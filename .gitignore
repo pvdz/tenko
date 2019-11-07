@@ -1,0 +1,12 @@
+# Output
+build
+dist
+
+# Dependency directory
+node_modules
+
+# Random stuff not for git. Test262, benchmark files, v8 log, etc
+ignore
+
+# This is where I put fuzzer output and other things I need to flesh out
+tests/testcases/todo

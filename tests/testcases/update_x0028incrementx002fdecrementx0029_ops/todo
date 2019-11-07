@@ -1,0 +1,3 @@
+// typeof x++  (the typeof wraps the update)
+// tests for asi and ++/-- for anything where LF_CAN_POSTFIX_ASI appears and async arrow functions because they're weird
+// check whether postfix asi (++/--) can be blocked by something else than objlit/arrlit/arrow/group

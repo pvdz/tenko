@@ -1,0 +1,1 @@
+    ; // `throw \n foo` should throw an error since the throw rhs is mandatory

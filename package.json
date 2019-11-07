@@ -1,0 +1,43 @@
+{
+  "name": "tenko",
+  "version": "1.0.0",
+  "author": "Peter van der Zee",
+  "description": "A \"pixel perfect\" 100% spec compliant ES2020 JavaScript parser written in JS.",
+  "main": "src/index.js",
+  "devDependencies": {
+    "@babel/parser": "7.6.4",
+    "acorn": "7.1.0",
+    "deoptigate": "0.5.0",
+    "esfuzz": "0.3.1",
+    "eslump": "2.0.0",
+    "prettier": "1.18.2",
+    "terser": "4.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pvdz/tenko.git"
+  },
+  "keywords": [
+    "javascript",
+    "js",
+    "ecmascript",
+    "es5",
+    "es6",
+    "es7",
+    "es8",
+    "es9",
+    "es10",
+    "es11",
+    "es2015",
+    "es2016",
+    "es2017",
+    "es2018",
+    "es2019",
+    "es2020",
+    "parser",
+    "parsing",
+    "lexer",
+    "token",
+    "fast"
+  ]
+}

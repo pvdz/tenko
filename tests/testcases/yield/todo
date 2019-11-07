@@ -1,0 +1,32 @@
+// I don't think a yield expression can ... yield a valid assignment
+// TODO: test stuff like `yield x = y` and `x = yield y = z` and `yield = x` and sloppy mode assignments etc
+// yield is always a regular varname in typeof yield (similar to +) and therefor an error in strict mode
+// yield's argument can be an assignment
+// yield\nfoo should apply ASI
+// yield\n/foo should not apply ASI, `yield` is never a statement so it's the same as (yield)/foo
+// yield\n/foo/ should not apply ASI because the next line starts with forward slash (error always)
+// sanity check; yield with and without argument in an expressions (the comma thing) as start/middle/end part
+// test all the exceptions noted in https://tc39.github.io/ecma262/#sec-generator-function-definitions-static-semantics-early-errors
+//
+// +if script mode, these should all work:
+//   +- `(yield)`
+//   +- `(yield = x)`
+//   +- `(x = yield)`
+//   +- `(x = yield = x)`
+//   +- `yield`
+//   +- `yield = x`
+//   +- `([yield])`
+//   +- `(x = a + yield)`
+//   +- `([x = yield])`
+//   +- `([x, {y: [yield]}] = z)`
+//   +- `([x, {y: [yield]}])`
+//   +And these should all fail:
+//   +- `(yield) => x`
+//   +- `(yield = x) => x`
+//   +- `(x = yield) => x`
+//   +- `(x = yield = x) => x`
+//   +- `yield => x`
+//   +- `([yield]) => x`
+//   +- `([x = yield]) => x`
+//   +- `([x = yield y]) => x`
+//   +- `([x, {y: [yield]}]) => x`

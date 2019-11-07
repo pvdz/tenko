@@ -1,0 +1,90 @@
+{
+  "es6.tiny": {
+    "path": "ignore/perf/es6.tiny.js",
+    "mode": "module",
+    "baseline": {
+      "tenko": 6,
+      "babel": 8,
+      "acorn": 6,
+      "tenk2": 6
+    },
+    "last": 5
+  },
+  "es5.js1k": {
+    "path": "ignore/perf/es5.js1k.js",
+    "mode": "web",
+    "baseline": {
+      "tenko": 245,
+      "babel": 274,
+      "acorn": 236,
+      "tenk2": 240
+    },
+    "last": 117
+  },
+  "es3.fb.js": {
+    "path": "ignore/perf/es3.fb.newsfeed.min.js",
+    "mode": "web",
+    "baseline": {
+      "tenko": 740,
+      "babel": 966,
+      "acorn": 724,
+      "tenk2": 738
+    },
+    "last": 405
+  },
+  "es6.material-ui-core": {
+    "path": "ignore/perf/es6.material-ui-core.js",
+    "mode": "web",
+    "baseline": {
+      "tenko": 729,
+      "babel": 1202,
+      "acorn": 799,
+      "tenk2": 719
+    },
+    "last": 342
+  },
+  "es6.angular-compiler": {
+    "path": "ignore/perf/es6.angular-compiler.js",
+    "mode": "module",
+    "baseline": {
+      "tenko": 923,
+      "babel": 1336,
+      "acorn": 923,
+      "tenk2": 892
+    },
+    "last": 438
+  },
+  "es5.moment-with-locales": {
+    "path": "ignore/perf/es5.moment-with-locales.js",
+    "mode": "web",
+    "baseline": {
+      "tenko": 452,
+      "babel": 650,
+      "acorn": 484,
+      "tenk2": 461
+    },
+    "last": 219
+  },
+  "es6.mljs": {
+    "path": "ignore/perf/es6.mljs.js",
+    "mode": "module",
+    "baseline": {
+      "tenko": 609,
+      "babel": 917,
+      "acorn": 627,
+      "tenk2": 587
+    },
+    "last": 302
+  },
+  "es5.webkit": {
+    "path": "ignore/perf/es5.webkit.npm.1.0.0.js",
+    "mode": "web",
+    "baseline": {
+      "tenko": 24916,
+      "babel": 28506,
+      "acorn": 23095,
+      "tenk2": 25418
+    },
+    "last": 8048
+  }
+}

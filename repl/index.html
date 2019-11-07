@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+<head>
+  <title>Tenko REPL</title>
+  <meta charset="UTF-8">
+  <style>
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0;
+    }
+
+    div { display: flex; }
+
+    .top { margin: 5px; }
+
+    .box { align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto; }
+    .header, .box.header { background-color: #eee; border: 1px solid black; box-sizing: border-box; padding: 5px; height: 30px; font-size: 14px; font-family: Verdana; }
+
+    .box.top-left .header { border: 0; border-top: 1px solid #aaa; border-right: 1px solid #aaa; }
+    .box.top-right .header { border: 0; border-top: 1px solid #aaa; border-left: 1px solid #aaa; }
+    .box.bottom-left .header { border: 0; border-right: 1px solid #aaa; }
+    .box.bottom-right .header { border: 0; border-left: 1px solid #aaa; }
+
+    .mode_selector {
+      position: relative;
+      border: 1px solid white;
+      height: 42px;
+    }
+    .mode_selector:hover {
+      border: 1px solid black;
+    }
+    .mode_selector.true {
+      background-color: #bceebd;
+    }
+    .mode_selector.false {
+      background-color: #ffbdb5;
+    }
+    .mode_selector > input {
+      position: absolute;
+      top: 18px;
+      left: 5px;
+      height: 14px;
+    }
+    .mode_selector > label {
+      height: 40px;
+      margin: 0 2px;
+      padding: 0 3px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+<div class="top">
+  Tenko REPL &mdash;
+  2019 &mdash;
+  &copy;&nbsp;<a href="https://pvdz.ee">Peter van der Zee</a>&nbsp;&mdash;&nbsp;
+  <a href="https://github.com/pvdz/tenko">Github</a>
+</div>
+<div style="flex-grow: 1">
+  <div class="box main" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+    <div class="box left" style="flex-direction: column; align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto; max-width:50%;">
+      <div class="box top-left" style="flex-direction: column; align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        <div class="header" style="height: 51px;">
+          <b>Input</b>
+          &nbsp;&mdash;<br>
+          Display:&nbsp;
+
+          <span class="mode_selector" title="Click here to show the output of the sloppy mode run">
+            <input type="radio" name="mode" id="$sloppy_mode" value="sloppy"/>
+            <label for="$sloppy_mode">Sloppy</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output of the sloppy web compat mode run">
+            <input type="radio" name="mode" id="$compat_mode" value="webcompat"/>
+            <label for="$compat_mode"> Web Compat</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output of the strict mode run">
+            <input checked type="radio" name="mode" id="$strict_mode" value="strict"/>
+            <label for="$strict_mode">Strict</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output of the module mode run">
+            <input type="radio" name="mode" id="$module_mode" value="module"/>
+            <label for="$module_mode">Module</label>
+          </span>
+
+          &nbsp;&mdash; in &mdash;&nbsp;
+
+          <span class="mode_selector" title="Click here to show the output parsed in es6">
+            <input type="radio" name="version" id="$ver_es6" value="6"/>
+            <label for="$ver_es6">ES6</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es7">
+            <input type="radio" name="version" id="$ver_es7" value="7"/>
+            <label for="$ver_es7">ES7</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es8">
+            <input type="radio" name="version" id="$ver_es8" value="8"/>
+            <label for="$ver_es8">ES8</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es9">
+            <input type="radio" name="version" id="$ver_es9" value="9"/>
+            <label for="$ver_es9">ES9</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es10">
+            <input type="radio" name="version" id="$ver_es10" value="10"/>
+            <label for="$ver_es10">ES10</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es11">
+            <input type="radio" name="version" id="$ver_es11" value="11" checked/>
+            <label for="$ver_es11">ES11</label>
+          </span>
+
+          &nbsp;&mdash; AST &mdash;&nbsp;
+<!-- This is not a mode; it's a build...
+          <span class="mode_selector" title="Click here to disable AST generation">
+            <input type="radio" name="ast" id="$ast_none" value="none"/>
+            <label for="$ast_none">None</label>
+          </span>
+-->
+          <span class="mode_selector" title="Click here generate an Estree AST">
+            <input type="radio" name="ast" id="$ast_estree" value="estree" checked/>
+            <label for="$ast_estree">Estree</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to generate a Babel AST">
+            <input type="radio" name="ast" id="$ast_babel" value="babel"/>
+            <label for="$ast_babel">Babel</label>
+          </span>
+        </div>
+        <textarea id="ta_input" placeholder="enter code here" class="box tl" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+// Note: Firefox (&lt;=63) crashes because of import(), >=66 seems to work fine
+// Same for any browser not supporting es modules (`import`/`export`).
+hello.world;
+how('are').you().doing ? oh: right;
+        </textarea>
+      </div>
+      <div class="box bottom-left" style="flex-direction: column; align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        <div class="header">Console</div>
+        <textarea id="stderr" placeholder="unused" class="box bl" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        </textarea>
+      </div>
+    </div>
+    <div class="box right" style="flex-direction: column; align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+      <div class="box top-right" style="flex-direction: column; align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        <div class="header">AST</div>
+        <textarea id="ta_ast" placeholder="AST" class="box tr" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        </textarea>
+      </div>
+      <div class="box top-right" style="flex-direction: column; align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        <div class="header">Tokens</div>
+        <textarea id="ta_output" placeholder="tokens" class="box br" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
+        </textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+
+
+<script>
+  var global = window;
+  var exports = {};
+  var disableCanonPoison = true; // disables dev-only poisoned getter for .canon in lexer
+</script>
+<script src="./lib/prettier.mjs"></script>
+<script src="./repl.js" type="module"></script>

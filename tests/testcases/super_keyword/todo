@@ -1,0 +1,19 @@
+// can never `super()` in non-constructor methods
+// can never `super()` in static methods
+// https://tc39.github.io/ecma262/#sec-object-initializer-static-semantics-early-errors
+// > It is a Syntax Error if HasDirectSuper of MethodDefinition is true.
+// (cannot super() in object literal methods)
+// TODO
+// function f(){super}
+// function super(){}
+// function f(super){}
+//
+// class A { constructor(){ super } }
+// class A { constructor(){ super(); } }
+// class A { constructor(super){ } }
+// class A { constructor(x=super()){ } }
+//
+// class A { f(){ super } }
+// class A { f(){ super(); } }
+// class A { f(super){ } }
+// class A { f(x=super()){ } }
