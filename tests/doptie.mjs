@@ -1,6 +1,6 @@
 // Run this through `./t d`
 
-import {Tenko, COLLECT_TOKENS_SOLID, COLLECT_TOKENS_NONE , GOAL_MODULE, GOAL_SCRIPT, WEB_COMPAT_ON, WEB_COMPAT_OFF} from '../build/build_w_ast.mjs';
+import {Tenko, COLLECT_TOKENS_SOLID, COLLECT_TOKENS_NONE , GOAL_MODULE, GOAL_SCRIPT, WEB_COMPAT_ON, WEB_COMPAT_OFF} from '../build/tenko.prod.mjs';
 import fs from 'fs';
 
 // let input = fs.readFileSync('ignore/perf/es5.moment-with-locales.js', 'utf8');

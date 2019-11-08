@@ -35,7 +35,7 @@ import {
   allFuncs,
   PERF_getStatus,
   PERF_DebugPrint,
-} from '../build/build_w_ast.mjs';
+} from '../build/tenko.prod.mjs';
 import fs from 'fs';
 
 // let input = fs.readFileSync('ignore/perf/es5.moment-with-locales.js', 'utf8');

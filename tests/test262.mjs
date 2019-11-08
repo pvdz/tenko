@@ -41,7 +41,7 @@ const BABEL_AST = process.argv.includes('--babel'); // run Tenko with babelCompa
 const COMPARE_BABEL = process.argv.includes('--test-babel'); // compare Tenko output for each test with Babel output?
 
 const TENKO_DEV_FILE = '../src/index.mjs';
-const TENKO_PROD_FILE = '../build/build_w_ast.mjs';
+const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
 
 const BOLD = '\x1b[;1;1m';
 const BLINK = '\x1b[;5;1m';

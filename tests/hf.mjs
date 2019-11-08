@@ -5,7 +5,7 @@ import {testTenko} from './parse_tenko.mjs';
 const USE_BUILD = process.argv.includes('--build') || process.argv.includes('-b');
 const USE_DEVTOOLS = process.argv.includes('--devtools');
 const TENKO_DEV_FILE = '../src/index.mjs';
-const TENKO_PROD_FILE = '../build/build_w_ast.mjs';
+const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
 
 const BOLD = '\x1b[;1;1m';
 const BOLD_GREEN = '\x1b[1;32m';

@@ -193,6 +193,6 @@ ${NATIVE_SYMBOLS?`
   console.log('Wrote', outPath, '(' + sizeBefore + ' -> ' + build.length + ' bytes)');
 }
 
-generate('build_w_ast.mjs', false);
+generate('tenko.prod.mjs', false);
 
 console.log('finished');

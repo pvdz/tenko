@@ -28,7 +28,7 @@ import {
   isBadTickToken,
   isNumberStringToken,
   isNumberStringRegex,
-} from '../build/build_w_ast.mjs';
+} from '../build/tenko.prod.mjs';
 // } from '../src/index.mjs';
 
 if (typeof Tenko !== 'function') throw new Error('Bad Tenko export');

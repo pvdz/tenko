@@ -54,7 +54,7 @@ const USE_BUILD = process.argv.includes('-b') || process.argv.includes('--build'
 const SKIP_PRINTER = process.argv.includes('--no-printer') || USE_BUILD;
 
 const TENKO_DEV_FILE = '../src/index.mjs';
-const TENKO_PROD_FILE = '../build/build_w_ast.mjs';
+const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
 
 if (process.argv.includes('-?') || process.argv.includes('--help')) {
   console.log(`

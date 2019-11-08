@@ -44,7 +44,7 @@ const GREEN = '\x1b[32m';
 const RESET = '\x1b[0m';
 
 const TENKO_DEV_FILE = '../src/index.mjs';
-const TENKO_PROD_FILE = '../build/build_w_ast.mjs';
+const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
 
 const FUZZERS = [
   // These functions should be callable without args and return randomly generated source code to test

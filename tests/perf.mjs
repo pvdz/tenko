@@ -12,8 +12,8 @@ import {performance} from 'perf_hooks';
 import path from 'path';
 
 const TENKO_DEV_FILE = path.resolve('./src/index.mjs');
-const TENKO_PROD_FILE = path.resolve('./build/build_w_ast.mjs');
-import TenkoBuild from '../build/build_w_ast.mjs';
+const TENKO_PROD_FILE = path.resolve('./build/tenko.prod.mjs');
+import TenkoBuild from '../build/tenko.prod.mjs';
 import {testTenko} from './parse_tenko.mjs';
 import {testBabel} from './parse_babel.mjs';
 import {testAcorn} from './parse_acorn.mjs';
