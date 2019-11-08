@@ -534,8 +534,8 @@ function hasNoFlag(flags, flag) {
 
 function Parser(code, options = {}) {
   let {
-    goalMode = GOAL_SCRIPT,
-    collectTokens = COLLECT_TOKENS_NONE,
+    goalMode: options_goalMode = GOAL_SCRIPT, // GOAL_SCRIPT | GOAL_MODULE | "script" | "module"
+    collectTokens: options_collectTokens = COLLECT_TOKENS_NONE, // COLLECT_TOKENS_NONE | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_ALL | "none" | "solid" | "all"
     webCompat: options_webCompat = WEB_COMPAT_ON,
     strictMode: options_strictMode = false,
     astRoot: options_astRoot = null,
@@ -566,6 +566,24 @@ function Parser(code, options = {}) {
     // parsers use Directive nodes. So I'm clearly overlooking something silly. *shrug*
     /* (This comment prevents the buildscript from detecting the ast prefix) */AST_directiveNodes = false,
   } = options;
+
+  let goalMode = GOAL_SCRIPT;
+  if (typeof options_goalMode === 'string') {
+    if (options_goalMode === 'module') goalMode = GOAL_MODULE;
+    else if (options_goalMode === 'script') goalMode = GOAL_SCRIPT;
+    else THROW('Unknown goal symbol value: `' + options_goalMode + '`');
+  } else {
+    goalMode = options_goalMode;
+  }
+  let collectTokens = COLLECT_TOKENS_NONE;
+  if (typeof options_collectTokens === 'string') {
+    if (options_collectTokens === 'all') collectTokens = COLLECT_TOKENS_ALL;
+    else if (options_collectTokens === 'solid') collectTokens = COLLECT_TOKENS_SOLID;
+    else if (options_collectTokens === 'none') collectTokens = COLLECT_TOKENS_NONE;
+    else THROW('Unknown collectTokens value: `' + options_collectTokens + '`');
+  } else {
+    collectTokens = options_collectTokens;
+  }
 
   let failForRegexAssertIfPass = '';
   let regexAssertTrace = undefined;

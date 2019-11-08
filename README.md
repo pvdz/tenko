@@ -49,9 +49,9 @@ const {
   inputCode,           // string
   {
     // Parse with script or module goal (module allows import/export)
-    goalMode = GOAL_MODULE, // GOAL_MODULE | GOAL_SCRIPT
+    goalMode = GOAL_MODULE, // GOAL_MODULE | GOAL_SCRIPT | "module" | "script"
     // Do you want to collect generated tokens at all?
-    collectTokens = COLLECT_TOKENS_ALL, // COLLECT_TOKENS_ALL | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_NONE
+    collectTokens = COLLECT_TOKENS_ALL, // COLLECT_TOKENS_ALL | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_NONE | "all" | "solid" | "none"
     // Apply Annex B rules? (Only works in sloppy mode)
     webCompat = true,
     // Start parsing as if in strict mode? (Works with script goal)
