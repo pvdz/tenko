@@ -50,9 +50,9 @@ let input = fs.readFileSync('ignore/perf/es5.webkit.npm.1.0.0.js', 'utf8');
 function testTenko(tenko, code, testVariant, enableAnnexb) {
   return tenko(
     code,
-    testVariant === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
-    COLLECT_TOKENS_NONE,
     {
+      goalMode: testVariant === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
+      collectTokens: COLLECT_TOKENS_NONE,
       strictMode: testVariant === 'strict',
       webCompat: enableAnnexb || testVariant === 'web',
       // targetEsVersion: tob.inputOptions.es,

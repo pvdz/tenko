@@ -47,9 +47,11 @@ const {
   tokenCountAny,       // number of tokens of any kind
 } = Tenko(
   inputCode,           // string
-  GOAL_MODULE,         // GOAL_MODULE | GOAL_SCRIPT
-  COLLECT_TOKENS_ALL,  // COLLECT_TOKENS_ALL | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_NONE
   {
+    // Parse with script or module goal (module allows import/export)
+    goalMode = GOAL_MODULE, // GOAL_MODULE | GOAL_SCRIPT
+    // Do you want to collect generated tokens at all?
+    collectTokens = COLLECT_TOKENS_ALL, // COLLECT_TOKENS_ALL | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_NONE
     // Apply Annex B rules? (Only works in sloppy mode)
     webCompat = true,
     // Start parsing as if in strict mode? (Works with script goal)

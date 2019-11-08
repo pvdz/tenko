@@ -532,8 +532,10 @@ function hasNoFlag(flags, flag) {
   return (flags & flag) === 0;
 }
 
-function Parser(code, goalMode = GOAL_SCRIPT, collectTokens = COLLECT_TOKENS_NONE, options = {}) {
+function Parser(code, options = {}) {
   let {
+    goalMode = GOAL_SCRIPT,
+    collectTokens = COLLECT_TOKENS_NONE,
     webCompat: options_webCompat = WEB_COMPAT_ON,
     strictMode: options_strictMode = false,
     astRoot: options_astRoot = null,

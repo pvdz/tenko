@@ -40,9 +40,9 @@ function compareBabel(code, tenkoPassed, testVariant, enableAnnexb, file, timePe
     try {
       tasb = Tenko(
         code,
-        testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
-        COLLECT_TOKENS_SOLID,
         {
+          goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
+          collectTokens: COLLECT_TOKENS_SOLID,
           strictMode: testVariant === TEST_STRICT,
           webCompat: (enableAnnexb || testVariant === TEST_WEB) ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
           babelCompat: true,

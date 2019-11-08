@@ -88,7 +88,9 @@ let GOAL_MODULE = undefined;
 let buffer = [];
 let p = (input, trimming) => {
   ++counts.tenkoParsed;
-  let z = Tenko(input, GOAL_SCRIPT, COLLECT_TOKENS_NONE, {
+  let z = Tenko(input, {
+    goalMode: GOAL_SCRIPT,
+    collectTokens: COLLECT_TOKENS_NONE,
     strictMode: false,
     webCompat: WEB_COMPAT_ON,
     fullErrorContext: true,

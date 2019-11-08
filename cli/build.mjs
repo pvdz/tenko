@@ -52,7 +52,9 @@ function processSource(source, constMap, recordConstants, keepAsserts) {
     ;
   }
 
-  let t = Tenko(source, GOAL_MODULE, COLLECT_TOKENS_NONE, {
+  let t = Tenko(source, {
+    goalMode: GOAL_MODULE,
+    collectTokens: COLLECT_TOKENS_NONE,
     webCompat: WEB_COMPAT_OFF, // Probably...
     fullErrorContext: true,
     exposeScopes: true, // constant inlining
@@ -146,7 +148,9 @@ ${NATIVE_SYMBOLS?`
 
   // Sanity check, won't work with native symbols (obviously)
   if (!NATIVE_SYMBOLS) {
-    Tenko(build, GOAL_MODULE, COLLECT_TOKENS_NONE, {
+    Tenko(build, {
+      goalMode: GOAL_MODULE,
+      collectTokens: COLLECT_TOKENS_NONE,
       webCompat: false, // Probably...
       fullErrorContext: true,
 

@@ -26,6 +26,8 @@ import {testPrinter} from "./run_printer.mjs";
 let GOAL_MODULE;
 let GOAL_SCRIPT;
 let COLLECT_TOKENS_ALL;
+let COLLECT_TOKENS_SOLID;
+let COLLECT_TOKENS_NONE;
 
 // node does not expose __dirname under module mode, but we can use import.meta to get it
 let filePath = import.meta.url.replace(/^file:\/\//, '');
@@ -59,9 +61,9 @@ function parse(input, strict, module, web) {
   stdout = [];
   return Tenko(
     input,
-    module ? GOAL_MODULE : GOAL_SCRIPT,
-    COLLECT_TOKENS_ALL,
     {
+      goalMode: module ? GOAL_MODULE : GOAL_SCRIPT,
+      collectTokens: COLLECT_TOKENS_ALL,
       strictMode: strict,
       webCompat: !!web,
       acornCompat: ACORN_AST,
@@ -324,7 +326,9 @@ function onRead(file, content) {
     Tenko,
     GOAL_MODULE,
     GOAL_SCRIPT,
-    COLLECT_TOKENS_ALL
+    COLLECT_TOKENS_ALL,
+    COLLECT_TOKENS_SOLID,
+    COLLECT_TOKENS_NONE,
   } = (await import(USE_BUILD ? TENKO_PROD_FILE : TENKO_DEV_FILE)));
 
   read(PATH262, '', onRead);

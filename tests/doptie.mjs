@@ -16,9 +16,9 @@ let input = fs.readFileSync('ignore/perf/es6.material-ui-core.js', 'utf8');
 function testTenko(tenko, code, testVariant, enableAnnexb) {
   return tenko(
     code,
-    testVariant === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
-    COLLECT_TOKENS_NONE,
     {
+      goalMode: testVariant === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
+      collectTokens: COLLECT_TOKENS_NONE,
       strictMode: testVariant === 'strict',
       webCompat: enableAnnexb || testVariant === 'web',
       // targetEsVersion: tob.inputOptions.es,

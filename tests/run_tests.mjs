@@ -238,9 +238,9 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
     }
     r = tenko(
       code,
-      testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
-      COLLECT_TOKENS_SOLID,
       {
+        goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
+        collectTokens: COLLECT_TOKENS_SOLID,
         strictMode: testVariant === TEST_STRICT,
         webCompat: (ENABLE_ANNEXB || testVariant === TEST_WEB) ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
         targetEsVersion: tob.inputOptions.es,
@@ -653,7 +653,7 @@ async function writeNewOutput(list) {
 async function loadTenkoAsync() {
   let Tenko;
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ Parser load');
-  [
+  ({
     Tenko,
     COLLECT_TOKENS_SOLID,
     COLLECT_TOKENS_NONE ,
@@ -662,15 +662,13 @@ async function loadTenkoAsync() {
     WEB_COMPAT_ON,
     WEB_COMPAT_OFF,
     toktypeToString,
-  ] = await Promise.all([
-    await import(path.join(dirname, USE_BUILD ? TENKO_PROD_FILE : TENKO_DEV_FILE)),
-  ]);
+  } = await import(path.join(dirname, USE_BUILD ? TENKO_PROD_FILE : TENKO_DEV_FILE)));
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Parser load');
 
   return Tenko;
 }
-async function runAndRegenerateList(list, tenkoarser) {
-  await runTests(list, tenkoarser);
+async function runAndRegenerateList(list, tenko) {
+  await runTests(list, tenko);
   if (!SEARCH) {
     constructNewOutput(list);
     if (USE_BUILD) {
@@ -690,7 +688,7 @@ async function runAndRegenerateList(list, tenkoarser) {
 }
 
 async function cli() {
-  let tenkoarser = await loadTenkoAsync();
+  let tenko = await loadTenkoAsync();
 
   let forcedTarget = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10  : TARGET_ES11 ? 11 : undefined;
   if (forcedTarget) console.log('Forcing target version: ES' + forcedTarget);
@@ -699,7 +697,7 @@ async function cli() {
   tob.inputCode = INPUT_OVERRIDE;
   tob.inputOptions.es = forcedTarget;
   let list = [tob];
-  await runTests(list, tenkoarser);
+  await runTests(list, tenko);
 
   if (!SEARCH && !CONCISE) {
     console.log('=============================================');
@@ -736,7 +734,7 @@ async function cli() {
 }
 
 async function main() {
-  let tenkoarser = await loadTenkoAsync();
+  let tenko = await loadTenkoAsync();
 
   if (TARGET_FILE) {
     console.log('Using explicit file:', TARGET_FILE);
@@ -761,7 +759,7 @@ async function main() {
   if (RUN_VERBOSE_IN_SERIAL) {
     for (let i=0; i<list.length && !stopAsap; ++i) {
       let tob = list[i];
-      await runAndRegenerateList([tob], tenkoarser);
+      await runAndRegenerateList([tob], tenko);
       let count = String(i+1).padStart(String(list.length).length, ' ') + ' / ' + list.length;
       if (tob.oldData === tob.newData) {
         if (tob.skippedForParser) {
@@ -776,7 +774,7 @@ async function main() {
       }
     }
   } else {
-    await runAndRegenerateList(list, tenkoarser);
+    await runAndRegenerateList(list, tenko);
   }
 
   console.timeEnd('$$ Whole test run');
