@@ -546,6 +546,7 @@ function Parser(code, options = {}) {
     exposeScopes: options_exposeScopes = false, // put scopes in the AST under `$scope` property?
     astUids = false, // add an incremental uid to all ast nodes for debugging
     fullErrorContext = false, // do not trunc the input when throwing an error?
+    ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
 
     templateNewlineNormalization = true, // normalize \r and \rn to \n in the `.raw` of template nodes? Estree spec says yes, but makes it hard to serialize lossless
 
@@ -633,8 +634,10 @@ function Parser(code, options = {}) {
   let tok_asi = tok.asi;
   let tok_prevEndColumn = tok.prevEndColumn;
   let tok_prevEndLine = tok.prevEndLine;
+  let tok_prevEndPointer = tok.prevEndPointer;
   let tok_currColumn = tok.currColumn;
   let tok_currLine = tok.currLine;
+  let tok_currPointer = tok.currPointer;
   let tok_nextToken = tok.nextToken;
 
   let allowTrailingFunctionComma = targetEsVersion >= VERSION_TRAILING_FUNC_COMMAS || targetEsVersion === VERSION_WHATEVER;
@@ -697,48 +700,63 @@ function Parser(code, options = {}) {
     options_astRoot.path = _path;
     ASSERT(options_astRoot.pathNames = _pnames, '(dev-only verification and debugging tool)');
   }
+
   function AST_getFirstLoc() {
     ASSERT(AST_getFirstLoc.length === arguments.length, 'arg count');
+
     // Create a loc for the start of the program
 
-    return {
-      start: {
-        line: 1, // offset 1
-        column: 0,
-      },
-      end: { // Updated in AST_close
-        line: 1,
-        column: 0,
-      },
-      source: sourceField, // File containing the code being parsed. Source maps may use this.
-    };
+    return AST_getOpenLoc(1, 0, 0);
   }
   function AST_getBaseLoc(firstToken) {
     ASSERT(AST_getBaseLoc.length === arguments.length, 'arg count');
+
     // Create a loc that is unclosed, to be closed by AST_close*
 
-    return {
-      start: {
-        line: firstToken.line, // offset 1
-        column: firstToken.column,
-      },
-      end: { // Updated in AST_close with the next token (which seems to be accurate)
-        line: 1,
-        column: 0,
-      },
-      source: sourceField, // File containing the code being parsed. Source maps may use this.
-    };
+    return AST_getOpenLoc(firstToken.line, firstToken.column, firstToken.start);
   }
   function AST_getBaseLocTemplate(firstToken) {
     ASSERT(AST_getBaseLocTemplate.length === arguments.length, 'arg count');
+
     // Create a loc that is unclosed, to be closed by AST_close*
     // This loc is for template elements where the backticks, `${`, and `}` characters are ignored in
     // the location ranges... so +1 it
 
+    return AST_getOpenLoc(firstToken.line, firstToken.column + 1, firstToken.start);
+  }
+  function AST_getClosedLoc(firstToken) {
+    ASSERT(AST_getClosedLoc.length === arguments.length, 'arg count');
+
+    // Create a loc that is immediately closed
+
+    return AST_getCloseLoc(firstToken.line, firstToken.column, firstToken.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer());
+  }
+  function AST_getOpenLoc(startLine, startColumn, startIndex) {
+    ASSERT(AST_getOpenLoc.length === arguments.length, 'arg count');
+
+    if (options_ranges) {
+      // Note: return two distinct object when using ranges to prevent deopt
+      return {
+        start: {
+          line: startLine, // offset 1
+          column: startColumn,
+        },
+        end: { // Updated in AST_close with the next token (which seems to be accurate)
+          line: 1,
+          column: 0,
+        },
+        range: {
+          start: startIndex,
+          end: 0,
+        },
+        source: sourceField, // File containing the code being parsed. Source maps may use this.
+      };
+    }
+
     return {
       start: {
-        line: firstToken.line, // offset 1
-        column: firstToken.column + 1,
+        line: startLine, // offset 1
+        column: startColumn,
       },
       end: { // Updated in AST_close with the next token (which seems to be accurate)
         line: 1,
@@ -747,22 +765,41 @@ function Parser(code, options = {}) {
       source: sourceField, // File containing the code being parsed. Source maps may use this.
     };
   }
-  function AST_getClosedLoc(firstToken) {
-    ASSERT(AST_getClosedLoc.length === arguments.length, 'arg count');
-    // Create a loc that is immediately closed
+  function AST_getCloseLoc(startLine, startColumn, startIndex, endLine, endColumn, endIndex) {
+    ASSERT(AST_getCloseLoc.length === arguments.length, 'arg count');
+
+    if (options_ranges) {
+      // Note: return two distinct object when using ranges to prevent deopt
+      return {
+        start: {
+          line: startLine, // offset 1
+          column: startColumn,
+        },
+        end: {
+          line: endLine,
+          column: endColumn,
+        },
+        range: {
+          start: startIndex,
+          end: endIndex,
+        },
+        source: sourceField, // File containing the code being parsed. Source maps may use this.
+      };
+    }
 
     return {
       start: {
-        line: firstToken.line, // offset 1
-        column: firstToken.column,
+        line: startLine, // offset 1
+        column: startColumn,
       },
-      end: { // This assumes the last token of this node has already been consumed and no further ...
-        line: tok_prevEndLine(),
-        column: tok_prevEndColumn(),
+      end: {
+        line: endLine,
+        column: endColumn,
       },
       source: sourceField, // File containing the code being parsed. Source maps may use this.
     };
   }
+
   function AST_open(prop, newNode) {
     ASSERT(arguments.length === AST_open.length, 'arg count');
     ASSERT(_path.length > 0, 'path shouldnt be empty');
@@ -795,7 +832,7 @@ function Parser(code, options = {}) {
     was.loc.end.column = tok_prevEndColumn();
     was.loc.end.line = tok_prevEndLine();
 
-    ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start', was.loc);
+    ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start (1)', was.loc);
     ASSERT(was.loc.start.line < was.loc.end.line || was.loc.start.column <= was.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', was.loc);
     ASSERT(was.loc.start.line >= 1, 'start line should be >= 1', was.loc);
     ASSERT(was.loc.start.column >= 0, 'start column should be >= 0', was.loc);
@@ -827,7 +864,7 @@ function Parser(code, options = {}) {
     was.loc.end.column = colEnd;
     was.loc.end.line = tok_prevEndLine();
 
-    ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start', was.loc);
+    ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start (2)', was.loc);
     ASSERT(was.loc.start.line < was.loc.end.line || was.loc.start.column <= was.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', was.loc);
     ASSERT(was.loc.start.line >= 1, 'start line should be >= 1', was.loc);
     ASSERT(was.loc.start.column >= 0, 'start column should be >= 0', was.loc);
@@ -913,21 +950,14 @@ function Parser(code, options = {}) {
     // TODO: is a destructuring more efficient pref-wise? `let {canon, col, line, ...} = token`. It may be :)
     let col = token.column;
     let line = token.line;
+    let len = token.str.length;
     let canon = token.canon;
+    // Idents can't contain newlines so the end.column should be start.column+len
+    let colEnd = col + len;
 
     let identNode = {
       type: 'Identifier',
-      loc: {
-        start: {
-          line: line, // offset 1
-          column: col, // offset 0
-        },
-        end: {
-          line: line,
-          column: col + token.str.length, // Idents can't contain newlines so this should be as simple as this?
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(line, col, token.start, line, colEnd, token.stop),
       // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
       name: canon,
     };
@@ -983,17 +1013,7 @@ function Parser(code, options = {}) {
     ASSERT_pushCanonPoison(true);
     let node = {
       type: 'Literal',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
       value: token.canon,
       raw: q + token.str + q,
     };
@@ -1037,17 +1057,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       value: value,
       raw: str,
     };
@@ -1081,17 +1091,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'BigIntLiteral',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       value: null,
       bigint: token.str.slice(0, -1), // TODO: Normalize... https://github.com/estree/estree/issues/200
     };
@@ -1125,17 +1125,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       value: null,
       regex: {
         pattern: body,
@@ -1464,24 +1454,14 @@ function Parser(code, options = {}) {
 
     let commentNode = {
       type: typeName,
-      loc: {
-        start: {
-          line: commentToken.line, // offset 1
-          column: commentToken.column, // offset 0
-        },
-        // Comment nodes are recorded immediately and should read the current position as their end...
-        end: {
-          line: tok_currLine(),
-          column: tok_currColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      // Comment nodes are recorded immediately and should read the current position as their end...
+      loc: AST_getCloseLoc(commentToken.line, commentToken.column, commentToken.start, tok_currLine(), tok_currColumn(), tok_currPointer()),
       value: value
     };
 
     AST_setNode('innerComments', commentNode);
 
-    ASSERT(commentNode.loc.start.line <= commentNode.loc.end.line, 'end line should be same or later than start', commentNode.loc);
+    ASSERT(commentNode.loc.start.line <= commentNode.loc.end.line, 'end line should be same or later than start (3)', commentNode.loc);
     ASSERT(commentNode.loc.start.line < commentNode.loc.end.line || commentNode.loc.start.column <= commentNode.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', commentNode.loc);
     ASSERT(commentNode.loc.start.line >= 1, 'start line should be >= 1', commentNode.loc);
     ASSERT(commentNode.loc.start.column >= 0, 'start column should be >= 0', commentNode.loc);
@@ -1504,22 +1484,10 @@ function Parser(code, options = {}) {
 
     return {
       type: 'StringLiteral',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      // Note: strings can contain 2028/2029 and line continuations, which increment the line counter. So we can't just use str.length
+      loc: AST_getCloseLoc(token.line, token.column, token.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
       value: value,
-      extra: {
-        raw: q + str + q,
-        rawValue: value,
-      },
+      extra: {rawValue: value, raw: q + str + q},
     };
   }
   function AST_babelGetNumberNode(token) {
@@ -1548,17 +1516,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'NumericLiteral',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       value: value,
       extra: { rawValue: value, raw: str},
     };
@@ -1566,17 +1524,7 @@ function Parser(code, options = {}) {
   function AST_babelGetBigIntNode(token) {
     return {
       type: 'BigIntLiteral',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       value: token.str.slice(0, -1),
       extra: {rawValue: token.str.slice(0, -1), raw: token.str}, // This will probably change ...
     };
@@ -1597,17 +1545,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'RegExpLiteral',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       pattern: body,
       flags: tail,
       extra: {rawValue: undefined, raw: str},
@@ -1617,17 +1555,7 @@ function Parser(code, options = {}) {
   function AST_acornGetBigIntNode(token) {
     return {
       type: 'Literal',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       raw: token.str,
       bigint: token.str.slice(0, -1),
       value: BigInt(token.str.slice(0, -1)), // Ironically it doesn't accept bigint notation
@@ -1645,17 +1573,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: {
-        start: {
-          line: token.line, // offset 1
-          column: token.column, // offset 0
-        },
-        end: {
-          line: tok_prevEndLine(),
-          column: tok_prevEndColumn(),
-        },
-        source: sourceField, // File containing the code being parsed. Source maps may use this.
-      },
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
       value: new RegExp(body, tail), // Only difference
       regex: {
         pattern: body,

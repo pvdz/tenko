@@ -472,6 +472,7 @@ function Lexer(
 
   let prevTokenEndColumn = 0;
   let prevTokenEndLine = 0;
+  let prevTokenEndPointer = 0;
   let prevTokenSolid = true;
 
   let stale = false; // do NOT read from `cache` when `stale` is true. This is a dev-only assertion based safeguard...
@@ -585,6 +586,7 @@ function Lexer(
       // would cause `a` to be set to the wrong column data.
       prevTokenEndColumn = pointer - currentColOffset;
       prevTokenEndLine = currentLine;
+      prevTokenEndPointer = pointer;
       prevTokenSolid = false;
     }
 
@@ -5042,8 +5044,10 @@ function Lexer(
     regexerror: function(){ return lastPotentialRegexError; },
     prevEndColumn: function(){ return prevTokenEndColumn; },
     prevEndLine: function(){ return prevTokenEndLine; },
+    prevEndPointer: function(){ return prevTokenEndPointer; },
     currColumn: function(){ return pointer - currentColOffset; },
     currLine: function(){ return currentLine; },
+    currPointer: function(){ return pointer; },
   };
 }
 
