@@ -340,7 +340,7 @@ function astToString(ast) {
   */
   // (Test cases won't contain this as string-content so the regex should be safe)
   .replace(
-    /loc:\s*\{\s*start:\s*\{\s*line:\s*\d+,\s*column:\s*\d+\s*\}\s*(?:,\s*identifierName:\s*'[^']*')?,\s*end:\s*\{\s*line:\s*\d+,\s*column?:\s*\d+\s*\}(?:,\s*source:\s*'[^']*')?(?:,\s*identifierName:\s*'[^']*')?\s*}/g,
+    /loc:\s*\{\s*start:\s*\{\s*line:\s*\d+,\s*column:\s*\d+\s*\}\s*(?:,\s*identifierName:\s*'[^']*')?,\s*end:\s*\{\s*line:\s*\d+,\s*column?:\s*\d+\s*\}(?:,\s*range:\s*\{\s*start:\s*\d+,\s*end?:\s*\d+\s*\})(?:,\s*source:\s*'[^']*')?(?:,\s*identifierName:\s*'[^']*')?\s*}/g,
     s => s.replace(/\s+/g, '')
   );
 }
