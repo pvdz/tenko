@@ -116,12 +116,13 @@ const update = e => {
 
     let mode = selectedMode === 'module' ? GOAL_MODULE : GOAL_SCRIPT;
 
-    out = Tenko(input, mode, COLLECT_TOKENS_ALL, {
+    out = Tenko(input, {
       strictMode: selectedMode === 'strict',
       webCompat: selectedMode === 'webcompat',
       babelCompat: selectedAst === 'babel',
       astRoot: ast,
       tokenStorage: tokens,
+      collectTokens: COLLECT_TOKENS_ALL,
       targetEsVersion: version,
     });
     threw = false;
@@ -135,9 +136,9 @@ const update = e => {
   reflectPass();
 
   // Note: shipping a very old version of Prettier. Not very important for the purpose of printing an AST.
-  window.ta_ast.value = pret(JSON.stringify(ast.root), true);
-  window.ta_output.value = tokens.map(JSON.stringify).join('\n')
-  console.log(['out:', out, 'ast:', ast]);
+  window.ta_ast.value = pret(JSON.stringify(out.ast), true);
+  window.ta_output.value = out.tokens.map(t => ''+t).join('\n')
+  console.log(['out:', out, 'ast:', out.ast]);
 };
 
 let overallBouncer = 0;
