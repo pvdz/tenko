@@ -5,6 +5,8 @@ import Tenko, {COLLECT_TOKENS_NONE, GOAL_MODULE, WEB_COMPAT_OFF} from '../src/in
 import {scrub} from './scrub.mjs';
 import Terser from 'terser';
 
+console.time('Finished build script (');
+
 // node does not expose __dirname under module mode, but we can use import.meta to get it
 let filePath = import.meta.url.replace(/^file:\/\//,'');
 let dirname = path.dirname(filePath);
@@ -15,6 +17,14 @@ const NO_MIN = NATIVE_SYMBOLS || process.argv.includes('--no-min'); // skip mini
 const NO_AST = process.argv.includes('--no-ast'); // drop ast related code from the parser (`AST_*`)
 
 if (NATIVE_SYMBOLS) console.log('Will convert `PERF_$` prefixed functions into `%` prefixed native functions...!');
+
+const BOLD = '\x1b[;1;1m';
+const OVER = '\x1b[32;53m';
+const DIM = '\x1b[30;1m';
+const BLINK = '\x1b[;5;1m';
+const RED = '\x1b[31m';
+const GREEN = '\x1b[32m';
+const RESET = '\x1b[0m';
 
 // The list of sources should form an ordered acyclic dependency graph
 // All constants that get inlined should be lexicographically declared before usage. This build script assumes it.
@@ -69,15 +79,23 @@ function processSource(source, constMap, recordConstants, keepAsserts) {
   return source;
 }
 
-function generate(filename, keepAsserts) {
-  let builds = {};
+function prepare(builds, keepAsserts) {
+  console.group('Preparing builds by reading all src files and transforming them...');
   const constMap = new Map;
 
   // Read all (targeted) src files from disk
   sources.forEach(obj => {
+    console.log(' - Processing', obj.path);
     obj.code = fs.readFileSync(path.join(dirname, obj.path), 'utf8');
     builds[obj.name] = processSource(obj.code, constMap, obj.recordConstants, keepAsserts);
   });
+
+  console.groupEnd();
+}
+
+function generate(builds, filename) {
+  const forEsm = !filename.endsWith('.js');
+  console.group('Generating', BOLD + filename + RESET, '(ESM?', forEsm, ')');
 
   let build = `
 
@@ -91,8 +109,18 @@ ${Object.getOwnPropertyNames(builds).map(name => {
 
 let Tenko = Parser;
 
+${forEsm?
+`
 export default Tenko; // Does dual export make sense? Default and as member. To each their own, eh
 export {
+`
+  :
+    // I'd rather not do the default exports in cjs tbh but want to maintain compat so *shrug*
+`
+module.exports = Tenko; // Does dual export make sense? Default and as member. To each their own, eh
+Object.assign(Tenko, {
+  default: Tenko,
+`}
   Tenko,
   Lexer,
 
@@ -143,7 +171,7 @@ ${NATIVE_SYMBOLS?`
   PERF_DebugPrint,
   allFuncs,
 `:''}
-};
+${forEsm ? '};' : '});'}
   `;
 
   // Sanity check, won't work with native symbols (obviously)
@@ -191,8 +219,12 @@ ${NATIVE_SYMBOLS?`
   fs.writeFileSync(outPath, build);
 
   console.log('Wrote', outPath, '(' + sizeBefore + ' -> ' + build.length + ' bytes)');
+  console.groupEnd();
 }
 
-generate('tenko.prod.mjs', false);
+let builds = {};
+prepare(builds, false);
+generate(builds, 'tenko.prod.mjs'); // ESM
+generate(builds, 'tenko.prod.js'); // CJS
 
-console.log('finished');
+console.timeEnd('Finished build script (');
