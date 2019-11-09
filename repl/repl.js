@@ -114,9 +114,8 @@ const update = e => {
   try {
     console.log('crunching (mode=', selectedMode, ', version=', version, '):', '\n```\n' + pret(input) + '\n```');
 
-    let mode = selectedMode === 'module' ? GOAL_MODULE : GOAL_SCRIPT;
-
     out = Tenko(input, {
+      goalMode: selectedMode === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
       strictMode: selectedMode === 'strict',
       webCompat: selectedMode === 'webcompat',
       babelCompat: selectedAst === 'babel',
@@ -137,7 +136,7 @@ const update = e => {
 
   // Note: shipping a very old version of Prettier. Not very important for the purpose of printing an AST.
   window.ta_ast.value = pret(JSON.stringify(out.ast), true);
-  window.ta_output.value = out.tokens.map(t => ''+t).join('\n')
+  window.ta_output.value = out.tokens.map(t => ''+t).join('\n');
   console.log(['out:', out, 'ast:', out.ast]);
 };
 
@@ -163,7 +162,9 @@ function scheduleOverall(input, currentMode, currentVersion) {
 function silentPassFail(code, mode/*:sloppy | webcompat | strict | module*/, version) {
   let threw = false;
   try {
-    Tenko(code, mode === 'module' ? GOAL_MODULE : GOAL_SCRIPT, COLLECT_TOKENS_NONE, {
+    Tenko(code, {
+      goalMode: mode === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
+      collectTokens: COLLECT_TOKENS_NONE,
       strictMode: mode === 'strict',
       webCompat: mode === 'webcompat',
       targetEsVersion: version,
