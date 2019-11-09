@@ -831,6 +831,7 @@ function Parser(code, options = {}) {
     // The column offsets at 0, the line at 1
     was.loc.end.column = tok_prevEndColumn();
     was.loc.end.line = tok_prevEndLine();
+    if (options_ranges) was.loc.range.end = tok_prevEndPointer();
 
     ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start (1)', was.loc);
     ASSERT(was.loc.start.line < was.loc.end.line || was.loc.start.column <= was.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', was.loc);
@@ -856,13 +857,16 @@ function Parser(code, options = {}) {
     // The column offsets at 0
     // For template elements the backticks, `${`, and `}` characters are ignored in the location ranges... so -1
     let colEnd = tok_prevEndColumn() - 1;
+    let pointerEnd = tok_prevEndPointer();
     if (isTemplateDouble) {
       // This is for TICK_HEAD and TICK_BODY which start with `${`
       --colEnd;
+      --pointerEnd;
     }
 
     was.loc.end.column = colEnd;
     was.loc.end.line = tok_prevEndLine();
+    if (options_ranges) was.loc.range.end = pointerEnd;
 
     ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start (2)', was.loc);
     ASSERT(was.loc.start.line < was.loc.end.line || was.loc.start.column <= was.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', was.loc);
