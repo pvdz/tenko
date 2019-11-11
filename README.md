@@ -219,7 +219,7 @@ To generate a build run this in the project root, flags can be combined:
 ```
 ./t z                      # Regular build with everything
 ./t z --no-ast             # Strip most AST related code from the build (~50% faster, but obviously no AST)
-./t z --no-compat          # Strip acorn/babel compatibilty
+./t z --no-compat          # Strip acorn/babel compatibility
 ./t z --no-min --pretty    # Skip minifier and use Prettier on result
 ```
 
