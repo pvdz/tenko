@@ -2874,16 +2874,18 @@ function Parser(code, options = {}) {
 
     if (curtok.type === $PUNC_SEMI) {
       ASSERT_skipToStatementStart(';', lexerFlags);
+      return;
+    }
+
+    ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'this case should have been caught sooner');
+
+    // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
+    if (curtok.type === $PUNC_CURLY_CLOSE || curtok.nl === true || curtok.type === $EOF) {
+      tok_asi();
     } else {
-      ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'this case should have been caught sooner');
-      // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-      if (curtok.type === $PUNC_CURLY_CLOSE || curtok.nl === true || curtok.type === $EOF) {
-        tok_asi();
-      } else {
-        $log('parse error at curtok.c', curtok.c, String.fromCharCode(curtok.c), curtok.str);
-        $log('current token:', curtok);
-        THROW('Unable to ASI, token: ' + curtok);
-      }
+      $log('parse error at curtok.c', curtok.c, String.fromCharCode(curtok.c), curtok.str);
+      $log('current token:', curtok);
+      THROW('Unable to ASI, token: ' + curtok);
     }
   }
 
