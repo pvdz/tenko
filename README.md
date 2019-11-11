@@ -38,7 +38,7 @@ _The REPL runs on dev master branch and needs a very new browser due to es modul
 
 ## Usage
 
-```
+```js
 import {Tenko, GOAL_MODULE, COLLECT_TOKENS_ALL} from 'src/index.mjs';
 const {
   ast,                 // estree compatible AST
