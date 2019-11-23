@@ -499,6 +499,7 @@ import {
   EMPTY_LABEL_SET,
 
   copyPiggies,
+  P,
 } from './enum_parser.mjs';
 
 let ASSERT_ASI_REGEX_NEXT = false; // When set, do not throw assertion error in the semi/asi parser for seeing a regex
@@ -12760,37 +12761,7 @@ function S(s) {
 
   ASSERT(false, 'S: unknown scope layer type: ' + s);
 }
-function P(f, arr) {
-  if (f & PIGGY_BACK_WAS_CONSTRUCTOR) {
-    arr.push('PIGGY_BACK_WAS_CONSTRUCTOR');
-    f ^= PIGGY_BACK_WAS_CONSTRUCTOR;
-  }
-  if (f & PIGGY_BACK_WAS_PROTO) {
-    arr.push('PIGGY_BACK_WAS_PROTO');
-    f ^= PIGGY_BACK_WAS_PROTO;
-  }
-  if (f & PIGGY_BACK_SAW_AWAIT_KEYWORD) {
-    arr.push('PIGGY_BACK_SAW_AWAIT_KEYWORD');
-    f ^= PIGGY_BACK_SAW_AWAIT_KEYWORD;
-  }
-  if (f & PIGGY_BACK_SAW_AWAIT_VARNAME) {
-    arr.push('PIGGY_BACK_SAW_AWAIT_VARNAME');
-    f ^= PIGGY_BACK_SAW_AWAIT_VARNAME;
-  }
-  if (f & PIGGY_BACK_SAW_YIELD_KEYWORD) {
-    arr.push('PIGGY_BACK_SAW_YIELD_KEYWORD');
-    f ^= PIGGY_BACK_SAW_YIELD_KEYWORD;
-  }
-  if (f & PIGGY_BACK_SAW_YIELD_VARNAME) {
-    arr.push('PIGGY_BACK_SAW_YIELD_VARNAME');
-    f ^= PIGGY_BACK_SAW_YIELD_VARNAME;
-  }
-  if (f & PIGGY_BACK_WAS_ARROW) {
-    arr.push('PIGGY_BACK_WAS_ARROW');
-    f ^= PIGGY_BACK_WAS_ARROW;
-  }
-  return f;
-}
+
 function F(fdState) {
   if (fdState === FDS_ILLEGAL) return ('F=FDS_ILLEGAL');
   else if (fdState === FDS_IFELSE) return ('F=FDS_IFELSE');

@@ -156,6 +156,38 @@ function copyPiggies(output, input) {
   return output | (input & PIGGIES);
 }
 
+function P(f, arr) {
+  if (f & PIGGY_BACK_WAS_CONSTRUCTOR) {
+    arr.push('PIGGY_BACK_WAS_CONSTRUCTOR');
+    f ^= PIGGY_BACK_WAS_CONSTRUCTOR;
+  }
+  if (f & PIGGY_BACK_WAS_PROTO) {
+    arr.push('PIGGY_BACK_WAS_PROTO');
+    f ^= PIGGY_BACK_WAS_PROTO;
+  }
+  if (f & PIGGY_BACK_SAW_AWAIT_KEYWORD) {
+    arr.push('PIGGY_BACK_SAW_AWAIT_KEYWORD');
+    f ^= PIGGY_BACK_SAW_AWAIT_KEYWORD;
+  }
+  if (f & PIGGY_BACK_SAW_AWAIT_VARNAME) {
+    arr.push('PIGGY_BACK_SAW_AWAIT_VARNAME');
+    f ^= PIGGY_BACK_SAW_AWAIT_VARNAME;
+  }
+  if (f & PIGGY_BACK_SAW_YIELD_KEYWORD) {
+    arr.push('PIGGY_BACK_SAW_YIELD_KEYWORD');
+    f ^= PIGGY_BACK_SAW_YIELD_KEYWORD;
+  }
+  if (f & PIGGY_BACK_SAW_YIELD_VARNAME) {
+    arr.push('PIGGY_BACK_SAW_YIELD_VARNAME');
+    f ^= PIGGY_BACK_SAW_YIELD_VARNAME;
+  }
+  if (f & PIGGY_BACK_WAS_ARROW) {
+    arr.push('PIGGY_BACK_WAS_ARROW');
+    f ^= PIGGY_BACK_WAS_ARROW;
+  }
+  return f;
+}
+
 export {
   VERSION_EXPONENTIATION,
   VERSION_ASYNC,
@@ -287,4 +319,5 @@ export {
   EMPTY_LABEL_SET,
 
   copyPiggies,
+  P,
 };
