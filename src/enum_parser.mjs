@@ -73,8 +73,8 @@ const NOT_SINGLE_IDENT_WRAP_A = 1 << 8;  // "assignable"
 const NOT_SINGLE_IDENT_WRAP_NA = 1 << 9; // "not assignable"
 const PIGGY_BACK_SAW_AWAIT = 1 << 10; // parsed an expression containing `await` as varname or keyword
 // 1 << 11 is unused atm
-const PIGGY_BACK_SAW_YIELD_VARNAME = 1 << 12; // parsed an expression containing `yield` as a regular var name
-const PIGGY_BACK_SAW_YIELD_KEYWORD = 1 << 13  ; // parsed an expression containing a YieldExpression
+const PIGGY_BACK_SAW_YIELD = 1 << 12; // parsed an expression containing `yield` as varname or keyword
+// 1 << 13 is unused atm
 const PIGGY_BACK_WAS_CONSTRUCTOR = 1 << 14; // signal having found a constructor (special case)
 const PIGGY_BACK_WAS_PROTO = 1 << 15; // signal that a `__proto__: x` was parsed (do detect double occurrence)
 const PIGGY_BACK_WAS_ARROW = 1 << 16; // signal that double proto was found on object; error in web compat outside of arrow headers
@@ -145,8 +145,7 @@ function dev() {
 
 const PIGGIES = (0
   | PIGGY_BACK_SAW_AWAIT
-  | PIGGY_BACK_SAW_YIELD_VARNAME
-  | PIGGY_BACK_SAW_YIELD_KEYWORD
+  | PIGGY_BACK_SAW_YIELD
   | PIGGY_BACK_WAS_CONSTRUCTOR
   | PIGGY_BACK_WAS_PROTO
   | PIGGY_BACK_WAS_ARROW
@@ -168,13 +167,9 @@ function P(f, arr) {
     arr.push('PIGGY_BACK_SAW_AWAIT');
     f ^= PIGGY_BACK_SAW_AWAIT;
   }
-  if (f & PIGGY_BACK_SAW_YIELD_KEYWORD) {
-    arr.push('PIGGY_BACK_SAW_YIELD_KEYWORD');
-    f ^= PIGGY_BACK_SAW_YIELD_KEYWORD;
-  }
-  if (f & PIGGY_BACK_SAW_YIELD_VARNAME) {
-    arr.push('PIGGY_BACK_SAW_YIELD_VARNAME');
-    f ^= PIGGY_BACK_SAW_YIELD_VARNAME;
+  if (f & PIGGY_BACK_SAW_YIELD) {
+    arr.push('PIGGY_BACK_SAW_YIELD');
+    f ^= PIGGY_BACK_SAW_YIELD;
   }
   if (f & PIGGY_BACK_WAS_ARROW) {
     arr.push('PIGGY_BACK_WAS_ARROW');
@@ -250,8 +245,7 @@ export {
   NOT_SINGLE_IDENT_WRAP_A,
   NOT_SINGLE_IDENT_WRAP_NA,
   PIGGY_BACK_SAW_AWAIT,
-  PIGGY_BACK_SAW_YIELD_VARNAME,
-  PIGGY_BACK_SAW_YIELD_KEYWORD,
+  PIGGY_BACK_SAW_YIELD,
   PIGGY_BACK_WAS_CONSTRUCTOR,
   PIGGY_BACK_WAS_PROTO,
   PIGGY_BACK_WAS_ARROW,

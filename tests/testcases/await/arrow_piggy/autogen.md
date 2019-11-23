@@ -222,11 +222,23 @@ Each case is applied to each test by simply replacing `#` with the actual case.
 > `````
 
 > `````js
+> async x => async ({a = await b})
+> `````
+
+> `````js
 > async x => async ({a: b = await})
+> `````
+>
+> `````js
+> async x => async ({a: b = await c})
 > `````
 
 > `````js
 > async x => async ([a = await])
+> `````
+
+> `````js
+> async x => async ([a = await b])
 > `````
 
 ### Templates

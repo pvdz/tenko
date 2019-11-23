@@ -435,8 +435,7 @@ import {
   NOT_SINGLE_IDENT_WRAP_A,
   NOT_SINGLE_IDENT_WRAP_NA,
   PIGGY_BACK_SAW_AWAIT,
-  PIGGY_BACK_SAW_YIELD_VARNAME,
-  PIGGY_BACK_SAW_YIELD_KEYWORD,
+  PIGGY_BACK_SAW_YIELD,
   PIGGY_BACK_WAS_CONSTRUCTOR,
   PIGGY_BACK_WAS_PROTO,
   PIGGY_BACK_WAS_ARROW,
@@ -7999,7 +7998,7 @@ function Parser(code, options = {}) {
       THROW('Can not have a `yield` expression on the left side of a ternary');
     }
 
-    return NOT_ASSIGNABLE | PIGGY_BACK_SAW_YIELD_KEYWORD;
+    return NOT_ASSIGNABLE | PIGGY_BACK_SAW_YIELD;
   }
   function parseYieldStarArgument(lexerFlags, allowAssignment, astProp) {
     // This is a "delegate". The argument is _required_ now. There is no further newline check, though.
@@ -8030,7 +8029,7 @@ function Parser(code, options = {}) {
 
     // `yield` is a var name in sloppy mode:
     let assignableFlags = parseIdentOrParenlessArrow(lexerFlags, identToken, IS_ASSIGNABLE, allowAssignment, astProp);
-    return copyPiggies(IS_ASSIGNABLE | PIGGY_BACK_SAW_YIELD_VARNAME, assignableFlags);
+    return copyPiggies(IS_ASSIGNABLE, assignableFlags);
   }
   function parseYieldArgument(lexerFlags, astProp) {
     ASSERT(parseYieldArgument.length === arguments.length, 'arg count');
@@ -9170,8 +9169,11 @@ function Parser(code, options = {}) {
         // [v]: `async x => async (a = await b)`
         // [x]: `async x => async ({await})`
         // [v]: `async x => async ({a = await})`
+        // [v]: `async x => async ({a = await c})`
         // [x]: `async x => async ({a: b = await})`
+        // [x]: `async x => async ({a: b = await c})`
         // [v]: `async x => async ([a = await])`
+        // [v]: `async x => async ([a = await b])`
 
         if (asyncToken !== UNDEF_ASYNC) {
           return THROW('The parameter header of an async arrow cannot contain `await` as varname nor as a keyword');
@@ -9180,13 +9182,78 @@ function Parser(code, options = {}) {
           return THROW('The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword');
         }
       }
-      if (hasAllFlags(destructible, PIGGY_BACK_SAW_YIELD_KEYWORD)) {
-        // = `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
+      if (hasAllFlags(destructible, PIGGY_BACK_SAW_YIELD)) {
+        // See tests/testcases/yield/arrow_piggy/autogen.md
+
+        // Note that, unlike `await`, arrows inherit the `yield` state in the grammar. So it's the parent function
+        // that decides whether `yield` is okay or not.
+        // Additionally, the `yield` argument is optional. So no args don't necessarily in/validate it.
+        // And, `yield` is always a keyword in strict mode (where `await` is only always a keyword in module goal), but
+        // that distinction does not help us much since it would still validate both with and without args.
+
+        // Without any generator context (in sloppy):
+        // Yield with arg cases are taken care of immediately by lexerFlags, all other cases are valid
+        // [v]: `yield => x`
+        // [v]: `(yield) => x`
+        // [v]: `(...yield) => x`
+        // [v]: `(a = yield) => x`
+        // [x]: `(a = yield b) => x`
+        // [v]: `({yield}) => x`
+        // [v]: `({a = yield}) => x`
+        // [x]: `({a = yield b}) => x`
+        // [v]: `({a: b = yield}) => x`
+        // [x]: `({a: b = yield c}) => x`
+        // [v]: `([a = yield]) => x`
+        // [x]: `([a = yield b]) => x`
+
+        // In generator space (makes yield expressions legal, but all arrow cases are now illegal)
+        // [x]: `function *g() {  yield => x  }`
+        // [x]: `function *g() {  (yield) => x  }`
+        // [x]: `function *g() {  (...yield) => x  }`
+        // [x]: `function *g() {  (a = yield) => x  }`
+        // [x]: `function *g() {  (a = yield b) => x  }`
+        // [x]: `function *g() {  ({yield}) => x  }`
+        // [x]: `function *g() {  ({a = yield}) => x  }`
+        // [x]: `function *g() {  ({a = yield b}) => x  }`
+        // [x]: `function *g() {  ({a: b = yield}) => x  }`
+        // [x]: `function *g() {  ({a: b = yield c}) => x  }`
+        // [x]: `function *g() {  ([a = yield]) => x  }`
+        // [x]: `function *g() {  ([a = yield b]) => x  }`
+
+        // The next two sets are the async-call variants. We don't have to check the piggy for them because
+        // they don't trigger the param checks, of course. So we these cases get picked by regular checks. Yay.
+
+        // The legacy async call variants (in sloppy), which should not trigger param destructuring checks
+        // [v]: `async (yield)`
+        // [v]: `async (...yield)`
+        // [v]: `async (a = yield)`
+        // [x]: `async (a = yield b)`
+        // [v]: `async ({yield})`
+        // [v]: `async ({a = yield})`
+        // [x]: `async ({a = yield b})`
+        // [v]: `async ({a: b = yield})`
+        // [x]: `async ({a: b = yield c})`
+        // [v]: `async ([a = yield])`
+        // [x]: `async ([a = yield b])`
+
+        // Legacy calls wrapped in an generator function.
+        // [x]: `function *g() {  async (yield)  }`
+        // [x]: `function *g() {  async (...yield)  }`
+        // [x]: `function *g() {  async (a = yield)  }`
+        // [v]: `function *g() {  async (a = yield b)  }`
+        // [x]: `function *g() {  async ({yield})  }`
+        // [v]: `function *g() {  async ({a = yield})  }`
+        // [v]: `function *g() {  async ({a = yield b})  }`
+        // [x]: `function *g() {  async ({a: b = yield})  }`
+        // [x]: `function *g() {  async ({a: b = yield c})  }`
+        // [v]: `function *g() {  async ([a = yield])  }`
+        // [v]: `function *g() {  async ([a = yield b])  }`
+
         THROW('The arguments of an arrow cannot contain a yield expression in their defaults');
       }
       // The param name/default containing await/yield checks are done elsewhere...
       ASSERT(!(hasAllFlags(destructible, PIGGY_BACK_SAW_AWAIT) && (hasAllFlags(lexerFlags, LF_IN_ASYNC) || goalMode === GOAL_MODULE)), 'async arrows dont reach this place and nested in an async arrow triggers somewhere else so I dont think this case can occur');
-      ASSERT(!(hasAllFlags(destructible, PIGGY_BACK_SAW_YIELD_VARNAME) && hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE)), 'these checks occur elsewhere and I cant come up with a covering test case');
+      ASSERT(!(hasAllFlags(destructible, PIGGY_BACK_SAW_YIELD) && hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE)), 'these checks occur elsewhere and I cant come up with a covering test case');
     } else if (hasAllFlags(destructible, MUST_DESTRUCT) || mustBeArrow) {
       // [x]: `(...x);`
       // [x]: `(a,)`
@@ -9404,8 +9471,8 @@ function Parser(code, options = {}) {
       }
       else {
         // If this had a yield violation then the call sites should have taken care of it already
-        ASSERT(!(hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE) && hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD_VARNAME | PIGGY_BACK_SAW_YIELD_VARNAME)), 'Call sites should have thrown for yield in arrow args in invalid context');
-        ASSERT(!hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_KEYWORD), 'caller should have dealt with `yield` in arrow args');
+        ASSERT(!(hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE) && hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD)), 'Call sites should have thrown for yield in arrow args in invalid context');
+        ASSERT(!hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD), 'caller should have dealt with `yield` in arrow args');
         // - `async (foo) => foo`
         //                ^
         parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, asyncToken, asyncToken, allowAssignment, astProp);
@@ -10159,7 +10226,7 @@ function Parser(code, options = {}) {
         AST_setLiteral(astProp, litToken);
 
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, litToken, undefined, astProp);
-        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
         destructible |= CANT_DESTRUCT;
       }
@@ -10269,7 +10336,7 @@ function Parser(code, options = {}) {
         // [v]: `wrap({[foo](){}, set [bar](e){}});`
         // [x]: `({[foo]() {}} = y)`
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, undefined, curlyToken, astProp);
-        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
         destructible |= CANT_DESTRUCT;
       }
@@ -10303,7 +10370,7 @@ function Parser(code, options = {}) {
         // - `({*async(){}})`     // NOT an async generator! it's a generator
         AST_setIdent(astProp, identToken);
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, identToken, undefined, astProp);
-        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
       }
       else if (isNumberStringToken(curtok.type)) {
@@ -10315,7 +10382,7 @@ function Parser(code, options = {}) {
         AST_setLiteral(astProp, litToken);
 
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, litToken, undefined, astProp);
-        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+        ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
       }
       else if (curtok.type === $PUNC_BRACKET_OPEN) {
@@ -11400,7 +11467,6 @@ function Parser(code, options = {}) {
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
     // - `function *f(){  class x{[yield foo](a){}}  }`
-    ASSERT(!hasAnyFlag(destructibleForPiggies, PIGGY_BACK_SAW_YIELD_VARNAME), 'Since `yield` is considered a keyword with and without argument, I dont think this case can be hit');
 
     return destructibleForPiggies;
   }
@@ -11687,7 +11753,7 @@ function Parser(code, options = {}) {
 
     // - `class A {async get foo(){}}`
     let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, undefined, astProp);
-    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     // - `(class A extends B { constructor() { super() } })`
     return destructPiggies; // Can have constructor piggy
   }
@@ -11715,7 +11781,7 @@ function Parser(code, options = {}) {
     // [v]: `class A {set 9(x){}}`
     // [v]: `class A {static set 10(x){}}`
     let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, litToken, undefined, astProp);
-    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     // - `class A {"constructor"(){}}`
     return destructPiggies; // Can have constructor piggy
   }
@@ -11737,7 +11803,6 @@ function Parser(code, options = {}) {
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
     // - `function *f(){  class x{[yield foo](a){}}  }`
-    ASSERT(hasNoFlag(nowAssignable, PIGGY_BACK_SAW_YIELD_VARNAME), 'all parts of class are strict so yield can never be varname');
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
     if (curtok.type !== $PUNC_BRACKET_CLOSE) THROW('Missing right square bracket for computed member, found `' + tokenStrForError(curtok) + '` instead');
     ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
@@ -11746,7 +11811,7 @@ function Parser(code, options = {}) {
     // - `class {[foo](){}}`
     // - `class x {[x]z){}}`
     let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, undefined, bracketOpenToken, astProp);
-    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD_KEYWORD | PIGGY_BACK_SAW_YIELD_VARNAME), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
+    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
 
     // Note: example case where copying the piggies matters
