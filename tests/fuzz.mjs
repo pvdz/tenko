@@ -8,7 +8,6 @@ import {
   dumpFuzzOutput,
   warnOsd,
 } from './fuzz/fuzzutils.mjs';
-import {generateEsFuzzCode} from './fuzz/fuzzers/esfuzz.mjs';
 import {generateEslumpCode} from './fuzz/fuzzers/eslump.mjs';
 import {
   generateZefuzzCode_classMethods,
@@ -48,7 +47,6 @@ const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
 
 const FUZZERS = [
   // These functions should be callable without args and return randomly generated source code to test
-  generateEsFuzzCode,
   generateEslumpCode,
   generateZefuzzCode_classMethods,
   generateZefuzzCode_arrows,
