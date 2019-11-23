@@ -71,8 +71,8 @@ const IS_SINGLE_IDENT_WRAP_A = 1 << 6;   // "assignable"
 const IS_SINGLE_IDENT_WRAP_NA = 1 << 7;  // "not assignable"
 const NOT_SINGLE_IDENT_WRAP_A = 1 << 8;  // "assignable"
 const NOT_SINGLE_IDENT_WRAP_NA = 1 << 9; // "not assignable"
-const PIGGY_BACK_SAW_AWAIT_VARNAME = 1 << 10; // parsed an expression containing `await` as a regular var name
-const PIGGY_BACK_SAW_AWAIT_KEYWORD = 1 << 11; // parsed an expression containing an AwaitExpression
+const PIGGY_BACK_SAW_AWAIT = 1 << 10; // parsed an expression containing `await` as varname or keyword
+// 1 << 11 is unused atm
 const PIGGY_BACK_SAW_YIELD_VARNAME = 1 << 12; // parsed an expression containing `yield` as a regular var name
 const PIGGY_BACK_SAW_YIELD_KEYWORD = 1 << 13  ; // parsed an expression containing a YieldExpression
 const PIGGY_BACK_WAS_CONSTRUCTOR = 1 << 14; // signal having found a constructor (special case)
@@ -144,8 +144,7 @@ function dev() {
 }
 
 const PIGGIES = (0
-  | PIGGY_BACK_SAW_AWAIT_VARNAME
-  | PIGGY_BACK_SAW_AWAIT_KEYWORD
+  | PIGGY_BACK_SAW_AWAIT
   | PIGGY_BACK_SAW_YIELD_VARNAME
   | PIGGY_BACK_SAW_YIELD_KEYWORD
   | PIGGY_BACK_WAS_CONSTRUCTOR
@@ -165,13 +164,9 @@ function P(f, arr) {
     arr.push('PIGGY_BACK_WAS_PROTO');
     f ^= PIGGY_BACK_WAS_PROTO;
   }
-  if (f & PIGGY_BACK_SAW_AWAIT_KEYWORD) {
-    arr.push('PIGGY_BACK_SAW_AWAIT_KEYWORD');
-    f ^= PIGGY_BACK_SAW_AWAIT_KEYWORD;
-  }
-  if (f & PIGGY_BACK_SAW_AWAIT_VARNAME) {
-    arr.push('PIGGY_BACK_SAW_AWAIT_VARNAME');
-    f ^= PIGGY_BACK_SAW_AWAIT_VARNAME;
+  if (f & PIGGY_BACK_SAW_AWAIT) {
+    arr.push('PIGGY_BACK_SAW_AWAIT');
+    f ^= PIGGY_BACK_SAW_AWAIT;
   }
   if (f & PIGGY_BACK_SAW_YIELD_KEYWORD) {
     arr.push('PIGGY_BACK_SAW_YIELD_KEYWORD');
@@ -254,8 +249,7 @@ export {
   IS_SINGLE_IDENT_WRAP_NA,
   NOT_SINGLE_IDENT_WRAP_A,
   NOT_SINGLE_IDENT_WRAP_NA,
-  PIGGY_BACK_SAW_AWAIT_VARNAME,
-  PIGGY_BACK_SAW_AWAIT_KEYWORD,
+  PIGGY_BACK_SAW_AWAIT,
   PIGGY_BACK_SAW_YIELD_VARNAME,
   PIGGY_BACK_SAW_YIELD_KEYWORD,
   PIGGY_BACK_WAS_CONSTRUCTOR,

@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An arrow inside an async function/arrow can not have `await` in its arguments
+  The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword
 
 async function a(){     ({r} = await bar) => {}     }
                                           ^------- error

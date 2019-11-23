@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The arguments of an async arrow cannot contain an await varname because it is still illegal when refining the cover grammar
+  The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
 async(a = (await) => {}) => {};
                          ^------- error
