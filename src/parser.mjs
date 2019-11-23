@@ -558,6 +558,7 @@ function Parser(code, options = {}) {
 
     // ast compatibility stuff?
     babelCompat = false,
+    babelTokenCompat = false, // Add locs to tokens
     acornCompat = false,
 
     // Should we parse directives as their own AST nodes? (Other parsers do not, they just use ExpressionStatement)
@@ -622,6 +623,7 @@ function Parser(code, options = {}) {
     webCompat: options_webCompat,
     gracefulErrors: FAIL_HARD,
     tokenStorage: options_tokenStorage,
+    babelTokenCompat,
 
     $log,
     $warn,

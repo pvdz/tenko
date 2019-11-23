@@ -435,6 +435,7 @@ function Lexer(
     webCompat = WEB_COMPAT_ON,
     gracefulErrors = FAIL_HARD,
     tokenStorageExternal,
+    babelTokenCompat = false,
 
     // You can override the logging functions
     $log = console.log,
@@ -846,28 +847,20 @@ function Lexer(
   function _createToken(type, start, stop, column, line, nl, str, canon) {
     ASSERT(_createToken.length === arguments.length, 'arg count');
 
-    let token = {
-      // <SCRUB DEV>
-      _t: toktypeToString(type),
-      // </SCRUB DEV>
-      type,
-      nl, // how many newlines between the start of the previous relevant token and the start of this one?
-      start,
-      stop, // start of next token
-      column, // of first char of token
-      line, // of first char of token
-      str,
-      // :'( https://tc39.github.io/ecma262/#prod-EscapeSequence
-      // The ReservedWord definitions are specified as literal sequences of specific SourceCharacter elements.
-      // A code point in a ReservedWord cannot be expressed by a \ UnicodeEscapeSequence.
-      canon, // will NOT contain escapes, only for idents, strings, and templates // TODO: should perf check this, perhaps we need to take this slowpath differently
+    let token = createBaseToken(type, start, stop, column, line, nl, str, canon);
 
-      // <SCRUB DEV>
+    // <SCRUB DEV>
+    token = {
+      _t: toktypeToString(type),
+
+      ...token,
+
       toString() {
         return `{# ${toktypeToString(type)} : nl=${nl?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${str}\`${canon&&canon!==str?' (canonical=`' + canon + '`)':''}#}`;
       },
-      // </SCRUB DEV>
     };
+    // </SCRUB DEV>
+
     ASSERT(
       disableCanonPoison[0] ||
       isIdentToken(type) ||
@@ -883,7 +876,49 @@ function Lexer(
       ),
       '(debugging)'
     );
+
     return token;
+  }
+  function createBaseToken(type, start, stop, column, line, nl, str, canon) {
+    if (babelTokenCompat) {
+      return {
+        type,
+        nl, // how many newlines between the start of the previous relevant token and the start of this one?
+        start,
+        stop, // start of next token
+        loc: { // Tenko does not use this
+          start: {
+            line: line,
+            column: column,
+          },
+          end: {
+            line: currentLine,
+            column: currentColOffset,
+          },
+        },
+        column, // of first char of token (we still have to set this as Tenko uses this)
+        line, // of first char of token (we still have to set this as Tenko uses this)
+        str,
+        // :'( https://tc39.github.io/ecma262/#prod-EscapeSequence
+        // The ReservedWord definitions are specified as literal sequences of specific SourceCharacter elements.
+        // A code point in a ReservedWord cannot be expressed by a \ UnicodeEscapeSequence.
+        canon, // will NOT contain escapes, only for idents, strings, and templates // TODO: should perf check this, perhaps we need to take this slowpath differently
+      };
+    }
+
+    return {
+      type,
+      nl, // how many newlines between the start of the previous relevant token and the start of this one?
+      start,
+      stop, // start of next token
+      column, // of first char of token
+      line, // of first char of token
+      str,
+      // :'( https://tc39.github.io/ecma262/#prod-EscapeSequence
+      // The ReservedWord definitions are specified as literal sequences of specific SourceCharacter elements.
+      // A code point in a ReservedWord cannot be expressed by a \ UnicodeEscapeSequence.
+      canon, // will NOT contain escapes, only for idents, strings, and templates // TODO: should perf check this, perhaps we need to take this slowpath differently
+    };
   }
 
   function parseLeadingDot() {

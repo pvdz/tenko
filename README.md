@@ -58,6 +58,8 @@ const {
     strictMode = false,
     // Output a Babel compatible AST? Note: comment nodes are not properly mirrored
     babelCompat = false,
+    // Add a loc (with `{start: {line, column}, stop: {line, column}}`) to each token?
+    babelTokenCompat = false,
     // Pass on a reference that will be used as the AST root
     astRoot = null,
     // Should it normalize \r and \r\n to \n in the .raw of template nodes?
