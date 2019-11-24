@@ -1664,11 +1664,7 @@ function Parser(code, options = {}) {
         ASSERT((curtok.type & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
         ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
-        ASSERT(hasAllFlags(curtok.type, what), 'expecting to skip token with certain type', 'expect:'
-          // <SCRUB DEV>
-          , T(what), 'actual:', T(curtok.type)
-          // </SCRUB DEV>
-        );
+        ASSERT(hasAllFlags(curtok.type, what), 'expecting to skip token with certain type', 'expect:', T(what), 'actual:', T(curtok.type));
       }
     }
     skipRex(lexerFlags);
@@ -1740,14 +1736,6 @@ function Parser(code, options = {}) {
       THROW('Expected to parse an opening curly, found `' + tokenStrForError(curtok) + '`');
     }
   }
-  function ASSERT_skipToParenOpenCurlyOpen(what, lexerFlags) {
-    skipToParenOpenCurlyOpen(lexerFlags);
-  }
-  function skipToParenOpenCurlyOpen(lexerFlags) {
-    // The next token must be a curly open or paren open, possibly preceded by some whitespace
-    skipAny(lexerFlags);
-    ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN || curtok.type === $PUNC_CURLY_OPEN, 'limited options, expecting { (', curtok);
-  }
   function ASSERT_skipToFromOrDie(what, lexerFlags) {
     skipToFromOrDie(lexerFlags);
   }
@@ -1758,7 +1746,6 @@ function Parser(code, options = {}) {
     if (curtok.type !== $ID_from) {
       THROW('Next token should be the ident `from` but was `' + tokenStrForError(curtok) + '`');
     }
-    ASSERT(isIdentToken(curtok.type), 'a token whose value "from" should be an ident');
   }
   function ASSERT_skipToStringOrDie(what, lexerFlags) {
     skipToStringOrDie(lexerFlags);
@@ -5898,7 +5885,8 @@ function Parser(code, options = {}) {
       // parseCatch
       hasEither = true;
       let catchToken = curtok;
-      ASSERT_skipToParenOpenCurlyOpen($ID_catch, lexerFlags);
+      ASSERT_skipAny($ID_catch, lexerFlags);
+      ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN || curtok.type === $PUNC_CURLY_OPEN, 'limited options, expecting { (, explicitly checked later', curtok);
       AST_open('handler', {
         type: 'CatchClause',
         loc: AST_getBaseLoc(catchToken),
