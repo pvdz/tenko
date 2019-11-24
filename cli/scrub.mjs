@@ -188,7 +188,7 @@ function CallExpression(node) {
     }
 
     // Terser should do this :'(
-    if (node.callee.name === 'dev') {
+    if (node.callee.name === 'DEVONLY') {
       return 'false';
     }
 
@@ -329,6 +329,14 @@ function CommentLine(node) {
 }
 function ConditionalExpression(node) {
   assert(node.type, 'ConditionalExpression');
+
+  // Scrub `dev()` branching
+  if (node.test.type === 'CallExpression' && node.test.callee.type === 'Identifier' && node.test.callee.name === 'DEVONLY') {
+    assert(node.test.arguments.length, 0, 'not expecting args for DEVONLY');
+    // Drop the dev version entirely. Helps with debugging perf.
+    return $w(node.alternate);
+  }
+
   return '(' + $w(node.test) + '? ' + $w(node.consequent) + ' : ' + $w(node.alternate) + ')';
 }
 function ContinueStatement(node) {
