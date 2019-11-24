@@ -641,6 +641,7 @@ function Parser(code, options = {}) {
   let tok_currPointer = tok.currPointer;
   let tok_nextToken = tok.nextToken;
   let tok_getNlwas = tok.getNlwas;
+  let tok_getCanon = tok.getCanon;
 
   let allowTrailingFunctionComma = targetEsVersion >= VERSION_TRAILING_FUNC_COMMAS || targetEsVersion === VERSION_WHATEVER;
   let allowAsyncFunctions = targetEsVersion >= VERSION_ASYNC || targetEsVersion === VERSION_WHATEVER;
@@ -890,7 +891,7 @@ function Parser(code, options = {}) {
     ASSERT(prop[0] === '$' || prop === 'directives' || prop === 'extra' || _path[_path.length - 1].hasOwnProperty(prop), 'all ast node members should be predefined', prop, '--->', _path[_path.length - 1]);
 
     // Set a property value and expect it to be undefined before
-    ASSERT(_path[_path.length - 1][prop] === undefined, 'use AST_clobber? This func doesnt clobber, prop=' + prop + ', val=' + value);// + ',was=' + JSON.stringify(_path[_path.length - 1]));
+    ASSERT(_path[_path.length - 1][prop] === undefined, 'use AST_clobber? This func doesnt clobber, prop=' + prop + ', val=' + value);
 
     _path[_path.length - 1][prop] = value;
   }
@@ -938,26 +939,27 @@ function Parser(code, options = {}) {
 
     return node; // for ASSERTs only!
   }
-  function AST_setIdent(astProp, token) {
+  function AST_setIdent(astProp, token, tokenCanon) {
     ASSERT(AST_setIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
     ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
     ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
     ASSERT(isIdentToken(token.type), 'token must be ident');
 
-    let identNode = AST_getIdentNode(token);
+    let identNode = AST_getIdentNode(token, tokenCanon);
     return AST_setNode(astProp, identNode); // only for ASSERTS
   }
-  function AST_getIdentNode(token) {
+  function AST_getIdentNode(token, tokenCanon) {
     ASSERT(AST_getIdentNode.length === arguments.length, 'arg count');
     ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
     ASSERT(isIdentToken(token.type), 'token must be ident');
+    ASSERT(typeof tokenCanon === 'string');
+    ASSERT(tokenCanon === tokenCanon);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, col, line, ...} = token`. It may be :)
     let col = token.column;
     let line = token.line;
-    let len = token.str.length;
-    let canon = token.canon;
+    let len = token.str.length; // .stop - token.stop;
     // Idents can't contain newlines so the end.column should be start.column+len
     let colEnd = col + len;
 
@@ -965,17 +967,17 @@ function Parser(code, options = {}) {
       type: 'Identifier',
       loc: AST_getCloseLoc(line, col, token.start, line, colEnd, token.stop),
       // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
-      name: canon,
+      name: tokenCanon,
     };
-    if (babelCompat) identNode.loc.identifierName = canon;
+    if (babelCompat) identNode.loc.identifierName = tokenCanon;
     ASSERT(identNode.loc.end.column - identNode.loc.start.column === token.str.length, 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
 
     return identNode;
   }
-  function AST_setLiteral(astProp, token) {
-    _AST_setLiteral(astProp, token, false);
+  function AST_setLiteral(astProp, token, tokenCanon) {
+    _AST_setLiteral(astProp, token, tokenCanon, false);
   }
-  function _AST_setLiteral(astProp, token, fromDirective) {
+  function _AST_setLiteral(astProp, token, tokenCanon, fromDirective) {
     ASSERT(_AST_setLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'prop is string');
     ASSERT(typeof token === 'object', 'token is obj');
@@ -986,7 +988,7 @@ function Parser(code, options = {}) {
 
     let node; // for assert
     if (isStringToken(token.type)) {
-      node = AST_setStringLiteral(astProp, token, fromDirective);
+      node = AST_setStringLiteral(astProp, token, tokenCanon, fromDirective);
     }
     else if (isNumberToken(token.type)) {
       if (isBigintToken(token.type)) {
@@ -1006,10 +1008,10 @@ function Parser(code, options = {}) {
     ASSERT(node, 'should be set by one of the branches');
     ASSERT(token.str.includes('\n') || token.str.includes('\r') || token.str.includes('\u2028') || token.str.includes('\u2029') || node.loc.end.column - node.loc.start.column === (token.stop - token.start), 'for literals the location should only span exactly the length of the lit', node.loc, token);
   }
-  function AST_getStringNode(token, fromDirective) {
+  function AST_getStringNode(token, tokenCanon, fromDirective) {
     ASSERT(AST_getStringNode.length === arguments.length, 'arg count');
 
-    if (babelCompat) return AST_babelGetStringNode(token, fromDirective);
+    if (babelCompat) return AST_babelGetStringNode(token, tokenCanon, fromDirective);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
@@ -1020,13 +1022,13 @@ function Parser(code, options = {}) {
     let node = {
       type: 'Literal',
       loc: AST_getCloseLoc(token.line, token.column, token.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
-      value: token.canon,
+      value: tokenCanon,
       raw: q + token.str + q,
     };
     ASSERT_popCanonPoison();
     return node;
   }
-  function AST_setStringLiteral(astProp, token, fromDirective) {
+  function AST_setStringLiteral(astProp, token, tokenCanon, fromDirective) {
     ASSERT(AST_setStringLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
     ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
@@ -1035,7 +1037,7 @@ function Parser(code, options = {}) {
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
-    let stringNode = AST_getStringNode(token, fromDirective);
+    let stringNode = AST_getStringNode(token, tokenCanon, fromDirective);
     return AST_setNode(astProp, stringNode); // for ASSERTs only!
   }
   function AST_getNumberNode(token) {
@@ -1373,7 +1375,7 @@ function Parser(code, options = {}) {
       THROW('Can only increment or decrement an identifier or member expression');
     }
   }
-  function AST_patchAsyncCall(asyncToken, astProp) {
+  function AST_patchAsyncCall(asyncToken, asyncTokenCanon, astProp) {
     ASSERT(AST_patchAsyncCall.length === arguments.length, 'arg count');
 
     let node = _path[_path.length - 1];
@@ -1392,7 +1394,7 @@ function Parser(code, options = {}) {
     AST_setNode(astProp, {
       type: 'CallExpression',
       loc: AST_getClosedLoc(asyncToken),
-      callee: AST_getIdentNode(asyncToken),
+      callee: AST_getIdentNode(asyncToken, asyncTokenCanon),
       arguments: args,
     });
   }
@@ -1477,13 +1479,13 @@ function Parser(code, options = {}) {
 
     return commentNode; // debug/assertions only...
   }
-  function AST_babelGetStringNode(token, fromDirective) {
+  function AST_babelGetStringNode(token, tokenCanon, fromDirective) {
     ASSERT(AST_babelGetStringNode.length === arguments.length, 'arg count');
     ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', [token, typeof token === 'object', token && typeof token.type === 'number']);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    let canon = token.canon;
+    let canon = tokenCanon;
     let str = token.str;
     let value = fromDirective ? str : canon;
     let q = "'";
@@ -2167,7 +2169,7 @@ function Parser(code, options = {}) {
     let bak ;
     ASSERT(!void(bak = _path.slice(0)));
     // </SCRUB AST>
-    parseBodyPartsWithDirectives(lexerFlags, scoop, EMPTY_LABEL_SET, exportedNames, exportedBindings, PARAMS_ALL_SIMPLE, NO_DUPE_PARAMS, NO_ID_TO_VERIFY, IS_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
+    parseBodyPartsWithDirectives(lexerFlags, scoop, EMPTY_LABEL_SET, exportedNames, exportedBindings, PARAMS_ALL_SIMPLE, NO_DUPE_PARAMS, NO_ID_TO_VERIFY, '', IS_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
 
     // <SCRUB AST>
     ASSERT(_path.length === len, 'should close all that was opened. Open before: ' + JSON.stringify(bak.map(o=>o.type).join(' > ')) + ', open after: ' + JSON.stringify(_path.map(o=>o.type).join(' > ')));
@@ -2652,8 +2654,9 @@ function Parser(code, options = {}) {
       // this will almost never happen outside of "use strict" so perhaps a pervasive
       // scan here is not so bad... And let's face it; trivial cases are quickly found.
       let stringToken = curtok;
+      let stringTokenCanon = tok_getCanon();
       ASSERT_skipDiv($G_STRING, lexerFlags); // statement start means div
-      _AST_setLiteral(astProp, stringToken, true);
+      _AST_setLiteral(astProp, stringToken, stringTokenCanon, true);
 
       // Remember the next token. Do a regular parse. If the next token is still the same token then there was no tail
       // and we can assume ASI will happen.
@@ -2764,7 +2767,7 @@ function Parser(code, options = {}) {
     return hadUseStrict;
   }
 
-  function parseBodyPartsWithDirectives(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, isGlobalToplevel, fdState, astProp) {
+  function parseBodyPartsWithDirectives(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon, isGlobalToplevel, fdState, astProp) {
     ASSERT(parseBodyPartsWithDirectives.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT([PARAMS_SOME_COMPLEX, PARAMS_SOME_NONSTRICT, PARAMS_ALL_SIMPLE].includes(paramsSimple), 'paramsSimple enum', paramsSimple);
@@ -2787,9 +2790,9 @@ function Parser(code, options = {}) {
       if (!wasStrict && functionNameTokenToVerify !== NO_ID_TO_VERIFY &&
         // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
         // Check the idents that are only keywords in strict mode. We've already checked everything else.
-        isStrictOnlyKeyword(functionNameTokenToVerify)
+        isStrictOnlyKeyword(functionNameTokenToVerify, functionNameTokenToVerifyCanon)
       ) {
-        THROW('Can not use reserved keyword `' + functionNameTokenToVerify.canon + '` in strict mode as id for function that has a use strict directive');
+        THROW('Can not use reserved keyword `' + functionNameTokenToVerifyCanon + '` in strict mode as id for function that has a use strict directive');
       }
 
       lexerFlags |= LF_STRICT_MODE;
@@ -2873,7 +2876,7 @@ function Parser(code, options = {}) {
     if (curtok.type === $PUNC_CURLY_CLOSE || tok_getNlwas() === true || curtok.type === $EOF) {
       tok_asi();
     } else {
-      $log('parse error at curtok.c', curtok.c, String.fromCharCode(curtok.c), curtok.str);
+      $log('parse error at curent token');
       $log('current token:', curtok);
       THROW('Unable to ASI, token: ' + curtok);
     }
@@ -3244,9 +3247,13 @@ function Parser(code, options = {}) {
     // need to track whether the name was eval/args because if the func body is strict mode then it should still throw
     // retroactively for having that name. a bit annoying.
     let functionNameTokenToVerify = NO_ID_TO_VERIFY;
+    let functionNameTokenToVerifyCanon = '';
 
     let name = '';
     if (isIdentToken(curtok.type)) {
+      functionNameTokenToVerify = curtok; // if not strict mode yet but this func has a directive, check it again
+      functionNameTokenToVerifyCanon = tok_getCanon();
+
       // properly inherit the async/gen state from the outer scope (func decls) or current function (func expr)
       let bindingFlags = (
         sansFlag(lexerFlags, LF_IN_GENERATOR | LF_IN_ASYNC)
@@ -3261,15 +3268,13 @@ function Parser(code, options = {}) {
         (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)
       ) ? BINDING_TYPE_FUNC_VAR : BINDING_TYPE_FUNC_LEX;
 
-      functionNameTokenToVerify = curtok; // if not strict mode yet but this func has a directive, check it again
-
-      name = curtok.str;
+      name = functionNameTokenToVerify.str;
 
       // Note: must verify id here and not after asserting the existence of the directive because by then the lexer flag
       // for async will have been merged and `async function await(){}` would be illegal.
       // The binding of a function could be considered lexical, but is probably the only lexical case that can be `let`
       // The id is passed forward and validated on a subset, if it turns out the func has a use strict directive.
-      fatalBindingIdentCheck(curtok, curtok.type === $ID_let ? BINDING_TYPE_VAR : nameBindingType, bindingFlags);
+      fatalBindingIdentCheck(functionNameTokenToVerify, functionNameTokenToVerifyCanon, curtok.type === $ID_let ? BINDING_TYPE_VAR : nameBindingType, bindingFlags);
 
       // declarations bind in outer scope, expressions bind in inner scope, methods bind ...  ehh?
       if (isFuncDecl === IS_FUNC_DECL) {
@@ -3282,9 +3287,8 @@ function Parser(code, options = {}) {
       innerScoop = SCOPE_addLayer(innerScoop, SCOPE_LAYER_FUNC_ROOT, 'parseFunctionAfterKeyword_hide_func_name');
       ASSERT(innerScoop._ = 'func scope');
 
-      let identToken = curtok;
       ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-      AST_setIdent('id', identToken);
+      AST_setIdent('id', functionNameTokenToVerify, functionNameTokenToVerifyCanon);
     } else if (isFuncDecl === IS_FUNC_DECL && optionalIdent === IDENT_REQUIRED) {
       THROW('Function decl missing required ident');
     } else {
@@ -3328,6 +3332,7 @@ function Parser(code, options = {}) {
       isFuncDecl === IS_FUNC_DECL ? IS_STATEMENT : IS_EXPRESSION,
       isClassConstructor,
       functionNameTokenToVerify,
+      functionNameTokenToVerifyCanon,
       isMethod,
       asyncToken,
       starToken,
@@ -3399,7 +3404,7 @@ function Parser(code, options = {}) {
 
     return lexerFlags;
   }
-  function parseFunctionFromParams(lexerFlags, scoop, bindingFrom, expressionState, isClassConstructor, functionNameTokenToVerify, isMethod, asyncToken, starToken, getToken, setToken) {
+  function parseFunctionFromParams(lexerFlags, scoop, bindingFrom, expressionState, isClassConstructor, functionNameTokenToVerify, functionNameTokenToVerifyCanon, isMethod, asyncToken, starToken, getToken, setToken) {
     ASSERT(parseFunctionFromParams.length === arguments.length, 'arg count should match');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
     ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
@@ -3426,7 +3431,7 @@ function Parser(code, options = {}) {
     let finalFuncScope = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseFunctionFromParams(body)');
     ASSERT(!void(finalFuncScope._funcName = functionNameTokenToVerify && functionNameTokenToVerify.str));
     if (options_exposeScopes) AST_set('$scope', finalFuncScope);
-    parseFunctionBody(lexerFlags, finalFuncScope, EMPTY_LABEL_SET, expressionState, paramsSimple, paramScoop.dupeParamErrorToken, functionNameTokenToVerify);
+    parseFunctionBody(lexerFlags, finalFuncScope, EMPTY_LABEL_SET, expressionState, paramsSimple, paramScoop.dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon);
   }
   function parseFuncArguments(lexerFlags, scoop, bindingFrom, asyncToken, starToken, getToken, setToken) {
     // parseArguments
@@ -3486,7 +3491,7 @@ function Parser(code, options = {}) {
     return paramsSimple;
   }
 
-  function parseFunctionBody(lexerFlags, scoop, labelSet, blockType, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify) {
+  function parseFunctionBody(lexerFlags, scoop, labelSet, blockType, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon) {
     ASSERT(parseFunctionBody.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof lexerFlags === 'number');
@@ -3506,7 +3511,7 @@ function Parser(code, options = {}) {
     });
     if (options_exposeScopes) AST_set('$scope', scoop);
 
-    parseBodyPartsWithDirectives(lexerFlagsNoTemplate, scoop, labelSet, UNDEF_EXPORTS, UNDEF_EXPORTS, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, NOT_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
+    parseBodyPartsWithDirectives(lexerFlagsNoTemplate, scoop, labelSet, UNDEF_EXPORTS, UNDEF_EXPORTS, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon, NOT_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
 
     if (curtok.type !== $PUNC_CURLY_CLOSE) THROW('Missing function body closing curly, found `' + tokenStrForError(curtok) + '` instead');
     if (blockType === IS_EXPRESSION) {
@@ -3534,13 +3539,14 @@ function Parser(code, options = {}) {
     // all statement starting keywords;
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     switch (identToken.type) {
       case $ID_async:
         // we deal with async here because it can be a valid label in sloppy mode
         // TODO: test case to this change
         ASSERT_skipDiv($ID_async, lexerFlags); // TODO: async could be ident, so `async/b` is a division
-        if (curtok.type === $PUNC_COLON) return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp);
-        parseAsyncStatement(lexerFlags, scoop, identToken, NOT_EXPORT, UNDEF_EXPORTS, isLabelled, fdState, astProp);
+        if (curtok.type === $PUNC_COLON) return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
+        parseAsyncStatement(lexerFlags, scoop, identToken, identTokenCanon, NOT_EXPORT, UNDEF_EXPORTS, isLabelled, fdState, astProp);
         return;
 
       case $ID_break:
@@ -3664,12 +3670,13 @@ function Parser(code, options = {}) {
     ASSERT(isStringToken(curtok.type));
 
     let stringToken = curtok;
+    let stringTokenCanon = tok_getCanon();
     ASSERT_skipDiv($G_STRING, lexerFlags); // note: this can be any tail, semi, asi, etc
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
       loc: AST_getBaseLoc(stringToken),
-      expression: AST_getStringNode(stringToken, false),
+      expression: AST_getStringNode(stringToken, stringTokenCanon, false),
     });
     parseExpressionAfterLiteral(lexerFlags, stringToken, 'expression');
     if (curtok.type === $PUNC_COMMA) {
@@ -3721,7 +3728,7 @@ function Parser(code, options = {}) {
     AST_close('ExpressionStatement');
   }
 
-  function parseAsyncStatement(lexerFlags, scoop, asyncToken, isExport, exportedBindings, isLabelled, fdState, astProp) {
+  function parseAsyncStatement(lexerFlags, scoop, asyncToken, asyncTokenCanon, isExport, exportedBindings, isLabelled, fdState, astProp) {
     ASSERT(parseAsyncStatement.length === arguments.length, 'arg count');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
 
@@ -3730,16 +3737,16 @@ function Parser(code, options = {}) {
     // at this point already verified not to be a label.
     // only the `async function ...` form does NOT require a semi as a statement. all other forms do.
     // A statement needs to pass on the scoop because the async func decl needs to record its id in that outer scope
-    _parseAsync(lexerFlags, scoop, IS_STATEMENT, asyncToken, NOT_NEW_ARG, isExport, ASSIGN_EXPR_IS_OK, exportedBindings, isLabelled, fdState, NOT_LHSE, astProp);
+    _parseAsync(lexerFlags, scoop, IS_STATEMENT, asyncToken, asyncTokenCanon, NOT_NEW_ARG, isExport, ASSIGN_EXPR_IS_OK, exportedBindings, isLabelled, fdState, NOT_LHSE, astProp);
   }
-  function parseAsyncExpression(lexerFlags, asyncToken, isNewArg, isExport, allowAssignment, leftHandSideExpression, astProp) {
+  function parseAsyncExpression(lexerFlags, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(parseAsyncExpression.length === arguments.length, 'arg count');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     // parsed the `async` keyword (-> asyncToken)
-    return _parseAsync(lexerFlags, DO_NOT_BIND, IS_EXPRESSION, asyncToken, isNewArg, isExport, allowAssignment, UNDEF_EXPORTS, NOT_LABELLED, FDS_ILLEGAL, leftHandSideExpression, astProp);
+    return _parseAsync(lexerFlags, DO_NOT_BIND, IS_EXPRESSION, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, UNDEF_EXPORTS, NOT_LABELLED, FDS_ILLEGAL, leftHandSideExpression, astProp);
   }
-  function _parseAsync(lexerFlags, scoop, fromStmtOrExpr, asyncToken, isNewArg, isExport, allowAssignment, exportedBindings, isLabelled, fdState, leftHandSideExpression, astProp) {
+  function _parseAsync(lexerFlags, scoop, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, exportedBindings, isLabelled, fdState, leftHandSideExpression, astProp) {
     ASSERT(_parseAsync.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop = string', astProp);
     ASSERT(asyncToken !== UNDEF_ASYNC && asyncToken.type === $ID_async, 'async token should be passed on');
@@ -3822,7 +3829,7 @@ function Parser(code, options = {}) {
     // - else: `async` as a var name
 
     if (curtok.type === $EOF || !allowAsyncFunctions) {
-      return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp);
+      return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
     }
 
     let newlineAfterAsync = tok_getNlwas() === true;
@@ -3847,7 +3854,7 @@ function Parser(code, options = {}) {
         // - `async \n in obj`
         // - `async \n instanceof obj`
         // - `async \n function f(){}`
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp);
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
       }
 
       if (curtok.type === $ID_function) {
@@ -3860,7 +3867,7 @@ function Parser(code, options = {}) {
         // - `async in x`
         // - `async instanceof x`
 
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp);
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
       }
 
       // - `async foo => ..`                        ok
@@ -3898,7 +3905,7 @@ function Parser(code, options = {}) {
         // - `new async();`
         // - `new async() =>x`                   --> error, arrow not allowed as new arg
         // Do not parse the paren because it belongs to the `new` op
-        AST_setIdent('callee', asyncToken);
+        AST_setIdent('callee', asyncToken, asyncTokenCanon);
         return IS_ASSIGNABLE; // I mean ...
       }
 
@@ -3915,10 +3922,10 @@ function Parser(code, options = {}) {
         // - `new async();`
         // - `new async() => x`     (error because arrow is an AssignmentExpression and new does not accept that)
         // Note that if it turns out to be an arrow, the parser will throw when seeing `=>` unexpectedly
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp);
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
       }
 
-      let r = parseGroupToplevels(lexerFlags, fromStmtOrExpr, allowAssignment, asyncToken, newlineAfterAsync ? IS_ASYNC_PREFIXED : NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
+      let r = parseGroupToplevels(lexerFlags, fromStmtOrExpr, allowAssignment, asyncToken, asyncTokenCanon, newlineAfterAsync ? IS_ASYNC_PREFIXED : NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
 
       if (fromStmtOrExpr === IS_STATEMENT) {
         AST_close('ExpressionStatement');
@@ -3935,7 +3942,7 @@ function Parser(code, options = {}) {
     // - `async \n [x]`
     // - `(async \n [x])`
     // - `new async;`
-    return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp);
+    return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
   }
 
   function isAssignable(state) {
@@ -3964,7 +3971,7 @@ function Parser(code, options = {}) {
     return override | ((state | NOT_ASSIGNABLE | IS_ASSIGNABLE) ^ (NOT_ASSIGNABLE | IS_ASSIGNABLE));
   }
 
-  function parseAwait(lexerFlags, awaitToken, isNewArg, allowAssignment, astProp) {
+  function parseAwait(lexerFlags, awaitToken, awaitTokenCanon, isNewArg, allowAssignment, astProp) {
     ASSERT(parseAwait.length === arguments.length, 'arg count');
     ASSERT(awaitToken.type === $ID_await, 'await token');
     ASSERT(awaitToken !== curtok, 'await should have been skipped');
@@ -3978,7 +3985,7 @@ function Parser(code, options = {}) {
       return parseAwaitKeyword(lexerFlags, awaitToken, isNewArg, astProp);
     }
     else if (goalMode === GOAL_SCRIPT) {
-      return parseAwaitVar(lexerFlags, awaitToken, isNewArg, allowAssignment, astProp)
+      return parseAwaitVar(lexerFlags, awaitToken, awaitTokenCanon, isNewArg, allowAssignment, astProp)
     }
     else {
       THROW('Cannot use `await` as var when goal=module but found `await` outside an async function');
@@ -4042,7 +4049,7 @@ function Parser(code, options = {}) {
     // See tests/testcases/await/arrow_piggy/autogen.md
     return NOT_ASSIGNABLE | PIGGY_BACK_SAW_AWAIT;
   }
-  function parseAwaitVar(lexerFlags, awaitToken, isNewArg, allowAssignment, astProp) {
+  function parseAwaitVar(lexerFlags, awaitToken, awaitTokenCanon, isNewArg, allowAssignment, astProp) {
     ASSERT(parseAwaitVar.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     // Consider `await` a regular var name, not a keyword
@@ -4053,7 +4060,7 @@ function Parser(code, options = {}) {
     // - `new await;`
     // - `typeof await;`
 
-    let assignable = parseIdentOrParenlessArrow(lexerFlags, awaitToken, IS_ASSIGNABLE, allowAssignment, astProp);
+    let assignable = parseIdentOrParenlessArrow(lexerFlags, awaitToken, awaitTokenCanon, IS_ASSIGNABLE, allowAssignment, astProp);
     assignable = parseValueTail(lexerFlags, awaitToken, assignable, isNewArg, NOT_LHSE, astProp);
 
     // For module goal see: https://tc39.github.io/ecma262/#prod-AwaitExpression
@@ -4125,6 +4132,7 @@ function Parser(code, options = {}) {
     // Note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
     if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
       let labelToken = curtok;
+      let labelTokenCanon = tok_getCanon();
       if (!findLabel(labelSet, labelToken.str, FROM_BREAK)) {
         THROW('The label (`' + tokenStrForError(labelToken) + '`) for this `break` was not defined in the current label set, which is illegal');
       }
@@ -4143,7 +4151,7 @@ function Parser(code, options = {}) {
       AST_setNode(astProp, {
         type: 'BreakStatement',
         loc: AST_getClosedLoc(breakToken),
-        label: AST_getIdentNode(labelToken),
+        label: AST_getIdentNode(labelToken, labelTokenCanon),
       });
     } else if (hasNoFlag(lexerFlags, LF_IN_ITERATION | LF_IN_SWITCH)) {
       // This is a `break` that is not inside a loop or switch
@@ -4243,6 +4251,7 @@ function Parser(code, options = {}) {
     // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
     if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
       let labelToken = curtok;
+      let labelTokenCanon = tok_getCanon();
       let labelName = labelToken.str;
       let set = labelSet;
       let found = false;
@@ -4273,7 +4282,7 @@ function Parser(code, options = {}) {
       AST_setNode(astProp, {
         type: 'ContinueStatement',
         loc: AST_getClosedLoc(continueToken),
-        label: AST_getIdentNode(labelToken),
+        label: AST_getIdentNode(labelToken, labelTokenCanon),
       });
     } else {
       if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
@@ -4357,13 +4366,14 @@ function Parser(code, options = {}) {
     // `export default async.x;`
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     ASSERT_skipRex($ID_async, lexerFlags); // function, arrow, or value-tail (for it can be a legacy async)
 
     // note: default export doesnt care as much about function type
     if (curtok.type === $ID_function) {
       // `export default async function f(){}`
       // `export default async function(){}`
-      return parseAsyncStatement(lexerFlags, scoop, identToken, IS_EXPORT, exportedBindings, NOT_LABELLED, FDS_VAR, 'declaration');
+      return parseAsyncStatement(lexerFlags, scoop, identToken, identTokenCanon, IS_EXPORT, exportedBindings, NOT_LABELLED, FDS_VAR, 'declaration');
       // no semi
     }
 
@@ -4377,7 +4387,7 @@ function Parser(code, options = {}) {
     // > export default [lookahead ∉ { function, async [no LineTerminator here] function, class }] AssignmentExpression [+In, ~Yield, ~Await] ;
     // > AssignmentExpression[In, Yield, Await] : AsyncArrowFunction [?In, ?Yield, ?Await]
     // so `export default async () => {};` should be fine
-    parseAsyncExpression(lexerFlags, identToken, NOT_NEW_ARG, IS_EXPORT, ASSIGN_EXPR_IS_OK, NOT_LHSE, 'declaration');
+    parseAsyncExpression(lexerFlags, identToken, identTokenCanon, NOT_NEW_ARG, IS_EXPORT, ASSIGN_EXPR_IS_OK, NOT_LHSE, 'declaration');
 
     // (this won't have any other name than "default")
     // bound names: "*default*"
@@ -4458,6 +4468,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
       // note: the exported _name_ can be any identifier, keywords included
       let exportedNameToken = curtok;
+      let exportedNameTokenCanon = tok_getCanon();
 
       addNameToExports(exportedNames, exportedNameToken.str);
 
@@ -4471,6 +4482,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToStringOrDie($ID_from, lexerFlags); // Will throw if next token is not a string
 
       let sourceToken = curtok;
+      let sourceTokenCanon = tok_getCanon();
       ASSERT_skipToStatementStart($G_STRING, lexerFlags);
 
       parseSemiOrAsi(lexerFlags);
@@ -4481,10 +4493,10 @@ function Parser(code, options = {}) {
         specifiers: [{
           type: 'ExportNamespaceSpecifier',
           loc: AST_getClosedLoc(exportToken),
-          exported: AST_getIdentNode(exportedNameToken),
+          exported: AST_getIdentNode(exportedNameToken, exportedNameTokenCanon),
         }],
         declaration: null,
-        source: AST_getStringNode(sourceToken, false),
+        source: AST_getStringNode(sourceToken, sourceTokenCanon, false),
       });
 
       return;
@@ -4497,6 +4509,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToStringOrDie($ID_from, lexerFlags); // Will throw if next token is not a string
 
     let sourceToken = curtok;
+    let sourceTokenCanon = tok_getCanon();
     ASSERT_skipToStatementStart($G_STRING, lexerFlags);
 
     parseSemiOrAsi(lexerFlags);
@@ -4504,7 +4517,7 @@ function Parser(code, options = {}) {
     AST_setNode(astProp, {
       type: 'ExportAllDeclaration',
       loc: AST_getClosedLoc(exportToken),
-      source: AST_getStringNode(sourceToken, false),
+      source: AST_getStringNode(sourceToken, sourceTokenCanon, false),
     });
   }
   function parseExportNamed(lexerFlags, scoop, exportToken, exportedNames, exportedBindings, astProp) {
@@ -4541,9 +4554,10 @@ function Parser(code, options = {}) {
         ASSERT_skipToStringOrDie($ID_from, lexerFlags);
         // TODO: what happens to dupe exported bindings or exported names here?
         let fromToken = curtok;
+        let fromTokenCanon = tok_getCanon();
 
         ASSERT_skipToStatementStart($G_STRING, lexerFlags);
-        AST_setStringLiteral('source', fromToken, false);
+        AST_setStringLiteral('source', fromToken, fromTokenCanon, false);
       } else {
         AST_set('source', null);
         // pump the names into the real sets now
@@ -4710,7 +4724,9 @@ function Parser(code, options = {}) {
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
     while (isIdentToken(curtok.type)) {
       let nameToken = curtok; // left of the `as`
+      let nameTokenCanon = tok_getCanon(); // left of the `as`
       let exportedNameToken = curtok; // right of the `as`, if present at all, otherwise same as name
+      let exportedNameTokenCanon = tok_getCanon(); // right of the `as`, if present at all, otherwise same as name
       ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
       // while the `nameToken` should be a valid non-keyword identifier, it also has to be bound and as such we
       // don't have to check it here since we already apply bind checks anyways and binding would apply this check
@@ -4718,6 +4734,7 @@ function Parser(code, options = {}) {
         ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
         // note: the exported _name_ can be any identifier, keywords included
         exportedNameToken = curtok;
+        exportedNameTokenCanon = tok_getCanon();
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
 
@@ -4727,8 +4744,8 @@ function Parser(code, options = {}) {
       AST_setNode('specifiers', {
         type: 'ExportSpecifier',
         loc: AST_getClosedLoc(nameToken),
-        local: AST_getIdentNode(nameToken),
-        exported: AST_getIdentNode(exportedNameToken),
+        local: AST_getIdentNode(nameToken, nameTokenCanon),
+        exported: AST_getIdentNode(exportedNameToken, exportedNameTokenCanon),
       });
 
       if (curtok.type === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
@@ -4828,6 +4845,7 @@ function Parser(code, options = {}) {
     //         ^
     // - `for (let x;;);`
     let letIdentToken = curtok;
+    let letIdentTokenCanon = tok_getCanon();
     let assignable = ASSIGNABLE_UNDETERMINED;
     let wasNotDecl = false;
     ASSERT_skipDiv($ID_let, lexerFlags); // div; if let is varname then next token can be next line statement start and if that starts with forward slash it's a div
@@ -4856,7 +4874,7 @@ function Parser(code, options = {}) {
           // [x]: `for (let in x)`
           THROW('Let binding missing binding names as `let` cannot be a var name in strict mode');
         }
-        AST_setIdent(astProp, letIdentToken);
+        AST_setIdent(astProp, letIdentToken, letIdentTokenCanon);
         wasNotDecl = true;
       } else {
         // [v]: `for (let x of y);`
@@ -4906,7 +4924,7 @@ function Parser(code, options = {}) {
         // [x]: `for (let , x;;);`
         //                ^
         // Note: we are inside a for-header so we don't care about assignable or the await/yield flags here
-        AST_setIdent(astProp, letIdentToken);
+        AST_setIdent(astProp, letIdentToken, letIdentTokenCanon);
         _parseExpressions(lexerFlags, letIdentToken, initNotAssignable(), astProp);
         assignable = NOT_ASSIGNABLE;
 
@@ -4931,7 +4949,7 @@ function Parser(code, options = {}) {
         // [x]: `for (let=10;;);`
         // [v]: `for (let.foo;;);`
         // [v]: `for (let();;);`
-        assignable = parseValueAfterIdent(lexerFlags, letIdentToken, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_OK, astProp);
+        assignable = parseValueAfterIdent(lexerFlags, letIdentToken, letIdentTokenCanon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_OK, astProp);
         if (curtok.type === $ID_of) {
           // [x]: `for (let.a of x);`
           THROW('Cannot use `let` as a var name on the left side in a `for-of` header');
@@ -4953,7 +4971,7 @@ function Parser(code, options = {}) {
       } else {
         // [v]: `for (let;;);`
         //               ^
-        AST_setIdent(astProp, letIdentToken);
+        AST_setIdent(astProp, letIdentToken, letIdentTokenCanon);
         assignable = NOT_ASSIGNABLE;
       }
     }
@@ -5527,8 +5545,9 @@ function Parser(code, options = {}) {
     ASSERT(isStringToken(curtok.type), 'skipToStringOrDie should throw if the next token is not a string, all branches should have enforced it');
 
     let sourceToken = curtok;
+    let sourceTokenCanon = tok_getCanon();
     ASSERT_skipToStatementStart($G_STRING, lexerFlags); // semi or asi
-    AST_setStringLiteral('source', sourceToken, false);
+    AST_setStringLiteral('source', sourceToken, sourceTokenCanon, false);
     parseSemiOrAsi(lexerFlags);
     AST_close('ImportDeclaration');
   }
@@ -5540,14 +5559,15 @@ function Parser(code, options = {}) {
     // import x, * as z from 'x'
     // import x, {...} from 'x'
     let identToken = curtok;
-    fatalBindingIdentCheck(identToken, BINDING_TYPE_CONST, lexerFlags);
+    let identTokenCanon = tok_getCanon();
+    fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_CONST, lexerFlags);
     SCOPE_addLexBinding(scoop, identToken.str, BINDING_TYPE_LET, FDS_LEX); // TODO: confirm `let`
     ASSERT_skipToAsCommaFrom($G_IDENT, lexerFlags);
 
     AST_setNode('specifiers', {
       type: 'ImportDefaultSpecifier',
       loc: AST_getClosedLoc(identToken),
-      local: AST_getIdentNode(identToken),
+      local: AST_getIdentNode(identToken, identTokenCanon),
     });
   }
   function parseImportObject(lexerFlags, scoop) {
@@ -5558,7 +5578,9 @@ function Parser(code, options = {}) {
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
     while (isIdentToken(curtok.type)) {
       let nameToken = curtok; // left of the `as` token
+      let nameTokenCanon = tok_getCanon(); // left of the `as` token
       let localToken = curtok; // right of the `as` token, otherwise same as nameToken
+      let localTokenCanon = tok_getCanon(); // right of the `as` token, otherwise same as nameToken
       ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
 
       // https://tc39.github.io/ecma262/#sec-createimportbinding
@@ -5568,16 +5590,17 @@ function Parser(code, options = {}) {
       if (curtok.type === $ID_as) {
         ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
         localToken = curtok;
+        localTokenCanon = tok_getCanon();
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
-      fatalBindingIdentCheck(localToken, BINDING_TYPE_CONST, lexerFlags);
+      fatalBindingIdentCheck(localToken, localTokenCanon, BINDING_TYPE_CONST, lexerFlags);
       SCOPE_addLexBinding(scoop, localToken.str, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
 
       AST_setNode('specifiers', {
         type: 'ImportSpecifier',
         loc: AST_getClosedLoc(nameToken),
-        imported: AST_getIdentNode(nameToken),
-        local: AST_getIdentNode(localToken),
+        imported: AST_getIdentNode(nameToken, nameTokenCanon),
+        local: AST_getIdentNode(localToken, localTokenCanon),
       });
 
       if (curtok.type === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
@@ -5598,15 +5621,16 @@ function Parser(code, options = {}) {
     ASSERT_skipToAsOrDie('*', lexerFlags);
     ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
     let localToken = curtok;
+    let localTokenCanon = tok_getCanon();
     // next must be `from` (default must come first, if present, and object can not be used together with star)
     ASSERT_skipToFromOrDie($G_IDENT, lexerFlags);
-    fatalBindingIdentCheck(localToken, BINDING_TYPE_CONST, lexerFlags);
+    fatalBindingIdentCheck(localToken, localTokenCanon, BINDING_TYPE_CONST, lexerFlags);
     SCOPE_addLexBinding(scoop, localToken.str, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
 
     AST_setNode('specifiers', {
       type: 'ImportNamespaceSpecifier',
       loc: AST_getClosedLoc(starToken),
-      local: AST_getIdentNode(localToken),
+      local: AST_getIdentNode(localToken, localTokenCanon),
     });
 
     ASSERT(curtok.type === $ID_from, 'already validated by skipToFromOrDie, above');
@@ -5618,6 +5642,7 @@ function Parser(code, options = {}) {
     ASSERT_LABELSET(labelSet);
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     ASSERT(identToken.type === $ID_let, 'should pass on the let token');
 
     // next token is ident, {, or [ in most cases. In sloppy mode it can also be any valid value tail, operator, and ASI-able.
@@ -5639,6 +5664,9 @@ function Parser(code, options = {}) {
       // and likewise, `let \n yield` does not trigger ASI inside a generator. So `let \n await 0` and `let \n yield 0`
       // is always going to trigger a syntax error.
 
+      let bindingToken = curtok;
+      let bindingTokenCanon = tok_getCanon();
+
       // This is a let with a newline following it and the next token is a reserved word.
       // This must now be a let-expression or a syntax error
       // - `let \n debugger'               (fine)
@@ -5649,7 +5677,7 @@ function Parser(code, options = {}) {
       // The next logic is: if there's no error, it's fine to bind. If there is an error, then if it concerns any of
       // these pseudo keywords they will still trigger an error (because the errors are early errors) so we throw.
       // In all other cases, apply the ASI and treat the next ident as an expression.
-      let identBindingErrorMsg = tok_getNlwas() === true ? nonFatalBindingIdentCheck(curtok, BINDING_TYPE_LET, lexerFlags) : '';
+      let identBindingErrorMsg = tok_getNlwas() === true ? nonFatalBindingIdentCheck(bindingToken, bindingTokenCanon, BINDING_TYPE_LET, lexerFlags) : '';
       if (identBindingErrorMsg !== '') {
         // This is now a slow error path
 
@@ -5660,14 +5688,14 @@ function Parser(code, options = {}) {
           [$ID_await, $ID_yield, $ID_arguments, $ID_eval, $ID_implements, $ID_interface, $ID_let, $ID_package, $ID_private, $ID_protected, $ID_public, $ID_static].includes(curtok.type)
         ) {
           // This must be an error now. ASI was not applicable but the var was (still) not a valid binding ident, so *boom*
-          return THROW('Attempted to create a `let` binding on special reserved keyword `' + tokenStrForError(curtok) + '` but: ' + identBindingErrorMsg);
+          return THROW('Attempted to create a `let` binding on special reserved keyword `' + tokenStrForError(bindingToken) + '` but: ' + identBindingErrorMsg);
         }
 
         if (hasAnyFlag(lexerFlags, LF_NO_ASI)) {
-          return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tokenStrForError(curtok) + '`) and ASI does not apply here');
+          return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tokenStrForError(bindingToken) + '`) and ASI does not apply here');
         }
 
-        return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tokenStrForError(curtok) + '`)');
+        return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tokenStrForError(bindingToken) + '`)');
       }
 
 
@@ -5691,7 +5719,7 @@ function Parser(code, options = {}) {
     } else {
       // let expression statement
       // TODO: add test case `let: function f(){}`
-      _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp);
+      _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
     }
   }
   function parseLetExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp) {
@@ -5699,6 +5727,7 @@ function Parser(code, options = {}) {
     ASSERT_LABELSET(labelSet);
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     ASSERT(identToken.type === $ID_let, 'should pass on the let token');
 
     // next token is ident, {, or [ in most cases. In sloppy mode it can also be any valid value tail, operator, and ASI-able.
@@ -5716,9 +5745,9 @@ function Parser(code, options = {}) {
     }
 
     // let expression statement
-    _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp);
+    _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
   }
-  function _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp) {
+  function _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp) {
     ASSERT(_parseLetAsPlainVarNameExpressionStatement.length === arguments.length, 'arg count');
     ASSERT(identToken.type === $ID_let, 'should pass on the let token');
     ASSERT(identToken !== curtok, 'the `let` token should have been skipped');
@@ -5731,17 +5760,17 @@ function Parser(code, options = {}) {
       AST_setNode(astProp, {
         type: 'ExpressionStatement',
         loc: AST_getClosedLoc(identToken),
-        expression: AST_getIdentNode(identToken),
+        expression: AST_getIdentNode(identToken, identTokenCanon),
       });
     } else if (curtok.type === $PUNC_COLON) {
-      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp);
+      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
     } else {
       AST_open(astProp, {
         type: 'ExpressionStatement',
         loc: AST_getBaseLoc(identToken),
         expression: undefined,
       });
-      let assignable = parseIdentOrParenlessArrow(lexerFlags, identToken, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
+      let assignable = parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
       assignable = parseValueTail(lexerFlags, identToken, assignable, NOT_NEW_ARG, NOT_LHSE, 'expression');
       parseExpressionFromOp(lexerFlags, identToken, assignable, 'expression');
       if (curtok.type === $PUNC_COMMA) {
@@ -6029,6 +6058,7 @@ function Parser(code, options = {}) {
 
     // note: this node may be replaced by a label node but we can't know that here without backtracking
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
 
     // TODO: in most of the cases below where it leads to a label an error "keyword label" should be thrown immediately
 
@@ -6039,7 +6069,7 @@ function Parser(code, options = {}) {
 
     if (curtok.type === $PUNC_COLON) {
       // Ident to be verified not to be reserved in the label parser
-      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp);
+      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
     }
 
     AST_open(astProp, {
@@ -6047,7 +6077,7 @@ function Parser(code, options = {}) {
       loc: AST_getBaseLoc(identToken),
       expression: undefined,
     });
-    parseExpressionsAfterIdent(lexerFlags, identToken, ASSIGN_EXPR_IS_OK, 'expression');
+    parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, ASSIGN_EXPR_IS_OK, 'expression');
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
@@ -6135,6 +6165,7 @@ function Parser(code, options = {}) {
       parens === 1 ? ASSIGN_EXPR_IS_ERROR : ASSIGN_EXPR_IS_OK,
       IS_DELETE_ARG,
       UNDEF_ASYNC,
+      '',
       NOT_ASYNC_PREFIXED,
       NOT_LHSE,
       astProp
@@ -6224,6 +6255,7 @@ function Parser(code, options = {}) {
     // `delete foo[yield x]`
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     // - `delete foo`
     //           ^
     // - `delete foo.bar`
@@ -6239,7 +6271,7 @@ function Parser(code, options = {}) {
     let afterIdentTokenNlwas = tok_getNlwas();
 
     // Note: assignable is relevant if it somehow contained an await or yield; TODO: citation needed
-    let assignable = parseValueAfterIdent(lexerFlags, identToken, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_ERROR, 'argument');
+    let assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_ERROR, 'argument');
 
     if (curtok === afterIdentToken && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
       // https://tc39.github.io/ecma262/#sec-delete-operator-static-semantics-early-errors
@@ -6272,7 +6304,7 @@ function Parser(code, options = {}) {
     return assignable;
   }
 
-  function parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, fdState, nestedLabels, astProp) {
+  function parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLabeledStatementInstead.length, 'arg count');
     ASSERT_LABELSET(labelSet);
     ASSERT(nestedLabels === PARENT_NOT_LABEL || nestedLabels instanceof Array, 'nestedLabels should be a list of names of uninterupted label parents');
@@ -6281,7 +6313,7 @@ function Parser(code, options = {}) {
 
     // This is an exception to the general case where eval and arguments are okay to use as label name. Thanks, spec.
     if (identToken.type !== $ID_eval && identToken.type !== $ID_arguments) {
-      fatalBindingIdentCheck(identToken, BINDING_TYPE_NONE, lexerFlags);
+      fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_NONE, lexerFlags);
     }
 
     let set = labelSet;
@@ -6316,7 +6348,7 @@ function Parser(code, options = {}) {
     AST_open(astProp, {
       type: 'LabeledStatement',
       loc: AST_getBaseLoc(identToken),
-      label: AST_getIdentNode(identToken),
+      label: AST_getIdentNode(identToken, identTokenCanon),
       body: undefined,
     });
     parseNestedBodyPart(lexerFlags, scoop, labelSet, IS_LABELLED, fdState, nestedLabels, 'body');
@@ -6518,8 +6550,9 @@ function Parser(code, options = {}) {
       // - `var foo = bar;`
       //        ^^^
       let bindingTok = curtok;
+      let bindingTokCanon = tok_getCanon();
       let bindingName = curtok.str;
-      fatalBindingIdentCheck(bindingTok, bindingType, lexerFlags);
+      fatalBindingIdentCheck(bindingTok, bindingTokCanon, bindingType, lexerFlags);
       if (bindingType === BINDING_TYPE_CATCH_OTHER) {
         // See details of specific catch var exceptions in the catch parser
         bindingType = BINDING_TYPE_CATCH_IDENT;
@@ -6528,13 +6561,14 @@ function Parser(code, options = {}) {
       addNameToExports(exportedNames, bindingName);
       addBindingToExports(exportedBindings, bindingName);
       let identToken = curtok;
+      let identTokenCanon = tok_getCanon();
       // note: if this is the end of the var decl and there is no semi the next line can start with a regex
       ASSERT_skipRex(bindingName, lexerFlags); // next is `=` or `,` or `;` or asi-continuation
-      AST_setIdent(astProp, identToken);
+      AST_setIdent(astProp, identToken, identTokenCanon);
 
       if (
         hasNoFlag(lexerFlags, LF_STRICT_MODE) &&
-        nonFatalBindingIdentCheck(bindingTok, bindingType, lexerFlags | LF_STRICT_MODE) !== ''
+        nonFatalBindingIdentCheck(bindingTok, bindingTokCanon, bindingType, lexerFlags | LF_STRICT_MODE) !== ''
       ) {
         // In this case we are in sloppy mode but the name would fail in strict mode. It is still possible for this
         // function to become strict mode if it turns out it has the "use strict" flag. So check for that, and throw an
@@ -6648,15 +6682,15 @@ function Parser(code, options = {}) {
     return paramSimple;
   }
 
-  function fatalBindingIdentCheck(identToken, bindingType, lexerFlags) {
+  function fatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags) {
     ASSERT(fatalBindingIdentCheck.length === arguments.length, 'arg count');
     ASSERT(isIdentToken(identToken.type), 'ident check on ident tokens ok', identToken);
     ASSERT_BINDING_TYPE(bindingType);
 
-    let str = nonFatalBindingIdentCheck(identToken, bindingType, lexerFlags);
+    let str = nonFatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags);
     if (str !== '') THROW_TOKEN(`Cannot use this name (${identToken.str}) as a variable name because: ${str}`, identToken);
   }
-  function nonFatalBindingIdentCheck(identToken, bindingType, lexerFlags) {
+  function nonFatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags) {
     ASSERT(nonFatalBindingIdentCheck.length === arguments.length, 'expecting all args');
     ASSERT(isIdentToken(identToken.type), 'ident check on ident tokens ok', identToken);
     ASSERT_BINDING_TYPE(bindingType);
@@ -6667,16 +6701,16 @@ function Parser(code, options = {}) {
 
     // If an ident has a unicode escape then its .canon must be shorter than its .str
     // If the lens are equal then the .type also applies to the .canon and we can skip slow checks for that edge case
-    if (identToken.str === identToken.canon) {
+    if (identToken.str === identTokenCanon) {
       if (identToken.type === $IDENT) return ''; // If the type is non-special (then so is the .canon) then no error
-      return nonFatalBindingIdentCheckByEnum(lexerFlags, identToken, bindingType);
+      return nonFatalBindingIdentCheckByEnum(lexerFlags, identToken, identTokenCanon, bindingType);
     }
     // This ident had an escape. This is a pretty exceptional situation so I'm okay with the slow path.
-    return nonFatalBindingIdentCheckByString(lexerFlags, identToken, bindingType);
+    return nonFatalBindingIdentCheckByString(lexerFlags, identToken, identTokenCanon, bindingType);
   }
-  function nonFatalBindingIdentCheckByEnum(lexerFlags, identToken, bindingType) {
+  function nonFatalBindingIdentCheckByEnum(lexerFlags, identToken, identTokenCanon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByEnum.length === arguments.length, 'arg count');
-    ASSERT(identToken.str === identToken.canon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
+    ASSERT(identToken.str === identTokenCanon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
 
     // This doesn't get hit very often as there's a simple ==$IDENT check that takes the brink
     // of these keyword checks. Since most cases that would fall through would lead to an error, it's only
@@ -6743,7 +6777,7 @@ function Parser(code, options = {}) {
       // `eval` and `arguments` edge case paths
       case $ID_eval:
       case $ID_arguments:
-        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identToken.canon +'` in strict mode';
+        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identTokenCanon +'` in strict mode';
         return '';
 
       // strict mode only future reserved keyword:
@@ -6784,11 +6818,11 @@ function Parser(code, options = {}) {
     // valid binding name
     return '';
   }
-  function nonFatalBindingIdentCheckByString(lexerFlags, identToken, bindingType) {
+  function nonFatalBindingIdentCheckByString(lexerFlags, identToken, identTokenCanon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByString.length === arguments.length, 'arg count');
-    ASSERT(identToken.str !== identToken.canon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
+    ASSERT(identToken.str !== identTokenCanon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
 
-    switch (identToken.canon) {
+    switch (identTokenCanon) {
       // keywords
       case 'break':
       case 'case':
@@ -6849,7 +6883,7 @@ function Parser(code, options = {}) {
       // `eval` and `arguments` edge case paths
       case 'eval':
       case 'arguments':
-        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identToken.canon +'` in strict mode';
+        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identTokenCanon +'` in strict mode';
         return '';
 
       // strict mode only future reserved keyword:
@@ -6911,18 +6945,18 @@ function Parser(code, options = {}) {
     let assignable = parseValueTail(lexerFlags, literalToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
     parseExpressionFromOp(lexerFlags, literalToken, assignable, astProp);
   }
-  function parseExpressionAfterIdent(lexerFlags, identToken, bindingType, allowAssignment, astProp) {
+  function parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, allowAssignment, astProp) {
     ASSERT(parseExpressionAfterIdent.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_BINDING_TYPE(bindingType);
 
-    let assignable = parseValueAfterIdent(lexerFlags, identToken, bindingType, allowAssignment, astProp);
+    let assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, allowAssignment, astProp);
     ASSERT(typeof assignable === 'number', 'assignanum', assignable);
     assignable = parseExpressionFromOp(lexerFlags, identToken, assignable, astProp);
     ASSERT(typeof assignable === 'number', 'assignanum', assignable);
     return assignable;
   }
-  function parseExpressionAfterAsyncAsVarName(lexerFlags, stmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp) {
+  function parseExpressionAfterAsyncAsVarName(lexerFlags, stmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp) {
     ASSERT(arguments.length === parseExpressionAfterAsyncAsVarName.length, 'arg count');
     ASSERT(asyncToken !== UNDEF_ASYNC && asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
@@ -6942,9 +6976,9 @@ function Parser(code, options = {}) {
     let assignable = NOT_ASSIGNABLE;
     if (curtok.type === $PUNC_EQ_GT) {
       // Note: param name is `async` and there is nothing else so args guaranteed to be simple
-      assignable |= parseArrowParenlessFromPunc(lexerFlags, asyncToken, asyncToken, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
+      assignable |= parseArrowParenlessFromPunc(lexerFlags, asyncToken, asyncToken, asyncTokenCanon, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
     } else {
-      assignable = parseIdentOrParenlessArrow(lexerFlags, asyncToken, IS_ASSIGNABLE, allowAssignment, astProp);
+      assignable = parseIdentOrParenlessArrow(lexerFlags, asyncToken, asyncTokenCanon, IS_ASSIGNABLE, allowAssignment, astProp);
       assignable = parseValueTail(lexerFlags, asyncToken, assignable, isNewArg, NOT_LHSE, astProp);
       if (stmtOrExpr === IS_STATEMENT) {
         // in expressions operator precedence is handled elsewhere. in statements this is the start,
@@ -6995,9 +7029,10 @@ function Parser(code, options = {}) {
     }
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     let isSimple = PARAMS_ALL_SIMPLE;
     // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
-    if (isStrictOnlyKeyword(identToken)) {
+    if (isStrictOnlyKeyword(identToken, identTokenCanon)) {
       // - `async eval => {}`
       // - `async eval => {"use strict"}`
       // - `async package => {}`
@@ -7006,7 +7041,7 @@ function Parser(code, options = {}) {
     }
     ASSERT_skipToArrowOrDie($G_IDENT, lexerFlags); // this was `async <curtok>` and curtok is not a keyword
 
-    let assignable = parseArrowParenlessFromPunc(lexerFlags, asyncToken, identToken, allowAssignment, isSimple, asyncToken, astProp);
+    let assignable = parseArrowParenlessFromPunc(lexerFlags, asyncToken, identToken, identTokenCanon, allowAssignment, isSimple, asyncToken, astProp);
 
     if (fromStmtOrExpr === IS_STATEMENT) {
       parseSemiOrAsi(lexerFlags); // this is not a func decl!
@@ -7015,11 +7050,13 @@ function Parser(code, options = {}) {
 
     return assignable;
   }
-  function isStrictOnlyKeyword(identToken) {
-    if (identToken.canon.length === identToken.str.length) {
+  function isStrictOnlyKeyword(identToken, identTokenCanon) {
+    ASSERT(isStrictOnlyKeyword.length === arguments.length, 'arg count');
+
+    if (identTokenCanon.length === identToken.str.length) {
       return isStrictOnlyKeywordByEnum(identToken);
     }
-    return isStrictOnlyKeywordByString(identToken);
+    return isStrictOnlyKeywordByString(identTokenCanon);
   }
   function isStrictOnlyKeywordByEnum(identToken) {
     switch (identToken.type) {
@@ -7038,9 +7075,9 @@ function Parser(code, options = {}) {
     }
     return false;
   }
-  function isStrictOnlyKeywordByString(identToken) {
+  function isStrictOnlyKeywordByString(identTokenCanon) {
     // Note: check canon because in strict these are keywords and they are not allowed to have escapes; so treat same
-    switch (identToken.canon) {
+    switch (identTokenCanon) {
       case 'eval':
       case 'arguments':
       case 'implements':
@@ -7191,11 +7228,11 @@ function Parser(code, options = {}) {
     return setNotAssignable(midAssignable | rhsAssignable);
   }
 
-  function parseExpressionsAfterIdent(lexerFlags, identToken, allowAssignment, astProp) {
+  function parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp) {
     ASSERT(parseExpressionsAfterIdent.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
-    let assignableForPiggies = parseExpressionAfterIdent(lexerFlags, identToken, BINDING_TYPE_NONE, allowAssignment, astProp)
+    let assignableForPiggies = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_NONE, allowAssignment, astProp)
     if (curtok.type === $PUNC_COMMA) {
       assignableForPiggies = _parseExpressions(lexerFlags, identToken, assignableForPiggies, astProp);
     }
@@ -7317,13 +7354,13 @@ function Parser(code, options = {}) {
     // eg. `new foo()` should NOT be `new (foo())` / `(new foo)()` but we do allow `new foo.bar()`
     return parseValueTail(lexerFlags, startToken, assignable, isNewArg, leftHandSideExpression, astProp);
   }
-  function parseValueAfterIdent(lexerFlags, identToken, bindingType, allowAssignment, astProp) {
+  function parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, allowAssignment, astProp) {
     ASSERT(parseValueAfterIdent.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_BINDING_TYPE(bindingType);
 
     // only parses head+body+tail but STOPS at ops
-    let assignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, bindingType, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
+    let assignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
     return parseValueTail(lexerFlags, identToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
   function parseYieldValueMaybe(lexerFlags, allowAssignment, astProp) {
@@ -7359,8 +7396,9 @@ function Parser(code, options = {}) {
     }
     else if (isNumberStringRegex(curtok.type)) {
       let litToken = curtok;
+      let litTokenCanon = tok_getCanon();
       skipDiv(lexerFlags); // Next can be any binary operator, anything that closes the current context (`}`, `)`, `]`)
-      AST_setLiteral(astProp, litToken);
+      AST_setLiteral(astProp, litToken, litTokenCanon);
       return NOT_ASSIGNABLE;
     }
     else if (isTemplateStart(curtok.type)) {
@@ -7380,7 +7418,7 @@ function Parser(code, options = {}) {
       }
       else if (curtok.type === $PUNC_PAREN_OPEN) {
         // do not parse arrow/group tail, regardless
-        return parseGroupToplevels(lexerFlags, IS_STATEMENT, allowAssignment, UNDEF_ASYNC, NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
+        return parseGroupToplevels(lexerFlags, IS_STATEMENT, allowAssignment, UNDEF_ASYNC, '', NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
       }
       else if (curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) {
         if (leftHandSideExpression === ONLY_LHSE) THROW('An update expression (`--` / `++`) is not allowed here');
@@ -7463,11 +7501,12 @@ function Parser(code, options = {}) {
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     skipIdentSafeSlowAndExpensive(lexerFlags, leftHandSideExpression);
 
-    return parseValueHeadBodyAfterIdent(lexerFlags, identToken, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp);
+    return parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp);
   }
-  function parseValueHeadBodyAfterIdent(lexerFlags, identToken, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp) {
+  function parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(parseValueHeadBodyAfterIdent.length === arguments.length, 'expecting args');
     ASSERT(isIdentToken(identToken.type), 'should have consumed token. make sure you checked whether the token after can be div or regex...');
     ASSERT(identToken !== curtok, 'should have consumed this');
@@ -7504,14 +7543,14 @@ function Parser(code, options = {}) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
             THROW('Can not use `arguments` as arg name in strict mode');
           }
-          return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
+          return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, identTokenCanon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
         }
-        AST_setIdent(astProp, identToken);
+        AST_setIdent(astProp, identToken, identTokenCanon);
         return assignable;
       case $ID_async:
-        return parseAsyncExpression(lexerFlags, identToken, isNewArg, NOT_EXPORT, allowAssignment, leftHandSideExpression, astProp);
+        return parseAsyncExpression(lexerFlags, identToken, identTokenCanon, isNewArg, NOT_EXPORT, allowAssignment, leftHandSideExpression, astProp);
       case $ID_await:
-        return parseAwait(lexerFlags, identToken, isNewArg, allowAssignment, astProp);
+        return parseAwait(lexerFlags, identToken, identTokenCanon, isNewArg, allowAssignment, astProp);
       case $ID_class:
         // - `(class x {})`
         // - `(class x {}.foo)`
@@ -7528,9 +7567,9 @@ function Parser(code, options = {}) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
             THROW('Can not use `eval` as arg name in strict mode');
           }
-          return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
+          return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, identTokenCanon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
         }
-        AST_setIdent(astProp, identToken);
+        AST_setIdent(astProp, identToken, identTokenCanon);
         return assignable;
       case $ID_false:
         return parseFalseKeyword(identToken, astProp);
@@ -7558,7 +7597,7 @@ function Parser(code, options = {}) {
 
         assignable = initAssignable(assignable);
 
-        return parseIdentOrParenlessArrow(lexerFlags, identToken, assignable, allowAssignment, astProp);
+        return parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, assignable, allowAssignment, astProp);
       case $ID_new:
         // - `new x`
         // - `new x()`
@@ -7566,7 +7605,7 @@ function Parser(code, options = {}) {
         // - `async function f(){   (fail = new x(await x)) => {}   }`
         // - `async function f(){   (fail = new (await x)) => {}   }`
         // - `async function f(){   (fail = new f[await x]) => {}   }`
-        let newAssignable = parseNewKeyword(lexerFlags, identToken, astProp);
+        let newAssignable = parseNewKeyword(lexerFlags, identToken, identTokenCanon, astProp);
         return setNotAssignable(newAssignable); // note: property in `new x().y` is not parsed yet. new expr is never assignable
       case $ID_null:
         return parseNullKeyword(identToken, astProp);
@@ -7603,7 +7642,7 @@ function Parser(code, options = {}) {
         // - `new yield`
         // - `function *f(){ new yield }`
         // - `x = x + yield`
-        return parseYield(lexerFlags, identToken, allowAssignment, astProp);
+        return parseYield(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp);
     }
 
     // - `x` but not `true`
@@ -7612,10 +7651,10 @@ function Parser(code, options = {}) {
     // if (!checkIdentReadable(lexerFlags, bindingType, identToken)) {
     //   THROW('Illegal keyword encountered; is not a value [' + identToken.str + ']');
     // }
-    fatalBindingIdentCheck(identToken, bindingType, lexerFlags);
+    fatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags);
     assignable = initAssignable(assignable);
 
-    return parseIdentOrParenlessArrow(lexerFlags, identToken, assignable, allowAssignment, astProp);
+    return parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, assignable, allowAssignment, astProp);
   }
 
   function verifyEvalArgumentsVar(lexerFlags) {
@@ -7755,7 +7794,7 @@ function Parser(code, options = {}) {
 
     THROW('The `super` keyword can only be used as call or member expression');
   }
-  function parseNewKeyword(lexerFlags, newToken, astProp) {
+  function parseNewKeyword(lexerFlags, newToken, newTokenCanon, astProp) {
     // Just parsed the `new` keyword at the start of an expression, should already have
     // been consumed (but `new new x` is a valid expression so we can't assert it)
 
@@ -7770,10 +7809,10 @@ function Parser(code, options = {}) {
     // - `new (await foo);`
     // - `new x(await foo);`
 
-    if (curtok.type === $PUNC_DOT) return parseNewDotTarget(lexerFlags, newToken, astProp);
+    if (curtok.type === $PUNC_DOT) return parseNewDotTarget(lexerFlags, newToken, newTokenCanon, astProp);
     return parseNewExpression(lexerFlags, newToken, astProp);
   }
-  function parseNewDotTarget(lexerFlags, newToken, astProp) {
+  function parseNewDotTarget(lexerFlags, newToken, newTokenCanon, astProp) {
     // - `new.target`
     // - `new.foo`
 
@@ -7785,13 +7824,14 @@ function Parser(code, options = {}) {
     }
     ASSERT_skipToTargetOrDie('.', lexerFlags); // already asserted the dot. For now, the valid followup is `target`
     let propertyToken = curtok;
+    let propertyTokenCanon = tok_getCanon();
     ASSERT_skipDiv($ID_target, lexerFlags); // new.target / foo
 
     AST_setNode(astProp, {
       type: 'MetaProperty',
       loc: AST_getClosedLoc(newToken),
-      meta: AST_getIdentNode(newToken),
-      property: AST_getIdentNode(propertyToken),
+      meta: AST_getIdentNode(newToken, newTokenCanon),
+      property: AST_getIdentNode(propertyToken, propertyTokenCanon),
     });
 
     return NOT_ASSIGNABLE;
@@ -7921,7 +7961,7 @@ function Parser(code, options = {}) {
     return setNotAssignable(assignable);
   }
 
-  function parseYield(lexerFlags, yieldIdentToken, allowAssignment, astProp) {
+  function parseYield(lexerFlags, yieldIdentToken, yieldIdentTokenCanon, allowAssignment, astProp) {
     ASSERT(arguments.length === parseYield.length, 'arg count');
     ASSERT(yieldIdentToken !== curtok, 'should have consumed the ident already');
     ASSERT(yieldIdentToken.type === $ID_yield, 'should receive the yield keyword token that was already consumed');
@@ -7936,7 +7976,7 @@ function Parser(code, options = {}) {
     if (hasAnyFlag(lexerFlags, LF_IN_GENERATOR)) {
       return parseYieldKeyword(lexerFlags, yieldIdentToken, allowAssignment, astProp);
     }
-    return parseYieldVarname(lexerFlags, yieldIdentToken, allowAssignment, astProp);
+    return parseYieldVarname(lexerFlags, yieldIdentToken, yieldIdentTokenCanon, allowAssignment, astProp);
   }
   function parseYieldKeyword(lexerFlags, yieldToken, allowAssignment, astProp) {
     ASSERT(parseYieldKeyword.length === arguments.length, 'arg count');
@@ -8010,7 +8050,7 @@ function Parser(code, options = {}) {
     let assignable = parseValue(lexerFlags, allowAssignment, NOT_NEW_ARG, NOT_LHSE, astProp); // arg required, no newline restrictions
     parseExpressionFromOp(lexerFlags, valueStartToken, assignable, astProp);
   }
-  function parseYieldVarname(lexerFlags, identToken, allowAssignment, astProp) {
+  function parseYieldVarname(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp) {
     ASSERT(parseYieldVarname.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
@@ -8021,7 +8061,7 @@ function Parser(code, options = {}) {
     }
 
     // `yield` is a var name in sloppy mode:
-    let assignableFlags = parseIdentOrParenlessArrow(lexerFlags, identToken, IS_ASSIGNABLE, allowAssignment, astProp);
+    let assignableFlags = parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, IS_ASSIGNABLE, allowAssignment, astProp);
     return copyPiggies(IS_ASSIGNABLE, assignableFlags);
   }
   function parseYieldArgument(lexerFlags, astProp) {
@@ -8040,7 +8080,7 @@ function Parser(code, options = {}) {
     }
   }
 
-  function parseIdentOrParenlessArrow(lexerFlags, identToken, assignable, allowAssignment, astProp) {
+  function parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, assignable, allowAssignment, astProp) {
     ASSERT(parseIdentOrParenlessArrow.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
     ASSERT_ASSIGN_EXPR(allowAssignment);
@@ -8049,14 +8089,14 @@ function Parser(code, options = {}) {
     // (in the case of `await`, consider it a regular var)
     if (curtok.type === $PUNC_EQ_GT) {
       ASSERT(isAssignable(assignable), 'not sure whether an arrow can be valid if the arg is marked as non-assignable');
-      return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
+      return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, identTokenCanon, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
     } else {
-      AST_setIdent(astProp, identToken);
+      AST_setIdent(astProp, identToken, identTokenCanon);
       return assignable;
     }
   }
 
-  function parseArrowParenlessFromPunc(lexerFlags, arrowStartToken, identToken, allowAssignment, wasSimple, asyncToken, astProp) {
+  function parseArrowParenlessFromPunc(lexerFlags, arrowStartToken, identToken, identTokenCanon, allowAssignment, wasSimple, asyncToken, astProp) {
     ASSERT(parseArrowParenlessFromPunc.length === arguments.length, 'arg count');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
@@ -8070,9 +8110,9 @@ function Parser(code, options = {}) {
       THROW('Arrows cannot be generators and parenless `yield` param in a generator would be parsing a yield expression and fail at the arrow');
     }
 
-    fatalBindingIdentCheck(identToken, BINDING_TYPE_ARG, lexerFlags); // TODO: confirm this isn't a duplicate check
+    fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_ARG, lexerFlags); // TODO: confirm this isn't a duplicate check
     // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
-    if (isStrictOnlyKeyword(identToken)) {
+    if (isStrictOnlyKeyword(identToken, identTokenCanon)) {
       // Throw error if body is or contains strict mode
       wasSimple = PARAMS_SOME_COMPLEX;
     }
@@ -8098,7 +8138,7 @@ function Parser(code, options = {}) {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
         loc: AST_getBaseLoc(arrowStartToken),
-        params: [AST_getIdentNode(identToken)],
+        params: [AST_getIdentNode(identToken, identTokenCanon)],
         id: null,
         generator: false,
         async: asyncToken !== UNDEF_ASYNC,
@@ -8108,7 +8148,7 @@ function Parser(code, options = {}) {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
         loc: AST_getBaseLoc(arrowStartToken),
-        params: [AST_getIdentNode(identToken)],
+        params: [AST_getIdentNode(identToken, identTokenCanon)],
         id: null,
         generator: false,
         async: asyncToken !== UNDEF_ASYNC,
@@ -8184,6 +8224,7 @@ function Parser(code, options = {}) {
     ASSERT_VALID(isTickToken(curtok.type), 'expect current token to be a tick pure, head, body, or tail', curtok.type);
 
     let tickToken = curtok;
+    let tickTokenCanon = tok_getCanon();
     let hasDoubleStart = false;
     let noCooked = false;
 
@@ -8208,7 +8249,7 @@ function Parser(code, options = {}) {
       // This normalization is almost lossy as you can't (trivially) reconstruct the original template now
       quasiValue = quasiValue.replace(/\r\n?/g, '\n');
     }
-    let cookedValue = noCooked ? null : tickToken.canon;
+    let cookedValue = noCooked ? null : tickTokenCanon;
 
     AST_open('quasis', {
       type: 'TemplateElement',
@@ -8260,12 +8301,13 @@ function Parser(code, options = {}) {
 
     ASSERT_skipToIdentOrDie('.', lexerFlags | LF_NOT_KEYWORD);
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     ASSERT_skipDiv($G_IDENT, lexerFlags); // x.y / z is division
     AST_setNode(astProp, {
       type: 'MemberExpression',
       loc: AST_getClosedLoc(valueFirstToken),
       object: AST_popNode(astProp),
-      property: AST_getIdentNode(identToken),
+      property: AST_getIdentNode(identToken, identTokenCanon),
       computed: false,
     });
     return parseValueTail(lexerFlags, valueFirstToken, setAssignable(assignable), isNewArg, NOT_LHSE, astProp);
@@ -8575,7 +8617,7 @@ function Parser(code, options = {}) {
 
       let arrowScoop = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseArrowFromPunc');
       ASSERT(arrowScoop._funcName = '(arrow has no name)');
-      parseFunctionBody(lexerFlags, arrowScoop, EMPTY_LABEL_SET, IS_EXPRESSION, paramsSimple, NO_DUPE_PARAMS, NO_ID_TO_VERIFY);
+      parseFunctionBody(lexerFlags, arrowScoop, EMPTY_LABEL_SET, IS_EXPRESSION, paramsSimple, NO_DUPE_PARAMS, NO_ID_TO_VERIFY, '');
     } else {
       // Note: you cannot await in a regular arrow, so this is illegal:
       // - `async function f(fail = () => await x){}`
@@ -8625,7 +8667,7 @@ function Parser(code, options = {}) {
 
     return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW;
   }
-  function parseGroupToplevels(lexerFlags, asyncStmtOrExpr, allowAssignment, asyncToken, newlineAfterAsync, leftHandSideExpression, astProp) {
+  function parseGroupToplevels(lexerFlags, asyncStmtOrExpr, allowAssignment, asyncToken, asyncTokenCanon, newlineAfterAsync, leftHandSideExpression, astProp) {
     ASSERT(parseGroupToplevels.length === arguments.length, 'arg count');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
     ASSERT(curtok.type === $PUNC_PAREN_OPEN, 'should have thrown if not currently at paren open');
@@ -8633,11 +8675,11 @@ function Parser(code, options = {}) {
     let parenToken = curtok;
 
     ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // Patterns are subsumed by exprs when it comes to skip
-    return _parseGroupToplevels(lexerFlags, parenToken, asyncStmtOrExpr, allowAssignment, NOT_DELETE_ARG, asyncToken, newlineAfterAsync, leftHandSideExpression, astProp);
+    return _parseGroupToplevels(lexerFlags, parenToken, asyncStmtOrExpr, allowAssignment, NOT_DELETE_ARG, asyncToken, asyncTokenCanon, newlineAfterAsync, leftHandSideExpression, astProp);
   }
-  function _parseGroupToplevels(lexerFlagsBeforeParen, parenToken, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, isDeleteArg, asyncToken, newlineAfterAsync, leftHandSideExpression, astProp) {
-    ASSERT(arguments.length === _parseGroupToplevels.length, 'arg count');
-    ASSERT(newlineAfterAsync === NOT_ASYNC_PREFIXED || newlineAfterAsync === IS_ASYNC_PREFIXED);
+  function _parseGroupToplevels(lexerFlagsBeforeParen, parenToken, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, isDeleteArg, asyncToken, asyncTokenCanon, newlineAfterAsync, leftHandSideExpression, astProp) {
+    ASSERT(_parseGroupToplevels.length === arguments.length, 'arg count');
+    ASSERT(newlineAfterAsync === NOT_ASYNC_PREFIXED || newlineAfterAsync === IS_ASYNC_PREFIXED, 'enum');
     ASSERT(typeof astProp === 'string');
     ASSERT(parenToken !== curtok, 'paren should be skipped');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
@@ -8700,6 +8742,7 @@ function Parser(code, options = {}) {
           MIGHT_DESTRUCT,
           true,
           asyncToken,
+          asyncTokenCanon,
           ASSIGNABLE_UNDETERMINED,
           astProp
         );
@@ -8772,6 +8815,7 @@ function Parser(code, options = {}) {
 
         // first scan next token to see what potential checks we need to apply
         const identToken = curtok;
+        const identTokenCanon = tok_getCanon();
         skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // because `(x/y)` and `(typeof /x/)` need different next token states
 
         let wasAssignment = curtok.type === $PUNC_EQ;
@@ -8779,7 +8823,7 @@ function Parser(code, options = {}) {
 
         ASSERT(toplevelComma || curtok.type !== $PUNC_PAREN_CLOSE || assignable === ASSIGNABLE_UNDETERMINED, 'for group with one simple element, delete edge case');
 
-        let exprAssignable = parseExpressionAfterIdent(lexerFlags, identToken, BINDING_TYPE_ARG, ASSIGN_EXPR_IS_OK, astProp);
+        let exprAssignable = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_ARG, ASSIGN_EXPR_IS_OK, astProp);
         assignable = mergeAssignable(exprAssignable, assignable);
         SCOPE_addLexBinding(paramScoop, identToken.str, BINDING_TYPE_ARG, FDS_ILLEGAL);
 
@@ -8826,7 +8870,7 @@ function Parser(code, options = {}) {
             wasSimple = PARAMS_SOME_COMPLEX; // if we can't assign to it then the name is a keyword of sorts
           } else if (
             // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
-            isStrictOnlyKeyword(identToken)
+            isStrictOnlyKeyword(identToken, identTokenCanon)
           ) {
             // Mark the args as non-simple such that if the body contains a "use strict" directive, it will still throw
             // If already in strict mode then make an arrow illegal immediately.
@@ -8963,7 +9007,7 @@ function Parser(code, options = {}) {
           // - `async("foo".bar) => x`
           //                     ^
           // TODO: move this out because worst case you'll still have to do this down below so we shouldnt add repetitive complexity for this edge case
-          return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, CANT_DESTRUCT, false, asyncToken, assignable, rootAstProp);
+          return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, CANT_DESTRUCT, false, asyncToken, asyncTokenCanon, assignable, rootAstProp);
         }
 
         if (babelCompat && !toplevelComma) {
@@ -9262,7 +9306,7 @@ function Parser(code, options = {}) {
       // `async(a) => x`
       // `async(a = await x) => x`
       destructible = copyPiggies(destructible, assignable);
-      return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, destructible, false, asyncToken, assignable, rootAstProp);
+      return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, destructible, false, asyncToken, asyncTokenCanon, assignable, rootAstProp);
     }
 
     if (isArrow) {
@@ -9407,7 +9451,7 @@ function Parser(code, options = {}) {
 
     return assignable;
   }
-  function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, groupDestructible, zeroArgs, asyncToken, assignable, astProp) {
+  function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, groupDestructible, zeroArgs, asyncToken, asyncTokenCanon, assignable, astProp) {
     ASSERT(parseAfterAsyncGroup.length === arguments.length, 'arg count');
     ASSERT(typeof groupDestructible === 'number', 'destructible num');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
@@ -9482,7 +9526,7 @@ function Parser(code, options = {}) {
         AST_setNode(astProp, {
           type: 'CallExpression',
           loc: AST_getClosedLoc(asyncToken),
-          callee: AST_getIdentNode(asyncToken),
+          callee: AST_getIdentNode(asyncToken, asyncTokenCanon),
           arguments: [],
         });
       }
@@ -9492,7 +9536,7 @@ function Parser(code, options = {}) {
         // - `async \n (a, b, c);`
         //                      ^
 
-        AST_patchAsyncCall(asyncToken, astProp);
+        AST_patchAsyncCall(asyncToken, asyncTokenCanon, astProp);
       }
 
       let assignable = parseValueTail(lexerFlags, asyncToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
@@ -9705,6 +9749,7 @@ function Parser(code, options = {}) {
         //   - some valid idents can not be assigned (`true`, `typeof`, etc) and are not destructible, not assignable
         // first scan next token to see what potential checks we need to apply (wrt the above comments)
         const identToken = curtok;
+        const identTokenCanon = tok_getCanon();
         skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // will properly deal with div/rex cases
 
         let nextIsAssignment = curtok.type === $PUNC_EQ;
@@ -9712,7 +9757,7 @@ function Parser(code, options = {}) {
 
         // ASSIGN_EXPR_IS_OK because this might just be an array element, where something like an arrow is legit
         // [v]: `[async ()=>x]`      // requires ASSIGN_EXPR_IS_OK
-        let leftAssignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, bindingType, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
+        let leftAssignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
         assignableYieldAwaitState |= leftAssignable;
 
         if (nextIsAssignment) {
@@ -10189,6 +10234,7 @@ function Parser(code, options = {}) {
       //     ^
       // - `({15: bar}) => x`
       let litToken = curtok;
+      let litTokenCanon = tok_getCanon();
       ASSERT_skipToColonParenOpen(litToken.str, lexerFlags);
 
       if (curtok.type === $PUNC_COLON) {
@@ -10209,14 +10255,14 @@ function Parser(code, options = {}) {
           if (litToken.str === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
         }
 
-        destructible |= parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, litToken, bindingType, assignableForPiggies, destructible, scoop, exportedNames, exportedBindings, astProp);
+        destructible |= parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, litToken, litTokenCanon, bindingType, assignableForPiggies, destructible, scoop, exportedNames, exportedBindings, astProp);
         ASSERT(curtok.type !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
       }
       else if (curtok.type === $PUNC_PAREN_OPEN) {
         // Method shorthand
         // - `{5(){}}`
         // - `{'foo'(){}}`
-        AST_setLiteral(astProp, litToken);
+        AST_setLiteral(astProp, litToken, litTokenCanon);
 
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, litToken, undefined, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
@@ -10355,13 +10401,14 @@ function Parser(code, options = {}) {
       if (isIdentToken(curtok.type)) {
         // - `({*ident(){}})`
         let identToken = curtok;
+        let identTokenCanon = tok_getCanon();
         ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
 
         // - `({*ident(){}})`
         // - `({*get(){}})`       // ok (not a getter!)
         // - `({*set(){}})`       // ok (not a setter!)
         // - `({*async(){}})`     // NOT an async generator! it's a generator
-        AST_setIdent(astProp, identToken);
+        AST_setIdent(astProp, identToken, identTokenCanon);
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, identToken, undefined, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
@@ -10370,9 +10417,10 @@ function Parser(code, options = {}) {
         // - `({*"str"(){}})`
         // - `({*15(){}})`
         let litToken = curtok;
+        let litTokenCanon = tok_getCanon();
 
         ASSERT_skipToParenOpenOrDie(litToken.str, lexerFlags);
-        AST_setLiteral(astProp, litToken);
+        AST_setLiteral(astProp, litToken, litTokenCanon);
 
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, litToken, undefined, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
@@ -10486,7 +10534,7 @@ function Parser(code, options = {}) {
     }
     return destructible;
   }
-  function parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, keyToken, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp) {
+  function parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, keyToken, keyTokenCanon, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp) {
     ASSERT(parseObjectPropertyValueAfterColon.length === arguments.length, 'arg count');
     // property value or label, some are destructible:
     // - ({ident: ident,}
@@ -10528,9 +10576,9 @@ function Parser(code, options = {}) {
       });
     }
     if (isIdentToken(keyToken.type)) {
-      AST_setIdent('key', keyToken);
+      AST_setIdent('key', keyToken, keyTokenCanon);
     } else {
-      AST_setLiteral('key', keyToken);
+      AST_setLiteral('key', keyToken, keyTokenCanon);
     }
     ASSERT_skipToExpressionStart(':', lexerFlags);
 
@@ -10562,6 +10610,7 @@ function Parser(code, options = {}) {
 
       // use the rhs of the colon as identToken now
       let identToken = curtok;
+      let identTokenCanon = tok_getCanon();
 
       // `[...{a: function=x} = c]`
       // let identAssignableOrErrMsg = nonFatalBindingIdentCheck(identToken, bindingType, lexerFlags);
@@ -10585,7 +10634,7 @@ function Parser(code, options = {}) {
       // - `{key: bar, koo: baa}`
       // - `{[key]: bar}`
       let commaOrEnd = curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE;
-      let valueAssignable = parseValueAfterIdent(lexerFlags, identToken, bindingType, ASSIGN_EXPR_IS_OK, 'value');
+      let valueAssignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
       assignableOnlyForYieldAwaitFlags |= valueAssignable;
 
       if (curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE) {
@@ -10783,6 +10832,7 @@ function Parser(code, options = {}) {
     ASSERT(typeof astProp === 'string', 'astprop string');
 
     let propLeadingIdentToken = curtok;
+    let propLeadingIdentTokenCanon = tok_getCanon();
     ASSERT_skipAny($G_IDENT, lexerFlags);
 
     if (allowAsyncFunctions) {
@@ -10861,7 +10911,7 @@ function Parser(code, options = {}) {
         // must throw for reserved words but binding check also checks for `eval`
         // and `arguments` which are not reserved and which would be allowed here
         // Since this is an assignment the `yield` and `await` checks are implicitly done when doing binding name checks
-        fatalBindingIdentCheck(propLeadingIdentToken, bindingType, lexerFlags);
+        fatalBindingIdentCheck(propLeadingIdentToken, propLeadingIdentTokenCanon, bindingType, lexerFlags);
       }
 
       if (propLeadingIdentToken.type === $ID_await) {
@@ -10887,10 +10937,10 @@ function Parser(code, options = {}) {
         AST_open(astProp, {
           type: NODE_NAME_PROPERTY,
           loc: AST_getBaseLoc(startOfPropToken),
-          key: AST_getIdentNode(propLeadingIdentToken),
+          key: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
           method: false, // only the {x(){}} shorthand gets true here, this is {x}
           computed: false,
-          value: AST_getIdentNode(propLeadingIdentToken),
+          value: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
           shorthand: true,
           extra: {shorthand: true},
         });
@@ -10898,11 +10948,11 @@ function Parser(code, options = {}) {
         AST_open(astProp, {
           type: NODE_NAME_PROPERTY,
           loc: AST_getBaseLoc(startOfPropToken),
-          key: AST_getIdentNode(propLeadingIdentToken),
+          key: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
           kind: 'init', // only getters/setters get special value here
           method: false, // only the {x(){}} shorthand gets true here, this is {x}
           computed: false,
-          value: AST_getIdentNode(propLeadingIdentToken),
+          value: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
           shorthand: true,
         });
       }
@@ -10952,7 +11002,7 @@ function Parser(code, options = {}) {
         if (propLeadingIdentToken.str === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
       }
 
-      destructible |= parseObjectPropertyValueAfterColon(lexerFlags, propLeadingIdentToken, propLeadingIdentToken, bindingType, assignable, destructible, scoop,exportedNames, exportedBindings, astProp);
+      destructible |= parseObjectPropertyValueAfterColon(lexerFlags, propLeadingIdentToken, propLeadingIdentToken, propLeadingIdentTokenCanon, bindingType, assignable, destructible, scoop,exportedNames, exportedBindings, astProp);
       ASSERT(curtok.type !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
     }
     else if (curtok.type === $PUNC_PAREN_OPEN) {
@@ -10961,7 +11011,7 @@ function Parser(code, options = {}) {
 
       destructible |= CANT_DESTRUCT;
 
-      AST_setIdent(astProp, propLeadingIdentToken);
+      AST_setIdent(astProp, propLeadingIdentToken, propLeadingIdentTokenCanon);
 
       parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, propLeadingIdentToken, undefined, astProp);
 
@@ -10989,8 +11039,9 @@ function Parser(code, options = {}) {
       }
 
       let identToken2 = curtok;
+      let identToken2Canon = tok_getCanon();
       ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-      AST_setIdent(astProp, identToken2);
+      AST_setIdent(astProp, identToken2, identToken2Canon);
       parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, identToken2, undefined, astProp);
 
       ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
@@ -11023,15 +11074,17 @@ function Parser(code, options = {}) {
         //             ^^^
         // `{   async *prototype(){}   }`
         let identToken2 = curtok;
+        let identToken2Canon = tok_getCanon();
         ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-        AST_setIdent(astProp, identToken2);
+        AST_setIdent(astProp, identToken2, identToken2Canon);
         parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, identToken2, undefined, astProp);
       } else if (isNumberStringToken(curtok.type)) {
         // `{   async *300(){}   }`
         // `{   async *"foo"(){}   }`
         let litToken = curtok;
+        let litTokenCanon = tok_getCanon();
         ASSERT_skipToParenOpenOrDie(litToken.str, lexerFlags);
-        AST_setLiteral(astProp, litToken);
+        AST_setLiteral(astProp, litToken, litTokenCanon);
         parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, litToken, undefined, astProp);
       } else if (curtok.type === $PUNC_BRACKET_OPEN) {
         // `{   async *[foo](){}   }`
@@ -11075,8 +11128,9 @@ function Parser(code, options = {}) {
       }
 
       let litToken = curtok;
+      let litTokenCanon = tok_getCanon();
       ASSERT_skipToParenOpenOrDie(litToken.str, lexerFlags);
-      AST_setLiteral(astProp, litToken);
+      AST_setLiteral(astProp, litToken, litTokenCanon);
 
       parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, litToken, undefined, astProp);
       ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
@@ -11301,6 +11355,8 @@ function Parser(code, options = {}) {
     // note: default exports has optional ident but should still not skip `extends` here
     // but it is not a valid class name anyways (which is superseded by a generic keyword check)
     if (isIdentToken(curtok.type) && curtok.type !== $ID_extends) {
+      let classNameToken = curtok;
+      let classNameTokenCanon = tok_getCanon();
       // The class name is to be considered a `const` inside the class, but a `let` outside of the class
       // https://tc39.github.io/ecma262/#sec-runtime-semantics-classdefinitionevaluation
       // > If hasNameProperty is false, perform SetFunctionName(value, className).
@@ -11312,12 +11368,13 @@ function Parser(code, options = {}) {
       //   Record. The String value N is the text of the bound name. V is the value for the binding and is a value of
       //   any ECMAScript language type.
       // eg: it is a `let` binding in outer scope and a `const` binding in inner scope...
-      fatalBindingIdentCheck(curtok, BINDING_TYPE_CLASS, lexerFlags);
-      bindingName = curtok.str;
+      fatalBindingIdentCheck(classNameToken, classNameTokenCanon, BINDING_TYPE_CLASS, lexerFlags);
+      bindingName = classNameToken.str;
       SCOPE_addLexBinding(scoop, bindingName, BINDING_TYPE_CLASS, FDS_ILLEGAL);
       let idToken = curtok;
+      let idTokenCanon = tok_getCanon();
       ASSERT_skipToIdentCurlyOpen($G_IDENT, lexerFlags); // TODO: this could explicitly check for `extends` but I think this is fine
-      AST_setIdent('id', idToken);
+      AST_setIdent('id', idToken, idTokenCanon);
     }
     else if (optionalIdent === IDENT_REQUIRED) {
       //  '`export class extends x {}` is the only valid class decl without name');
@@ -11498,6 +11555,7 @@ function Parser(code, options = {}) {
     // - `class x {static get constructor(){}}`    (ok because static members are not real constructors)
 
     let staticToken = UNDEF_STATIC;
+    let staticTokenCanon = '';
     let getToken = UNDEF_GET;
     let setToken = UNDEF_SET;
     let asyncToken = UNDEF_ASYNC;
@@ -11518,6 +11576,7 @@ function Parser(code, options = {}) {
       // - `class x {static get constructor(){}}`
 
       staticToken = curtok;
+      staticTokenCanon = tok_getCanon();
       // = `class x { static / foo(){} }`
       ASSERT_skipAny($ID_static, lexerFlags);
 
@@ -11525,7 +11584,7 @@ function Parser(code, options = {}) {
         // The `static` ident here is the name of a method, not a modifier
         // - `class x {static(){}}`
         //                   ^
-        destructible |= _parseClassMethodIdentKey(lexerFlags, UNDEF_STATIC, asyncToken, starToken, getToken, setToken, staticToken, astProp);
+        destructible |= _parseClassMethodIdentKey(lexerFlags, UNDEF_STATIC, asyncToken, starToken, getToken, setToken, staticToken, staticTokenCanon, astProp);
         return destructible;
       }
     }
@@ -11603,6 +11662,7 @@ function Parser(code, options = {}) {
     ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
 
     let identToken = curtok;
+    let identTokenCanon = tok_getCanon();
     ASSERT_skipAny($G_IDENT, lexerFlags);
 
     if (allowAsyncFunctions) {
@@ -11646,7 +11706,7 @@ function Parser(code, options = {}) {
       // Simple method shorthand
       // - `class x {ident(){}}`
       //                  ^
-      destructible |= _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, identToken, astProp);
+      destructible |= _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, identToken, identTokenCanon, astProp);
     }
     else {
       switch (identToken.type) {
@@ -11729,10 +11789,11 @@ function Parser(code, options = {}) {
     ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
 
     let keyToken = curtok; // Note: constructor is tested elsewhere
+    let keyTokenCanon = tok_getCanon(); // Note: constructor is tested elsewhere
     ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-    return _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, astProp);
+    return _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, astProp);
   }
-  function _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, astProp) {
+  function _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, astProp) {
     ASSERT(_parseClassMethodIdentKey.length === arguments.length, 'arg count');
     ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
@@ -11742,10 +11803,10 @@ function Parser(code, options = {}) {
     ASSERT(keyToken !== undefined, 'key is token');
     ASSERT(isIdentToken(keyToken.type), 'key is ident');
 
-    AST_setIdent(astProp, keyToken);
+    AST_setIdent(astProp, keyToken, keyTokenCanon);
 
     // - `class A {async get foo(){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, undefined, astProp);
+    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, undefined, astProp);
     ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     // - `(class A extends B { constructor() { super() } })`
     return destructPiggies; // Can have constructor piggy
@@ -11760,8 +11821,9 @@ function Parser(code, options = {}) {
     ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
 
     let litToken = curtok;
+    let litTokenCanon = tok_getCanon();
     ASSERT_skipToParenOpenOrDie(litToken.str, lexerFlags);
-    AST_setLiteral(astProp, litToken);
+    AST_setLiteral(astProp, litToken, litTokenCanon);
 
     // [v]: `class A {"x"(){}}`
     // [v]: `class A {1(){}}`
@@ -11773,7 +11835,7 @@ function Parser(code, options = {}) {
     // [v]: `class A {static get 6(){}}`
     // [v]: `class A {set 9(x){}}`
     // [v]: `class A {static set 10(x){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, litToken, undefined, astProp);
+    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, litToken, litTokenCanon, undefined, astProp);
     ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     // - `class A {"constructor"(){}}`
     return destructPiggies; // Can have constructor piggy
@@ -11803,7 +11865,7 @@ function Parser(code, options = {}) {
     // - `{[foo](){}}`
     // - `class {[foo](){}}`
     // - `class x {[x]z){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, undefined, bracketOpenToken, astProp);
+    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, undefined, '', bracketOpenToken, astProp);
     ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
 
@@ -11811,7 +11873,7 @@ function Parser(code, options = {}) {
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
     return copyPiggies(CANT_DESTRUCT, nowAssignable);
   }
-  function parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, bracketOpenToken, astProp) {
+  function parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, bracketOpenToken, astProp) {
     ASSERT(parseClassMethodAfterKey.length === arguments.length, 'want args');
     ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
@@ -11845,12 +11907,12 @@ function Parser(code, options = {}) {
                   keyToken;
 
     if (keyToken !== undefined && staticToken !== UNDEF_STATIC) {
-      if (isIdentToken(keyToken.type) && keyToken.canon === 'prototype') {
+      if (isIdentToken(keyToken.type) && keyTokenCanon === 'prototype') {
         THROW('Static class methods can not be called `prototype`');
       }
       else if (
         isStringToken(keyToken.type) &&
-        keyToken.canon === 'prototype'
+        keyTokenCanon === 'prototype'
       ) {
         THROW('Static class methods can not be called `prototype`');
       }
@@ -11867,18 +11929,15 @@ function Parser(code, options = {}) {
         // https://tc39.github.io/ecma262/#sec-identifier-names-static-semantics-stringvalue
         // Note: the "constructor" check is determined by the "StringValue" of ident, which is the canonical value
         (
-          isIdentToken(keyToken.type) &&
-          keyToken.canon === 'constructor' // .canon will have any escapes properly unescaped
-        ) ||
+          isIdentToken(keyToken.type) ||
         // > LiteralPropertyName: StringLiteral
         // >   Return the String value whose code units are the SV of the StringLiteral.
         // In other words; `class x{"constructor"(){}}` is also a proper constructor
         // https://tc39.github.io/ecma262/#sec-string-literals-static-semantics-stringvalue
         // And for strings it is the unquoted canonical value of the string (so "constructor" and 'constructor' + escapes)
-        (
-          isStringToken(keyToken.type) &&
-          keyToken.canon === 'constructor' // .canon will have any escapes properly unescaped
-        )
+          isStringToken(keyToken.type)
+        ) &&
+        keyTokenCanon === 'constructor' // .canon will have any escapes properly unescaped
       )
     ) {
       // This is a proper class constructor
@@ -12223,11 +12282,12 @@ function Parser(code, options = {}) {
       // don't update destructible here. assignment is handled at the end of this function (!)
 
       let identToken = curtok;
+      let identTokenCanon = tok_getCanon();
       skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // will properly deal with div/rex cases
       let assignBefore = curtok.type === $PUNC_EQ;
       let willBeSimple = curtok.type === closingPuncType || curtok.type === $PUNC_COMMA || assignBefore;
       if (willBeSimple) {
-        let assignableOrErrorMsg = nonFatalBindingIdentCheck(identToken, bindingType, lexerFlags);
+        let assignableOrErrorMsg = nonFatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags);
         ASSERT(typeof assignableOrErrorMsg === 'string', 'func should always return string');
         if (assignableOrErrorMsg.length !== 0) {
           // - `[...await] = obj`
@@ -12244,7 +12304,7 @@ function Parser(code, options = {}) {
         // Can't _just_ throw here because the arrow may not be an arrow
         // THROW('The rest argument of an arrow or function must always be a simple ident without suffix');
       }
-      assignable = parseValueAfterIdent(lexerFlags, identToken, bindingType, ASSIGN_EXPR_IS_OK, astProp);
+      assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
       ASSERT(!assignBefore || curtok.type === $PUNC_EQ, 'parseValueAfterIdent should not consume the assignment');
       let assignAfter = curtok.type === $PUNC_EQ;
       if (curtok.type !== $PUNC_COMMA && curtok.type !== closingPuncType) {
