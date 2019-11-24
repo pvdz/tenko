@@ -461,6 +461,7 @@ function Lexer(
   let len = input.length;
 
   let consumedNewlinesBeforeSolid = false; // whitespace newline token or string token that contained newline or multiline comment
+  let nlwas = false; // basically the state of consumedNewlinesBeforeSolid before starting the current token
   let finished = false; // generated an $EOF?
   let lastParsedIdent = ''; // updated after parsing an ident. used to canonicalize escaped identifiers (a\u{65}b -> aab). this var will NOT contain escapes
   let lastCanonizedString = ''; // updated while parsing a string token. escapes will be unescaped. Used for .value in AST.
@@ -601,14 +602,15 @@ function Lexer(
       let startCol = pointer - currentColOffset;
       let startRow = currentLine;
 
+      nlwas = consumedNewlinesBeforeSolid; // Do not include the newlines for the token itself unless whitespace (ex: `` throw `\n` ``)
+
       if (eof()) {
-        let token = createToken($EOF, pointer, pointer, startCol, startRow, consumedNewlinesBeforeSolid);
+        let token = createToken($EOF, pointer, pointer, startCol, startRow);
         finished = true;
         return returnSolidToken(token);
       }
 
       let start = startForError = pointer; // TODO: see if startForError makes a dent at all
-      let nlwas = consumedNewlinesBeforeSolid; // Do not include the newlines for the token itself unless whitespace (ex: `` throw `\n` ``)
 
       let consumedTokenType = jumpTableLexer(lexerFlags);
       ASSERT(consumedTokenType !== undefined, 'should not return undefined');
@@ -616,27 +618,27 @@ function Lexer(
 
       // Non-whitespace tokens always get returned
       if (!isWhiteToken(consumedTokenType)) {
-        let token = createToken(consumedTokenType, start, pointer, startCol, startRow, nlwas);
+        let token = createToken(consumedTokenType, start, pointer, startCol, startRow);
         return returnSolidToken(token);
       }
 
       // Babel parity demands comments to be returned... Not sure whether the complexity (over checking $white) is worth
       if (isCommentToken(consumedTokenType)) {
         if (returnTokens === RETURN_COMMENT_TOKENS) {
-          let token = createToken(consumedTokenType, start, pointer, startCol, startRow, nlwas);
+          let token = createToken(consumedTokenType, start, pointer, startCol, startRow);
           return returnCommentToken(token);
         }
       }
 
       // This is a whitespace token (which may be a comment) that is not yet collected.
       if (collectTokens === COLLECT_TOKENS_ALL) {
-        let token = createToken(consumedTokenType, start, pointer, startCol, startRow, nlwas);
+        let token = createToken(consumedTokenType, start, pointer, startCol, startRow);
         ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
         tokenStorage.push(token);
       }
 
       if (returnTokens === RETURN_ANY_TOKENS) {
-        return createToken(consumedTokenType, start, pointer, startCol, startRow, nlwas);
+        return createToken(consumedTokenType, start, pointer, startCol, startRow);
       }
 
       // At this point it has to be some form of whitespace and we're clearly not returning it so we can
@@ -789,7 +791,7 @@ function Lexer(
   }
 
   function addAsi() {
-    let token = createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine, consumedNewlinesBeforeSolid);
+    let token = createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine);
     // are asi's whitespace? i dunno. they're kinda special so maybe.
     // put it _before_ the current token (that should be the "offending" token)
     if (collectTokens !== COLLECT_TOKENS_NONE) {
@@ -801,7 +803,7 @@ function Lexer(
     prevTokenSolid = true;
   }
 
-  function createToken(type, start, stop, column, line, nl) {
+  function createToken(type, start, stop, column, line) {
     ASSERT(createToken.length === arguments.length, 'arg count');
     ASSERT(ALL_TOKEN_TYPES.includes(type) || console.log('####\n' + getErrorContext()), 'the set of generated token types is fixed. New ones combinations should be part of this set', type.toString(2));
     ASSERT(Number.isFinite(start), 'start finite');
@@ -809,7 +811,6 @@ function Lexer(
     ASSERT(Number.isFinite(column), 'col finite');
     ASSERT(Number.isFinite(line), 'line finite');
     ASSERT(typeof type === 'number', 'type is enum');
-    ASSERT(typeof nl === 'boolean', 'nl bool');
 
     ASSERT(typeof lastCanonizedString !== 'string' || lastCanonizedString.length === lastCanonizedStringLen, 'the len cache should be equal to the canonized string len itself (thats the point)');
 
@@ -819,18 +820,18 @@ function Lexer(
       if (lastCanonizedStringLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, nl, slice(start + 1, stop - 1), lastCanonizedString);
+        return _createToken(type, start, stop, column, line, slice(start + 1, stop - 1), lastCanonizedString);
       }
-      return _createToken(type, start, stop, column, line, nl, lastCanonizedString, lastCanonizedString);
+      return _createToken(type, start, stop, column, line, lastCanonizedString, lastCanonizedString);
     }
     if (isIdentToken(type)) {
       let len = stop - start;
       if (lastParsedIdent.length !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, nl, slice(start, stop), lastParsedIdent);
+        return _createToken(type, start, stop, column, line, slice(start, stop), lastParsedIdent);
       }
-      return _createToken(type, start, stop, column, line, nl, lastParsedIdent, lastParsedIdent);
+      return _createToken(type, start, stop, column, line, lastParsedIdent, lastParsedIdent);
     }
 
     if (isTickToken(type)) {
@@ -840,16 +841,16 @@ function Lexer(
       if (lastCanonizedStringLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, nl, slice(start + 1, stop - closeWrapperLen), lastCanonizedString);
+        return _createToken(type, start, stop, column, line, slice(start + 1, stop - closeWrapperLen), lastCanonizedString);
       }
-      return _createToken(type, start, stop, column, line, nl, lastCanonizedString, lastCanonizedString);
+      return _createToken(type, start, stop, column, line, lastCanonizedString, lastCanonizedString);
     }
-    return _createToken(type, start, stop, column, line, nl, slice(start, stop), '');
+    return _createToken(type, start, stop, column, line, slice(start, stop), '');
   }
-  function _createToken(type, start, stop, column, line, nl, str, canon) {
+  function _createToken(type, start, stop, column, line, str, canon) {
     ASSERT(_createToken.length === arguments.length, 'arg count');
 
-    let token = createBaseToken(type, start, stop, column, line, nl, str, canon);
+    let token = createBaseToken(type, start, stop, column, line, str, canon);
 
     // <SCRUB DEV>
     token = {
@@ -858,7 +859,7 @@ function Lexer(
       ...token,
 
       toString() {
-        return `{# ${toktypeToString(type)} : nl=${nl?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${str}\`${canon&&canon!==str?' (canonical=`' + canon + '`)':''}#}`;
+        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${str}\`${canon&&canon!==str?' (canonical=`' + canon + '`)':''}#}`;
       },
     };
     // </SCRUB DEV>
@@ -881,11 +882,12 @@ function Lexer(
 
     return token;
   }
-  function createBaseToken(type, start, stop, column, line, nl, str, canon) {
+  function createBaseToken(type, start, stop, column, line, str, canon) {
+    ASSERT(createBaseToken.length === arguments.length, 'arg count');
+
     if (babelTokenCompat) {
       return {
         type,
-        nl, // how many newlines between the start of the previous relevant token and the start of this one?
         start,
         stop, // start of next token
         loc: { // Tenko does not use this
@@ -910,7 +912,6 @@ function Lexer(
 
     return {
       type,
-      nl, // how many newlines between the start of the previous relevant token and the start of this one?
       start,
       stop, // start of next token
       column, // of first char of token
@@ -5124,6 +5125,8 @@ function Lexer(
     currColumn: function(){ return pointer - currentColOffset; },
     currLine: function(){ return currentLine; },
     currPointer: function(){ return pointer; },
+
+    getNlwas: function(){ return nlwas; },
   };
 }
 

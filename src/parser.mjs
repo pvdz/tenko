@@ -640,6 +640,7 @@ function Parser(code, options = {}) {
   let tok_currLine = tok.currLine;
   let tok_currPointer = tok.currPointer;
   let tok_nextToken = tok.nextToken;
+  let tok_getNlwas = tok.getNlwas;
 
   let allowTrailingFunctionComma = targetEsVersion >= VERSION_TRAILING_FUNC_COMMAS || targetEsVersion === VERSION_WHATEVER;
   let allowAsyncFunctions = targetEsVersion >= VERSION_ASYNC || targetEsVersion === VERSION_WHATEVER;
@@ -2869,7 +2870,7 @@ function Parser(code, options = {}) {
     ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'this case should have been caught sooner');
 
     // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-    if (curtok.type === $PUNC_CURLY_CLOSE || curtok.nl === true || curtok.type === $EOF) {
+    if (curtok.type === $PUNC_CURLY_CLOSE || tok_getNlwas() === true || curtok.type === $EOF) {
       tok_asi();
     } else {
       $log('parse error at curtok.c', curtok.c, String.fromCharCode(curtok.c), curtok.str);
@@ -3824,7 +3825,7 @@ function Parser(code, options = {}) {
       return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, isNewArg, allowAssignment, astProp);
     }
 
-    let newlineAfterAsync = curtok.nl === true;
+    let newlineAfterAsync = tok_getNlwas() === true;
 
     if (isIdentToken(curtok.type)) {
       // - `async foo ...`
@@ -4122,14 +4123,14 @@ function Parser(code, options = {}) {
     // `break` with label is only valid if the label exists in the current statement tree
 
     // Note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-    if (isIdentToken(curtok.type) && curtok.nl === false) {
+    if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
       let labelToken = curtok;
       if (!findLabel(labelSet, labelToken.str, FROM_BREAK)) {
         THROW('The label (`' + tokenStrForError(labelToken) + '`) for this `break` was not defined in the current label set, which is illegal');
       }
       ASSERT_skipToStatementStart($G_IDENT, lexerFlags);
 
-      if (curtok.nl === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // We have already asserted to be inside a loop/switch so that's fine
         // - `label: for(;;) break label \n /foo/`
@@ -4149,7 +4150,7 @@ function Parser(code, options = {}) {
       // [v]: `if (x) break`
       THROW('Can only `break` without label inside a `switch` or loop');
     } else {
-      if (curtok.nl === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // We have already asserted to be inside a loop/switch so that's fine
         // - `for(;;) break \n /foo/`
@@ -4240,7 +4241,7 @@ function Parser(code, options = {}) {
     // otherwise it's just a continue to the nearest loop (most likely).
 
     // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-    if (isIdentToken(curtok.type) && curtok.nl === false) {
+    if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
       let labelToken = curtok;
       let labelName = labelToken.str;
       let set = labelSet;
@@ -4259,7 +4260,7 @@ function Parser(code, options = {}) {
       }
 
       ASSERT_skipToStatementStart($G_IDENT, lexerFlags);
-      if (curtok.nl === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // Must be in loop, we checked this at the beginning
         // - `label: for (;;) continue label \n /foo/`
@@ -4275,7 +4276,7 @@ function Parser(code, options = {}) {
         label: AST_getIdentNode(labelToken),
       });
     } else {
-      if (curtok.nl === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // Must be in loop, we checked this at the beginning
         // - `for (;;) continue \n /foo/`
@@ -4297,7 +4298,7 @@ function Parser(code, options = {}) {
     let debuggerToken = curtok;
     ASSERT_skipToStatementStart($ID_debugger, lexerFlags);
     if (isRegexToken(curtok.type)) {
-      if (curtok.nl === false) THROW('Missing semi-colon after debugger keyword');
+      if (tok_getNlwas() === false) THROW('Missing semi-colon after debugger keyword');
       // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
       // - `debugger \n /foo/`
       // - `debugger \n /foo/x`
@@ -4608,7 +4609,7 @@ function Parser(code, options = {}) {
         // - `export async \n a => b`
         THROW('Can only export async functions (not arrows), did not find a function');
       }
-      if (curtok.nl === true) {
+      if (tok_getNlwas() === true) {
         // - `export async \n function(){}`
         THROW('Async can not be followed by a newline as it results in `export async;`, which is not valid (and probably not what you wanted)');
       }
@@ -4626,7 +4627,7 @@ function Parser(code, options = {}) {
 
     if (needsSemi) {
       // The variable (let/const/var) decls will consume the semi for us
-      if (curtok.nl === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
         ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'Export cases can only appear on the toplevel as a statement so ASI is always valid here');
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // `export {} \n /foo/`
@@ -5648,7 +5649,7 @@ function Parser(code, options = {}) {
       // The next logic is: if there's no error, it's fine to bind. If there is an error, then if it concerns any of
       // these pseudo keywords they will still trigger an error (because the errors are early errors) so we throw.
       // In all other cases, apply the ASI and treat the next ident as an expression.
-      let identBindingErrorMsg = curtok.nl === true ? nonFatalBindingIdentCheck(curtok, BINDING_TYPE_LET, lexerFlags) : '';
+      let identBindingErrorMsg = tok_getNlwas() === true ? nonFatalBindingIdentCheck(curtok, BINDING_TYPE_LET, lexerFlags) : '';
       if (identBindingErrorMsg !== '') {
         // This is now a slow error path
 
@@ -5763,14 +5764,14 @@ function Parser(code, options = {}) {
       argument: undefined,
     });
 
-    if (curtok.nl === true && isRegexToken(curtok.type)) {
+    if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
       // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
       // - `return \n /foo/`
       // - `return \n /foo/x`
       tok_asi();
       AST_set('argument', null);
     } else {
-      if (curtok.nl === false && curtok.type !== $EOF && curtok.type !== $PUNC_SEMI && curtok.type !== $PUNC_CURLY_CLOSE) {
+      if (tok_getNlwas() === false && curtok.type !== $EOF && curtok.type !== $PUNC_SEMI && curtok.type !== $PUNC_CURLY_CLOSE) {
         parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'argument');
       }
       else {
@@ -5856,7 +5857,7 @@ function Parser(code, options = {}) {
       loc: AST_getBaseLoc(throwToken),
       argument: undefined,
     });
-    if (curtok.nl === true) THROW('Found a newline between `throw` and its argument but that is not allowed');
+    if (tok_getNlwas() === true) THROW('Found a newline between `throw` and its argument but that is not allowed');
     let tmpLexerFlags = sansFlag(lexerFlags, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
     parseExpressions(tmpLexerFlags, ASSIGN_EXPR_IS_OK, 'argument'); // mandatory1
     parseSemiOrAsi(lexerFlags);
@@ -6235,6 +6236,7 @@ function Parser(code, options = {}) {
     skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE);
 
     let afterIdentToken = curtok; // store to assert whether anything after the ident was parsed
+    let afterIdentTokenNlwas = tok_getNlwas();
 
     // Note: assignable is relevant if it somehow contained an await or yield; TODO: citation needed
     let assignable = parseValueAfterIdent(lexerFlags, identToken, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_ERROR, 'argument');
@@ -6261,7 +6263,7 @@ function Parser(code, options = {}) {
         THROW('Cannot delete an identifier without tail, in strict mode');
       }
     }
-    else if (afterIdentToken.nl > 0 && afterIdentToken.type === $PUNC_PAREN_OPEN && identToken.type === $ID_async && curtok.type === $PUNC_EQ_GT && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+    else if (afterIdentTokenNlwas > 0 && afterIdentToken.type === $PUNC_PAREN_OPEN && identToken.type === $ID_async && curtok.type === $PUNC_EQ_GT && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
       // - `delete async \n (...) => x`
       // which is effectively `delete async; () => x;`, which is still an error
       THROW('Cannot delete an identifier without tail, in strict mode');
@@ -6622,7 +6624,7 @@ function Parser(code, options = {}) {
       THROW('Constants must be initialized');
     }
     else if (defaultsOption === ASSIGNMENT_IS_INIT) {
-      if (curtok.nl === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
         if (bindingOrigin === FROM_FOR_HEADER) {
           // [x] `for (var x \n /foo/;;);`
           THROW('Illegal regex after binding declaration in `for` header');
@@ -6964,7 +6966,7 @@ function Parser(code, options = {}) {
   function parseParenlessArrowAfterAsync(lexerFlags, fromStmtOrExpr, allowAssignment, asyncToken, astProp) {
     ASSERT(parseParenlessArrowAfterAsync.length === arguments.length, 'arg count');
     ASSERT(curtok.type !== $ID_function, '(Function and newline have already been asserted)');
-    ASSERT(curtok.nl === false, '(Function and newline have already been asserted)');
+    ASSERT(tok_getNlwas() === false, '(Function and newline have already been asserted)');
     ASSERT(isIdentToken(curtok.type), 'dont have to skip the ident to assert it having to be an arrow');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
@@ -7962,7 +7964,7 @@ function Parser(code, options = {}) {
       delegate: undefined, // TODO: init to false
       argument: undefined,
     });
-    if (curtok.nl === true && isRegexToken(curtok.type)) {
+    if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
       // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
       // - `continue \n /foo/`
       // - `continue \n /foo/x`
@@ -7998,7 +8000,7 @@ function Parser(code, options = {}) {
     // [x] `yield \n * x`
     // [x] `yield *;`
 
-    if (curtok.nl === true) {
+    if (tok_getNlwas() === true) {
       // [x]: `function *f() { yield \n * x }`
       THROW('A newline after `yield` is illegal for `yield *`');
     }
@@ -8028,7 +8030,7 @@ function Parser(code, options = {}) {
 
     let yieldArgStartToken = curtok;
     // there can be no newline between keyword `yield` and its argument (restricted production)
-    let hadValue = curtok.nl === true ? YIELD_WITHOUT_VALUE : parseYieldValueMaybe(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+    let hadValue = tok_getNlwas() === true ? YIELD_WITHOUT_VALUE : parseYieldValueMaybe(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
     if (hadValue === YIELD_WITHOUT_VALUE) {
       AST_set(astProp, null);
     } else {
@@ -8082,7 +8084,7 @@ function Parser(code, options = {}) {
     // - `eval => x`
     // - `async eval => x`
 
-    if (curtok.nl === true) {
+    if (tok_getNlwas() === true) {
       // - `async x \n => x`
       THROW('The arrow is a restricted production an there can not be a newline before `=>` token');
     }
@@ -8388,7 +8390,7 @@ function Parser(code, options = {}) {
 
     // ok when inside a: expression statement, return statement, throw statement, var/let/const decl, export (?)
 
-    if (curtok.nl === true) {
+    if (tok_getNlwas() === true) {
       // note: this is ++/-- SUFFIX. This version DOES have newline restrictions!
       // a restricted production has no tail
       // do nothing. nothing further gets parsed. and since next token is ++ or -- there is no risk of "overaccepting" here
@@ -8608,11 +8610,11 @@ function Parser(code, options = {}) {
       if (isTemplateStart(curtok.type)) {
         THROW('Block body arrows can not be immediately tagged without a group');
       }
-      if ((isCompoundAssignment(curtok.type) || isNonAssignBinOp(curtok.type, lexerFlags)) && (curtok.nl === false || curtok.type === $PUNC_DIV)) {
+      if ((isCompoundAssignment(curtok.type) || isNonAssignBinOp(curtok.type, lexerFlags)) && (tok_getNlwas() === false || curtok.type === $PUNC_DIV)) {
         // - `()=>{}+a'
         THROW('An arrow function can not be part of an operator to the right');
       }
-      if ((curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) && curtok.nl === false) {
+      if ((curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) && tok_getNlwas() === false) {
         // - `()=>{}++'
         // - `()=>{}--'
         // - `()=>{}\n++x'
@@ -8709,7 +8711,7 @@ function Parser(code, options = {}) {
 
       lexerFlags = lexerFlagsBeforeParen; // reset no_asi state to before the group
 
-      if (curtok.nl === true) {
+      if (tok_getNlwas() === true) {
         // arrows with newlines are always an error
         // - `() \n => x`
         THROW('The arrow token `=>` is a restricted production and cannot have a newline preceding it');
@@ -9076,7 +9078,7 @@ function Parser(code, options = {}) {
 
       if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('Arrow not allowed in this position', asyncToken === UNDEF_ASYNC ? parenToken : asyncToken);
 
-      if (curtok.nl === true) {
+      if (tok_getNlwas() === true) {
         // we can safely throw here because there's no way that the `=>` token is valid without an arrow header
         THROW('Arrow is restricted production; cannot have newline before the arrow token');
       }
@@ -9413,7 +9415,7 @@ function Parser(code, options = {}) {
 
     // this is called after parsing a group that followed an `async` when it might be an async arrow
     if (curtok.type === $PUNC_EQ_GT) {
-      if (curtok.nl === true) {
+      if (tok_getNlwas() === true) {
         THROW('The arrow is a restricted production an there can not be a newline before `=>` token');
       }
       else if (newlineAfterAsync === IS_ASYNC_PREFIXED) {
@@ -10785,7 +10787,7 @@ function Parser(code, options = {}) {
 
     if (allowAsyncFunctions) {
       // Note: `{async\n(){}}` is legal in sloppy so we do have to check the paren
-      if (curtok.type !== $PUNC_PAREN_OPEN && curtok.nl === true && propLeadingIdentToken.type === $ID_async) {
+      if (curtok.type !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && propLeadingIdentToken.type === $ID_async) {
         // - `{async \n key(){}}`
         //              ^
         // Always an error due to async being a restricted production
@@ -11604,7 +11606,7 @@ function Parser(code, options = {}) {
     ASSERT_skipAny($G_IDENT, lexerFlags);
 
     if (allowAsyncFunctions) {
-      if (curtok.type !== $PUNC_PAREN_OPEN && curtok.nl === true && identToken.type === $ID_async) {
+      if (curtok.type !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && identToken.type === $ID_async) {
         // - `{async \n key(){}}`
         //              ^
         // Always an error due to async being a restricted production
