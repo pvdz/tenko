@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=10:13 loc=10:1 `foo`#}
+  Unable to ASI, token: {# IDENT : nl=N pos=10:13 loc=10:1 `foo` (canonical=`foo`)#}
 
 new await foo
           ^------- error

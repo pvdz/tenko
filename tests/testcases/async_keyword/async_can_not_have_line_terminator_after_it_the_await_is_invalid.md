@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=25:26 loc=19:2 `x`#}
+  Unable to ASI, token: {# IDENT : nl=N pos=25:26 loc=19:2 `x` (canonical=`x`)#}
 
 async
 function f(){await x}

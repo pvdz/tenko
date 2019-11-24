@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=20:21 loc=20:1 `x`#}
+  Unable to ASI, token: {# IDENT : nl=N pos=20:21 loc=20:1 `x` (canonical=`x`)#}
 
 function f(){ yield x; }
                     ^------- error

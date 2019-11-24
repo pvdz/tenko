@@ -45,7 +45,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=44:47 loc=44:1 `foo`#}
+  Unable to ASI, token: {# IDENT : nl=N pos=44:47 loc=44:1 `foo` (canonical=`foo`)#}
 
 function *as(){ class A {f() { return await foo; }} }
                                             ^------- error

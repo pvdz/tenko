@@ -819,18 +819,18 @@ function Lexer(
       if (lastCanonizedInputLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, slice(start + 1, stop - 1), lastCanonizedInput);
+        return _createToken(type, start, stop, column, line, slice(start + 1, stop - 1));
       }
-      return _createToken(type, start, stop, column, line, lastCanonizedInput, lastCanonizedInput);
+      return _createToken(type, start, stop, column, line, lastCanonizedInput);
     }
     if (isIdentToken(type)) {
       let len = stop - start;
       if (lastCanonizedInputLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, slice(start, stop), lastCanonizedInput);
+        return _createToken(type, start, stop, column, line, slice(start, stop));
       }
-      return _createToken(type, start, stop, column, line, lastCanonizedInput, lastCanonizedInput);
+      return _createToken(type, start, stop, column, line, lastCanonizedInput);
     }
 
     if (isTickToken(type)) {
@@ -840,16 +840,16 @@ function Lexer(
       if (lastCanonizedInputLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, slice(start + 1, stop - closeWrapperLen), lastCanonizedInput);
+        return _createToken(type, start, stop, column, line, slice(start + 1, stop - closeWrapperLen));
       }
-      return _createToken(type, start, stop, column, line, lastCanonizedInput, lastCanonizedInput);
+      return _createToken(type, start, stop, column, line, lastCanonizedInput);
     }
-    return _createToken(type, start, stop, column, line, slice(start, stop), '');
+    return _createToken(type, start, stop, column, line, slice(start, stop));
   }
-  function _createToken(type, start, stop, column, line, str, canon) {
+  function _createToken(type, start, stop, column, line, str) {
     ASSERT(_createToken.length === arguments.length, 'arg count');
 
-    let token = createBaseToken(type, start, stop, column, line, str, canon);
+    let token = createBaseToken(type, start, stop, column, line, str);
 
     // <SCRUB DEV>
     token = {
@@ -858,31 +858,14 @@ function Lexer(
       ...token,
 
       toString() {
-        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${str}\`${canon&&canon!==str?' (canonical=`' + canon + '`)':''}#}`;
+        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${str}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
       },
     };
     // </SCRUB DEV>
 
-    // Can no longer do this but I think it has served its purpose.
-    // ASSERT(
-    //   disableCanonPoison[0] ||
-    //   isIdentToken(type) ||
-    //   isStringToken(type) ||
-    //   isTickToken(type) ||
-    //   !void Object.defineProperty(
-    //     token,
-    //     'canon',
-    //     {
-    //       get: () => disableCanonPoison[0] || ASSERT(false, 'do not read .canon on non-ident tokens (' + token + ')'),
-    //       set: () => disableCanonPoison[0] || ASSERT(false, 'do not write to .canon on non-ident tokens (' + token + ')')
-    //     }
-    //   ),
-    //   '(debugging)'
-    // );
-
     return token;
   }
-  function createBaseToken(type, start, stop, column, line, str, canon) {
+  function createBaseToken(type, start, stop, column, line, str) {
     ASSERT(createBaseToken.length === arguments.length, 'arg count');
 
     if (babelTokenCompat) {
@@ -903,10 +886,6 @@ function Lexer(
         column, // of first char of token (we still have to set this as Tenko uses this)
         line, // of first char of token (we still have to set this as Tenko uses this)
         str,
-        // :'( https://tc39.github.io/ecma262/#prod-EscapeSequence
-        // The ReservedWord definitions are specified as literal sequences of specific SourceCharacter elements.
-        // A code point in a ReservedWord cannot be expressed by a \ UnicodeEscapeSequence.
-        canon, // will NOT contain escapes, only for idents, strings, and templates // TODO: should perf check this, perhaps we need to take this slowpath differently
       };
     }
 
@@ -917,10 +896,6 @@ function Lexer(
       column, // of first char of token
       line, // of first char of token
       str,
-      // :'( https://tc39.github.io/ecma262/#prod-EscapeSequence
-      // The ReservedWord definitions are specified as literal sequences of specific SourceCharacter elements.
-      // A code point in a ReservedWord cannot be expressed by a \ UnicodeEscapeSequence.
-      canon, // will NOT contain escapes, only for idents, strings, and templates // TODO: should perf check this, perhaps we need to take this slowpath differently
     };
   }
 
