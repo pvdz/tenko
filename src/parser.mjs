@@ -810,7 +810,7 @@ function Parser(code, options = {}) {
     // The column offsets at 0
 
     AST_setNode(prop, newNode);
-    _path.push(newNode);
+    _path[_path.length] = newNode;
     ASSERT(_pnames.push(prop), '(dev-only verification and debugging tool)');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
   }
@@ -906,7 +906,7 @@ function Parser(code, options = {}) {
 
     let p = parentNode[astProp];
     if (Array.isArray(p)) {
-      p.push(node);
+      p[p.length] = node;
     }
     else {
       ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`);
@@ -928,7 +928,7 @@ function Parser(code, options = {}) {
 
     let p = parentNode[astProp];
     if (Array.isArray(p)) {
-      p.push(node);
+      p[p.length] = node;
     }
     else {
       ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`);
@@ -1155,7 +1155,8 @@ function Parser(code, options = {}) {
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
     ASSERT(Array.isArray(_path[_path.length - 1][prop]), 'expecting to add to an existing array');
 
-    _path[_path.length - 1][prop].push(value);
+    const arr = _path[_path.length - 1][prop];
+    arr[arr.length] = value;
   }
   function AST_popNode(prop) {
     ASSERT(AST_popNode.length === arguments.length, 'arg count');
@@ -1406,11 +1407,11 @@ function Parser(code, options = {}) {
     // Move and transform a ExpressionStatement<Literal<"use strict">> node to directives Directive<DirectiveLiteral>>
     while (node.body.length && node.body[0].directive !== undefined) {
       let dir = node.body.shift();
-      dirs.push({
+      dirs[dirs.length] = {
         type: 'Directive',
         loc: dir.loc,
         value: dir.expression,
-      });
+      };
       dir.expression.type = 'DirectiveLiteral';
     }
   }
@@ -6116,7 +6117,7 @@ function Parser(code, options = {}) {
     while (curtok.type === $PUNC_PAREN_OPEN) {
       ++parens;
       parenToken = curtok;
-      pees.push(curtok);
+      pees[pees.length] = curtok;
 
       // Note: next is expression start or `)` in case of `delete (()=>{})`
       ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // `delete (/x/.y)`, for bonus points
@@ -6298,7 +6299,7 @@ function Parser(code, options = {}) {
     if (nestedLabels === PARENT_NOT_LABEL) {
       nestedLabels = [labelName];
     } else {
-      nestedLabels.push(labelName);
+      nestedLabels[nestedLabels.length] = labelName;
     }
 
     // We have already consumed the colon for the label so the next token must start the child-statement of this label
