@@ -464,6 +464,7 @@ function Lexer(
   let finished = false; // generated an $EOF?
   let lastParsedIdent = ''; // updated after parsing an ident. used to canonicalize escaped identifiers (a\u{65}b -> aab). this var will NOT contain escapes
   let lastCanonizedString = ''; // updated while parsing a string token. escapes will be unescaped. Used for .value in AST.
+  let lastCanonizedStringLen = 0; // work around an inline cache bug (lastCanonizedString.length would cause megamorphic deopt for some reason)
   let lastRegexUnicodeEscapeOrd = 0; // need this to validate unicode escapes in named group identifiers :/
   let lastPotentialRegexError = ''; // If regex scanner is an error then this is the message. Many errors require flag validation at the end.
   let lastReportableLexerError = ''; // Set whenever an $error is or will be returned
@@ -810,11 +811,12 @@ function Lexer(
     ASSERT(typeof type === 'number', 'type is enum');
     ASSERT(typeof nl === 'boolean', 'nl bool');
 
-    ASSERT(typeof lastCanonizedString === 'string', 'euhhhh what?');
+    ASSERT(typeof lastCanonizedString !== 'string' || lastCanonizedString.length === lastCanonizedStringLen, 'the len cache should be equal to the canonized string len itself (thats the point)');
+
     if (isStringToken(type)) {
       let len = (stop - start) - 2; // 2=quotes
       ASSERT(typeof len === 'number', 'ok dit ook he');
-      if (lastCanonizedString.length !== len) {
+      if (lastCanonizedStringLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
         return _createToken(type, start, stop, column, line, nl, slice(start + 1, stop - 1), lastCanonizedString);
@@ -835,7 +837,7 @@ function Lexer(
       let closeWrapperLen = (type === $TICK_HEAD || type === $TICK_BODY || type === $TICK_BAD_HEAD || type === $TICK_BAD_BODY ? 2 : 1);
       let len = (stop - start) - (1 + closeWrapperLen); // 2 (or 3) for the template begin/end chars
 
-      if (lastCanonizedString.length !== len) {
+      if (lastCanonizedStringLen !== len) {
         // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
         // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
         return _createToken(type, start, stop, column, line, nl, slice(start + 1, stop - closeWrapperLen), lastCanonizedString);
@@ -973,6 +975,7 @@ function Lexer(
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
 
     lastCanonizedString = '';
+    lastCanonizedStringLen = 0;
 
     let pointerOffset = pointer;
     let badEscape = false;
@@ -1013,6 +1016,7 @@ function Lexer(
           }
 
           lastCanonizedString += slice(pointerOffset, pointer - 1);
+          lastCanonizedStringLen += (pointer - 1) - pointerOffset;
 
           return marker === $$DQUOTE_22 ? $STRING_DOUBLE : $STRING_SINGLE;
         }
@@ -1026,6 +1030,7 @@ function Lexer(
 
         if (c === $$BACKSLASH_5C) { // This seems to hit quite frequently, relative to this function
           lastCanonizedString += slice(pointerOffset, pointer);
+          lastCanonizedStringLen += pointer - pointerOffset;
           // The canonized value will be updated too
           badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
           pointerOffset = pointer;
@@ -1085,30 +1090,39 @@ function Lexer(
 
       case $$T_74:
         lastCanonizedString += '\t';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$N_6E:
         lastCanonizedString += '\n';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$R_72:
         lastCanonizedString += '\r';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$B_62:
         lastCanonizedString += '\b';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$F_66:
         lastCanonizedString += '\f';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$V_76:
         lastCanonizedString += '\v';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$SQUOTE_27:
         lastCanonizedString += '\'';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$DQUOTE_22:
         lastCanonizedString += '"';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       case $$BACKSLASH_5C:
         lastCanonizedString += '\\';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
 
       case $$LF_0A:
@@ -1125,6 +1139,7 @@ function Lexer(
 
       default:
         lastCanonizedString += String.fromCharCode(c);
+        ++lastCanonizedStringLen; // Always 1 char
     }
 
 
@@ -1166,6 +1181,7 @@ function Lexer(
       ASSERT(ASSERT_peekUncached() === d);
       skip();
       lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b, c, d), 16));
+      ++lastCanonizedStringLen; // Always 1 char
       return GOOD_ESCAPE;
     } else {
       if (!lastReportableLexerError) lastReportableLexerError = 'At least one character of the unicode escape was not a valid hex (0-9a-f) character';
@@ -1193,6 +1209,7 @@ function Lexer(
       if (!isHex(a)) {
         if (a === $$CURLY_R_7D) {
           lastCanonizedString += '\0';
+          ++lastCanonizedStringLen;
           ASSERT_skip($$CURLY_R_7D);
           return GOOD_ESCAPE;
         }
@@ -1206,6 +1223,7 @@ function Lexer(
     if (!isHex(b)) {
       if (b === $$CURLY_R_7D) {
         lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a), 16));
+        ++lastCanonizedStringLen; // Always 1 char
         ASSERT_skip($$CURLY_R_7D);
         return GOOD_ESCAPE;
       }
@@ -1218,6 +1236,7 @@ function Lexer(
     if (!isHex(c)) {
       if (c === $$CURLY_R_7D) {
         lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b), 16));
+        ++lastCanonizedStringLen; // Always 1 char
         ASSERT_skip($$CURLY_R_7D);
         return GOOD_ESCAPE;
       }
@@ -1230,6 +1249,7 @@ function Lexer(
     if (!isHex(d)) {
       if (d === $$CURLY_R_7D) {
         lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b, c), 16));
+        ++lastCanonizedStringLen; // Always 1 char
         ASSERT_skip($$CURLY_R_7D);
         return GOOD_ESCAPE;
       }
@@ -1242,6 +1262,7 @@ function Lexer(
     if (!isHex(e)) {
       if (e === $$CURLY_R_7D) {
         lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b, c, d), 16));
+        ++lastCanonizedStringLen; // Always 1 char
         ASSERT_skip($$CURLY_R_7D);
         return GOOD_ESCAPE;
       }
@@ -1253,7 +1274,9 @@ function Lexer(
     let f = peek();
     if (!isHex(f)) {
       if (f === $$CURLY_R_7D) {
-        lastCanonizedString += String.fromCodePoint(parseInt(String.fromCharCode(a, b, c, d, e), 16));
+        let s = String.fromCodePoint(parseInt(String.fromCharCode(a, b, c, d, e), 16));
+        lastCanonizedString += s;
+        lastCanonizedStringLen += s.length; // 1 or 2 (I think always 2?)
         ASSERT_skip($$CURLY_R_7D);
         return GOOD_ESCAPE;
       }
@@ -1270,7 +1293,9 @@ function Lexer(
 
     // the total may not exceed 0x10ffff which means that at six digits we only have to validate the first two
     if (a === $$0_30 || (a === $$1_31 && b === $$0_30)) {
-      lastCanonizedString += String.fromCodePoint(parseInt(String.fromCharCode(a, b, c, d, e, f), 16));
+      let s = String.fromCodePoint(parseInt(String.fromCharCode(a, b, c, d, e, f), 16));
+      lastCanonizedString += s;
+      lastCanonizedStringLen += s.length; // 1 or 2 (I think always 2?)
       ASSERT_skip($$CURLY_R_7D);
       return GOOD_ESCAPE;
     }
@@ -1304,10 +1329,12 @@ function Lexer(
       ASSERT_skip(a);
       ASSERT_skip(b);
       lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b), 16));
+      ++lastCanonizedStringLen; // Always 1 char
       return GOOD_ESCAPE;
     } else {
       // '\xz' should have 'xz' as canonized value
       lastCanonizedString += 'x';
+      ++lastCanonizedStringLen;
       if (!lastReportableLexerError) lastReportableLexerError = 'At least one of the two hex characters were not hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
@@ -1341,6 +1368,7 @@ function Lexer(
         // [v]: `"\0x"`
         // \0 is not an octal escape, it's a nul, but whatever
         lastCanonizedString += '\0';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       }
 
@@ -1368,12 +1396,15 @@ function Lexer(
         // \0 is not an octal escape, it's a nul, but whatever
         // In web compat mode the following char can be 8 and 9 according to the extended syntax
         lastCanonizedString += '\0';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       } else if (a === $$8_38) {
         lastCanonizedString += '8';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       } else if (a === $$9_39) {
         lastCanonizedString += '9';
+        ++lastCanonizedStringLen;
         return GOOD_ESCAPE;
       }
     }
@@ -1381,6 +1412,7 @@ function Lexer(
     if (b < $$0_30 || b > $$7_37) {
       // Max valid octal escape is 0377 so if a >= 4 then it's max 2 digits so we can return now
       lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a), 8));
+      ++lastCanonizedStringLen; // Always 1 char
       return GOOD_ESCAPE;
     }
 
@@ -1389,16 +1421,19 @@ function Lexer(
     if (a > $$3_33) {
       // Max valid octal escape is 0377 so if a >= 4 then it's max 2 digits so we can return now
       lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b), 8));
+      ++lastCanonizedStringLen; // Always 1 char
       return GOOD_ESCAPE;
     }
     let c = peek();
     if (c < $$0_30 || c > $$7_37) {
       lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b), 8));
+      ++lastCanonizedStringLen; // Always 1 char
       return GOOD_ESCAPE;
     }
 
     ASSERT_skip(c);
     lastCanonizedString += String.fromCharCode(parseInt(String.fromCharCode(a, b, c), 8));
+    ++lastCanonizedStringLen; // Always 1 char
     return GOOD_ESCAPE;
   }
 
@@ -1494,6 +1529,7 @@ function Lexer(
     // - `...${expr}...${expr}...`     // tick_head, tick_body (the middle part), and tick_tail
 
     lastCanonizedString = '';
+    lastCanonizedStringLen = 0;
 
     let lastOffset = pointer;
     let badEscapes = false;
@@ -1507,12 +1543,14 @@ function Lexer(
         if (eof()) {
           if (!lastReportableLexerError) lastReportableLexerError = 'Unclosed template string';
           lastCanonizedString += slice(lastOffset, pointer);
+          lastCanonizedStringLen += pointer - lastOffset;
           return $ERROR;
         }
         c = peek();
 
         if (c === $$CURLY_L_7B) {
           lastCanonizedString += slice(lastOffset, pointer - 1);
+          lastCanonizedStringLen += (pointer - 1) - lastOffset;
           ASSERT_skip($$CURLY_L_7B);
           return badEscapes ? (fromTick ? $TICK_BAD_HEAD : $TICK_BAD_BODY) : (fromTick ? $TICK_HEAD : $TICK_BODY);
         }
@@ -1520,6 +1558,7 @@ function Lexer(
 
       if (c === $$TICK_60) {
         lastCanonizedString += slice(lastOffset, pointer);
+        lastCanonizedStringLen += pointer - lastOffset;
         ASSERT_skip($$TICK_60);
         return badEscapes ? (fromTick ? $TICK_BAD_PURE : $TICK_BAD_TAIL) : (fromTick ? $TICK_PURE : $TICK_TAIL);
       }
@@ -1536,6 +1575,7 @@ function Lexer(
         incrementLine();
       } else if (c === $$BACKSLASH_5C) {
         lastCanonizedString += slice(lastOffset, pointer);
+        lastCanonizedStringLen += pointer - lastOffset;
         badEscapes = parseStringEscape(lexerFlags, FOR_TEMPLATE) || badEscapes;
         lastOffset = pointer;
       } else {
@@ -1544,6 +1584,7 @@ function Lexer(
     }
 
     lastCanonizedString += slice(lastOffset, pointer);
+    lastCanonizedStringLen += pointer - lastOffset;
     if (!lastReportableLexerError) lastReportableLexerError = 'Unclosed template literal';
     return $ERROR;
   }
