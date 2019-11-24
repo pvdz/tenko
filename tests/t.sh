@@ -289,7 +289,7 @@ if [[ "${HF}" = "yes" ]]; then
       fi
 
       # Transform the build file inline
-      ${NODE_BIN} --experimental-modules ../heatfiler/bin/cli.mjs --file ../tenko/build/build_w_ast.mjs --inline --post-node --interval-sync 1000000
+      ${NODE_BIN} --experimental-modules ../heatfiler/bin/cli.mjs --file ../tenko/build/tenko.prod.mjs --inline --post-node --interval-sync 1000000
     else
       echo "Running on src"
       HAS_SRC_CHANGES=$(git diff src)
@@ -332,7 +332,7 @@ case "${ACTION}" in
     build)
       ${NODE_BIN} ${INSPECT_NODE} --experimental-modules cli/build.mjs ${NOCOMP} ${NOAST} ${NOMIN} ${INSPECT_ZEPAR} ${NATIVESYMBOLS}
       if [[ ! -z "${PRETTIER}" ]]; then
-          node_modules/.bin/prettier build/build_w_ast.mjs --write
+          node_modules/.bin/prettier build/tenko.prod.mjs --write
       fi
     ;;
 
