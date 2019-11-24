@@ -2832,7 +2832,7 @@ function Parser(code, options = {}) {
     ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN, 'all callers should have called `skipToParenOpenOrDie()` which should verify this invariant');
 
     ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, lexerFlags);
-    parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), ASSIGN_EXPR_IS_OK, headProp);
+    parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), headProp);
     if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Missing closing paren of statement header, found `' + tokenStrForError(curtok) + '` instead');
     ASSERT_skipToStatementStart($PUNC_PAREN_CLOSE, lexerFlags);
   }
@@ -3743,6 +3743,7 @@ function Parser(code, options = {}) {
     ASSERT(parseAsyncExpression.length === arguments.length, 'arg count');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
+
     // parsed the `async` keyword (-> asyncToken)
     return _parseAsync(lexerFlags, DO_NOT_BIND, IS_EXPRESSION, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, UNDEF_EXPORTS, NOT_LABELLED, FDS_ILLEGAL, leftHandSideExpression, astProp);
   }
@@ -4440,7 +4441,7 @@ function Parser(code, options = {}) {
       // - `export default 15`
 
       // any expression is exported as is (but is not a live binding)
-      parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'declaration');
+      parseExpression(lexerFlags, 'declaration');
       parseSemiOrAsi(lexerFlags);
     }
 
@@ -5213,7 +5214,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToExpressionStart($ID_of, lexerFlags);
     // `for (a of b=c) ..`
     // Note that this rhs is an AssignmentExpression, _not_ a SequenceExpression
-    parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+    parseExpression(lexerFlags, 'right');
   }
   function parseForFromOf(lexerFlags, forToken, assignable, astProp) {
     ASSERT(parseForFromOf.length === arguments.length, 'arg count');
@@ -5235,7 +5236,7 @@ function Parser(code, options = {}) {
     }, 'left');
     ASSERT_skipToExpressionStart($ID_in, lexerFlags);
     // `for (a in b=c) ..`
-    parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+    parseExpressions(lexerFlags, 'right');
   }
   function parseForFromSemi(lexerFlags, startOfForHeaderToken, astProp) {
     ASSERT(parseForFromSemi.length === arguments.length, 'arg count');
@@ -5269,7 +5270,7 @@ function Parser(code, options = {}) {
     if (curtok.type === $PUNC_SEMI) {
       AST_set('test', null);
     } else {
-      parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'test');
+      parseExpressions(lexerFlags, 'test');
       if (curtok.type !== $PUNC_SEMI) {
         THROW('Missing second semi in `for` header, found `' + tokenStrForError(curtok) + '` instead');
       }
@@ -5280,7 +5281,7 @@ function Parser(code, options = {}) {
     if (curtok.type === $PUNC_PAREN_CLOSE) {
       AST_set('update', null);
     } else {
-      parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'update');
+      parseExpressions(lexerFlags, 'update');
     }
   }
   function parsePatternTailInForHeader(lexerFlags, patternStartToken, closingPuncType, assignable, destructible, awaitable, astProp) {
@@ -5801,7 +5802,7 @@ function Parser(code, options = {}) {
       AST_set('argument', null);
     } else {
       if (tok_getNlwas() === false && curtok.type !== $EOF && curtok.type !== $PUNC_SEMI && curtok.type !== $PUNC_CURLY_CLOSE) {
-        parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'argument');
+        parseExpressions(lexerFlags, 'argument');
       }
       else {
         AST_set('argument', null);
@@ -5854,7 +5855,7 @@ function Parser(code, options = {}) {
           test: undefined,
           consequent: [],
         });
-        parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'test');
+        parseExpressions(lexerFlags, 'test');
         if (curtok.type !== $PUNC_COLON) THROW('Missing colon after case expr');
       } else if (curtok.type === $ID_default) {
         if (hadDefault) THROW('Found second `default` in same switch');
@@ -5888,7 +5889,7 @@ function Parser(code, options = {}) {
     });
     if (tok_getNlwas() === true) THROW('Found a newline between `throw` and its argument but that is not allowed');
     let tmpLexerFlags = sansFlag(lexerFlags, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
-    parseExpressions(tmpLexerFlags, ASSIGN_EXPR_IS_OK, 'argument'); // mandatory1
+    parseExpressions(tmpLexerFlags, 'argument'); // mandatory1
     parseSemiOrAsi(lexerFlags);
     AST_close('ThrowStatement');
   }
@@ -6077,7 +6078,7 @@ function Parser(code, options = {}) {
       loc: AST_getBaseLoc(identToken),
       expression: undefined,
     });
-    parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, ASSIGN_EXPR_IS_OK, 'expression');
+    parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, 'expression');
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
@@ -6378,7 +6379,7 @@ function Parser(code, options = {}) {
       expression: undefined,
     });
     // Note: an arrow would create a new scope and there is no other way to introduce a new binding from here on out
-    parseExpressions(lexerFlags, ASSIGN_EXPR_IS_OK, 'expression');
+    parseExpressions(lexerFlags, 'expression');
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
@@ -6635,7 +6636,7 @@ function Parser(code, options = {}) {
           left: undefined,
           right: undefined,
         }, 'left');
-        parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+        parseExpression(lexerFlags, 'right');
         AST_close('AssignmentPattern');
       } else {
         ASSERT(bindingOrigin !== FROM_CATCH, 'catch is default');
@@ -6646,7 +6647,7 @@ function Parser(code, options = {}) {
           id: undefined,
           init: undefined,
         }, 'id');
-        parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'init');
+        parseExpression(lexerFlags, 'init');
         AST_close('VariableDeclarator');
       }
     }
@@ -6929,12 +6930,12 @@ function Parser(code, options = {}) {
   // ### expressions (functions below should not call functions above)
 
 
-  function parseExpression(lexerFlags, allowAssignment, astProp) {
-    ASSERT(arguments.length === parseExpression.length, 'expecting all args');
-    ASSERT_ASSIGN_EXPR(allowAssignment);
+  function parseExpression(lexerFlags, astProp) {
+    ASSERT(parseExpression.length === arguments.length, 'arg count');
+    ASSERT(typeof astProp === 'string', 'astProp string');
 
     let startToken = curtok;
-    let assignable = parseValue(lexerFlags, allowAssignment, NOT_NEW_ARG, NOT_LHSE, astProp);
+    let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
     return parseExpressionFromOp(lexerFlags, startToken, assignable, astProp);
   }
   function parseExpressionAfterLiteral(lexerFlags, literalToken, astProp) {
@@ -6945,12 +6946,11 @@ function Parser(code, options = {}) {
     let assignable = parseValueTail(lexerFlags, literalToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
     parseExpressionFromOp(lexerFlags, literalToken, assignable, astProp);
   }
-  function parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, allowAssignment, astProp) {
+  function parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, astProp) {
     ASSERT(parseExpressionAfterIdent.length === arguments.length, 'arg count');
-    ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_BINDING_TYPE(bindingType);
 
-    let assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, allowAssignment, astProp);
+    let assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
     ASSERT(typeof assignable === 'number', 'assignanum', assignable);
     assignable = parseExpressionFromOp(lexerFlags, identToken, assignable, astProp);
     ASSERT(typeof assignable === 'number', 'assignanum', assignable);
@@ -7123,7 +7123,7 @@ function Parser(code, options = {}) {
     }, 'left');
     ASSERT_skipToExpressionStart(curtok.str, lexerFlags);
 
-    let rhsAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+    let rhsAssignable = parseExpression(lexerFlags, 'right');
     AST_close('AssignmentExpression');
 
     // - `a.b = x`
@@ -7216,33 +7216,32 @@ function Parser(code, options = {}) {
     // you can have an assignment between `?` and `:` but not after `:`
     // the `in` is allowed between as well because there can be no ambiguity
     // TODO: add testcase where NO_ASI is necessary. Not sure it is but can't determine that it is not. Go fuzzer?
-    let midAssignable = parseExpression(sansFlag(lexerFlags, LF_IN_FOR_LHS) | LF_NO_ASI, ASSIGN_EXPR_IS_OK, 'consequent');
+    let midAssignable = parseExpression(sansFlag(lexerFlags, LF_IN_FOR_LHS) | LF_NO_ASI, 'consequent');
     if (curtok.type !== $PUNC_COLON) {
       if (curtok.type === $PUNC_COMMA) THROW('Can not use comma inside ternary expressions');
       THROW('Unexpected character inside ternary');
     }
     ASSERT_skipToExpressionStart(':', lexerFlags);
-    let rhsAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'alternate');
+    let rhsAssignable = parseExpression(lexerFlags, 'alternate');
     AST_close('ConditionalExpression');
 
     return setNotAssignable(midAssignable | rhsAssignable);
   }
 
-  function parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp) {
+  function parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, astProp) {
     ASSERT(parseExpressionsAfterIdent.length === arguments.length, 'arg count');
-    ASSERT_ASSIGN_EXPR(allowAssignment);
 
-    let assignableForPiggies = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_NONE, allowAssignment, astProp)
+    let assignableForPiggies = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_NONE, astProp)
     if (curtok.type === $PUNC_COMMA) {
       assignableForPiggies = _parseExpressions(lexerFlags, identToken, assignableForPiggies, astProp);
     }
     return assignableForPiggies;
   }
-  function parseExpressions(lexerFlags, allowAssignment, astProp) {
+  function parseExpressions(lexerFlags, astProp) {
     ASSERT(arguments.length === parseExpressions.length, 'arg count');
-    ASSERT_ASSIGN_EXPR(allowAssignment);
+
     let startOfFirstExprToken = curtok;
-    let assignableForPiggies = parseExpression(lexerFlags, allowAssignment, astProp);
+    let assignableForPiggies = parseExpression(lexerFlags, astProp);
     if (curtok.type === $PUNC_COMMA) {
       assignableForPiggies = _parseExpressions(lexerFlags, startOfFirstExprToken, assignableForPiggies, astProp);
     }
@@ -7265,7 +7264,7 @@ function Parser(code, options = {}) {
     // current node should already be a SequenceExpression here. it wont be closed here either
     do {
       ASSERT_skipToExpressionStart(',', lexerFlags);
-      let nowAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+      let nowAssignable = parseExpression(lexerFlags, astProp);
       assignableForPiggies |= nowAssignable; // make sure to propagate the await/yield flags
     } while (curtok.type === $PUNC_COMMA);
     return setNotAssignable(assignableForPiggies);
@@ -7346,7 +7345,11 @@ function Parser(code, options = {}) {
 
   function parseValue(lexerFlags, allowAssignment, isNewArg, leftHandSideExpression, astProp) {
     ASSERT(arguments.length === parseValue.length, 'arg count');
+    ASSERT(typeof lexerFlags === 'number', 'lf is bitfield');
+    ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum');
+    ASSERT(leftHandSideExpression === NOT_LHSE || leftHandSideExpression === ONLY_LHSE, 'enum');
     ASSERT_ASSIGN_EXPR(allowAssignment);
+    ASSERT(typeof astProp === 'string', 'astProp string');
 
     let startToken = curtok;
     let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MUST, isNewArg, allowAssignment, leftHandSideExpression, astProp);
@@ -7363,13 +7366,12 @@ function Parser(code, options = {}) {
     let assignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
     return parseValueTail(lexerFlags, identToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
-  function parseYieldValueMaybe(lexerFlags, allowAssignment, astProp) {
+  function parseYieldValueMaybe(lexerFlags, astProp) {
     ASSERT(parseYieldValueMaybe.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
-    ASSERT_ASSIGN_EXPR(allowAssignment);
 
     let argStartToken = curtok;
-    let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MAYBE, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
+    let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MAYBE, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
     // TODO: how to properly solve this when there are no tokens? can we even do that? (-> lexer head)
     if (curtok === argStartToken) return YIELD_WITHOUT_VALUE;
     assignable = parseValueTail(lexerFlags, argStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
@@ -8015,7 +8017,7 @@ function Parser(code, options = {}) {
     }
     else if (curtok.type === $PUNC_STAR) {
       AST_set('delegate', true);
-      parseYieldStarArgument(lexerFlags, allowAssignment, 'argument');
+      parseYieldStarArgument(lexerFlags, 'argument');
     }
     else if (curtok.type === $PUNC_STAR_STAR) {
       THROW('Cannot use `yield` to the left of the `**` operator');
@@ -8033,7 +8035,9 @@ function Parser(code, options = {}) {
 
     return NOT_ASSIGNABLE | PIGGY_BACK_SAW_YIELD;
   }
-  function parseYieldStarArgument(lexerFlags, allowAssignment, astProp) {
+  function parseYieldStarArgument(lexerFlags, astProp) {
+    ASSERT(parseYieldStarArgument.length === arguments.length, 'arg count');
+
     // This is a "delegate". The argument is _required_ now. There is no further newline check, though.
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/yield*
     // [v] `yield * x`
@@ -8047,7 +8051,7 @@ function Parser(code, options = {}) {
 
     ASSERT_skipToExpressionStart('*', lexerFlags); // next is any value
     let valueStartToken = curtok;
-    let assignable = parseValue(lexerFlags, allowAssignment, NOT_NEW_ARG, NOT_LHSE, astProp); // arg required, no newline restrictions
+    let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp); // arg required, no newline restrictions
     parseExpressionFromOp(lexerFlags, valueStartToken, assignable, astProp);
   }
   function parseYieldVarname(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp) {
@@ -8070,7 +8074,7 @@ function Parser(code, options = {}) {
 
     let yieldArgStartToken = curtok;
     // there can be no newline between keyword `yield` and its argument (restricted production)
-    let hadValue = tok_getNlwas() === true ? YIELD_WITHOUT_VALUE : parseYieldValueMaybe(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+    let hadValue = tok_getNlwas() === true ? YIELD_WITHOUT_VALUE : parseYieldValueMaybe(lexerFlags, astProp);
     if (hadValue === YIELD_WITHOUT_VALUE) {
       AST_set(astProp, null);
     } else {
@@ -8100,6 +8104,7 @@ function Parser(code, options = {}) {
     ASSERT(parseArrowParenlessFromPunc.length === arguments.length, 'arg count');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
+    ASSERT_VALID(allowAssignment === ASSIGN_EXPR_IS_OK, 'arrows are assignment expressions so it should lead to an error if those are not allowed');
 
     if (curtok.type !== $PUNC_EQ_GT) {
       // [x]: `function *g() { async yield = {}; }`
@@ -8201,7 +8206,7 @@ function Parser(code, options = {}) {
       // keep parsing expression+tick until tick-tail
       let wasTail = IS_QUASI_TAIL;
       do {
-        awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, ASSIGN_EXPR_IS_OK, 'expressions');
+        awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, 'expressions');
         wasTail = curtok.type === $TICK_TAIL || curtok.type === $TICK_BAD_TAIL ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
         parseQuasiPart(lexerFlags, wasTail, false);
       } while (wasTail === NOT_QUASI_TAIL);
@@ -8323,7 +8328,7 @@ function Parser(code, options = {}) {
       computed: true,
     }, 'object');
     ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-    let nowAssignable = parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), ASSIGN_EXPR_IS_OK, 'property');
+    let nowAssignable = parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), 'property');
     // - `foo[await bar]`
     assignable = mergeAssignable(nowAssignable, assignable); // pass on piggies (yield, await, etc)
     if (curtok.type !== $PUNC_BRACKET_CLOSE) THROW('Expected the closing bracket `]` for a dynamic property, found `' + tokenStrForError(curtok) + '` instead');
@@ -8388,7 +8393,7 @@ function Parser(code, options = {}) {
       // keep parsing expression+tick until tick-tail
       let wasTail = IS_QUASI_TAIL;
       do {
-        awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, ASSIGN_EXPR_IS_OK, 'expressions');
+        awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, 'expressions');
         wasTail = (curtok.type === $TICK_TAIL || curtok.type === $TICK_BAD_TAIL) ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
         parseQuasiPart(lexerFlags, wasTail, allowBadEscapesInTaggedTemplates);
       } while (wasTail === NOT_QUASI_TAIL);
@@ -8480,11 +8485,11 @@ function Parser(code, options = {}) {
             loc: AST_getBaseLoc(spreadToken),
             argument: undefined,
           });
-          let nowAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'argument');
+          let nowAssignable = parseExpression(lexerFlags, 'argument');
           assignable = mergeAssignable(nowAssignable, assignable);
           AST_close('SpreadElement');
         } else {
-          let nowAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+          let nowAssignable = parseExpression(lexerFlags, astProp);
           assignable = mergeAssignable(nowAssignable, assignable);
         }
         if (curtok.type !== $PUNC_COMMA) break;
@@ -8546,7 +8551,7 @@ function Parser(code, options = {}) {
 
     ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, lexerFlags); // The arg to dynamic import is mandatory and an arbitrary expr
     // Note: the import call arg sets the +IN flag in the grammar (can't use `in` operator). So that's why we set it too
-    let assignable = parseExpression(lexerFlags | LF_IN_FOR_LHS, ASSIGN_EXPR_IS_OK, acornCompat ? 'source' : 'arguments');
+    let assignable = parseExpression(lexerFlags | LF_IN_FOR_LHS, acornCompat ? 'source' : 'arguments');
     if (curtok.type !== $PUNC_PAREN_CLOSE) {
       if (curtok.type === $PUNC_COMMA) {
         // [x]: `import(a, b)`
@@ -8631,7 +8636,7 @@ function Parser(code, options = {}) {
       if (insideForLhs) lexerFlags |= LF_IN_FOR_LHS;
 
       if (!babelCompat) AST_set('expression', true); // "body of arrow is expr"
-      parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'body');
+      parseExpression(lexerFlags, 'body');
     }
 
     {
@@ -8823,7 +8828,7 @@ function Parser(code, options = {}) {
 
         ASSERT(toplevelComma || curtok.type !== $PUNC_PAREN_CLOSE || assignable === ASSIGNABLE_UNDETERMINED, 'for group with one simple element, delete edge case');
 
-        let exprAssignable = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_ARG, ASSIGN_EXPR_IS_OK, astProp);
+        let exprAssignable = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_ARG, astProp);
         assignable = mergeAssignable(exprAssignable, assignable);
         SCOPE_addLexBinding(paramScoop, identToken.str, BINDING_TYPE_ARG, FDS_ILLEGAL);
 
@@ -8977,7 +8982,7 @@ function Parser(code, options = {}) {
       else {
         // arbitrary expression that is not destructible at the toplevel of a group
         destructible |= CANT_DESTRUCT;
-        let exprAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+        let exprAssignable = parseExpression(lexerFlags, astProp);
         // - `((a)) = b;`
         assignable = mergeAssignable(exprAssignable, assignable);
         if (curtok.type === $PUNC_COMMA) {
@@ -9796,7 +9801,7 @@ function Parser(code, options = {}) {
           }, 'left');
           ASSERT_skipToExpressionStart('=', lexerFlags);
           // The rhs of the assignment is irrelevant beyond yield/await flags
-          let rightAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+          let rightAssignable = parseExpression(lexerFlags, 'right');
           AST_close('AssignmentExpression');
 
           assignableYieldAwaitState |= rightAssignable;
@@ -9978,7 +9983,7 @@ function Parser(code, options = {}) {
             // pick up the flags from assignable and put them in destructible
             // - `= await bar`
             // - `= yield`
-            destructible |= parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right'); // save the piggies!
+            destructible |= parseExpression(lexerFlags, 'right'); // save the piggies!
             AST_close('AssignmentExpression');
           } else {
             // - `[2=x]`
@@ -10314,7 +10319,7 @@ function Parser(code, options = {}) {
       let curlyToken = curtok;
       // skip computed key part first because we need to figure out whether we're parsing a method
       ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-      let nowAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+      let nowAssignable = parseExpression(lexerFlags, astProp);
       // pass yield/await flags here (note that the assignability itself is irrelevant for this expr)
       // TODO: find a testcase where the setNotAssignable state fails...
       assignableForPiggies = setNotAssignable(nowAssignable | assignableForPiggies);
@@ -10432,7 +10437,7 @@ function Parser(code, options = {}) {
         let bracketOpenToken = curtok;
         // skip dynamic part first because we need to assert that we're parsing a method
         ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-        let assignablePiggies1 = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+        let assignablePiggies1 = parseExpression(lexerFlags, astProp);
         if (curtok.type !== $PUNC_BRACKET_CLOSE) {
           THROW('Missing closing square bracket for computed property member name, found `' + tokenStrForError(curtok) + '` instead');
         }
@@ -10525,7 +10530,7 @@ function Parser(code, options = {}) {
       // - `async function a(){     ({r} = await bar) => {}     }`
       // - `({x} = yield) => {}`
       // - `function *f(){ ({x} = yield) => {} }`
-      destructible |= parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+      destructible |= parseExpression(lexerFlags, 'right');
       AST_close('AssignmentExpression');
     } else if (isCompoundAssignment(curtok.type)) {
       // - `[x] += y`
@@ -10971,7 +10976,7 @@ function Parser(code, options = {}) {
           right: undefined,
         }, 'left');
         ASSERT_skipToExpressionStart('=', lexerFlags); // a forward slash after = has to be a regex
-        let nowAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+        let nowAssignable = parseExpression(lexerFlags, 'right');
         assignable = mergeAssignable(nowAssignable, assignable);
         AST_close('AssignmentExpression');
       }
@@ -11090,7 +11095,7 @@ function Parser(code, options = {}) {
         // `{   async *[foo](){}   }`
         let bracketOpenToken = curtok;
         ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-        let assignablePiggies = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+        let assignablePiggies = parseExpression(lexerFlags, astProp);
         assignable = mergeAssignable(assignablePiggies, assignable);
         if (curtok.type !== $PUNC_BRACKET_CLOSE) THROW('Missing right square bracket for computed property, found `' + tokenStrForError(curtok) + '` instead');
         ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
@@ -11166,7 +11171,7 @@ function Parser(code, options = {}) {
       // skip dynamic part first because we need to assert that we're parsing a method
       let bracketOpenToken = curtok;
       ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-      let assignablePiggies = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+      let assignablePiggies = parseExpression(lexerFlags, astProp);
       assignable = mergeAssignable(assignablePiggies, assignable);
       if (curtok.type !== $PUNC_BRACKET_CLOSE) {
         THROW('Missing closing square bracket for computed property name, found `' + tokenStrForError(curtok) + '` instead');
@@ -11854,7 +11859,7 @@ function Parser(code, options = {}) {
 
     // Note: the expression of computed keys of class methods are parsed with the context before the class
     // So the context is not guaranteed to be strict.
-    let nowAssignable = parseExpression(outerLexerFlags, ASSIGN_EXPR_IS_OK, astProp);
+    let nowAssignable = parseExpression(outerLexerFlags, astProp);
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
     // - `function *f(){  class x{[yield foo](a){}}  }`
@@ -12611,7 +12616,7 @@ function Parser(code, options = {}) {
           right: undefined,
         }, 'left');
         ASSERT_skipToExpressionStart('=', lexerFlags);
-        let nowAssignable = parseExpression(lexerFlags, ASSIGN_EXPR_IS_OK, 'right');
+        let nowAssignable = parseExpression(lexerFlags, 'right');
         assignable = mergeAssignable(nowAssignable, assignable);
         AST_close('AssignmentExpression');
         // at this point the end should be reached or another point in the code will throw an error on it
