@@ -724,9 +724,9 @@ function Lexer(
       case START_SPACE:
         return parseSpace();
       case START_ID:
-        return parseIdentifierRest(String.fromCharCode(c));
+        return parseIdentifierRest(String.fromCharCode(c), 1);
       case START_KEY:
-        if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c));
+        if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c), 1);
         return parsePotentialKeyword(c);
       case START_NL_SOLO:
         return parseNewlineSolo();
@@ -1864,12 +1864,12 @@ function Lexer(
     return $PUNC_STAR;
   }
 
-  function parseIdentifierRest(prevStr) {
+  function parseIdentifierRest(prevStr, prevLen) {
     // Returns a token type (!). See parseRegexIdentifierRest for regexes...
     ASSERT(parseIdentifierRest.length === arguments.length, 'arg count');
     ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty');
+    ASSERT(typeof prevLen === 'number' && prevStr.length === prevLen, 'should be in sync');
 
-    let buf = prevStr;
     let start = pointer;
 
     let c = 0;
@@ -1880,8 +1880,8 @@ function Lexer(
     }
 
     if (eof()) {
-      lastCanonizedInput = buf + slice(start, pointer);
-      lastCanonizedInputLen = lastCanonizedInput.length;
+      lastCanonizedInput = prevStr + slice(start, pointer);
+      lastCanonizedInputLen = prevLen + (pointer - start);
       return $IDENT;
     }
 
@@ -1893,8 +1893,8 @@ function Lexer(
       let wide = isIdentRestChrUnicode(c, pointer);
 
       if (wide === INVALID_IDENT_CHAR) {
-        lastCanonizedInput = buf + slice(start, pointer);
-        lastCanonizedInputLen = lastCanonizedInput.length;
+        lastCanonizedInput = prevStr + slice(start, pointer);
+        lastCanonizedInputLen = prevLen + (pointer - start);
         return $IDENT;
       }
 
@@ -1904,19 +1904,22 @@ function Lexer(
       skip();
 
       // Recursion ... should be okay for idents even without tail recursion?
-      return parseIdentifierRest(buf + slice(start, pointer));
+      return parseIdentifierRest(prevStr + slice(start, pointer), prevLen + (pointer - start));
     }
 
     if (s === START_BSLASH) {
       // `foo\u0030bar`  (is canonical ident `foo0bar`)
-      let x = buf + slice(start, pointer);
+      let x = prevStr + slice(start, pointer);
+      let xlen = prevLen + (pointer - start);
       ASSERT_skip($$BACKSLASH_5C);
-      return parseIdentFromUnicodeEscape(NON_START, x);
+      return parseIdentFromUnicodeEscape(NON_START, x, xlen);
     }
 
-    lastCanonizedInput = buf + slice(start, pointer);
-    lastCanonizedInputLen = lastCanonizedInput.length;
-    return $IDENT;
+    {
+      lastCanonizedInput = prevStr + slice(start, pointer);
+      lastCanonizedInputLen = prevLen + (pointer - start);
+      return $IDENT;
+    }
   }
   function isIdentRestCharAscii(c) {
     if (c >= $$A_61 && c <= $$Z_7A) return true;
@@ -1925,13 +1928,14 @@ function Lexer(
     if (c === $$$_24 || c === $$LODASH_5F) return true;
     return false;
   }
-  function parseIdentFromUnicodeEscape(fromStart, prev) {
-    ASSERT(typeof prev === 'string', 'prev should be string so far or empty');
+  function parseIdentFromUnicodeEscape(fromStart, prevStr, prevLen) {
+    ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty');
+    ASSERT(typeof prevLen === 'number' && prevStr.length === prevLen, 'should be in sync');
     ASSERT(input.charCodeAt(pointer-1) === $$BACKSLASH_5C, 'should have consumed the backslash');
 
     if (eof()) {
-      lastCanonizedInput = prev;
-      lastCanonizedInputLen = prev.length;
+      lastCanonizedInput = prevStr;
+      lastCanonizedInputLen = prevLen;
       if (!lastReportableLexerError) lastReportableLexerError = 'Encountered a backslash at end of input';
       return $ERROR;
     }
@@ -1951,9 +1955,9 @@ function Lexer(
     // Note: this is a slow path. and a super edge case.
     let start = pointer;
     if (parseIdentOrStringEscapeUnicode() === BAD_ESCAPE) {
-      parseIdentifierRest(prev); // keep on parsing the identifier but we will make it an error token
-      lastCanonizedInput = prev;
-      lastCanonizedInputLen = prev.length;
+      parseIdentifierRest(prevStr, prevLen); // keep on parsing the identifier but we will make it an error token
+      lastCanonizedInput = prevStr;
+      lastCanonizedInputLen = prevLen;
       if (!lastReportableLexerError) lastReportableLexerError = 'Only _unicode_ escapes are supported in identifiers';
       return $ERROR;
     }
@@ -1965,18 +1969,25 @@ function Lexer(
     ASSERT(data.charCodeAt(data.length - 1) !== $$CURLY_R_7D && isHex(data.charCodeAt(data.length - 1)), 'if wrapped, the closer should not be consumed yet');
 
     let ord = parseInt(data, 16);
-    if (ord > 0xffff) prev += String.fromCodePoint(ord); // there's a test... but if ord is >0xffff then fromCharCode can't properly deal with it
-    else prev += String.fromCharCode(ord);
+    if (ord > 0xffff) {
+      // there's a test... but if ord is >0xffff then fromCharCode can't properly deal with it
+      prevStr += String.fromCodePoint(ord);
+      prevLen += 2;
+    }
+    else {
+      prevStr += String.fromCharCode(ord);
+      ++prevLen;
+    }
     // the escaped char must still be a valid identifier character. then and only
     // then can we proceed to parse an identifier. otherwise we'll still parse
     // into an error token.
     if (fromStart === FIRST_CHAR && isIdentStart(ord, CODEPOINT_FROM_ESCAPE) !== INVALID_IDENT_CHAR) {
-      return parseIdentifierRest(prev);
+      return parseIdentifierRest(prevStr, prevLen);
     } else if (fromStart === NON_START && isIdentRestChr(ord, CODEPOINT_FROM_ESCAPE) !== INVALID_IDENT_CHAR) {
-      return parseIdentifierRest(prev);
+      return parseIdentifierRest(prevStr, prevLen);
     } else {
-      lastCanonizedInput = prev;
-      lastCanonizedInputLen = prev.length;
+      lastCanonizedInput = prevStr;
+      lastCanonizedInputLen = prevLen;
       if (!lastReportableLexerError) lastReportableLexerError = 'Identifier escape did not yield a valid identifier character';
       return $ERROR;
     }
@@ -2064,7 +2075,7 @@ function Lexer(
     let trie = KEYWORD_TRIE[c - $$A_61];
     let start = pointer - 1; // c was peekSkipped
     let n = start + 1;
-    if (trie === undefined) return parseIdentifierRest(slice(start, n));
+    if (trie === undefined) return parseIdentifierRest(slice(start, n), n - start);
     do {
       if (n >= len) return eofAfterPotentialKeyword(trie, n, start);
       let d = input.charCodeAt(n++);
@@ -2079,7 +2090,7 @@ function Lexer(
   function parseIdentRestNotKeyword(d, n, start) {
       pointer = n - 1;
       cache = d;
-      return parseIdentifierRest(slice(start, n - 1));
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
   }
   function eofAfterPotentialKeyword(trie, n, start) {
     // EOF
@@ -2103,7 +2114,7 @@ function Lexer(
     if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
       pointer = n - 1;
       cache = d;
-      return parseIdentifierRest(slice(start, n - 1));
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
     }
     if (s === START_UNICODE) {
       // maybe rest id
@@ -2120,13 +2131,13 @@ function Lexer(
         }
         return trie.hit;
       }
-      return parseIdentifierRest(slice(start, n - 1));
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
     }
     if (s === START_BSLASH) {
       pointer = n - 1;
       cache = d;
       // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
-      return parseIdentifierRest(slice(start, n - 1));
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
     }
 
     // So this must be the end of the identifier. Either we found a keyword, or we didn't :)
@@ -2428,7 +2439,7 @@ function Lexer(
   }
 
   function parseBackslash() {
-    return parseIdentFromUnicodeEscape(FIRST_CHAR, '');
+    return parseIdentFromUnicodeEscape(FIRST_CHAR, '', 0);
   }
 
   function regexSyntaxError(desc, ...rest) {
@@ -5042,7 +5053,7 @@ function Lexer(
     let wide = isIdentStart(cu, pointer - 1);
     if (wide !== INVALID_IDENT_CHAR) {
       if (wide === VALID_DOUBLE_CHAR) skip(); // c was skipped but cu was two (16bit) positions
-      return parseIdentifierRest(String.fromCodePoint(cu));
+      return parseIdentifierRest(String.fromCodePoint(cu), wide === VALID_DOUBLE_CHAR ? 2 : 1);
     }
 
     if (!lastReportableLexerError) lastReportableLexerError = 'Unexpected unicode character: ' + c + ' (' + String.fromCharCode(c) + ')';
