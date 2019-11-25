@@ -1133,7 +1133,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + str.length, token.stop),
       value: null,
       regex: {
         pattern: body,
@@ -1458,7 +1458,7 @@ function Parser(code, options = {}) {
       ASSERT(str.slice(0,3) === '-->' || str.slice(0, 4) === '<!--', 'only two types of html comment');
       // Note: html comments are single line ast nodes
       // typeName = 'CommentLine'
-      value = str.slice(0, 3) === '-->' ? commentToken.str.slice(3) : commentToken.str.slice(4);
+      value = str.slice(0, 3) === '-->' ? str.slice(3) : str.slice(4);
     }
 
     let commentNode = {
@@ -1525,17 +1525,18 @@ function Parser(code, options = {}) {
 
     return {
       type: 'NumericLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + str.length, token.stop),
       value: value,
       extra: { rawValue: value, raw: str},
     };
   }
   function AST_babelGetBigIntNode(token) {
+    let str = token.str;
     return {
       type: 'BigIntLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
-      value: token.str.slice(0, -1),
-      extra: {rawValue: token.str.slice(0, -1), raw: token.str}, // This will probably change ...
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + str.length, token.stop),
+      value: str.slice(0, -1),
+      extra: {rawValue: str.slice(0, -1), raw: str}, // This will probably change ...
     };
   }
   function AST_babelGetRegexNode(token) {
@@ -1554,7 +1555,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'RegExpLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + str.length, token.stop),
       pattern: body,
       flags: tail,
       extra: {rawValue: undefined, raw: str},
@@ -1562,12 +1563,13 @@ function Parser(code, options = {}) {
     };
   }
   function AST_acornGetBigIntNode(token) {
+    let str = token.str;
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
-      raw: token.str,
-      bigint: token.str.slice(0, -1),
-      value: BigInt(token.str.slice(0, -1)), // Ironically it doesn't accept bigint notation
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + str.length, token.stop),
+      raw: str,
+      bigint: str.slice(0, -1),
+      value: BigInt(str.slice(0, -1)), // Ironically it doesn't accept bigint notation
     };
   }
   function AST_acornGetRegexNode(token) {
@@ -1582,7 +1584,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + token.str.length, token.stop),
+      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + str.length, token.stop),
       value: new RegExp(body, tail), // Only difference
       regex: {
         pattern: body,
@@ -2228,7 +2230,7 @@ function Parser(code, options = {}) {
     ASSERT(scoopNew._desc = desc + '.scope', '(debugging)');
     return scoopNew;
   }
-  function SCOPE_addFuncDeclName(lexerFlags, scoop, name, bindingType, fdState) {
+  function SCOPE_addFuncDeclName(lexerFlags, scoop, canonName, bindingType, fdState) {
     ASSERT(SCOPE_addFuncDeclName.length === arguments.length, 'arg count');
     ASSERT([BINDING_TYPE_FUNC_VAR, BINDING_TYPE_FUNC_LEX, BINDING_TYPE_FUNC_STMT].includes(bindingType), 'either a func lex or var', bindingType);
     ASSERT(scoop === DO_NOT_BIND || scoop.isScope, 'expecting scoop', scoop);
@@ -2263,29 +2265,29 @@ function Parser(code, options = {}) {
     ASSERT((bindingType === BINDING_TYPE_FUNC_VAR) === (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)), 'redundancy?');
 
     if (bindingType === BINDING_TYPE_FUNC_VAR) {
-      SCOPE_addVarBinding(lexerFlags, scoop, name, bindingType);
+      SCOPE_addVarBinding(lexerFlags, scoop, canonName, bindingType);
     } else {
-      SCOPE_addLexBinding(scoop, name, bindingType, fdState);
+      SCOPE_addLexBinding(scoop, canonName, bindingType, fdState);
     }
   }
-  function SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, name) {
+  function SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, canonName) {
     ASSERT(SCOPE_actuallyAddBinding.length === arguments.length, 'arg count');
-    ASSERT(typeof name === 'string', 'name is a string');
+    ASSERT(typeof canonName === 'string', 'name is a string');
     ASSERT(scoop === DO_NOT_BIND || scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names, it must be a Map', scoop.names);
     ASSERT_BINDING_TYPE(bindingType);
 
     if (bindingType === BINDING_TYPE_VAR) {
-      SCOPE_addVarBinding(lexerFlags, scoop, name, bindingType);
+      SCOPE_addVarBinding(lexerFlags, scoop, canonName, bindingType);
     }
     else {
       // TODO: arg?
       // TODO: is fdState ever relevant when parsing a binding here?
-      SCOPE_addLexBinding(scoop, name, bindingType, FDS_ILLEGAL);
+      SCOPE_addLexBinding(scoop, canonName, bindingType, FDS_ILLEGAL);
     }
   }
-  function SCOPE_addVarBinding(lexerFlags, scoop, name, bindingType) {
+  function SCOPE_addVarBinding(lexerFlags, scoop, canonName, bindingType) {
     ASSERT(SCOPE_addVarBinding.length === arguments.length, 'arg count');
-    ASSERT(typeof name === 'string', 'name = string', name);
+    ASSERT(typeof canonName === 'string', 'name = string', canonName);
     ASSERT(scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names, it must be a Map');
     ASSERT_BINDING_TYPE(bindingType);
 
@@ -2480,7 +2482,7 @@ function Parser(code, options = {}) {
     let isLexBinding = SCOPE_bindingTypeIsLex(bindingType);
     let s = scoop;
     do {
-      let value = s.names === HAS_NO_BINDINGS || !s.names.has(name) ? BINDING_TYPE_NONE : s.names.get(name);
+      let value = s.names === HAS_NO_BINDINGS || !s.names.has(canonName) ? BINDING_TYPE_NONE : s.names.get(canonName);
       if (value !== BINDING_TYPE_NONE && SCOPE_bindingTypeIsLex(value)) {
         // There already was a binding of any kind with the same name on this statement level, or a variable declaration
         // of the same name in a statement that is a descendent of the current statement parent. This is the error.
@@ -2508,7 +2510,7 @@ function Parser(code, options = {}) {
       if (s === scoop) {
         // Things to only check in the statement/scope level where they appear
         if (value !== BINDING_TYPE_NONE && isLexBinding) {
-          THROW('Can not create a lexical binding for `' + name + '` because there already exists a binding on the same statement level');
+          THROW('Can not create a lexical binding for `' + canonName + '` because there already exists a binding on the same statement level');
         }
         else if (value === BINDING_TYPE_ARG && bindingType === BINDING_TYPE_ARG) {
           s.dupeParamErrorToken = curtok; // TOFIX: point to proper token
@@ -2522,11 +2524,11 @@ function Parser(code, options = {}) {
 
           // Shadowing catch clause vars with regular vars is okay in web compat mode...
         } else {
-          THROW('Can not create a binding for `' + name + '` because was already bound as a catch clause binding');
+          THROW('Can not create a binding for `' + canonName + '` because was already bound as a catch clause binding');
         }
       }
       if (s.names === HAS_NO_BINDINGS) s.names = new Map;
-      s.names.set(name, bindingType);
+      s.names.set(canonName, bindingType);
       s = s.parent;
     } while (s && s.type !== SCOPE_LAYER_FUNC_ROOT);
   }
@@ -2534,7 +2536,7 @@ function Parser(code, options = {}) {
     ASSERT_BINDING_TYPE(t);
     return t === BINDING_TYPE_LET || t === BINDING_TYPE_CONST || t === BINDING_TYPE_FUNC_LEX || t === BINDING_TYPE_FUNC_STMT || t === BINDING_TYPE_CLASS
   }
-  function SCOPE_addLexBinding(scoop, name, bindingType, fdState) {
+  function SCOPE_addLexBinding(scoop, canonName, bindingType, fdState) {
     ASSERT(SCOPE_addLexBinding.length === arguments.length, 'arg count');
     ASSERT(scoop === DO_NOT_BIND || scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names then it must be a Map');
     ASSERT_BINDING_TYPE(bindingType);
@@ -2551,7 +2553,7 @@ function Parser(code, options = {}) {
 
     // Scan the lexical records for any `catch` header record, have to scan all the way up to scope-root (func/glob)
     // for any such lexical records, confirm the current name does not appear in it, or throw. :'(
-    let value = scoop.names === HAS_NO_BINDINGS || !scoop.names.has(name) ? BINDING_TYPE_NONE : scoop.names.get(name);
+    let value = scoop.names === HAS_NO_BINDINGS || !scoop.names.has(canonName) ? BINDING_TYPE_NONE : scoop.names.get(canonName);
     if (value !== BINDING_TYPE_NONE) {
       if (bindingType === BINDING_TYPE_ARG) {
         // This is an error but we can't throw yet because we may be inside the not-yet-confirmed arrow header which
@@ -2568,12 +2570,12 @@ function Parser(code, options = {}) {
         // (so only ignore sibling function decls in blocks or switches, in sloppy mode, not in script global nor function root)
         // [v]: `{ function f() {} ; function f() {} }`
       } else {
-        THROW('Attempted to create a lexical binding for `' + name + '` but another binding already existed on the same level');
+        THROW('Attempted to create a lexical binding for `' + canonName + '` but another binding already existed on the same level');
       }
     }
 
-    if (scoop.type === SCOPE_LAYER_FUNC_BODY && scoop.parent.names !== HAS_NO_BINDINGS && scoop.parent.names.has(name)) {
-      THROW('Cannot create lexical binding for `' + name + '` because it shadows a function parameter');
+    if (scoop.type === SCOPE_LAYER_FUNC_BODY && scoop.parent.names !== HAS_NO_BINDINGS && scoop.parent.names.has(canonName)) {
+      THROW('Cannot create lexical binding for `' + canonName + '` because it shadows a function parameter');
     }
 
     if (scoop.type === SCOPE_LAYER_ARROW_PARAMS && value !== BINDING_TYPE_NONE) {
@@ -2587,7 +2589,7 @@ function Parser(code, options = {}) {
         // [v]: `e => { try {} catch (e) {} }`
         // [v]: `e => { try {} catch ([e]) {} }`
       } else {
-        THROW('Can not create a lexical binding for `' + name +'` because an arrow param already has that name');
+        THROW('Can not create a lexical binding for `' + canonName +'` because an arrow param already has that name');
       }
     }
 
@@ -2598,21 +2600,21 @@ function Parser(code, options = {}) {
     if (bindingType === BINDING_TYPE_CATCH_IDENT || bindingType === BINDING_TYPE_CATCH_OTHER) {
       // Detect duplicate catch binding of the same catch clause
       if (value === BINDING_TYPE_CATCH_IDENT || value === BINDING_TYPE_CATCH_OTHER) {
-        THROW('Can not create a lexical binding for `' + name + '` because it shadows a catch clause binding');
+        THROW('Can not create a lexical binding for `' + canonName + '` because it shadows a catch clause binding');
       }
     }
     else if (scoop.type === SCOPE_LAYER_CATCH_BODY) {
       // A lexical binding (or any var) in the catch block cannot be shadowing a catch clause binding
       ASSERT(scoop.parent && scoop.parent.type === SCOPE_LAYER_CATCH_HEAD, 'scoop body must have head as parent', scoop);
-      let parentValue = scoop.parent.names === HAS_NO_BINDINGS || !scoop.parent.names.has(name) ? BINDING_TYPE_NONE : scoop.parent.names.get(name);
+      let parentValue = scoop.parent.names === HAS_NO_BINDINGS || !scoop.parent.names.has(canonName) ? BINDING_TYPE_NONE : scoop.parent.names.get(canonName);
       if (parentValue === BINDING_TYPE_CATCH_IDENT || parentValue === BINDING_TYPE_CATCH_OTHER) {
-        THROW('Can not create a lexical binding for `' + name + '` because it shadows a catch clause binding');
+        THROW('Can not create a lexical binding for `' + canonName + '` because it shadows a catch clause binding');
       }
     }
 
     let s = scoop.parent;
     while (s && s.type !== SCOPE_LAYER_FUNC_ROOT) {
-      let value = s.names === HAS_NO_BINDINGS || !s.names.has(name)  ? BINDING_TYPE_NONE : s.names.get(name);
+      let value = s.names === HAS_NO_BINDINGS || !s.names.has(canonName)  ? BINDING_TYPE_NONE : s.names.get(canonName);
       if (s.type === SCOPE_LAYER_ARROW_PARAMS) {
         if (bindingType === BINDING_TYPE_CATCH_IDENT || bindingType === BINDING_TYPE_CATCH_OTHER) {
           // I guess we ignore this case...
@@ -2620,7 +2622,7 @@ function Parser(code, options = {}) {
           // [v]: `e => { try {} catch ([e]) {} }`
         }
         else if (value !== BINDING_TYPE_NONE && scoop.parent === s) {
-          THROW('Can not create a lexical binding for `' + name +'` because an arrow param already has that name');
+          THROW('Can not create a lexical binding for `' + canonName +'` because an arrow param already has that name');
         }
         else {
           // TODO: this one does not need a loop. `(a) => {{let a}}` is not a problem.
@@ -2636,7 +2638,7 @@ function Parser(code, options = {}) {
     }
 
     if (scoop.names === HAS_NO_BINDINGS) scoop.names = new Map;
-    scoop.names.set(name, bindingType);
+    scoop.names.set(canonName, bindingType);
   }
 
   function parseDirectivePrologues(lexerFlags, astProp) {
@@ -3132,7 +3134,7 @@ function Parser(code, options = {}) {
     ASSERT(curtok.type === $ID_function, 'already checked, not yet consumed');
     ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
 
-    let name = parseFunctionDeclaration(
+    let canonName = parseFunctionDeclaration(
       lexerFlags,
       scoop,
       fromStmtOrExpr === IS_EXPRESSION ? NOT_FUNC_DECL : IS_FUNC_DECL,
@@ -3151,7 +3153,7 @@ function Parser(code, options = {}) {
       // - `export default function x(){}`
       // the "default" and "*default*" cases are handled in the export parser
       // if this func has a name, record it by reference because return values are already used by something else
-      addBindingToExports(exportedBindings, name);
+      addBindingToExports(exportedBindings, canonName);
     }
 
     return NOT_ASSIGNABLE;
@@ -3249,7 +3251,7 @@ function Parser(code, options = {}) {
     let functionNameTokenToVerify = NO_ID_TO_VERIFY;
     let functionNameTokenToVerifyCanon = '';
 
-    let name = '';
+    let canonName = '';
     if (isIdentToken(curtok.type)) {
       functionNameTokenToVerify = curtok; // if not strict mode yet but this func has a directive, check it again
       functionNameTokenToVerifyCanon = tok_getCanon();
@@ -3268,7 +3270,7 @@ function Parser(code, options = {}) {
         (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)
       ) ? BINDING_TYPE_FUNC_VAR : BINDING_TYPE_FUNC_LEX;
 
-      name = functionNameTokenToVerify.str;
+      canonName = functionNameTokenToVerifyCanon;
 
       // Note: must verify id here and not after asserting the existence of the directive because by then the lexer flag
       // for async will have been merged and `async function await(){}` would be illegal.
@@ -3279,7 +3281,7 @@ function Parser(code, options = {}) {
       // declarations bind in outer scope, expressions bind in inner scope, methods bind ...  ehh?
       if (isFuncDecl === IS_FUNC_DECL) {
         // TODO: add test case for catch shadow
-        SCOPE_addFuncDeclName(lexerFlags, outerScoop, name, nameBindingType, fdState);
+        SCOPE_addFuncDeclName(lexerFlags, outerScoop, canonName, nameBindingType, fdState);
       }
 
       // create new lexical binding to "hide" the function name.
@@ -3344,7 +3346,7 @@ function Parser(code, options = {}) {
       AST_close(isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression');
     }
 
-    return name;
+    return canonName;
   }
   function getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, starToken) {
     ASSERT(getFuncIdentGeneratorState.length === arguments.length, 'arg count');
@@ -4134,7 +4136,7 @@ function Parser(code, options = {}) {
     if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
       let labelToken = curtok;
       let labelTokenCanon = tok_getCanon();
-      if (!findLabel(labelSet, labelToken.str, FROM_BREAK)) {
+      if (!findLabel(labelSet, labelTokenCanon, FROM_BREAK)) {
         THROW('The label (`' + tokenStrForError(labelToken) + '`) for this `break` was not defined in the current label set, which is illegal');
       }
       ASSERT_skipToStatementStart($G_IDENT, lexerFlags);
@@ -4178,12 +4180,12 @@ function Parser(code, options = {}) {
       });
     }
   }
-  function findLabel(inputLabelSet, labelName, checkIteration) {
+  function findLabel(inputLabelSet, labelNameCanon, checkIteration) {
     if (inputLabelSet === null) {
-      THROW(`The label (\`${labelName}\`) for this \`break\` was not defined in the current label set, which is illegal`);
+      THROW(`The label (\`${labelNameCanon}\`) for this \`break\` was not defined in the current label set, which is illegal`);
     }
 
-    let id = '#' + labelName;
+    let id = '#' + labelNameCanon;
 
     let labelSet = inputLabelSet;
     if (labelSet[id]) {
@@ -4208,7 +4210,7 @@ function Parser(code, options = {}) {
         // The last examples, where the outer-for has a block child statement, shows that it's really about the
         // immediate parent node of any loop node in the current statement branch.
         // That gets a little tricky to track efficiently.
-        THROW('Cannot `continue` to label `' + labelName + '` because it was defined inside the current inner-most loop');
+        THROW('Cannot `continue` to label `' + labelNameCanon + '` because it was defined inside the current inner-most loop');
       }
       return true;
     }
@@ -4253,12 +4255,11 @@ function Parser(code, options = {}) {
     if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
       let labelToken = curtok;
       let labelTokenCanon = tok_getCanon();
-      let labelName = labelToken.str;
       let set = labelSet;
       let found = false;
       while (set) {
         if (set.iterationLabels) {
-          if (set.iterationLabels.includes(labelName)) {
+          if (set.iterationLabels.includes(labelTokenCanon)) {
             found = true;
             break;
           }
@@ -4266,7 +4267,7 @@ function Parser(code, options = {}) {
         set = set.parentLabels;
       }
       if (!found) {
-        THROW('This `continue` had a label (`' + labelName + '`) that was not defined in the current label set as the direct parent of a loop, which would be required');
+        THROW('This `continue` had a label (`' + labelTokenCanon + '`) that was not defined in the current label set as the direct parent of a loop, which would be required');
       }
 
       ASSERT_skipToStatementStart($G_IDENT, lexerFlags);
@@ -4420,8 +4421,8 @@ function Parser(code, options = {}) {
       // - `export default class {}`
       // - `export default class x{}`
 
-      let exportedName = parseClassDeclaration(lexerFlags, scoop, IDENT_OPTIONAL, NOT_LABELLED, FDS_LEX, 'declaration');
-      addBindingToExports(exportedBindings, exportedName);
+      let exportedNameCanon = parseClassDeclaration(lexerFlags, scoop, IDENT_OPTIONAL, NOT_LABELLED, FDS_LEX, 'declaration');
+      addBindingToExports(exportedBindings, exportedNameCanon);
       // no semi
     }
     else if (curtok.type === $ID_function) {
@@ -4429,9 +4430,8 @@ function Parser(code, options = {}) {
       // - `export default function* f(){}`
       // - `export default function(){}`
       // - `export default function* (){}`
-
-      let exportedName = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, curtok, IDENT_OPTIONAL, NOT_LABELLED, FDS_VAR, 'declaration');
-      addBindingToExports(exportedBindings, exportedName);
+      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, curtok, IDENT_OPTIONAL, NOT_LABELLED, FDS_VAR, 'declaration');
+      addBindingToExports(exportedBindings, exportedNameCanon);
       // no semi
     }
     else if (curtok.type === $ID_async) {
@@ -4471,7 +4471,7 @@ function Parser(code, options = {}) {
       let exportedNameToken = curtok;
       let exportedNameTokenCanon = tok_getCanon();
 
-      addNameToExports(exportedNames, exportedNameToken.str);
+      addNameToExports(exportedNames, exportedNameTokenCanon);
 
       // Must skip `from` but we'll check for that explicitly next, so just skipAny
       ASSERT_skipAny(curtok.str, lexerFlags);
@@ -4592,9 +4592,9 @@ function Parser(code, options = {}) {
     }
     else if (curtok.type === $ID_class) {
       // export class ...
-      let exportedName = parseClassDeclaration(lexerFlags, scoop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX,'declaration');
-      addNameToExports(exportedNames, exportedName);
-      addBindingToExports(exportedBindings, exportedName);
+      let exportedNameCanon = parseClassDeclaration(lexerFlags, scoop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX,'declaration');
+      addNameToExports(exportedNames, exportedNameCanon);
+      addBindingToExports(exportedBindings, exportedNameCanon);
       needsSemi = false;
       AST_set('source', null);
     }
@@ -4604,9 +4604,9 @@ function Parser(code, options = {}) {
       // - `export function* f(){}`
       //           ^^^^^^^^
       // (anonymous should not be allowed but parsers seem to do it anyways)
-      let exportedName = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, curtok, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
-      addNameToExports(exportedNames, exportedName);
-      addBindingToExports(exportedBindings, exportedName);
+      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, curtok, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
+      addNameToExports(exportedNames, exportedNameCanon);
+      addBindingToExports(exportedBindings, exportedNameCanon);
       AST_set('source', null);
       needsSemi = false;
     }
@@ -4629,9 +4629,9 @@ function Parser(code, options = {}) {
         THROW('Async can not be followed by a newline as it results in `export async;`, which is not valid (and probably not what you wanted)');
       }
 
-      let exportedName = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, asyncToken, curtok, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
-      addNameToExports(exportedNames, exportedName);
-      addBindingToExports(exportedBindings, exportedName);
+      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, asyncToken, curtok, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
+      addNameToExports(exportedNames, exportedNameCanon);
+      addBindingToExports(exportedBindings, exportedNameCanon);
       AST_set('source', null);
       needsSemi = false;
     }
@@ -4713,10 +4713,10 @@ function Parser(code, options = {}) {
       exportedNames.add(exportedName);
     }
   }
-  function addBindingToExports(exportedBindings, exportedName) {
+  function addBindingToExports(exportedBindings, exportedCanonName) {
     ASSERT(exportedBindings !== DO_NOT_BIND, 'use UNDEF_EXPORTS not DO_NOT_BIND');
-    if (exportedBindings !== UNDEF_EXPORTS && exportedName !== '') {
-      exportedBindings.add(exportedName);
+    if (exportedBindings !== UNDEF_EXPORTS && exportedCanonName !== '') {
+      exportedBindings.add(exportedCanonName);
     }
   }
   function parseExportObject(lexerFlags, tmpExportedNames, tmpExportedBindings) {
@@ -4739,8 +4739,8 @@ function Parser(code, options = {}) {
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
 
-      addNameToExports(tmpExportedNames, exportedNameToken.str);
-      addBindingToExports(tmpExportedBindings, nameToken.str);
+      addNameToExports(tmpExportedNames, exportedNameTokenCanon);
+      addBindingToExports(tmpExportedBindings, nameTokenCanon);
 
       AST_setNode('specifiers', {
         type: 'ExportSpecifier',
@@ -5562,7 +5562,7 @@ function Parser(code, options = {}) {
     let identToken = curtok;
     let identTokenCanon = tok_getCanon();
     fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_CONST, lexerFlags);
-    SCOPE_addLexBinding(scoop, identToken.str, BINDING_TYPE_LET, FDS_LEX); // TODO: confirm `let`
+    SCOPE_addLexBinding(scoop, identTokenCanon, BINDING_TYPE_LET, FDS_LEX); // TODO: confirm `let`
     ASSERT_skipToAsCommaFrom($G_IDENT, lexerFlags);
 
     AST_setNode('specifiers', {
@@ -5595,7 +5595,7 @@ function Parser(code, options = {}) {
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
       fatalBindingIdentCheck(localToken, localTokenCanon, BINDING_TYPE_CONST, lexerFlags);
-      SCOPE_addLexBinding(scoop, localToken.str, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
+      SCOPE_addLexBinding(scoop, localTokenCanon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
 
       AST_setNode('specifiers', {
         type: 'ImportSpecifier',
@@ -5626,7 +5626,7 @@ function Parser(code, options = {}) {
     // next must be `from` (default must come first, if present, and object can not be used together with star)
     ASSERT_skipToFromOrDie($G_IDENT, lexerFlags);
     fatalBindingIdentCheck(localToken, localTokenCanon, BINDING_TYPE_CONST, lexerFlags);
-    SCOPE_addLexBinding(scoop, localToken.str, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
+    SCOPE_addLexBinding(scoop, localTokenCanon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
 
     AST_setNode('specifiers', {
       type: 'ImportNamespaceSpecifier',
@@ -6310,8 +6310,6 @@ function Parser(code, options = {}) {
     ASSERT_LABELSET(labelSet);
     ASSERT(nestedLabels === PARENT_NOT_LABEL || nestedLabels instanceof Array, 'nestedLabels should be a list of names of uninterupted label parents');
 
-    let labelName = identToken.str;
-
     // This is an exception to the general case where eval and arguments are okay to use as label name. Thanks, spec.
     if (identToken.type !== $ID_eval && identToken.type !== $ID_arguments) {
       fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_NONE, lexerFlags);
@@ -6319,11 +6317,11 @@ function Parser(code, options = {}) {
 
     let set = labelSet;
     while (set) {
-      if (set['#' + labelName]) THROW('Saw the same label twice which is not allowed');
+      if (set['#' + identTokenCanon]) THROW('Saw the same label twice which is not allowed');
       set = set.parentLabels;
     }
     labelSet = wrapLabelSet(labelSet, 'labelled statement');
-    labelSet['#' + labelName] = true;
+    labelSet['#' + identTokenCanon] = true;
     ASSERT_skipToStatementStart(':', lexerFlags);
 
     if (fdState === FDS_IFELSE) {
@@ -6332,9 +6330,9 @@ function Parser(code, options = {}) {
     }
 
     if (nestedLabels === PARENT_NOT_LABEL) {
-      nestedLabels = [labelName];
+      nestedLabels = [identTokenCanon];
     } else {
-      nestedLabels[nestedLabels.length] = labelName;
+      nestedLabels[nestedLabels.length] = identTokenCanon;
     }
 
     // We have already consumed the colon for the label so the next token must start the child-statement of this label
@@ -6552,19 +6550,18 @@ function Parser(code, options = {}) {
       //        ^^^
       let bindingTok = curtok;
       let bindingTokCanon = tok_getCanon();
-      let bindingName = curtok.str;
       fatalBindingIdentCheck(bindingTok, bindingTokCanon, bindingType, lexerFlags);
       if (bindingType === BINDING_TYPE_CATCH_OTHER) {
         // See details of specific catch var exceptions in the catch parser
         bindingType = BINDING_TYPE_CATCH_IDENT;
       }
-      SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, bindingName);
-      addNameToExports(exportedNames, bindingName);
-      addBindingToExports(exportedBindings, bindingName);
+      SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, bindingTokCanon);
+      addNameToExports(exportedNames, bindingTokCanon);
+      addBindingToExports(exportedBindings, bindingTokCanon);
       let identToken = curtok;
       let identTokenCanon = tok_getCanon();
       // note: if this is the end of the var decl and there is no semi the next line can start with a regex
-      ASSERT_skipRex(bindingName, lexerFlags); // next is `=` or `,` or `;` or asi-continuation
+      ASSERT_skipRex(bindingTok.str, lexerFlags); // next is `=` or `,` or `;` or asi-continuation
       AST_setIdent(astProp, identToken, identTokenCanon);
 
       if (
@@ -8205,7 +8202,7 @@ function Parser(code, options = {}) {
     let paramScoop = SCOPE_addLayer(arrowScoop, SCOPE_LAYER_ARROW_PARAMS, 'parseArrowParenlessFromPunc(arg)');
     ASSERT(paramScoop._ = 'parenless arrow scope');
     ASSERT(paramScoop._funcName = '(arrow has no name)');
-    SCOPE_addLexBinding(paramScoop, identToken.str, BINDING_TYPE_ARG, FDS_ILLEGAL);
+    SCOPE_addLexBinding(paramScoop, identTokenCanon, BINDING_TYPE_ARG, FDS_ILLEGAL);
 
     if (identToken.type === $ID_await && hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
       // - `async function f(){ return await => {}; }`
@@ -8871,7 +8868,7 @@ function Parser(code, options = {}) {
 
         let exprAssignable = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_ARG, astProp);
         assignable = mergeAssignable(exprAssignable, assignable);
-        SCOPE_addLexBinding(paramScoop, identToken.str, BINDING_TYPE_ARG, FDS_ILLEGAL);
+        SCOPE_addLexBinding(paramScoop, identTokenCanon, BINDING_TYPE_ARG, FDS_ILLEGAL);
 
         if (wasAssignment) {
           // [v]: `(foo = x) => {}`
@@ -9827,10 +9824,10 @@ function Parser(code, options = {}) {
           // If this isn't a binding, this is a noop
           // If this is inside a group, this is a noop if it turns out not to be an arrow
           // TODO: add test case for catch shadow
-          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identToken.str);
+          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
           // If this is not an export declaration, the calls below will be noops
-          addNameToExports(exportedNames, identToken.str);
-          addBindingToExports(exportedBindings, identToken.str);
+          addNameToExports(exportedNames, identTokenCanon);
+          addBindingToExports(exportedBindings, identTokenCanon);
 
           // We should have just added an Identifier to the AST, so wrap that as left now
           AST_wrapClosedCustom(astProp, {
@@ -9863,10 +9860,10 @@ function Parser(code, options = {}) {
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
             // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identToken.str);
+            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
             // If this is not an export declaration, the calls below will be noops
-            addNameToExports(exportedNames, identToken.str);
-            addBindingToExports(exportedBindings, identToken.str);
+            addNameToExports(exportedNames, identTokenCanon);
+            addBindingToExports(exportedBindings, identTokenCanon);
           }
         }
         else {
@@ -10711,10 +10708,10 @@ function Parser(code, options = {}) {
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
             // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identToken.str);
+            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
             // If this is not an export declaration, the calls below will be noops
-            addNameToExports(exportedNames, identToken.str);
-            addBindingToExports(exportedBindings, identToken.str);
+            addNameToExports(exportedNames, identTokenCanon);
+            addBindingToExports(exportedBindings, identTokenCanon);
           } else {
             // non-ident prop with a single ident as value, assignable, destructible. but cant be part of an export decl
             // - `({"a": b})`
@@ -10727,11 +10724,11 @@ function Parser(code, options = {}) {
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
             // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identToken.str);
+            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
             // If this is not an export declaration, the calls below will be noops
             // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-            addNameToExports(exportedNames, identToken.str);
-            addBindingToExports(exportedBindings, identToken.str);
+            addNameToExports(exportedNames, identTokenCanon);
+            addBindingToExports(exportedBindings, identTokenCanon);
           }
         }
         else {
@@ -10780,11 +10777,11 @@ function Parser(code, options = {}) {
           // If this isn't a binding, this is a noop
           // If this is inside a group, this is a noop if it turns out not to be an arrow
           // TODO: add test case for catch shadow
-          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identToken.str);
+          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
           // If this is not an export declaration, the calls below will be noops
           // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-          addNameToExports(exportedNames, identToken.str);
-          addBindingToExports(exportedBindings, identToken.str);
+          addNameToExports(exportedNames, identTokenCanon);
+          addBindingToExports(exportedBindings, identTokenCanon);
         }
 
         // The assignment itself cannot affect destructibility so just parse the rest
@@ -10974,10 +10971,10 @@ function Parser(code, options = {}) {
       // If this isn't a binding, this is a noop
       // If this is inside a group, this is a noop if it turns out not to be an arrow
       // TODO: add test case for catch shadow
-      SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, propLeadingIdentToken.str);
+      SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, propLeadingIdentTokenCanon);
       // If this is not an export declaration, the calls below will be noops
-      addNameToExports(exportedNames, propLeadingIdentToken.str);
-      addBindingToExports(exportedBindings, propLeadingIdentToken.str);
+      addNameToExports(exportedNames, propLeadingIdentTokenCanon);
+      addBindingToExports(exportedBindings, propLeadingIdentTokenCanon);
 
       if (babelCompat) {
         AST_open(astProp, {
@@ -11351,14 +11348,14 @@ function Parser(code, options = {}) {
       body: undefined,
     });
 
-    let name = parseClassId(lexerFlags, optionalIdent, scoop);
+    let nameCanon = parseClassId(lexerFlags, optionalIdent, scoop);
 
     // TODO: I'm prety sure scoop should be DO_NOT_BIND here (and can be folded inward)
     _parseClass(lexerFlags, originalOuterLexerFlags, scoop, IS_STATEMENT);
 
     AST_close('ClassDeclaration');
 
-    return name; // used if export
+    return nameCanon; // used if export
   }
   function parseClassExpression(lexerFlags, classToken, astProp) {
     ASSERT(arguments.length === parseClassExpression.length, 'expecting all args');
@@ -11396,7 +11393,7 @@ function Parser(code, options = {}) {
     ASSERT(parseClassId.length === arguments.length, 'arg count');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
 
-    let bindingName = '';
+    let bindingNameCanon = '';
 
     // note: default exports has optional ident but should still not skip `extends` here
     // but it is not a valid class name anyways (which is superseded by a generic keyword check)
@@ -11415,8 +11412,8 @@ function Parser(code, options = {}) {
       //   any ECMAScript language type.
       // eg: it is a `let` binding in outer scope and a `const` binding in inner scope...
       fatalBindingIdentCheck(classNameToken, classNameTokenCanon, BINDING_TYPE_CLASS, lexerFlags);
-      bindingName = classNameToken.str;
-      SCOPE_addLexBinding(scoop, bindingName, BINDING_TYPE_CLASS, FDS_ILLEGAL);
+      bindingNameCanon = classNameTokenCanon;
+      SCOPE_addLexBinding(scoop, bindingNameCanon, BINDING_TYPE_CLASS, FDS_ILLEGAL);
       let idToken = curtok;
       let idTokenCanon = tok_getCanon();
       ASSERT_skipToIdentCurlyOpen($G_IDENT, lexerFlags); // TODO: this could explicitly check for `extends` but I think this is fine
@@ -11432,7 +11429,7 @@ function Parser(code, options = {}) {
       AST_set('id', null);
     }
 
-    return bindingName;
+    return bindingNameCanon;
   }
   function _parseClass(outerLexerFlags, originalOuterLexerFlags, scoop, isExpression) {
     ASSERT(arguments.length === _parseClass.length, 'expecting all args');
@@ -12382,11 +12379,11 @@ function Parser(code, options = {}) {
         // If this isn't a binding, this is a noop
         // If this is inside a group, this is a noop if it turns out not to be an arrow
         // TODO: add test case for catch shadow
-        SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identToken.str);
+        SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
         // If this is not an export declaration, the calls below will be noops
         // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-        addNameToExports(exportedNames, identToken.str);
-        addBindingToExports(exportedBindings, identToken.str);
+        addNameToExports(exportedNames, identTokenCanon);
+        addBindingToExports(exportedBindings, identTokenCanon);
       } else {
         // `[...a.b]=c`
         // `let [...a.b]=c`
