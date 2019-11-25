@@ -2172,7 +2172,7 @@ function Parser(code, options = {}) {
     parseBodyPartsWithDirectives(lexerFlags, scoop, EMPTY_LABEL_SET, exportedNames, exportedBindings, PARAMS_ALL_SIMPLE, NO_DUPE_PARAMS, NO_ID_TO_VERIFY, '', IS_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
 
     // <SCRUB AST>
-    ASSERT(_path.length === len, 'should close all that was opened. Open before: ' + JSON.stringify(bak.map(o=>o.type).join(' > ')) + ', open after: ' + JSON.stringify(_path.map(o=>o.type).join(' > ')));
+    ASSERT(_path.length === len, 'should close all that was opened. Open before: ' + bak.map(o=>o.type).join(' > ') + ', open after: ' + _path.map(o=>o.type).join(' > '));
     // </SCRUB AST>
     if (goalMode === GOAL_MODULE) {
       let globalNames = scoop.names;
@@ -2231,7 +2231,7 @@ function Parser(code, options = {}) {
   function SCOPE_addFuncDeclName(lexerFlags, scoop, name, bindingType, fdState) {
     ASSERT(SCOPE_addFuncDeclName.length === arguments.length, 'arg count');
     ASSERT([BINDING_TYPE_FUNC_VAR, BINDING_TYPE_FUNC_LEX, BINDING_TYPE_FUNC_STMT].includes(bindingType), 'either a func lex or var', bindingType);
-    ASSERT(scoop === DO_NOT_BIND || scoop.isScope, 'expecting scoop', JSON.stringify(scoop));
+    ASSERT(scoop === DO_NOT_BIND || scoop.isScope, 'expecting scoop', scoop);
     ASSERT(scoop === DO_NOT_BIND || scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names, it must be a Map');
     ASSERT_FDS(fdState);
     ASSERT(fdState !== FDS_ILLEGAL, 'This would be an error and should be caught elsewhere...');
