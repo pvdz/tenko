@@ -818,11 +818,12 @@ function Lexer(
     // <SCRUB DEV>
     token = {
       _t: toktypeToString(type),
+      get _str() { return input.slice(start, stop); },
 
       ...token,
 
       toString() {
-        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${token.str}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
+        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${token._str}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
       },
     };
     // </SCRUB DEV>
@@ -849,7 +850,6 @@ function Lexer(
         },
         column, // of first char of token (we still have to set this as Tenko uses this)
         line, // of first char of token (we still have to set this as Tenko uses this)
-        get str() { return input.slice(start, stop); },
       };
     }
 
@@ -859,7 +859,6 @@ function Lexer(
       stop, // start of next token
       column, // of first char of token
       line, // of first char of token
-      get str() { return input.slice(start, stop); },
     };
   }
 
@@ -5047,7 +5046,7 @@ function Lexer(
     let nl1 = offset && (usedInput.lastIndexOf('\n', offset) + 1);
     let nl2 = usedInput.indexOf('\n', nl1);
     if (nl2 < 0) nl2 = usedInput.length;
-    let arrows = Math.max(1, token ? token.str.length : 1);
+    let arrows = Math.max(1, token ? token.stop - token.start : 1);
 
     let indent = offset - (nl1);
 
@@ -5095,6 +5094,7 @@ function Lexer(
 
     getNlwas: function(){ return nlwas; },
     getCanon: function(){ return lastCanonizedInput; }, // This is only relevant for idents and strings, but might be captured for other reasons. TODO: Should use a proxy in devmode which verifies that actual reads on this value are for ident/string tokens only...
+    sliceInput: slice,
   };
 }
 
@@ -5137,13 +5137,6 @@ function START(type) {
   return 'S<' + T(type) + '>';
 }
 
-function tokenStrForError(token) {
-  if (isStringToken(token)) {
-    if (token.type === $STRING_DOUBLE) return '"' + token.str + '"';
-    return "'" + token.str + "'";
-  }
-  return token.str;
-}
 
 export default Lexer; // QoL for somebody, perhaps.
 export {
@@ -5165,8 +5158,6 @@ export {
 
   WEB_COMPAT_OFF,
   WEB_COMPAT_ON,
-
-  tokenStrForError,
 
   // <SCRUB ASSERTS TO COMMENT>
   ASSERT_pushCanonPoison,
