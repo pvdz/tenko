@@ -7689,9 +7689,9 @@ function Parser(code, options = {}) {
       THROW('Cannot assign to `eval` and `arguments` in strict mode');
     }
 
-    switch (curtok.str) {
-      case '++':
-      case '--':
+    switch (curtok.type) {
+      case $PUNC_PLUS_PLUS:
+      case $PUNC_MIN_MIN:
         THROW('Cannot assign to `eval` and `arguments` in strict mode');
     }
 
