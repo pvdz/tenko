@@ -8332,10 +8332,10 @@ function Parser(code, options = {}) {
         return _parseValueTailTemplate(lexerFlags, valueFirstToken, assignable, isNewArg, astProp);
       case $PUNC_PLUS_PLUS:
         if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
-        return _parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, astProp);
+        return parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, '++', astProp);
       case $PUNC_MIN_MIN:
         if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
-        return _parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, astProp);
+        return parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, '--', astProp);
     }
 
     if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
@@ -8452,17 +8452,17 @@ function Parser(code, options = {}) {
     // new rhs only parses a subset of tails
     return setNotAssignable(assignable); // maintain piggies
   }
-  function _parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, astProp) {
-    ASSERT(_parseValueTailUpdate.length === arguments.length, 'arg count');
+  function parseValueTailUpdate(lexerFlags, argStartToken, assignable, leftHandSideExpression, opName, astProp) {
+    ASSERT(parseValueTailUpdate.length === arguments.length, 'arg count');
     ASSERT(curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN, 'have not consumed the update op yet');
+    ASSERT(opName === '--' || opName === '++', 'enum');
+    ASSERT(curtok.str === opName, 'should be in sync');
 
-    if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('A `++` or `--` update expression is not allowed here', valueFirstToken);
-    return parseUpdateExpressionSuffix(lexerFlags, valueFirstToken, assignable, astProp);
-  }
-
-  function parseUpdateExpressionSuffix(lexerFlags, argStartToken, assignable, astProp) {
-    ASSERT(curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN, 'only for update unaries');
     // note: this is ++/-- SUFFIX. This version DOES have newline restrictions!
+
+    if (leftHandSideExpression === ONLY_LHSE) {
+      return THROW_TOKEN('A `' + opName + '` update expression is not allowed here', argStartToken);
+    }
 
     // if there is a newline between the previous value and UpdateExpression (++ or --) then it is not postfix
     // https://tc39.github.io/ecma262/#sec-rules-of-automatic-semicolon-insertion
@@ -8483,7 +8483,7 @@ function Parser(code, options = {}) {
       // do nothing. nothing further gets parsed. and since next token is ++ or -- there is no risk of "overaccepting" here
       // caller can return assignability though it won't matter as there's no scenario where the next token causes assignment
       if (hasAllFlags(lexerFlags, LF_NO_ASI)) {
-        THROW('The postfix ++/-- is a restricted production so ASI must apply but that is not valid in this context');
+        return THROW('The postfix `' + opName + '` is a restricted production so ASI must apply but that is not valid in this context');
       }
       return assignable;
     }
@@ -8491,20 +8491,21 @@ function Parser(code, options = {}) {
     // check for this _after_ the newline check, for cases like
     if (notAssignable(assignable)) {
       // - `"foo"\n++bar`
-      THROW('Cannot inc/dec a non-assignable value as postfix');
+      return THROW('Cannot postfix `' + opName + '` a non-assignable value');
     }
 
     AST_throwIfIllegalUpdateArg(astProp);
 
-    let operator = curtok.str;
-    ASSERT_skipDiv($G_PUNCTUATOR, lexerFlags);
+    ASSERT_skipDiv(opName, lexerFlags);
+
     AST_setNodeDangerously(astProp, {
       type: 'UpdateExpression',
       loc: AST_getClosedLoc(argStartToken),
       argument: AST_popNode(astProp),
-      operator: operator,
+      operator: opName,
       prefix: false,
     });
+
     return NOT_ASSIGNABLE;
   }
   function parseCallArgs(lexerFlags, astProp) {
