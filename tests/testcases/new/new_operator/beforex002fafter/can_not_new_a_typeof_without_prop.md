@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot typeof inside `new`
+  Cannot `typeof` inside `new`
 
 new typeof x
            ^------- error

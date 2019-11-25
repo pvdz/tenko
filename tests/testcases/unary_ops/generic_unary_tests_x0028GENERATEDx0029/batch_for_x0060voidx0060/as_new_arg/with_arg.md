@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot void inside `new`
+  Cannot `void` inside `new`
 
 new void x.x
          ^------- error

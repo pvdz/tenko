@@ -7433,9 +7433,20 @@ function Parser(code, options = {}) {
         return parseUpdatePrefix(lexerFlags, isNewArg, astProp);
       }
 
-      if (curtok.type === $PUNC_PLUS || curtok.type === $PUNC_MIN || curtok.type === $PUNC_EXCL || curtok.type === $PUNC_TILDE) {
-        if (leftHandSideExpression === ONLY_LHSE) return THROW('An unary expression (`+-~!`) is not allowed here');
-        return parseUnary(lexerFlags, isNewArg, astProp);
+      if (curtok.type === $PUNC_PLUS) {
+        return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '+', astProp);
+      }
+
+      if (curtok.type === $PUNC_MIN) {
+        return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '-', astProp);
+      }
+
+      if (curtok.type === $PUNC_EXCL) {
+        return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '!', astProp);
+      }
+
+      if (curtok.type === $PUNC_TILDE) {
+        return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '~', astProp);
       }
     }
 
@@ -7546,7 +7557,6 @@ function Parser(code, options = {}) {
     // - class
     let assignable = ASSIGNABLE_UNDETERMINED;
     // note: curtok token has been skipped prior to this call.
-    let identName = identToken.str;
     switch (identToken.type) {
       case $ID_arguments:
         assignable = verifyEvalArgumentsVar(lexerFlags);
@@ -7570,6 +7580,7 @@ function Parser(code, options = {}) {
         // - `async function f(){   (fail = class extends (await x) {}) => {}   }`
         return parseClassExpression(lexerFlags, identToken, astProp);
       case $ID_delete:
+        ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
         if (isNewArg === IS_NEW_ARG) THROW('Cannot delete inside `new`');
         return parseDeleteExpression(lexerFlags, identToken, assignable, astProp);
       case $ID_eval:
@@ -7637,13 +7648,13 @@ function Parser(code, options = {}) {
         // [v]: `[typeof x]`
         // [x]: `([typeof x]) => x;`
         // [v]: `x + typeof y.x`
-        if (isNewArg === IS_NEW_ARG) THROW('Cannot '+identName+' inside `new`');
-        return _parseUnary(lexerFlags, identToken, identName, astProp);
+        ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
+        return _parseUnary(lexerFlags, identToken, 'typeof', isNewArg, astProp);
       case $ID_void:
         // [x]: `[void x] = x;`
         // [v]: `[void x]`
-        if (isNewArg === IS_NEW_ARG) THROW('Cannot '+identName+' inside `new`');
-        return _parseUnary(lexerFlags, identToken, identName, astProp);
+        ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
+        return _parseUnary(lexerFlags, identToken, 'void', isNewArg, astProp);
       case $ID_yield:
         // - `x + yield`
         // - `delete yield`
@@ -7904,20 +7915,26 @@ function Parser(code, options = {}) {
     });
     return NOT_ASSIGNABLE;
   }
-  function parseUnary(lexerFlags, isNewArg, astProp) {
+  function parseUnary(lexerFlags, isNewArg, leftHandSideExpression, opName, astProp) {
     ASSERT(parseUnary.length === arguments.length, 'arg count');
+    ASSERT(typeof opName === 'string', 'opname string');
+    ASSERT(curtok.str === opName, 'should match', opName, curtok+'');
+    ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
+
+    if (leftHandSideExpression === ONLY_LHSE) return THROW('The unary expression `' + opName + '` is not allowed here');
 
     let unaryToken = curtok;
-    let identName = curtok.str;
     ASSERT_skipToExpressionStart(unaryToken.str, lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
 
-    if (isNewArg === IS_NEW_ARG) THROW('Cannot '+identName+' inside `new`');
-
-    return _parseUnary(lexerFlags, unaryToken, identName, astProp);
+    return _parseUnary(lexerFlags, unaryToken, opName, isNewArg, astProp);
   }
-  function _parseUnary(lexerFlags, unaryToken, identName, astProp) {
+  function _parseUnary(lexerFlags, unaryToken, opName, isNewArg, astProp) {
     ASSERT(_parseUnary.length === arguments.length, 'arg count');
-    ASSERT(['+', '-', '~', '!', 'void', 'typeof'].includes(identName), '++, --, delete, new, yield, and await have special parsers', identName);
+    ASSERT(['+', '-', '~', '!', 'void', 'typeof'].includes(opName), '++, --, delete, new, yield, and await have special parsers', opName);
+    ASSERT(unaryToken.str === opName, 'should match', opName, unaryToken+'');
+    ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
+
+    if (isNewArg === IS_NEW_ARG) return THROW('Cannot `' + opName + '` inside `new`');
 
     // - `!x`
     // - `~yield`                        // ok outside strict & generator
@@ -7927,7 +7944,7 @@ function Parser(code, options = {}) {
     AST_open(astProp, {
       type: 'UnaryExpression',
       loc: AST_getBaseLoc(unaryToken),
-      operator: identName,
+      operator: opName,
       prefix: true,
       argument: undefined,
     });
@@ -7939,6 +7956,7 @@ function Parser(code, options = {}) {
       // [x]: `~3 ** 2;`
       // [x]: `typeof 3 ** 2;`
       THROW('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)');
+      return NOT_ASSIGNABLE;
     }
     return setNotAssignable(assignable);
   }
