@@ -1194,7 +1194,7 @@ function Parser(code, options = {}) {
     // set it as child of new node
     AST_set(newProp, child);
   }
-  function AST_wrapClosedIntoArrayCustom(prop, newNode, newProp, startToken) {
+  function AST_wrapClosedIntoArrayCustom(prop, newNode, newProp) {
     ASSERT(AST_wrapClosedIntoArrayCustom.length === arguments.length, 'arg count');
     ASSERT(_path.length > 0, 'path shouldnt be empty');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
@@ -1300,7 +1300,7 @@ function Parser(code, options = {}) {
         generator: false,
         async: asyncToken !== UNDEF_ASYNC,
         body: undefined,
-      }, 'params', arrowStartToken);
+      }, 'params');
     } else {
       AST_wrapClosedIntoArrayCustom(astProp, {
         type: 'ArrowFunctionExpression',
@@ -1311,7 +1311,7 @@ function Parser(code, options = {}) {
         async: asyncToken !== UNDEF_ASYNC,
         expression: undefined, // TODO: init to bool
         body: undefined,
-      }, 'params', arrowStartToken);
+      }, 'params');
     }
     let top = _path[_path.length - 1];
     if (toplevelComma) {
@@ -7247,7 +7247,7 @@ function Parser(code, options = {}) {
       type: 'SequenceExpression',
       loc: AST_getBaseLoc(startOfFirstExprToken),
       expressions: undefined,
-    }, 'expressions', startOfFirstExprToken);
+    }, 'expressions');
     assignableForPiggies = __parseExpressions(lexerFlags, assignableForPiggies, 'expressions');
     AST_close('SequenceExpression');
     return assignableForPiggies; // since we asserted a comma, we can be certain about this
@@ -9028,7 +9028,7 @@ function Parser(code, options = {}) {
               type: 'SequenceExpression',
               loc: AST_getBaseLoc(firstTokenAfterParen),
               expressions: undefined,
-            }, 'expressions', firstTokenAfterParen);
+            }, 'expressions');
             astProp = 'expressions';
           }
           assignable = __parseExpressions(lexerFlags, assignable, astProp);
@@ -9125,7 +9125,7 @@ function Parser(code, options = {}) {
           type: 'SequenceExpression',
           loc: AST_getBaseLoc(firstTokenAfterParen),
           expressions: undefined,
-        }, 'expressions', firstTokenAfterParen);
+        }, 'expressions');
         astProp = 'expressions';
       }
     }
