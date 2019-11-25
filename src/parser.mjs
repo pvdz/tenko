@@ -7428,9 +7428,12 @@ function Parser(code, options = {}) {
         return parseGroupToplevels(lexerFlags, IS_STATEMENT, allowAssignment, UNDEF_ASYNC, '', NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
       }
 
-      if (curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) {
-        if (leftHandSideExpression === ONLY_LHSE) return THROW('An update expression (`--` / `++`) is not allowed here');
-        return parseUpdatePrefix(lexerFlags, isNewArg, astProp);
+      if (curtok.type === $PUNC_PLUS_PLUS) {
+        return parseUpdatePrefix(lexerFlags, isNewArg, leftHandSideExpression, '++', astProp);
+      }
+
+      if (curtok.type === $PUNC_MIN_MIN) {
+        return parseUpdatePrefix(lexerFlags, isNewArg, leftHandSideExpression, '--', astProp);
       }
 
       if (curtok.type === $PUNC_PLUS) {
@@ -7960,15 +7963,24 @@ function Parser(code, options = {}) {
     }
     return setNotAssignable(assignable);
   }
-  function parseUpdatePrefix(lexerFlags, isNewArg, astProp) {
+  function parseUpdatePrefix(lexerFlags, isNewArg, leftHandSideExpression, opName, astProp) {
     ASSERT(parseUpdatePrefix.length === arguments.length, 'arg count');
+    ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'isNewArg enum');
+    ASSERT(leftHandSideExpression === ONLY_LHSE || leftHandSideExpression === NOT_LHSE, 'leftHandSideExpression enum');
+    ASSERT(opName === '--' || opName === '++', 'enum');
+    ASSERT(opName === curtok.str, 'should sync');
 
     // note: this is ++/-- PREFIX. This version does NOT have newline restrictions!
+
+    if (leftHandSideExpression === ONLY_LHSE) {
+      return THROW('An update expression `' + opName + '` is not allowed here');
+    }
+
     if (isNewArg === IS_NEW_ARG) {
       // [x]: `new ++x`
       // [x]: `new ++x.y`
       // [x]: `new ++x().y`
-      THROW('Cannot `new` on an inc/dec expr');
+      return THROW('Cannot `new` on a `' + opName +'` expr');
     }
 
     let puncToken = curtok;
@@ -7977,7 +7989,7 @@ function Parser(code, options = {}) {
       type: 'UpdateExpression',
       loc: AST_getBaseLoc(puncToken),
       argument: undefined,
-      operator: puncToken.str,
+      operator: opName,
       prefix: true,
     });
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
@@ -7986,7 +7998,7 @@ function Parser(code, options = {}) {
 
     AST_close('UpdateExpression');
 
-    if (notAssignable(assignable)) THROW('Cannot inc/dec a non-assignable value as prefix');
+    if (notAssignable(assignable)) return THROW('Cannot inc/dec a non-assignable value as prefix');
     return setNotAssignable(assignable);
   }
 
@@ -8299,6 +8311,7 @@ function Parser(code, options = {}) {
   function parseValueTail(lexerFlags, valueFirstToken, assignable, isNewArg, leftHandSideExpression, astProp) {
     ASSERT(parseValueTail.length === arguments.length, 'arg count');
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'isNewArg enum');
+    ASSERT(leftHandSideExpression === ONLY_LHSE || leftHandSideExpression === NOT_LHSE, 'leftHandSideExpression enum');
     ASSERT(typeof assignable === 'number', 'assignable num', assignable);
     ASSERT(typeof astProp === 'string', 'should be string', astProp);
 

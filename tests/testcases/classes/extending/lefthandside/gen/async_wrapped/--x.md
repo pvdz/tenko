@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An update expression (`--` / `++`) is not allowed here
+  An update expression `--` is not allowed here
 
 async function p(){
   class C extends --x {}

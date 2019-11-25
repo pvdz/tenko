@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot `new` on an inc/dec expr
+  Cannot `new` on a `--` expr
 
 new --x
     ^------- error
