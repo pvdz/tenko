@@ -813,43 +813,7 @@ function Lexer(
 
     ASSERT(typeof lastCanonizedInput !== 'string' || lastCanonizedInput.length === lastCanonizedInputLen, 'the len cache should be equal to the canonized string len itself (thats the point)');
 
-    if (isStringToken(type)) {
-      let len = (stop - start) - 2; // 2=quotes
-      ASSERT(typeof len === 'number', 'ok dit ook he');
-      if (lastCanonizedInputLen !== len) {
-        // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
-        // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, slice(start + 1, stop - 1));
-      }
-      return _createToken(type, start, stop, column, line, lastCanonizedInput);
-    }
-    if (isIdentToken(type)) {
-      let len = stop - start;
-      if (lastCanonizedInputLen !== len) {
-        // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
-        // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, slice(start, stop));
-      }
-      return _createToken(type, start, stop, column, line, lastCanonizedInput);
-    }
-
-    if (isTickToken(type)) {
-      let closeWrapperLen = (type === $TICK_HEAD || type === $TICK_BODY || type === $TICK_BAD_HEAD || type === $TICK_BAD_BODY ? 2 : 1);
-      let len = (stop - start) - (1 + closeWrapperLen); // 2 (or 3) for the template begin/end chars
-
-      if (lastCanonizedInputLen !== len) {
-        // Canonization converts escapes to actual chars so if this happens the canonized length should be smaller
-        // than the original input. If it is the same, no conversion happened and we can use input. Less slicing = better
-        return _createToken(type, start, stop, column, line, slice(start + 1, stop - closeWrapperLen));
-      }
-      return _createToken(type, start, stop, column, line, lastCanonizedInput);
-    }
-    return _createToken(type, start, stop, column, line, slice(start, stop));
-  }
-  function _createToken(type, start, stop, column, line, str) {
-    ASSERT(_createToken.length === arguments.length, 'arg count');
-
-    let token = createBaseToken(type, start, stop, column, line, str);
+    let token = createBaseToken(type, start, stop, column, line);
 
     // <SCRUB DEV>
     token = {
@@ -858,14 +822,14 @@ function Lexer(
       ...token,
 
       toString() {
-        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${str}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
+        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${token.str}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
       },
     };
     // </SCRUB DEV>
 
     return token;
   }
-  function createBaseToken(type, start, stop, column, line, str) {
+  function createBaseToken(type, start, stop, column, line) {
     ASSERT(createBaseToken.length === arguments.length, 'arg count');
 
     if (babelTokenCompat) {
@@ -885,7 +849,7 @@ function Lexer(
         },
         column, // of first char of token (we still have to set this as Tenko uses this)
         line, // of first char of token (we still have to set this as Tenko uses this)
-        str,
+        get str() { return input.slice(start, stop); },
       };
     }
 
@@ -895,7 +859,7 @@ function Lexer(
       stop, // start of next token
       column, // of first char of token
       line, // of first char of token
-      str,
+      get str() { return input.slice(start, stop); },
     };
   }
 

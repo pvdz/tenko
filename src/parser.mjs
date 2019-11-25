@@ -1015,15 +1015,12 @@ function Parser(code, options = {}) {
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    let q = "'";
-    if (token.type === $STRING_DOUBLE) q = '"';
-
     ASSERT_pushCanonPoison(true);
     let node = {
       type: 'Literal',
       loc: AST_getCloseLoc(token.line, token.column, token.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
       value: tokenCanon,
-      raw: q + token.str + q,
+      raw: token.str,
     };
     ASSERT_popCanonPoison();
     return node;
@@ -2684,10 +2681,11 @@ function Parser(code, options = {}) {
         // This is a directive. It may be nonsense, but it's a string in the head so it's a directive.
 
         let dir = stringToken.str;
+        let dirless = dir.slice(1, -1);
 
         // Check all directives for octals because strict mode may be enabled by a directive later in the same block
         // and that would still cause a previous sibling directive with octal escape to be an error.
-        if (!isStrict && /(^|[^\\])\\(?:0\d|[1-9])/.test(dir)) {
+        if (!isStrict && /(^|[^\\])\\(?:0\d|[1-9])/.test(dirless)) {
           // We can't really validate this with a regex. And yet, here we are :'(
           // [v]: `"x\\0"`
           // [x]: `"x\\0"; "use strict";`
@@ -2695,7 +2693,7 @@ function Parser(code, options = {}) {
           hadOctal = true;
         }
 
-        if (dir === 'use strict') {
+        if (dirless === 'use strict') {
           hadUseStrict = true;
           lexerFlags = lexerFlags | LF_STRICT_MODE;
 
@@ -2721,7 +2719,7 @@ function Parser(code, options = {}) {
               // - `"use strict" \n 0123`
               THROW('Illegal legacy octal literal in strict mode');
             }
-            if (!hadOctal && /(^|[^\\])\\(?:0\d|[1-9])/.test(dir)) {
+            if (!hadOctal && /(^|[^\\])\\(?:0\d|[1-9])/.test(dirless)) {
               // We can't really validate this with a regex. And yet, here we are :'(
               // [v]: `"x\\0"`
               // [x]: `"x\\0"; "use strict";`
@@ -2737,7 +2735,7 @@ function Parser(code, options = {}) {
           AST_setNodeDangerously(astProp, { // we know we will overwrite the existing string node
             type: 'Directive',
             loc: AST_getClosedLoc(stringToken),
-            directive: dir,
+            directive: dirless,
           });
           parseSemiOrAsi(lexerFlags);
         }
@@ -2747,7 +2745,7 @@ function Parser(code, options = {}) {
             type: 'ExpressionStatement',
             loc: AST_getClosedLoc(stringToken),
             expression: AST_popNode(astProp),
-            directive: dir,
+            directive: dirless,
           });
         }
       } else {
@@ -8291,6 +8289,9 @@ function Parser(code, options = {}) {
       quasiValue = quasiValue.replace(/\r\n?/g, '\n');
     }
     let cookedValue = noCooked ? null : tickTokenCanon;
+    let closeWrapperLen = (tickToken.type === $TICK_HEAD || tickToken.type === $TICK_BODY || tickToken.type === $TICK_BAD_HEAD || tickToken.type === $TICK_BAD_BODY ? 2 : 1);
+    // Note: the quasi may start with ` or } and end with ` or ${
+    quasiValue = quasiValue.slice(1, -closeWrapperLen);
 
     AST_open('quasis', {
       type: 'TemplateElement',
@@ -10295,7 +10296,7 @@ function Parser(code, options = {}) {
         // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
         // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
         if (options_webCompat === WEB_COMPAT_ON) {
-          if (litToken.str === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
+          if (litToken.str.slice(1, -1) === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
         }
 
         destructible |= parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, litToken, litTokenCanon, bindingType, assignableForPiggies, destructible, scoop, exportedNames, exportedBindings, astProp);
@@ -11042,7 +11043,7 @@ function Parser(code, options = {}) {
       // - ({ident: <object destruct> = expr,}
       // anything else as value is non-destructible
       if (options_webCompat === WEB_COMPAT_ON) {
-        if (propLeadingIdentToken.str === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
+        if (propLeadingIdentTokenCanon === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
       }
 
       destructible |= parseObjectPropertyValueAfterColon(lexerFlags, propLeadingIdentToken, propLeadingIdentToken, propLeadingIdentTokenCanon, bindingType, assignable, destructible, scoop,exportedNames, exportedBindings, astProp);
