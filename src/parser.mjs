@@ -7396,38 +7396,45 @@ function Parser(code, options = {}) {
     if (isIdentToken(curtok.type)) {
       return parseValueHeadBodyIdent(lexerFlags, isNewArg, BINDING_TYPE_NONE, allowAssignment, leftHandSideExpression, astProp);
     }
-    else if (isNumberStringRegex(curtok.type)) {
+
+    if (isNumberStringRegex(curtok.type)) {
       let litToken = curtok;
       let litTokenCanon = tok_getCanon();
       skipDiv(lexerFlags); // Next can be any binary operator, anything that closes the current context (`}`, `)`, `]`)
       AST_setLiteral(astProp, litToken, litTokenCanon);
       return NOT_ASSIGNABLE;
     }
-    else if (isTemplateStart(curtok.type)) {
+
+    if (isTemplateStart(curtok.type)) {
       parseTickExpression(lexerFlags, curtok, astProp);
       return NOT_ASSIGNABLE;
     }
-    else if (isPunctuatorToken(curtok.type)) {
+
+    if (isPunctuatorToken(curtok.type)) {
       if (curtok.type === $PUNC_CURLY_OPEN) {
         let skipInit = allowAssignment === ASSIGN_EXPR_IS_OK && leftHandSideExpression === NOT_LHSE && isNewArg === NOT_NEW_ARG ? PARSE_INIT : SKIP_INIT;
         let wasDestruct = parseObjectOuter(lexerFlags, DO_NOT_BIND, BINDING_TYPE_NONE, skipInit, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         return _parseValueHeadBodyAfterObjArr(wasDestruct);
       }
-      else if (curtok.type === $PUNC_BRACKET_OPEN) {
+
+      if (curtok.type === $PUNC_BRACKET_OPEN) {
         let skipInit = allowAssignment === ASSIGN_EXPR_IS_OK && leftHandSideExpression === NOT_LHSE && isNewArg === NOT_NEW_ARG ? PARSE_INIT : SKIP_INIT;
         let wasDestruct = parseArrayOuter(lexerFlags, DO_NOT_BIND, BINDING_TYPE_NONE, skipInit, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         return _parseValueHeadBodyAfterObjArr(wasDestruct);
       }
-      else if (curtok.type === $PUNC_PAREN_OPEN) {
+
+      if (curtok.type === $PUNC_PAREN_OPEN) {
         // do not parse arrow/group tail, regardless
         return parseGroupToplevels(lexerFlags, IS_STATEMENT, allowAssignment, UNDEF_ASYNC, '', NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
       }
-      else if (curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) {
-        if (leftHandSideExpression === ONLY_LHSE) THROW('An update expression (`--` / `++`) is not allowed here');
+
+      if (curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) {
+        if (leftHandSideExpression === ONLY_LHSE) return THROW('An update expression (`--` / `++`) is not allowed here');
         return parseUpdatePrefix(lexerFlags, isNewArg, astProp);
       }
-      else if (curtok.type === $PUNC_PLUS || curtok.type === $PUNC_MIN || curtok.type === $PUNC_EXCL || curtok.type === $PUNC_TILDE) {
-        if (leftHandSideExpression === ONLY_LHSE) THROW('An unary expression (`+-~!`) is not allowed here');
+
+      if (curtok.type === $PUNC_PLUS || curtok.type === $PUNC_MIN || curtok.type === $PUNC_EXCL || curtok.type === $PUNC_TILDE) {
+        if (leftHandSideExpression === ONLY_LHSE) return THROW('An unary expression (`+-~!`) is not allowed here');
         return parseUnary(lexerFlags, isNewArg, astProp);
       }
     }
@@ -7435,32 +7442,34 @@ function Parser(code, options = {}) {
     ASSERT(startToken === curtok, 'anything that consumed something should return in that branch ...');
     if (maybe === PARSE_VALUE_MUST) {
       // Slow always-error path
-      if (curtok.str.charCodeAt(0) === $$DOT_2E) {
-        // basically an expression that starts with a leading (single) dot, only legal case is `new`
-        // TODO: (random but kind of relevant here): add tests that put `.5` and `...` in any place here a leading-dot-token is expected
-        // Note that certain cases should not reach this point:
-        // `(.2)`
-        // `new.target`
-        // `new.fail`
-        // `(.fail)`
-        ASSERT(curtok.type !== $NUMBER_DEC, 'should be checked elsewhere');
 
-        // the ... should be confirmed at any and only point where that might be legal
-        if (curtok.type === $PUNC_DOT_DOT_DOT) {
-          // Can't be something like `foo(...x)` since that is caught elsewhere
-          // [x]: `let x = ...y;`
-          // [x]: `foo[...x];`
-          // [x]: `for (...x in y){}`
-          // [x]: `y, ...x => x`
-          // [x]: `...x => x`
-          // [x]: `import(...a);`
-          THROW('Unexpected spread/rest dots');
-        } else {
-          // - `foo[.bar]`    or something silly like that...?
-          THROW('Unexpected dot');
-        }
+      // If the next token starts with a dot, certain cases should not reach this point:
+      // TODO: (random but kind of relevant here): add tests that put `.5` and `...` in any place here a leading-dot-token is expected
+      // - `(.2)`
+      // - `new.target`
+      // - `new.fail`
+      // - `(.fail)`
+      ASSERT(curtok.type !== $NUMBER_DEC, 'should be checked elsewhere');
+
+      if (curtok.type === $PUNC_DOT_DOT_DOT) {
+        // The `...` token should be confirmed at any and only points where it might be legal
+        // [x]: `let x = ...y;`
+        // [x]: `foo[...x];`
+        // [x]: `for (...x in y){}`
+        // [x]: `y, ...x => x`
+        // [x]: `...x => x`
+        // [x]: `import(...a);`
+        THROW('Unexpected spread/rest dots');
       }
+
+      if (curtok.type === $PUNC_DOT) {
+        // - `foo[.bar]`    or something silly like that...?
+        THROW('Unexpected dot');
+      }
+
       THROW('Expected to parse a value');
+
+      return NOT_ASSIGNABLE;
     }
     // currently all callsites that have maybe=PARSE_VALUE_MAYBE will ignore the return value if nothing was consumed
 
