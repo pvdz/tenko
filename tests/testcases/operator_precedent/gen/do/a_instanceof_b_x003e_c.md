@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# ID_while : nl=N pos=22:27 loc=22:1 `while` (canonical=`while`)#}
+  Unable to ASI
 
 do a instanceof b > c while (x);
                       ^------- error

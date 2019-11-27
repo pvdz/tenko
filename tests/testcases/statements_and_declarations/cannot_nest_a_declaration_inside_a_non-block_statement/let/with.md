@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=12:13 loc=12:1 `y` (canonical=`y`)#}
+  Unable to ASI
 
 with(x) let y = x
             ^------- error

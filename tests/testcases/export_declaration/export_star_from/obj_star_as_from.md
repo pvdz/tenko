@@ -48,7 +48,7 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_COMMA : nl=N pos=12:13 loc=12:1 `,`#}
+  Unable to ASI
 
 export {bar}, * as foo from 'bar';
             ^------- error

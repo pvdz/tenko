@@ -47,7 +47,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# NUMBER_DEC : nl=N pos=50:53 loc=50:1 `100`#}
+  Unable to ASI
 
 function *as(){ async function f() { return yield 100; } }
                                                   ^------- error

@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# ID_function : nl=N pos=10:18 loc=10:1 `function` (canonical=`function`)#}
+  Unable to ASI
 
 x = async function(){}
           ^------- error

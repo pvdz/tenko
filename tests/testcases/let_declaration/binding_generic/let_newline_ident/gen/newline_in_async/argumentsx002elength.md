@@ -31,7 +31,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_DOT : nl=N pos=38:39 loc=11:3 `.`#}
+  Unable to ASI
 
 async function f() {
   let

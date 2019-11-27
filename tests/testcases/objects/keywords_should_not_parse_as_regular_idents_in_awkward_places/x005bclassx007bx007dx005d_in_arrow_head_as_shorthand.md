@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected character after object literal property name {# PUNC_CURLY_OPEN : nl=N pos=7:8 loc=7:1 `{`#}
+  Unexpected character after object literal property name
 
 ({class{}}) => x;
        ^------- error

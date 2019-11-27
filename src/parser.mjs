@@ -588,7 +588,6 @@ function Parser(code, options = {}) {
   let failForRegexAssertIfPass = '';
   let regexAssertTrace = undefined;
 
-  let curtok = null;
   let __oldtok = null;
 
   let NODE_NAME_PROPERTY = babelCompat ? 'ObjectProperty' : 'Property';
@@ -1667,7 +1666,7 @@ function Parser(code, options = {}) {
     }
   }
   function updateToken($tt_nextToken) {
-    __oldtok = curtok = $tt_nextToken;
+    __oldtok = $tt_nextToken;
 
     if (tok_getType() === $ERROR) {
       tok_lexError();
@@ -2897,7 +2896,7 @@ function Parser(code, options = {}) {
       tok_asi();
     } else {
       $log('parse error at curent token');
-      THROW('Unable to ASI, token: ' + curtok); // TODO: remove curtok
+      return THROW('Unable to ASI');
     }
   }
 
@@ -5579,7 +5578,7 @@ function Parser(code, options = {}) {
       } else {
         // End of the expression before finding `in`, `of`, or a semi colon.
         // - `for ([] = x);`
-        THROW('Unknown input followed the left side of a for loop header after assignment: ' + curtok);
+        return THROW('Unknown input followed the left side of a for loop header after assignment');
       }
     }
     else {
@@ -5616,7 +5615,7 @@ function Parser(code, options = {}) {
         // [x]: `for ([]);`
         // [x]: `for ({});`
         //              ^
-        THROW('Unknown input followed the left side of a for loop header: ' + curtok);
+        return THROW('Unknown input followed the left side of a for loop header');
       }
     }
 
@@ -6440,7 +6439,7 @@ function Parser(code, options = {}) {
     let outerLexerflags = lexerFlags;
 
     let parens = 1;
-    let pees = [curtok]; // rare use of arrays because we need to remember where it was opened for locs in ASTs (edge case path meh)
+    let pees = [$tt_outerParenToken]; // rare use of arrays because we need to remember where it was opened for locs in ASTs (edge case path meh)
     // Cannot asi inside `delete (...)`, the `in` restriction stuff does not apply inside the arg
     lexerFlags = sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS);
     let $tt_parenToken = __oldtok;
@@ -6452,7 +6451,7 @@ function Parser(code, options = {}) {
     while (tok_getType() === $PUNC_PAREN_OPEN) {
       ++parens;
       $tt_parenToken = __oldtok;
-      pees[pees.length] = curtok;
+      pees[pees.length] = $tt_parenToken;
 
       // Note: next is expression start or `)` in case of `delete (()=>{})`
       ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // `delete (/x/.y)`, for bonus points
@@ -10790,7 +10789,7 @@ function Parser(code, options = {}) {
         destructible |= CANT_DESTRUCT;
       }
       else {
-        THROW('Object literal keys that are strings or numbers must be a method or have a colon: ' + curtok);
+        return THROW('Object literal keys that are strings or numbers must be a method or have a colon');
       }
 
       ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the expression');
@@ -11676,7 +11675,7 @@ function Parser(code, options = {}) {
         ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
         parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, undefined, $tt_bracketOpenToken, astProp);
       } else {
-        THROW('Expected to parse the key of a generator method but found something unexpected', curtok);
+        return THROW('Expected to parse the key of a generator method but found something unexpected');
       }
 
       ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
@@ -11766,7 +11765,7 @@ function Parser(code, options = {}) {
     else {
       // this is most likely an error
       // - `({x+=y})`
-      THROW('Unexpected character after object literal property name ' + curtok);
+      return THROW('Unexpected character after object literal property name');
     }
 
     // pick up the flags from assignable and put them in destructible
@@ -12352,7 +12351,7 @@ function Parser(code, options = {}) {
           break;
         default:
           // There aren't any other ident modifiers so this must be an error
-          THROW('Either the current modifier is unknown or the input that followed was unexpected', $tt_identToken, curtok);
+          return THROW('Either the current modifier is unknown or the input that followed was unexpected');
       }
 
       // The curtok must be key and is unknown. There are four types of key; ident, number, string, and computed

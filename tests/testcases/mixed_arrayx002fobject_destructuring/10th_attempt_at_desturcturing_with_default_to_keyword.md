@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Object literal keys that are strings or numbers must be a method or have a colon: {# PUNC_EQ : nl=N pos=6:7 loc=6:1 `=`#}
+  Object literal keys that are strings or numbers must be a method or have a colon
 
 [...{0=x} = c]
       ^------- error

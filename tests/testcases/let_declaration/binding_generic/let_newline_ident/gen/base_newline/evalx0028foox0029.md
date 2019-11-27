@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_PAREN_OPEN : nl=N pos=8:9 loc=4:2 `(`#}
+  Unable to ASI
 
 let
 eval(foo)

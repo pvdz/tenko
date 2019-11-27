@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=26:27 loc=26:1 `a` (canonical=`a`)#}
+  Unable to ASI
 
 async function f(){ yield a,b; }
                           ^------- error

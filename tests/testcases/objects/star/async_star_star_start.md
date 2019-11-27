@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected character after object literal property name {# PUNC_STAR_STAR : nl=N pos=8:10 loc=8:1 `**`#}
+  Unexpected character after object literal property name
 
 ({async **f(){}})
         ^------- error

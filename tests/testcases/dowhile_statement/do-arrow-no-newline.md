@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# ID_while : nl=N pos=9:14 loc=9:1 `while` (canonical=`while`)#}
+  Unable to ASI
 
 do x=>{} while(y)
          ^------- error

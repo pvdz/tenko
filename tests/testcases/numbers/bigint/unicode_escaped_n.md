@@ -36,7 +36,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# IDENT : nl=N pos=3:9 loc=3:1 `\u006E` (canonical=`n`)#}
+  Unable to ASI
 
 100\u006E
    ^------- error

@@ -31,7 +31,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# ID_while : nl=N pos=31:36 loc=16:2 `while` (canonical=`while`)#}
+  Unable to ASI
 
 function f() {
   do throw pass while(x);

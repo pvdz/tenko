@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Object literal keys that are strings or numbers must be a method or have a colon: {# PUNC_CURLY_CLOSE : nl=N pos=9:10 loc=9:1 `}`#}
+  Object literal keys that are strings or numbers must be a method or have a colon
 
 wrap({"a"}=obj);
          ^------- error

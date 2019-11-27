@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_EQ_GT : nl=N pos=22:24 loc=22:1 `=>`#}
+  Unable to ASI
 
 function *g() { yield => {}; }
                       ^------- error

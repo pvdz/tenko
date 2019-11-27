@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# NUMBER_DEC : nl=N pos=10:11 loc=6:2 `0`#}
+  Unable to ASI
 
 let
 yield 0

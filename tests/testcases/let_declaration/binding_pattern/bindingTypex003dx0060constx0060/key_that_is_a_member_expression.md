@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected character after object literal property name {# PUNC_DOT : nl=N pos=8:9 loc=8:1 `.`#}
+  Unexpected character after object literal property name
 
 const {a.b: c} = v;
         ^------- error

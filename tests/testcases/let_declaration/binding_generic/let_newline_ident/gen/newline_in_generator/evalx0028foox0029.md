@@ -31,7 +31,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_PAREN_OPEN : nl=N pos=28:29 loc=6:3 `(`#}
+  Unable to ASI
 
 function *f() {
   let

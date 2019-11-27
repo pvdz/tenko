@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unknown input followed the left side of a for loop header: {# PUNC_PAREN_CLOSE : nl=N pos=18:19 loc=18:1 `)`#}
+  Unknown input followed the left side of a for loop header
 
 for ([] + b in obj);
                   ^------- error

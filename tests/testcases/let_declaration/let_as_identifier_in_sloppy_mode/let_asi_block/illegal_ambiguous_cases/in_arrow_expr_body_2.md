@@ -44,7 +44,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_CURLY_OPEN : nl=N pos=9:10 loc=9:1 `{`#}
+  Unable to ASI
 
 _ => let {foo};
          ^------- error

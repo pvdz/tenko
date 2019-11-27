@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_DIV : nl=N pos=18:19 loc=18:1 `/`#}
+  Unable to ASI
 
 for (x of 3) break/
                   ^------- error

@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_BRACKET_CLOSE : nl=N pos=4:5 loc=4:1 `]`#}
+  Unable to ASI
 
 let ];
     ^------- error

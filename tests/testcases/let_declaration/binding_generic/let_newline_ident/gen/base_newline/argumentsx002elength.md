@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI, token: {# PUNC_DOT : nl=N pos=13:14 loc=9:2 `.`#}
+  Unable to ASI
 
 let
 arguments.length
