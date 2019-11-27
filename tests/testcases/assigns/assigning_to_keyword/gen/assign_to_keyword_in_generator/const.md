@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected identifier, or array/object destructuring, next token is: {# PUNC_EQ : nl=N pos=23:24 loc=8:2 `=`#}
+  Expected identifier, or array/object destructuring
 
 function *f(){
   const = 1;

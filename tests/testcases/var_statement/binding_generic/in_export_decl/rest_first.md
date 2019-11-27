@@ -50,7 +50,7 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Expected identifier, or array/object destructuring, next token is: {# PUNC_DOT_DOT_DOT : nl=N pos=11:14 loc=11:1 `...`#}
+  Expected identifier, or array/object destructuring
 
 export var ...a = 1;
            ^------- error

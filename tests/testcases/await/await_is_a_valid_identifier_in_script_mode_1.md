@@ -60,7 +60,7 @@ throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function (at EOF)
 
 await
-^------- error
+     ^------- error at EOF
 `````
 
 

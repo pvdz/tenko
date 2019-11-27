@@ -463,6 +463,13 @@ function Lexer(
   let consumedNewlinesBeforeSolid = false; // whitespace newline token or string token that contained newline or multiline comment
   let nlwas = false; // basically the state of consumedNewlinesBeforeSolid before starting the current token
   let finished = false; // generated an $EOF?
+  let lastOffset = pointer; // Value of `pointer` before starting to parse one token
+  let startForError = 0;
+  let lastType = 0;
+  let lastStart = 0;
+  let lastStop = 0;
+  let lastLine = 0;
+  let lastColumn = 0;
   let lastCanonizedInput = ''; // updated when parsing ident or string. Contains _unescaped_ input. Used for keyword checks and .value in ast for strings
   let lastCanonizedInputLen = 0; // work around an inline cache bug (lastCanonizedInput.length would cause megamorphic deopt for some reason)
   let lastRegexUnicodeEscapeOrd = 0; // need this to validate unicode escapes in named group identifiers :/
@@ -578,7 +585,6 @@ function Lexer(
   }
   // </SCRUB ASSERTS TO COMMENT>
 
-  let startForError = 0;
   function nextToken(lexerFlags) {
     ASSERT(nextToken.length === arguments.length, 'arg count');
     ASSERT(!finished, 'should not next() after eof token');
@@ -604,7 +610,7 @@ function Lexer(
       nlwas = consumedNewlinesBeforeSolid; // Do not include the newlines for the token itself unless whitespace (ex: `` throw `\n` ``)
 
       if (eof()) {
-        let token = createToken($EOF, pointer, pointer, startCol, startRow);
+        let token = createToken($EOF, pointer, pointer, startCol, startRow, false);
         finished = true;
         return returnSolidToken(token);
       }
@@ -617,27 +623,27 @@ function Lexer(
 
       // Non-whitespace tokens always get returned
       if (!isWhiteToken(consumedTokenType)) {
-        let token = createToken(consumedTokenType, start, pointer, startCol, startRow);
+        let token = createToken(consumedTokenType, start, pointer, startCol, startRow, false);
         return returnSolidToken(token);
       }
 
       // Babel parity demands comments to be returned... Not sure whether the complexity (over checking $white) is worth
       if (isCommentToken(consumedTokenType)) {
         if (returnTokens === RETURN_COMMENT_TOKENS) {
-          let token = createToken(consumedTokenType, start, pointer, startCol, startRow);
+          let token = createToken(consumedTokenType, start, pointer, startCol, startRow, false);
           return returnCommentToken(token);
         }
       }
 
       // This is a whitespace token (which may be a comment) that is not yet collected.
       if (collectTokens === COLLECT_TOKENS_ALL) {
-        let token = createToken(consumedTokenType, start, pointer, startCol, startRow);
+        let token = createToken(consumedTokenType, start, pointer, startCol, startRow, false);
         ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
         tokenStorage.push(token);
       }
 
       if (returnTokens === RETURN_ANY_TOKENS) {
-        return createToken(consumedTokenType, start, pointer, startCol, startRow);
+        return createToken(consumedTokenType, start, pointer, startCol, startRow, false);
       }
 
       // At this point it has to be some form of whitespace and we're clearly not returning it so we can
@@ -790,10 +796,10 @@ function Lexer(
   }
 
   function addAsi() {
-    let token = createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine);
     // are asi's whitespace? i dunno. they're kinda special so maybe.
     // put it _before_ the current token (that should be the "offending" token)
     if (collectTokens !== COLLECT_TOKENS_NONE) {
+      let token = createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine, true);
       ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
       tokenStorage.push(token, tokenStorage.pop());
     }
@@ -802,9 +808,9 @@ function Lexer(
     prevTokenSolid = true;
   }
 
-  function createToken(type, start, stop, column, line) {
+  function createToken(type, start, stop, column, line, asi) {
     ASSERT(createToken.length === arguments.length, 'arg count');
-    ASSERT(ALL_TOKEN_TYPES.includes(type) || console.log('####\n' + getErrorContext()), 'the set of generated token types is fixed. New ones combinations should be part of this set', type.toString(2));
+    ASSERT(ALL_TOKEN_TYPES.includes(type) || console.log('####\n' + getErrorContext(start, stop)), 'the set of generated token types is fixed. New ones combinations should be part of this set');
     ASSERT(Number.isFinite(start), 'start finite');
     ASSERT(Number.isFinite(stop), 'stop finite');
     ASSERT(Number.isFinite(column), 'col finite');
@@ -813,7 +819,7 @@ function Lexer(
 
     ASSERT(typeof lastCanonizedInput !== 'string' || lastCanonizedInput.length === lastCanonizedInputLen, 'the len cache should be equal to the canonized string len itself (thats the point)');
 
-    let token = createBaseToken(type, start, stop, column, line);
+    let token = createBaseToken(type, start, stop, column, line, asi);
 
     // <SCRUB DEV>
     token = {
@@ -830,8 +836,16 @@ function Lexer(
 
     return token;
   }
-  function createBaseToken(type, start, stop, column, line) {
+  function createBaseToken(type, start, stop, column, line, asi) {
     ASSERT(createBaseToken.length === arguments.length, 'arg count');
+
+    if (!asi) {
+      lastType = type;
+      lastStart = start;
+      lastStop = stop;
+      lastLine = line;
+      lastColumn = column;
+    }
 
     if (babelTokenCompat) {
       return {
@@ -1470,7 +1484,7 @@ function Lexer(
     lastCanonizedInput = '';
     lastCanonizedInputLen = 0;
 
-    let lastOffset = pointer;
+    lastOffset = pointer;
     let badEscapes = false;
     while (neof()) {
       // while we will want to consume at least one more byte for proper strings,
@@ -1544,7 +1558,7 @@ function Lexer(
         (c >= $$0_30 && c <= $$9_39)                        // DecimalDigit, not even sure about an example
       )
     ) {
-      THROW('Found `' + String.fromCharCode(c) + '`. It is not legal for an ident or number token to start after a number token without some form of separation');
+      return THROW2('Found `' + String.fromCharCode(c) + '`. It is not legal for an ident or number token to start after a number token without some form of separation', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
     }
   }
 
@@ -1576,7 +1590,7 @@ function Lexer(
         }
         if (e === $$N_6E) {
           if (!supportBigInt) {
-            THROW('BigInt suffix is not supported on legacy octals; use the `0o` prefix notation for that');
+            return THROW2('BigInt suffix is not supported on legacy octals; use the `0o` prefix notation for that', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
           }
         }
         // The dot may still lead to valid (though obscure) code: `01.foo` is the same as `1..foo`
@@ -1602,7 +1616,7 @@ function Lexer(
     } else if (c === $$N_6E) {
       // [v] `0n`
       if (!supportBigInt) {
-        THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')');
+        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_DEC;
@@ -1624,7 +1638,7 @@ function Lexer(
         // BigInt (ES2020 / ES11)
         // [v] `5464354354353n`
         if (!supportBigInt) {
-          THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')');
+          return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
         }
         ASSERT_skip($$N_6E);
         verifyCharAfterNumber();
@@ -1706,7 +1720,7 @@ function Lexer(
       // BigInt (ES2020 / ES11)
       // [v] `0x54a643D54354353n`
       if (!supportBigInt) {
-        THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')');
+        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_HEX;
@@ -1745,7 +1759,7 @@ function Lexer(
       // BigInt (ES2020 / ES11)
       // [v] `0o0043175346024n`
       if (!supportBigInt) {
-        THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')');
+        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_OCT;
@@ -1778,7 +1792,7 @@ function Lexer(
       // BigInt (ES2020 / ES11)
       // [v] `0b10100110101011010101001010110100001101n`
       if (!supportBigInt) {
-        THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')');
+        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_DEC;
@@ -1907,7 +1921,7 @@ function Lexer(
       ASSERT_skip($$U_75);
     } else {
       // any other escape is not supported in identifiers
-      THROW('Only unicode escapes are supported in identifier escapes');
+      return THROW2('Only unicode escapes are supported in identifier escapes', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
     }
 
     if (eof()) {
@@ -2601,7 +2615,7 @@ function Lexer(
             let l = namedBackRefs.length;
             for (let i=0;i<l;++i) {
               if (groupNames['#' + namedBackRefs[i]] === undefined) {
-                THROW('Named back reference \\k<' + namedBackRefs[i] +'> was not defined in this regex: ' + JSON.stringify(groupNames).replace(/"/g,''));
+                return THROW2('Named back reference \\k<' + namedBackRefs[i] +'> was not defined in this regex: ' + JSON.stringify(groupNames).replace(/"/g,''), startForError, startForError + 1); // TODO: use stop
               }
             }
           }
@@ -2700,7 +2714,7 @@ function Lexer(
                 c = peek();
                 if (c === $$IS_3D || c === $$EXCL_21) {
                   if (!supportRegexLookbehinds) {
-                    THROW('Lookbehinds in regular expressions are not supported in the currently targeted language version');
+                    return THROW2('Lookbehinds in regular expressions are not supported in the currently targeted language version', startForError, startForError + 1); // TODO: use stop
                   }
                   // (?<= (?<!
                   ASSERT_skip(c);
@@ -5023,43 +5037,69 @@ function Lexer(
     return $ERROR;
   }
 
-  function THROW(str, token = null) {
+  function THROW(str) {
     $error('Throwing this error:', str);
-    _THROW('Lexer error! ' + str, token, str);
+    _THROW('Lexer error! ' + str, lastOffset, pointer); // TODO: add str as second param?
   }
-  function _THROW(str, token = null, msg = '', fullErrorContext = false) {
+  function THROW2(str, tokenStart, tokenStop) {
+    $error('Throwing this error:', str);
+    _THROW2('Lexer error! ' + str, tokenStart, tokenStop); // TODO: add str as second param?
+  }
+  function _THROW(str, DONOTUSE, DONOTUSEEITHER, msg = '', fullErrorContext = false) {
     $log('\n');
-    let ectxt = getErrorContext(token, msg, fullErrorContext);
-    $log('Error at:\n```\n' + ectxt + (ectxt[ectxt.length-1] === '\n' ? '' : '\n') + '```\n');
-    if (gracefulErrors === FAIL_HARD) throw new Error(str);
+    let ectxt = getCurrentErrorContext(msg, fullErrorContext); // TODO: use other context func
+    let context = '\n`````\n' + ectxt + (ectxt[ectxt.length-1] === '\n' ? '' : '\n') + '`````\n';
+    $log('Error at:' + context);
+    if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
     else $error(str);
   }
-  function DEBUG(msg) {
-    return 'Lexer at:\n' + getErrorContext(undefined, 'DEBUG('+msg+')');
+  function _THROW2(str, tokenStart, tokenStop, msg = '', fullErrorContext = false) {
+    $log('\n');
+    let ectxt = getErrorContext(tokenStart, tokenStop, msg, fullErrorContext);
+    let context = '\n`````\n' + ectxt + (ectxt[ectxt.length-1] === '\n' ? '' : '\n') + '`````\n';
+    $log('Error at:' + context);
+    if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
+    else $error(str);
   }
-  function getErrorContext(token, msg, fullErrorContext = false) {
-    let offset = token ? token.start : startForError;
-    let inputOffset = fullErrorContext || offset <= 100 ? 0 : offset - 100;
-    if (inputOffset) offset -= inputOffset;
-    let usedInput = input.slice(inputOffset, fullErrorContext ? input.length : inputOffset + 200);
+  function getCurrentErrorContext(msg, fullErrorContext) {
+    let offset = startForError || pointer;
+    return getErrorContext(offset, offset + 1, msg, fullErrorContext);
+  }
+  function getErrorContext(tokenStart, tokenStop, msg = '', fullErrorContext = false) {
+    ASSERT(getErrorContext.length >= 2 && getErrorContext.length <= 4, 'arg count');
+    ASSERT(tokenStart <= tokenStop, 'should have a positive length range', tokenStart, tokenStop);
+    tokenStop = tokenStart + 1; // TODO: remove this line
+    let inputOffset = 0;
+    if (!fullErrorContext && tokenStart > 100) inputOffset = tokenStart - 100;
+    let inputLen = input.length;
+    if (!fullErrorContext && tokenStart + 200 < input.length) inputLen = tokenStart + 200;
+    let usedInput = input.slice(inputOffset, inputOffset + inputLen);
+    let tokenOffset = tokenStart - inputOffset; // Where is tokenStart relative to usedInput?
 
-    let nl1 = offset && (usedInput.lastIndexOf('\n', offset) + 1);
-    let nl2 = usedInput.indexOf('\n', nl1);
+    // nl1 is the last newline before the point of error, or SOF, relative to usedInput
+    // nl2 is the first newline to the right of nl1, or EOF, relative to usedInput
+    // We need nl1 to determine the offset and indentation of the error pointer
+    // We need nl2 because that's where we'll make the cut to inject the error pointer
+    let nl1 = usedInput.lastIndexOf('\n', tokenOffset);
+    let nl2 = usedInput.indexOf('\n', nl1 + 1);
     if (nl2 < 0) nl2 = usedInput.length;
-    let arrows = Math.max(1, token ? token.stop - token.start : 1);
+    let arrowCount = (tokenStop - tokenStart) || 1;
+    let indentCount = tokenOffset - (nl1 + 1);
 
-    let indent = offset - (nl1);
+    let pre = usedInput.slice(inputOffset, nl2).trimEnd(); // Trailing whitespaces are very unlikely to be relevant and annoying in diffs
+    let post = usedInput.slice(nl2, inputOffset + inputLen).trimEnd();
 
-    let maxStart = 600;
-    let maxTotal = 1000;
+    pre = pre.split('\n').map(s => s.trimRight()).join('\n')
+    post = post.split('\n').map(s => s.trimRight()).join('\n')
+
     return (
-      (nl2 > maxStart ? '...\n' : '') +
-      usedInput.slice(nl2 > maxStart ? nl2 - maxStart : 0, nl2) + '\n' +
-      ' '.repeat(Math.max(0, indent)) +
-      '^'.repeat(Math.max(0, arrows)) +
-      '------- error'+(msg?': '+msg:offset>=usedInput.length?' at EOF':'') + '\n' +
-      usedInput.slice(nl2, Math.min(nl2 + (maxTotal - maxStart), usedInput.length)) +
-      (usedInput.length > maxTotal ? '\n...' : '') +
+      (inputOffset > 0 ? '...\n' : '') +
+      pre + '\n' +
+      ' '.repeat(Math.max(0, indentCount)) +
+      '^'.repeat(Math.max(0, arrowCount)) +
+      '------- error' + (msg ? ': ' : '') + msg + (tokenOffset >= usedInput.length ? ' at EOF' : '') + (post ? '\n' : '') +
+      post +
+      (usedInput.length > inputLen ? '\n...' : '') +
       ''
     );
   }
@@ -5070,20 +5110,21 @@ function Lexer(
     nextToken: nextToken,
     asi: addAsi,
     throw: _THROW,
+    throw2: _THROW2,
     lexError: function() {
       if (lastReportableLexerError) {
-        THROW(lastReportableLexerError);
+        THROW2(lastReportableLexerError, startForError,  startForError + 1); // TODO: set stop
       }
       if (lastPotentialRegexError) {
-        THROW(lastPotentialRegexError);
+        THROW2(lastPotentialRegexError, startForError,  startForError + 1); // TODO: set stop
       }
       ASSERT(false, 'lexError should only be called if a lexer error was actually detected');
       THROW('Parser thought lexer threw an error but lexer has no error message prepared so ... please file an issue with this input?');
     },
     getTokenCountAny: function(){ return anyTokenCount; },
     getTokenCountSolid: function(){ return solidTokenCount; },
-    DEBUG: DEBUG,
     getErrorContext: getErrorContext,
+    getCurrentErrorContext: getCurrentErrorContext,
     regexerror: function(){ return lastPotentialRegexError; },
     prevEndColumn: function(){ return prevTokenEndColumn; },
     prevEndLine: function(){ return prevTokenEndLine; },
@@ -5094,6 +5135,11 @@ function Lexer(
 
     getNlwas: function(){ return nlwas; },
     getCanon: function(){ return lastCanonizedInput; }, // This is only relevant for idents and strings, but might be captured for other reasons. TODO: Should use a proxy in devmode which verifies that actual reads on this value are for ident/string tokens only...
+    getType: function(){ return lastType; },
+    getStart: function(){ return lastStart; },
+    getStop: function(){ return lastStop; },
+    getLine: function(){ return lastLine; },
+    getColumn: function(){ return lastColumn; },
     sliceInput: slice,
   };
 }

@@ -589,20 +589,21 @@ function Parser(code, options = {}) {
   let regexAssertTrace = undefined;
 
   let curtok = null;
+  let __oldtok = null;
 
   let NODE_NAME_PROPERTY = babelCompat ? 'ObjectProperty' : 'Property';
   let NODE_NAME_METHOD_OBJECT = babelCompat ? 'ObjectMethod' : 'Property';
   let NODE_NAME_METHOD_CLASS = babelCompat ? 'ClassMethod' : 'MethodDefinition';
 
   let assertExpectedFail = '';
-  let assertExpectedToken = null;
+  let $tt_assertExpectedToken = null;
   function ASSERT_VALID(bool, msg) {
     // An assert that must at least hold when the parser would otherwise accept the input.
     // This assert Will only throw an assertion error if the parser tripped over this but did not throw any actual error
     // (This helps with asserting certain syntax errors that would be properly caught without the assert)
     if (!bool) {
       assertExpectedFail = msg + '\n' + (new Error().stack);
-      assertExpectedToken = curtok;
+      $tt_assertExpectedToken = __oldtok;
     }
   }
 
@@ -630,6 +631,7 @@ function Parser(code, options = {}) {
   });
 
   let tok_throw = tok.throw;
+  let tok_throw2 = tok.throw2;
   let tok_lexError = tok.lexError;
   let tok_asi = tok.asi;
   let tok_prevEndColumn = tok.prevEndColumn;
@@ -641,6 +643,11 @@ function Parser(code, options = {}) {
   let tok_nextToken = tok.nextToken;
   let tok_getNlwas = tok.getNlwas;
   let tok_getCanon = tok.getCanon;
+  let tok_getType = tok.getType;
+  let tok_getStart = tok.getStart;
+  let tok_getStop = tok.getStop;
+  let tok_getLine = tok.getLine;
+  let tok_getColumn = tok.getColumn;
   let tok_sliceInput = tok.sliceInput;
 
   let allowTrailingFunctionComma = targetEsVersion >= VERSION_TRAILING_FUNC_COMMAS || targetEsVersion === VERSION_WHATEVER;
@@ -657,14 +664,25 @@ function Parser(code, options = {}) {
   if (getLexer) getLexer(tok);
 
   function THROW(desc, ...args) {
-    THROW_TOKEN(desc, curtok, ...args)
+    THROW_TOKEN(desc, tok_getStart(), tok_getStop(), ...args)
   }
-  function THROW_TOKEN(desc, token, ...args) {
+  function THROW_TOKEN(desc, tokenStart, tokenStop, ...args) {
+    if (tokenStart > tokenStop) throw new Error('range should be >0, was [' + tokenStart + ', ' + tokenStop + ']');
+
     $log('\n');
     $log('Error in parser:', desc, 'remaining throw args;', args);
-    $log('Error token: ' + token);
     // The "at eof" suffix also helps for reducing fuzz cases
-    tok_throw('Parser error! ' + desc + (curtok.type === $EOF ? ' (at EOF)' : ''), token, undefined, fullErrorContext);
+    let fullErrmsg = 'Parser error! ' + desc + (tok_getType() === $EOF ? ' (at EOF)' : '');
+    tok_throw(fullErrmsg, tokenStart, tokenStop, '', fullErrorContext);
+  }
+  function THROW_TOKEN2(desc, tokenStart, tokenStop, ...args) {
+    if (tokenStart > tokenStop) throw new Error('range should be >0, was [' + tokenStart + ', ' + tokenStop + ']');
+
+    $log('\n');
+    $log('Error in parser:', desc, 'remaining throw args;', args);
+    // The "at eof" suffix also helps for reducing fuzz cases
+    let fullErrmsg = 'Parser error! ' + desc + (tok_getType() === $EOF ? ' (at EOF)' : '');
+    tok_throw2(fullErrmsg, tokenStart, tokenStop, '', fullErrorContext);
   }
 
   let uid_counter = 0;
@@ -711,28 +729,28 @@ function Parser(code, options = {}) {
 
     return AST_getOpenLoc(1, 0, 0);
   }
-  function AST_getBaseLoc(firstToken) {
+  function AST_getBaseLoc($tt_firstToken) {
     ASSERT(AST_getBaseLoc.length === arguments.length, 'arg count');
 
     // Create a loc that is unclosed, to be closed by AST_close*
 
-    return AST_getOpenLoc(firstToken.line, firstToken.column, firstToken.start);
+    return AST_getOpenLoc($tt_firstToken.line, $tt_firstToken.column, $tt_firstToken.start);
   }
-  function AST_getBaseLocTemplate(firstToken) {
+  function AST_getBaseLocTemplate($tt_firstToken) {
     ASSERT(AST_getBaseLocTemplate.length === arguments.length, 'arg count');
 
     // Create a loc that is unclosed, to be closed by AST_close*
     // This loc is for template elements where the backticks, `${`, and `}` characters are ignored in
     // the location ranges... so +1 it
 
-    return AST_getOpenLoc(firstToken.line, firstToken.column + 1, firstToken.start);
+    return AST_getOpenLoc($tt_firstToken.line, $tt_firstToken.column + 1, $tt_firstToken.start);
   }
-  function AST_getClosedLoc(firstToken) {
+  function AST_getClosedLoc($t_firstToken_line, $t_firstToken_column, $t_firstToken_start) {
     ASSERT(AST_getClosedLoc.length === arguments.length, 'arg count');
 
     // Create a loc that is immediately closed
 
-    return AST_getCloseLoc(firstToken.line, firstToken.column, firstToken.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer());
+    return AST_getCloseLoc($t_firstToken_line, $t_firstToken_column, $t_firstToken_start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer());
   }
   function AST_getOpenLoc(startLine, startColumn, startIndex) {
     ASSERT(AST_getOpenLoc.length === arguments.length, 'arg count');
@@ -829,7 +847,7 @@ function Parser(code, options = {}) {
     let was = _path.pop();
     ASSERT(was.loc.end.column === 0, 'only set once, when closing the node');
     ASSERT(was.loc.end.line === 1, 'only set once, when closing the node');
-    // In all cases where AST_close is called, `curtok` should be the first token of the next node(s)
+    // In all cases where AST_close is called, the current token should be the first token of the next node(s)
     // However, it ought to be the first _whitespace_ token, not just non-whitespace
     // The column offsets at 0, the line at 1
     was.loc.end.column = tok_prevEndColumn();
@@ -888,7 +906,7 @@ function Parser(code, options = {}) {
     ASSERT(typeof prop === 'string', 'prop should be string');
     ASSERT(_path.length > 0, 'path shouldnt be empty');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
-    ASSERT(prop[0] === '$' || prop === 'directives' || prop === 'extra' || _path[_path.length - 1].hasOwnProperty(prop), 'all ast node members should be predefined', prop, '--->', _path[_path.length - 1]);
+    ASSERT(prop[0] === '$' || prop === 'directives' || prop === 'extra' || _path[_path.length - 1].hasOwnProperty(prop), 'all ast node members should be predefined');
 
     // Set a property value and expect it to be undefined before
     ASSERT(_path[_path.length - 1][prop] === undefined, 'use AST_clobber? This func doesnt clobber, prop=' + prop + ', val=' + value);
@@ -939,122 +957,122 @@ function Parser(code, options = {}) {
 
     return node; // for ASSERTs only!
   }
-  function AST_setIdent(astProp, token, tokenCanon) {
+  function AST_setIdent(astProp, $tt_identToken, tokenCanon) {
     ASSERT(AST_setIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
-    ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
-    ASSERT(isIdentToken(token.type), 'token must be ident');
+    ASSERT(typeof $tt_identToken === 'object' && $tt_identToken && typeof $tt_identToken.type === 'number', 'should receive token');
+    ASSERT($tt_identToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
+    ASSERT(isIdentToken($tt_identToken.type), 'token must be ident');
 
-    let identNode = AST_getIdentNode(token, tokenCanon);
+    let identNode = AST_getIdentNode($tt_identToken, tokenCanon);
     return AST_setNode(astProp, identNode); // only for ASSERTS
   }
-  function AST_getIdentNode(token, tokenCanon) {
+  function AST_getIdentNode($tt_identToken, tokenCanon) {
     ASSERT(AST_getIdentNode.length === arguments.length, 'arg count');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
-    ASSERT(isIdentToken(token.type), 'token must be ident');
+    ASSERT(typeof $tt_identToken === 'object' && $tt_identToken && typeof $tt_identToken.type === 'number', 'should receive token');
+    ASSERT(isIdentToken($tt_identToken.type), 'token must be ident');
     ASSERT(typeof tokenCanon === 'string');
     ASSERT(tokenCanon === tokenCanon);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, col, line, ...} = token`. It may be :)
-    let col = token.column;
-    let line = token.line;
-    let len = token.stop - token.start;
+    let col = $tt_identToken.column;
+    let line = $tt_identToken.line;
+    let len = $tt_identToken.stop - $tt_identToken.start;
     // Idents can't contain newlines so the end.column should be start.column+len
     let colEnd = col + len;
 
     let identNode = {
       type: 'Identifier',
-      loc: AST_getCloseLoc(line, col, token.start, line, colEnd, token.stop),
+      loc: AST_getCloseLoc(line, col, $tt_identToken.start, line, colEnd, $tt_identToken.stop),
       // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
       name: tokenCanon,
     };
     if (babelCompat) identNode.loc.identifierName = tokenCanon;
-    ASSERT(identNode.loc.end.column - identNode.loc.start.column === token._str.length, 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
+    ASSERT(identNode.loc.end.column - identNode.loc.start.column === $tt_identToken._str.length, 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
 
     return identNode;
   }
-  function AST_setLiteral(astProp, token, tokenCanon) {
-    _AST_setLiteral(astProp, token, tokenCanon, false);
+  function AST_setLiteral(astProp, $tt_litToken, tokenCanon) {
+    _AST_setLiteral(astProp, $tt_litToken, tokenCanon, false);
   }
-  function _AST_setLiteral(astProp, token, tokenCanon, fromDirective) {
+  function _AST_setLiteral(astProp, $tt_litToken, tokenCanon, fromDirective) {
     ASSERT(_AST_setLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'prop is string');
-    ASSERT(typeof token === 'object', 'token is obj');
+    ASSERT(typeof $tt_litToken === 'object', 'token is obj');
     ASSERT(_path.length > 0, 'path shouldnt be empty');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
-    ASSERT(isNumberStringRegex(token.type), 'should be number or string');
-    ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
+    ASSERT(isNumberStringRegex($tt_litToken.type), 'should be number or string');
+    ASSERT($tt_litToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     let node; // for assert
-    if (isStringToken(token.type)) {
-      node = AST_setStringLiteral(astProp, token, tokenCanon, fromDirective);
+    if (isStringToken($tt_litToken.type)) {
+      node = AST_setStringLiteral(astProp, $tt_litToken, tokenCanon, fromDirective);
     }
-    else if (isNumberToken(token.type)) {
-      if (isBigintToken(token.type)) {
-        node = AST_setBigInt(astProp, token);
+    else if (isNumberToken($tt_litToken.type)) {
+      if (isBigintToken($tt_litToken.type)) {
+        node = AST_setBigInt(astProp, $tt_litToken);
       } else {
-        node = AST_setNumberLiteral(astProp, token);
+        node = AST_setNumberLiteral(astProp, $tt_litToken);
       }
     }
-    else if (isRegexToken(token.type)) {
-      ASSERT(token._str.split('/').length > 2, 'a regular expression should have at least two forward slashes', token._str);
-      node = AST_setRegexLiteral(astProp, token);
+    else if (isRegexToken($tt_litToken.type)) {
+      ASSERT($tt_litToken._str.split('/').length > 2, 'a regular expression should have at least two forward slashes', $tt_litToken._str);
+      node = AST_setRegexLiteral(astProp, $tt_litToken);
     }
     else {
-      ASSERT(false, 'what kind of literal is this?', T(token.type), ''+token, isNumberToken(token.type));
+      ASSERT(false, 'what kind of literal is this?', T($tt_litToken.type), ''+$tt_litToken, isNumberToken($tt_litToken.type));
     }
     // It's difficult to make this generic but for idents and literals it's doable
     ASSERT(node, 'should be set by one of the branches');
-    ASSERT(token._str.includes('\n') || token._str.includes('\r') || token._str.includes('\u2028') || token._str.includes('\u2029') || node.loc.end.column - node.loc.start.column === (token.stop - token.start), 'for literals the location should only span exactly the length of the lit', node.loc, token);
+    ASSERT($tt_litToken._str.includes('\n') || $tt_litToken._str.includes('\r') || $tt_litToken._str.includes('\u2028') || $tt_litToken._str.includes('\u2029') || node.loc.end.column - node.loc.start.column === ($tt_litToken.stop - $tt_litToken.start), 'for literals the location should only span exactly the length of the lit', node.loc, $tt_litToken);
   }
-  function AST_getStringNode(token, tokenCanon, fromDirective) {
+  function AST_getStringNode($tt_stringToken, tokenCanon, fromDirective) {
     ASSERT(AST_getStringNode.length === arguments.length, 'arg count');
 
-    if (babelCompat) return AST_babelGetStringNode(token, tokenCanon, fromDirective);
+    if (babelCompat) return AST_babelGetStringNode($tt_stringToken, tokenCanon, fromDirective);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
     ASSERT_pushCanonPoison(true);
     let node = {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
+      loc: AST_getCloseLoc($tt_stringToken.line, $tt_stringToken.column, $tt_stringToken.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
       value: tokenCanon,
-      raw: tok_sliceInput(token.start, token.stop),
+      raw: tok_sliceInput($tt_stringToken.start, $tt_stringToken.stop),
     };
     ASSERT_popCanonPoison();
     return node;
   }
-  function AST_setStringLiteral(astProp, token, tokenCanon, fromDirective) {
+  function AST_setStringLiteral(astProp, $tt_stringToken, tokenCanon, fromDirective) {
     ASSERT(AST_setStringLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
-    ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
+    ASSERT(typeof $tt_stringToken === 'object' && $tt_stringToken && typeof $tt_stringToken.type === 'number', 'should receive token');
+    ASSERT($tt_stringToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
-    let stringNode = AST_getStringNode(token, tokenCanon, fromDirective);
+    let stringNode = AST_getStringNode($tt_stringToken, tokenCanon, fromDirective);
     return AST_setNode(astProp, stringNode); // for ASSERTs only!
   }
-  function AST_getNumberNode(token) {
+  function AST_getNumberNode($tt_numberToken) {
     ASSERT(AST_getNumberNode.length === arguments.length, 'arg count');
 
-    let type = token.type;
-    if (isBigintToken(type)) return AST_getBigIntNode(token);
-    if (babelCompat) return AST_babelGetNumberNode(token);
+    let type = $tt_numberToken.type;
+    if (isBigintToken(type)) return AST_getBigIntNode($tt_numberToken);
+    if (babelCompat) return AST_babelGetNumberNode($tt_numberToken);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    let str = tok_sliceInput(token.start, token.stop);
+    let str = tok_sliceInput($tt_numberToken.start, $tt_numberToken.stop);
     let value =
       type === $NUMBER_DEC ? parseFloat(str) : // parseFloat also deals with `e` cases
       type === $NUMBER_HEX ? parseInt(str.slice(2), 16) :
       type === $NUMBER_BIN ? parseInt(str.slice(2), 2) :
       type === $NUMBER_OCT ? parseInt(str.slice(2), 8) :
       (
-        ASSERT(type === $NUMBER_OLD, 'number types are enum and bigint should not reach this', token),
-        ASSERT(str !== '0', 'a zero should just be a decimal', token),
+        ASSERT(type === $NUMBER_OLD, 'number types are enum and bigint should not reach this', $tt_numberToken),
+        ASSERT(str !== '0', 'a zero should just be a decimal', $tt_numberToken),
         str.includes('8') || str.includes('9')
         ? parseFloat(str.slice(1))
         : parseInt(str.slice(1), 8)
@@ -1062,24 +1080,24 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_numberToken.line, $tt_numberToken.column, $tt_numberToken.start, $tt_numberToken.line, $tt_numberToken.column + ($tt_numberToken.stop - $tt_numberToken.start), $tt_numberToken.stop),
       value: value,
       raw: str,
     };
   }
-  function AST_setNumberLiteral(astProp, token) {
+  function AST_setNumberLiteral(astProp, $tt_numberToken) {
     ASSERT(AST_setNumberLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
-    ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
+    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.type === 'number', 'should receive token');
+    ASSERT($tt_numberToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_numberToken, tok_getStart());
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
-    let numberNode = AST_getNumberNode(token);
+    let numberNode = AST_getNumberNode($tt_numberToken);
     return AST_setNode(astProp, numberNode); // for ASSERTs only!
   }
-  function AST_getBigIntNode(token) {
+  function AST_getBigIntNode($tt_numberToken) {
     // [v] `45n`
     // [v] `0b100n`
     // [v] `0o533n`
@@ -1091,37 +1109,37 @@ function Parser(code, options = {}) {
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    if (acornCompat) return AST_acornGetBigIntNode(token);
-    if (babelCompat) return AST_babelGetBigIntNode(token);
+    if (acornCompat) return AST_acornGetBigIntNode($tt_numberToken);
+    if (babelCompat) return AST_babelGetBigIntNode($tt_numberToken);
 
     return {
       type: 'BigIntLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_numberToken.line, $tt_numberToken.column, $tt_numberToken.start, $tt_numberToken.line, $tt_numberToken.column + ($tt_numberToken.stop - $tt_numberToken.start), $tt_numberToken.stop),
       value: null,
-      bigint: tok_sliceInput(token.start, token.stop - 1), // TODO: Normalize... https://github.com/estree/estree/issues/200
+      bigint: tok_sliceInput($tt_numberToken.start, $tt_numberToken.stop - 1), // TODO: Normalize... https://github.com/estree/estree/issues/200
     };
   }
-  function AST_setBigInt(astProp, token) {
+  function AST_setBigInt(astProp, $tt_numberToken) {
     ASSERT(AST_setBigInt.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
-    ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
+    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.type === 'number', 'should receive token', $tt_numberToken, typeof $tt_numberToken === 'object', $tt_numberToken && typeof $tt_numberToken.type === 'number');
+    ASSERT($tt_numberToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_numberToken, tok_getStart());
 
-    let bigintNode = AST_getBigIntNode(token);
+    let bigintNode = AST_getBigIntNode($tt_numberToken);
     return AST_setNode(astProp, bigintNode); // for ASSERTs only!
   }
-  function AST_getRegexNode(token) {
+  function AST_getRegexNode($tt_regexToken) {
     ASSERT(AST_getRegexNode.length === arguments.length, 'arg count');
 
-    if (acornCompat) return AST_acornGetRegexNode(token);
-    if (babelCompat) return AST_babelGetRegexNode(token);
+    if (acornCompat) return AST_acornGetRegexNode($tt_regexToken);
+    if (babelCompat) return AST_babelGetRegexNode($tt_regexToken);
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    let str = tok_sliceInput(token.start, token.stop);
+    let str = tok_sliceInput($tt_regexToken.start, $tt_regexToken.stop);
     let pos = str.lastIndexOf('/');
     let body = str.slice(1, pos);
     let tail = str.slice(pos + 1);
@@ -1130,7 +1148,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_regexToken.line, $tt_regexToken.column, $tt_regexToken.start, $tt_regexToken.line, $tt_regexToken.column + ($tt_regexToken.stop - $tt_regexToken.start), $tt_regexToken.stop),
       value: null,
       regex: {
         pattern: body,
@@ -1139,13 +1157,13 @@ function Parser(code, options = {}) {
       raw: str,
     };
   }
-  function AST_setRegexLiteral(astProp, token) {
+  function AST_setRegexLiteral(astProp, $tt_regexToken) {
     ASSERT(AST_setRegexLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', token, typeof token === 'object', token && typeof token.type === 'number');
-    ASSERT(token !== curtok, 'token should be consumed to ensure location data is correct', token, curtok);
+    ASSERT(typeof $tt_regexToken === 'object' && $tt_regexToken && typeof $tt_regexToken.type === 'number', 'should receive token', $tt_regexToken, typeof $tt_regexToken === 'object', $tt_regexToken && typeof $tt_regexToken.type === 'number');
+    ASSERT($tt_regexToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_regexToken, tok_getStart());
 
-    let regexNode = AST_getRegexNode(token);
+    let regexNode = AST_getRegexNode($tt_regexToken);
     return AST_setNode(astProp, regexNode); // for ASSERTs only!
   }
   function AST_add(prop, value) {
@@ -1288,27 +1306,27 @@ function Parser(code, options = {}) {
 
     parentNode[prop] = newNode;
   }
-  function AST_destructArrowParams(toplevelComma, asyncToken, arrowStartToken, astProp) {
+  function AST_destructArrowParams(toplevelComma, $tt_asyncToken, $t_arrowStart_line, $t_arrowStart_column, $t_arrowStart_start, astProp) {
     ASSERT(AST_destructArrowParams.length === arguments.length, 'arg count');
 
     if (babelCompat) {
       AST_wrapClosedIntoArrayCustom(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc(arrowStartToken),
+        loc: AST_getOpenLoc($t_arrowStart_line, $t_arrowStart_column, $t_arrowStart_start),
         params: undefined,
         id: null,
         generator: false,
-        async: asyncToken !== UNDEF_ASYNC,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         body: undefined,
       }, 'params');
     } else {
       AST_wrapClosedIntoArrayCustom(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc(arrowStartToken),
+        loc: AST_getOpenLoc($t_arrowStart_line, $t_arrowStart_column, $t_arrowStart_start),
         params: undefined,
         id: null,
         generator: false,
-        async: asyncToken !== UNDEF_ASYNC,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         expression: undefined, // TODO: init to bool
         body: undefined,
       }, 'params');
@@ -1328,10 +1346,10 @@ function Parser(code, options = {}) {
     }
 
   }
-  function AST_convertArrayToPattern(token, astProp) {
+  function AST_convertArrayToPattern($tt_eqToken, astProp) {
     ASSERT(AST_convertArrayToPattern.length === arguments.length, 'arg count');
 
-    if (token.type === $PUNC_EQ) {
+    if ($tt_eqToken.type === $PUNC_EQ) {
       let node = _path[_path.length - 1][astProp];
       if (Array.isArray(node)) {
         node = node[node.length - 1];
@@ -1372,7 +1390,7 @@ function Parser(code, options = {}) {
       THROW('Can only increment or decrement an identifier or member expression');
     }
   }
-  function AST_patchAsyncCall(asyncToken, asyncTokenCanon, astProp) {
+  function AST_patchAsyncCall($tt_asyncToken, asyncCanon, astProp) {
     ASSERT(AST_patchAsyncCall.length === arguments.length, 'arg count');
 
     let node = _path[_path.length - 1];
@@ -1390,8 +1408,8 @@ function Parser(code, options = {}) {
     ASSERT(_path[_path.length - 1][astProp]  instanceof Array || !void(_path[_path.length - 1][astProp] = undefined), '(there is an assert that confirms that the property is undefined and we expect this not to be the case here)');
     AST_setNode(astProp, {
       type: 'CallExpression',
-      loc: AST_getClosedLoc(asyncToken),
-      callee: AST_getIdentNode(asyncToken, asyncTokenCanon),
+      loc: AST_getClosedLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
+      callee: AST_getIdentNode($tt_asyncToken, asyncCanon),
       arguments: args,
     });
   }
@@ -1415,7 +1433,7 @@ function Parser(code, options = {}) {
       dir.expression.type = 'DirectiveLiteral';
     }
   }
-  function AST_babelParenthesizesClosed(token, astProp) {
+  function AST_babelParenthesizesClosed($tt_parenOpenToken, astProp) {
     // Hack: get the node we just closed and add the extra meta data to it
     let parent = _path[_path.length-1];
     let child = parent[astProp];
@@ -1426,42 +1444,42 @@ function Parser(code, options = {}) {
 
     if (child.extra) {
       child.extra.parenthesized = true;
-      child.extra.parenStart = token.start;
+      child.extra.parenStart = $tt_parenOpenToken.start;
     } else {
       child.extra = {
         parenthesized: true,
-        parenStart: token.start,
+        parenStart: $tt_parenOpenToken.start,
       };
     }
   }
-  function AST_babelAddComment(commentToken) {
+  function AST_babelAddComment($tt_commentToken) {
     // Create property if it doesn't already exist.
     // Add comment if it does.
     if (!_path[_path.length - 1].innerComments) _path[_path.length - 1].innerComments = [];
 
-    let type = commentToken.type;
-    let str = tok_sliceInput(commentToken.start, commentToken.stop);
+    let type = $tt_commentToken.type;
+    let str = tok_sliceInput($tt_commentToken.start, $tt_commentToken.stop);
 
     let typeName = 'CommentLine';
     let value = '';
     if (type === $COMMENT_SINGLE) {
       // typeName = 'CommentBlock'
-      value = tok_sliceInput(commentToken.start + 2, commentToken.stop);
+      value = tok_sliceInput($tt_commentToken.start + 2, $tt_commentToken.stop);
     } else if (type === $COMMENT_MULTI) {
       typeName = 'CommentBlock'
-      value = tok_sliceInput(commentToken.start + 2, commentToken.stop - 2);
+      value = tok_sliceInput($tt_commentToken.start + 2, $tt_commentToken.stop - 2);
     } else {
       ASSERT(type === $COMMENT_HTML, 'comment is enum so this must be html');
       ASSERT(str.slice(0,3) === '-->' || str.slice(0, 4) === '<!--', 'only two types of html comment');
       // Note: html comments are single line ast nodes
       // typeName = 'CommentLine'
-      value = str.slice(0, 3) === '-->' ? tok_sliceInput(commentToken.start + 3, commentToken.stop) : tok_sliceInput(commentToken.start + 4, commentToken.stop);
+      value = str.slice(0, 3) === '-->' ? tok_sliceInput($tt_commentToken.start + 3, $tt_commentToken.stop) : tok_sliceInput($tt_commentToken.start + 4, $tt_commentToken.stop);
     }
 
     let commentNode = {
       type: typeName,
       // Comment nodes are recorded immediately and should read the current position as their end...
-      loc: AST_getCloseLoc(commentToken.line, commentToken.column, commentToken.start, tok_currLine(), tok_currColumn(), tok_currPointer()),
+      loc: AST_getCloseLoc($tt_commentToken.line, $tt_commentToken.column, $tt_commentToken.start, tok_currLine(), tok_currColumn(), tok_currPointer()),
       value: value
     };
 
@@ -1476,35 +1494,35 @@ function Parser(code, options = {}) {
 
     return commentNode; // debug/assertions only...
   }
-  function AST_babelGetStringNode(token, tokenCanon, fromDirective) {
+  function AST_babelGetStringNode($tt_stringToken, tokenCanon, fromDirective) {
     ASSERT(AST_babelGetStringNode.length === arguments.length, 'arg count');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', [token, typeof token === 'object', token && typeof token.type === 'number']);
+    ASSERT(typeof $tt_stringToken === 'object' && $tt_stringToken && typeof $tt_stringToken.type === 'number', 'should receive token', [$tt_stringToken, typeof $tt_stringToken === 'object', $tt_stringToken && typeof $tt_stringToken.type === 'number']);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
     let canon = tokenCanon;
-    let str = tok_sliceInput(token.start, token.stop);
+    let str = tok_sliceInput($tt_stringToken.start, $tt_stringToken.stop);
     let value = fromDirective ? str : canon;
 
     return {
       type: 'StringLiteral',
       // Note: strings can contain 2028/2029 and line continuations, which increment the line counter. So we can't just use str.length
-      loc: AST_getCloseLoc(token.line, token.column, token.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
+      loc: AST_getCloseLoc($tt_stringToken.line, $tt_stringToken.column, $tt_stringToken.start, tok_prevEndLine(), tok_prevEndColumn(), tok_prevEndPointer()),
       value: value,
       extra: {rawValue: value, raw: str},
     };
   }
-  function AST_babelGetNumberNode(token) {
+  function AST_babelGetNumberNode($tt_numberToken) {
     ASSERT(AST_babelGetNumberNode.length === arguments.length, 'arg count');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', [token, typeof token === 'object', token && typeof token.type === 'number']);
+    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.type === 'number', 'should receive token', [$tt_numberToken, typeof $tt_numberToken === 'object', $tt_numberToken && typeof $tt_numberToken.type === 'number']);
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    let type = token.type;
-    let str = tok_sliceInput(token.start, token.stop);
+    let type = $tt_numberToken.type;
+    let str = tok_sliceInput($tt_numberToken.start, $tt_numberToken.stop);
     let value =
       type === $NUMBER_DEC ? parseFloat(str) : // parseFloat also deals with `e` cases
       type === $NUMBER_HEX ? parseInt(str.slice(2), 16) :
@@ -1520,57 +1538,57 @@ function Parser(code, options = {}) {
 
     return {
       type: 'NumericLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_numberToken.line, $tt_numberToken.column, $tt_numberToken.start, $tt_numberToken.line, $tt_numberToken.column + ($tt_numberToken.stop - $tt_numberToken.start), $tt_numberToken.stop),
       value: value,
       extra: { rawValue: value, raw: str},
     };
   }
-  function AST_babelGetBigIntNode(token) {
-    let str = tok_sliceInput(token.start, token.stop - 1);
+  function AST_babelGetBigIntNode($tt_numberToken) {
+    let str = tok_sliceInput($tt_numberToken.start, $tt_numberToken.stop - 1);
     return {
       type: 'BigIntLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_numberToken.line, $tt_numberToken.column, $tt_numberToken.start, $tt_numberToken.line, $tt_numberToken.column + ($tt_numberToken.stop - $tt_numberToken.start), $tt_numberToken.stop),
       value: str,
       extra: {rawValue: str, raw: str}, // This will probably change ...
     };
   }
-  function AST_babelGetRegexNode(token) {
+  function AST_babelGetRegexNode($tt_regexToken) {
     ASSERT(AST_babelGetRegexNode.length === arguments.length, 'arg count');
-    ASSERT(typeof token === 'object' && token && typeof token.type === 'number', 'should receive token', [token, typeof token === 'object', token && typeof token.type === 'number']);
+    ASSERT(typeof $tt_regexToken === 'object' && $tt_regexToken && typeof $tt_regexToken.type === 'number', 'should receive token', [$tt_regexToken, typeof $tt_regexToken === 'object', $tt_regexToken && typeof $tt_regexToken.type === 'number']);
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
-    let str = tok_sliceInput(token.start, token.stop);
+    let str = tok_sliceInput($tt_regexToken.start, $tt_regexToken.stop);
     let pos = str.lastIndexOf('/');
     let body = str.slice(1, pos);
     let tail = str.slice(pos + 1);
 
     return {
       type: 'RegExpLiteral',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_regexToken.line, $tt_regexToken.column, $tt_regexToken.start, $tt_regexToken.line, $tt_regexToken.column + ($tt_regexToken.stop - $tt_regexToken.start), $tt_regexToken.stop),
       pattern: body,
       flags: tail,
       extra: {rawValue: undefined, raw: str},
       value: undefined,
     };
   }
-  function AST_acornGetBigIntNode(token) {
-    let strn = tok_sliceInput(token.start, token.stop);
+  function AST_acornGetBigIntNode($tt_numberToken) {
+    let strn = tok_sliceInput($tt_numberToken.start, $tt_numberToken.stop);
     let str = strn.slice(0, -1);
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_numberToken.line, $tt_numberToken.column, $tt_numberToken.start, $tt_numberToken.line, $tt_numberToken.column + ($tt_numberToken.stop - $tt_numberToken.start), $tt_numberToken.stop),
       raw: strn,
       bigint: str,
       value: BigInt(str), // Ironically it doesn't accept bigint notation
     };
   }
-  function AST_acornGetRegexNode(token) {
+  function AST_acornGetRegexNode($tt_regexToken) {
 
-    let str = tok_sliceInput(token.start, token.stop);
+    let str = tok_sliceInput($tt_regexToken.start, $tt_regexToken.stop);
     let pos = str.lastIndexOf('/');
     let body = str.slice(1, pos);
     let tail = str.slice(pos + 1);
@@ -1580,7 +1598,7 @@ function Parser(code, options = {}) {
 
     return {
       type: 'Literal',
-      loc: AST_getCloseLoc(token.line, token.column, token.start, token.line, token.column + (token.stop - token.start), token.stop),
+      loc: AST_getCloseLoc($tt_regexToken.line, $tt_regexToken.column, $tt_regexToken.start, $tt_regexToken.line, $tt_regexToken.column + ($tt_regexToken.stop - $tt_regexToken.start), $tt_regexToken.stop),
       value: new RegExp(body, tail), // Only difference
       regex: {
         pattern: body,
@@ -1593,10 +1611,10 @@ function Parser(code, options = {}) {
   function initLexer(lexerFlags) {
     do {
       skipToStatementStart(lexerFlags);
-      if (curtok.type === $ERROR) {
-        THROW_TOKEN('Lexer error: ' + tok_lexError(), curtok);
+      if (tok_getType() === $ERROR) {
+        THROW_TOKEN('Lexer error: ' + tok_lexError(), tok_getStart(), tok_getStop());
       }
-    } while (curtok.type === $ERROR);
+    } while (tok_getType() === $ERROR);
   }
 
   function skipRex(lexerFlags) {
@@ -1607,7 +1625,7 @@ function Parser(code, options = {}) {
 
     _skip(lexerFlags | LF_FOR_REGEX);
 
-    ASSERT(typeof curtok.type === 'number' && curtok.type >= 0);
+    ASSERT(tok_getType() >= 0);
   }
   function skipDiv(lexerFlags) {
     // skip a token and if the next token starts with a forward slash, search for a division punctuator
@@ -1617,7 +1635,7 @@ function Parser(code, options = {}) {
 
     _skip(lexerFlags);
 
-    ASSERT(typeof curtok.type === 'number' && curtok.type >= 0);
+    ASSERT(tok_getType() >= 0);
   }
   function skipAny(lexerFlags) {
     // skip a token and if the next token starts with a forward slash, search for a division punctuator
@@ -1627,8 +1645,8 @@ function Parser(code, options = {}) {
 
     _skip(lexerFlags);
 
-    ASSERT(typeof curtok.type === 'number' && curtok.type >= 0);
-    ASSERT_VALID(curtok.type !== $PUNC_DIV && !isRegexToken(curtok.type), 'this function should not be called if the parsed token could possibly start with a forward slash (div/regex)');
+    ASSERT(tok_getType() >= 0);
+    ASSERT_VALID(tok_getType() !== $PUNC_DIV && !isRegexToken(tok_getType()), 'this function should not be called if the parsed token could possibly start with a forward slash (div/regex)');
   }
   function _skip(lexerFlags) {
     // This is regex agnostic and should be called from skipDiv or skipRex only ...
@@ -1636,18 +1654,22 @@ function Parser(code, options = {}) {
     updateToken(tok_nextToken(lexerFlags));
 
     if (babelCompat) {
-      let maybeComment = curtok;
-      while (isCommentToken(maybeComment.type)) {
+      let $tt_maybeComment = __oldtok;
+      let $t_maybeComment_line = tok_getLine();
+      let $t_maybeComment_column = tok_getColumn();
+      let $t_maybeComment_start = tok_getStart();
+
+      while (isCommentToken($tt_maybeComment.type)) {
         updateToken(tok_nextToken(lexerFlags));
-        AST_babelAddComment(maybeComment);
-        maybeComment = curtok;
+        AST_babelAddComment($tt_maybeComment);
+        $tt_maybeComment = __oldtok;
       }
     }
   }
-  function updateToken(token) {
-    curtok = token;
+  function updateToken($tt_nextToken) {
+    __oldtok = curtok = $tt_nextToken;
 
-    if (curtok.type === $ERROR) {
+    if (tok_getType() === $ERROR) {
       tok_lexError();
     }
   }
@@ -1659,14 +1681,14 @@ function Parser(code, options = {}) {
     ASSERT(typeof what === 'number' || typeof what === 'string', 'what number/string');
     ASSERT(hasNoFlag(lexerFlags, LF_FOR_REGEX), 'regex flag should not be set or propagated inside the parser');
     if (typeof what === 'string') {
-      ASSERT(curtok._str === what, 'expecting to skip token with certain value', 'expect:', what, 'actual:', T(curtok.type), curtok._str);
+      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === what, 'expecting to skip token with certain value');
     } else {
       if (ALL_TOKEN_GROUPS.includes(what)) {
         // Check for a group type of token
-        ASSERT((curtok.type & what) === what, 'Expected to parse a particular group type of token', what);
+        ASSERT((tok_getType() & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
         ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
-        ASSERT(hasAllFlags(curtok.type, what), 'expecting to skip token with certain type', 'expect:', T(what), 'actual:', T(curtok.type));
+        ASSERT(hasAllFlags(tok_getType(), what), 'expecting to skip token with certain type');
       }
     }
     skipRex(lexerFlags);
@@ -1678,18 +1700,14 @@ function Parser(code, options = {}) {
     ASSERT(typeof what === 'number' || typeof what === 'string', 'what number/string');
     ASSERT(hasNoFlag(lexerFlags, LF_FOR_REGEX), 'regex flag should not be set or propagated inside the parser');
     if (typeof what === 'string') {
-      ASSERT(curtok._str === what, 'expecting to skip token with certain value', 'expect:', what, 'actual:', T(curtok.type), curtok._str);
+      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === what, 'expecting to skip token with certain value');
     } else {
       if (ALL_TOKEN_GROUPS.includes(what)) {
         // Check for a group type of token
-        ASSERT((curtok.type & what) === what, 'Expected to parse a particular group type of token', what);
+        ASSERT((tok_getType() & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
         ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
-        ASSERT(hasAllFlags(curtok.type, what), 'expecting to skip token with certain type', 'expect:'
-          // <SCRUB DEV>
-          , T(what, true), 'actual:', T(curtok.type, true)
-          // </SCRUB DEV>
-        );
+        ASSERT(hasAllFlags(tok_getType(), what), 'expecting to skip token with certain type');
       }
     }
     skipDiv(lexerFlags);
@@ -1700,18 +1718,14 @@ function Parser(code, options = {}) {
     ASSERT(typeof what === 'number' || typeof what === 'string', 'what number/string');
     ASSERT(hasNoFlag(lexerFlags, LF_FOR_REGEX), 'regex flag should not be set or propagated inside the parser');
     if (typeof what === 'string') {
-      ASSERT(curtok._str === what, 'expecting to skip token with certain value', 'expect:', what, 'actual:', T(curtok.type), curtok._str);
+      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === what, 'expecting to skip token with certain value');
     } else {
       if (ALL_TOKEN_GROUPS.includes(what)) {
         // Check for a group type of token
-        ASSERT((curtok.type & what) === what, 'Expected to parse a particular group type of token', what);
+        ASSERT((tok_getType() & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
         ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
-        ASSERT(hasAllFlags(curtok.type, what), 'expecting to skip token with certain type', 'expect:'
-          // <SCRUB DEV>
-          , T(what, true), 'actual:', T(curtok.type, true)
-          // </SCRUB DEV>
-        );
+        ASSERT(hasAllFlags(tok_getType(), what), 'expecting to skip token with certain type');
       }
     }
     skipAny(lexerFlags);
@@ -1723,8 +1737,8 @@ function Parser(code, options = {}) {
   function skipToParenOpenOrDie(lexerFlags) {
     // The next token must be a paren
     skipAny(lexerFlags);
-    if (curtok.type !== $PUNC_PAREN_OPEN) {
-      THROW('Expected to parse an opening paren, found `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $PUNC_PAREN_OPEN) {
+      THROW('Expected to parse an opening paren, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToCurlyOpenOrDie(what, lexerFlags) {
@@ -1734,8 +1748,8 @@ function Parser(code, options = {}) {
     // The next token must be a curly, possibly preceded by some whitespace
     // If it's not a curly then it falls back to the regular lexer. This function will validate the string afterwards.
     skipAny(lexerFlags);
-    if (curtok.type !== $PUNC_CURLY_OPEN) {
-      THROW('Expected to parse an opening curly, found `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $PUNC_CURLY_OPEN) {
+      THROW('Expected to parse an opening curly, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToFromOrDie(what, lexerFlags) {
@@ -1745,8 +1759,8 @@ function Parser(code, options = {}) {
     // The next token must be the ident "from"
     skipAny(lexerFlags);
 
-    if (curtok.type !== $ID_from) {
-      THROW('Next token should be the ident `from` but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $ID_from) {
+      THROW('Next token should be the ident `from` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToStringOrDie(what, lexerFlags) {
@@ -1755,8 +1769,8 @@ function Parser(code, options = {}) {
   function skipToStringOrDie(lexerFlags) {
     // The next token must be a string
     skipAny(lexerFlags);
-    if (!isStringToken(curtok.type)) {
-      THROW('Next token should be a string but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (!isStringToken(tok_getType())) {
+      THROW('Next token should be a string but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToIdentOrDie(what, lexerFlags) {
@@ -1765,8 +1779,8 @@ function Parser(code, options = {}) {
   function skipToIdentOrDie(lexerFlags) {
     // The next token must be a string
     skipAny(lexerFlags);
-    if (!isIdentToken(curtok.type)) {
-      THROW('Next token should be an ident but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (!isIdentToken(tok_getType())) {
+      THROW('Next token should be an ident but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToArrowOrDie(what, lexerFlags) {
@@ -1775,8 +1789,8 @@ function Parser(code, options = {}) {
   function skipToArrowOrDie(lexerFlags) {
     // Next token must be an arrow
     skipAny(lexerFlags);
-    if (curtok.type !== $PUNC_EQ_GT) {
-      THROW('Next token should be `=>` but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $PUNC_EQ_GT) {
+      THROW('Next token should be `=>` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToAsOrDie(what, lexerFlags) {
@@ -1785,8 +1799,8 @@ function Parser(code, options = {}) {
   function skipToAsOrDie(lexerFlags) {
     // Next token must be `as`
     skipAny(lexerFlags);
-    if (curtok.type !== $ID_as) {
-      THROW('Next token should be `as` but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $ID_as) {
+      THROW('Next token should be `as` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToAsCommaCurlyClose(what, lexerFlags) {
@@ -1795,7 +1809,7 @@ function Parser(code, options = {}) {
   function skipToAsCommaCurlyClose(lexerFlags) {
     // Next token must be `as`, comma, or `}`
     skipAny(lexerFlags);
-    ASSERT_VALID(curtok.type === $ID_as || curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE, 'limited options, wanted `as` , }', curtok);
+    ASSERT_VALID(tok_getType() === $ID_as || tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE, 'limited options, wanted `as` , }');
   }
   function ASSERT_skipToAsCommaFrom(what, lexerFlags) {
     skipToAsCommaFrom(lexerFlags);
@@ -1803,7 +1817,7 @@ function Parser(code, options = {}) {
   function skipToAsCommaFrom(lexerFlags) {
     // Next token must be `as`, with some whitespace
     skipAny(lexerFlags);
-    ASSERT_VALID(curtok.type === $ID_as || curtok.type === $ID_from || curtok.type === $PUNC_COMMA, 'limited options, expecting `as` `from` comma', curtok);
+    ASSERT_VALID(tok_getType() === $ID_as || tok_getType() === $ID_from || tok_getType() === $PUNC_COMMA, 'limited options, expecting `as` `from` comma');
   }
   function ASSERT_skipToColonOrDie(what, lexerFlags) {
     skipToColonOrDie(lexerFlags);
@@ -1811,8 +1825,8 @@ function Parser(code, options = {}) {
   function skipToColonOrDie(lexerFlags) {
     // Next token must be `:`, with possibly some whitespace
     skipAny(lexerFlags);
-    if (curtok.type !== $PUNC_COLON) {
-      THROW('Next token should be `:` but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $PUNC_COLON) {
+      THROW('Next token should be `:` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToTargetOrDie(what, lexerFlags) {
@@ -1821,8 +1835,8 @@ function Parser(code, options = {}) {
   function skipToTargetOrDie(lexerFlags) {
     // Next token must be `target`, with unlikely some whitespace
     skipAny(lexerFlags);
-    if (curtok.type !== $ID_target) {
-      THROW('Next token should be `target` but was `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+    if (tok_getType() !== $ID_target) {
+      THROW('Next token should be `target` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
   }
   function ASSERT_skipToStatementStart(what, lexerFlags) {
@@ -1838,24 +1852,24 @@ function Parser(code, options = {}) {
 
     // Note: this is the assertion from expressionStart + semi and closing curly
     ASSERT_VALID(
-      isIdentToken(curtok.type) ||
-      isStringToken(curtok.type) ||
-      isTemplateStart(curtok.type) ||
-      isNumberToken(curtok.type) ||
-      isRegexToken(curtok.type) ||
-      curtok.type === $PUNC_EXCL ||
-      curtok.type === $PUNC_BRACKET_OPEN ||
-      curtok.type === $PUNC_CURLY_OPEN ||
-      curtok.type === $PUNC_PAREN_OPEN ||
-      curtok.type === $PUNC_PLUS ||
-      curtok.type === $PUNC_MIN ||
-      curtok.type === $PUNC_PLUS_PLUS ||
-      curtok.type === $PUNC_MIN_MIN ||
-      curtok.type === $PUNC_TILDE ||
-      curtok.type === $PUNC_SEMI ||
-      curtok.type === $PUNC_CURLY_CLOSE ||
-      curtok.type === $EOF || // do-while at at eof. do while is not a problem otherwise... (I think)
-      false, 'expecting the start of a statement, a wide but limited set of valid tokens ' + curtok);
+      isIdentToken(tok_getType()) ||
+      isStringToken(tok_getType()) ||
+      isTemplateStart(tok_getType()) ||
+      isNumberToken(tok_getType()) ||
+      isRegexToken(tok_getType()) ||
+      tok_getType() === $PUNC_EXCL ||
+      tok_getType() === $PUNC_BRACKET_OPEN ||
+      tok_getType() === $PUNC_CURLY_OPEN ||
+      tok_getType() === $PUNC_PAREN_OPEN ||
+      tok_getType() === $PUNC_PLUS ||
+      tok_getType() === $PUNC_MIN ||
+      tok_getType() === $PUNC_PLUS_PLUS ||
+      tok_getType() === $PUNC_MIN_MIN ||
+      tok_getType() === $PUNC_TILDE ||
+      tok_getType() === $PUNC_SEMI ||
+      tok_getType() === $PUNC_CURLY_CLOSE ||
+      tok_getType() === $EOF || // do-while at at eof. do while is not a problem otherwise... (I think)
+      false, 'expecting the start of a statement, a wide but limited set of valid tokens');
   }
   function ASSERT_skipToExpressionStart(what, lexerFlags) {
     ASSERT(typeof lexerFlags === 'number');
@@ -1866,21 +1880,21 @@ function Parser(code, options = {}) {
     skipRex(lexerFlags);
     // No validation. Too expensive. Instead trust that the fallback scanner will still work. This is just a hint.
     ASSERT_VALID(
-      isIdentToken(curtok.type) ||
-      isStringToken(curtok.type) ||
-      isTemplateStart(curtok.type) ||
-      isNumberToken(curtok.type) ||
-      isRegexToken(curtok.type) ||
-      curtok.type === $PUNC_EXCL ||
-      curtok.type === $PUNC_BRACKET_OPEN ||
-      curtok.type === $PUNC_CURLY_OPEN ||
-      curtok.type === $PUNC_PAREN_OPEN ||
-      curtok.type === $PUNC_PLUS ||
-      curtok.type === $PUNC_MIN ||
-      curtok.type === $PUNC_PLUS_PLUS ||
-      curtok.type === $PUNC_MIN_MIN ||
-      curtok.type === $PUNC_TILDE ||
-      curtok.type === $PUNC_DOT_DOT_DOT ||
+      isIdentToken(tok_getType()) ||
+      isStringToken(tok_getType()) ||
+      isTemplateStart(tok_getType()) ||
+      isNumberToken(tok_getType()) ||
+      isRegexToken(tok_getType()) ||
+      tok_getType() === $PUNC_EXCL ||
+      tok_getType() === $PUNC_BRACKET_OPEN ||
+      tok_getType() === $PUNC_CURLY_OPEN ||
+      tok_getType() === $PUNC_PAREN_OPEN ||
+      tok_getType() === $PUNC_PLUS ||
+      tok_getType() === $PUNC_MIN ||
+      tok_getType() === $PUNC_PLUS_PLUS ||
+      tok_getType() === $PUNC_MIN_MIN ||
+      tok_getType() === $PUNC_TILDE ||
+      tok_getType() === $PUNC_DOT_DOT_DOT ||
       false, 'expecting the start of an expression, a wide but limited set of valid tokens');
   }
   function ASSERT_skipToExpressionStartGrouped(what, lexerFlags) {
@@ -1892,22 +1906,22 @@ function Parser(code, options = {}) {
     skipRex(lexerFlags);
     // No validation. Too expensive. Instead trust that the fallback scanner will still work. This is just a hint.
     ASSERT_VALID(
-      isIdentToken(curtok.type) ||
-      isStringToken(curtok.type) ||
-      isTemplateStart(curtok.type) ||
-      isNumberToken(curtok.type) ||
-      isRegexToken(curtok.type) ||
-      curtok.type === $PUNC_EXCL ||
-      curtok.type === $PUNC_BRACKET_OPEN ||
-      curtok.type === $PUNC_CURLY_OPEN ||
-      curtok.type === $PUNC_PAREN_OPEN ||
-      curtok.type === $PUNC_PLUS ||
-      curtok.type === $PUNC_MIN ||
-      curtok.type === $PUNC_PLUS_PLUS ||
-      curtok.type === $PUNC_MIN_MIN ||
-      curtok.type === $PUNC_TILDE ||
-      curtok.type === $PUNC_DOT_DOT_DOT ||
-      curtok.type === $PUNC_PAREN_CLOSE ||
+      isIdentToken(tok_getType()) ||
+      isStringToken(tok_getType()) ||
+      isTemplateStart(tok_getType()) ||
+      isNumberToken(tok_getType()) ||
+      isRegexToken(tok_getType()) ||
+      tok_getType() === $PUNC_EXCL ||
+      tok_getType() === $PUNC_BRACKET_OPEN ||
+      tok_getType() === $PUNC_CURLY_OPEN ||
+      tok_getType() === $PUNC_PAREN_OPEN ||
+      tok_getType() === $PUNC_PLUS ||
+      tok_getType() === $PUNC_MIN ||
+      tok_getType() === $PUNC_PLUS_PLUS ||
+      tok_getType() === $PUNC_MIN_MIN ||
+      tok_getType() === $PUNC_TILDE ||
+      tok_getType() === $PUNC_DOT_DOT_DOT ||
+      tok_getType() === $PUNC_PAREN_CLOSE ||
       false, 'expecting the start of an expression or `)`, a wide but limited set of valid tokens');
   }
   function ASSERT_skipToExpressionStartSemi(what, lexerFlags) {
@@ -1919,22 +1933,22 @@ function Parser(code, options = {}) {
     skipRex(lexerFlags);
     // No validation. Too expensive. Instead trust that the fallback scanner will still work. This is just a hint.
     ASSERT_VALID(
-      isIdentToken(curtok.type) ||
-      isStringToken(curtok.type) ||
-      isTemplateStart(curtok.type) ||
-      isNumberToken(curtok.type) ||
-      isRegexToken(curtok.type) ||
-      curtok.type === $PUNC_EXCL ||
-      curtok.type === $PUNC_BRACKET_OPEN ||
-      curtok.type === $PUNC_CURLY_OPEN ||
-      curtok.type === $PUNC_PAREN_OPEN ||
-      curtok.type === $PUNC_PLUS ||
-      curtok.type === $PUNC_MIN ||
-      curtok.type === $PUNC_PLUS_PLUS ||
-      curtok.type === $PUNC_MIN_MIN ||
-      curtok.type === $PUNC_TILDE ||
-      curtok.type === $PUNC_DOT_DOT_DOT ||
-      curtok.type === $PUNC_SEMI ||
+      isIdentToken(tok_getType()) ||
+      isStringToken(tok_getType()) ||
+      isTemplateStart(tok_getType()) ||
+      isNumberToken(tok_getType()) ||
+      isRegexToken(tok_getType()) ||
+      tok_getType() === $PUNC_EXCL ||
+      tok_getType() === $PUNC_BRACKET_OPEN ||
+      tok_getType() === $PUNC_CURLY_OPEN ||
+      tok_getType() === $PUNC_PAREN_OPEN ||
+      tok_getType() === $PUNC_PLUS ||
+      tok_getType() === $PUNC_MIN ||
+      tok_getType() === $PUNC_PLUS_PLUS ||
+      tok_getType() === $PUNC_MIN_MIN ||
+      tok_getType() === $PUNC_TILDE ||
+      tok_getType() === $PUNC_DOT_DOT_DOT ||
+      tok_getType() === $PUNC_SEMI ||
       false, 'expecting the start of an expression or `;`, a wide but limited set of valid tokens');
   }
   function ASSERT_skipToExpressionStartSquareCloseComma(what, lexerFlags) {
@@ -1946,23 +1960,23 @@ function Parser(code, options = {}) {
     skipRex(lexerFlags);
     // No validation. Too expensive. Instead trust that the fallback scanner will still work. This is just a hint.
     ASSERT_VALID(
-      isIdentToken(curtok.type) ||
-      isStringToken(curtok.type) ||
-      isTemplateStart(curtok.type) ||
-      isNumberToken(curtok.type) ||
-      isRegexToken(curtok.type) ||
-      curtok.type === $PUNC_EXCL ||
-      curtok.type === $PUNC_BRACKET_OPEN ||
-      curtok.type === $PUNC_CURLY_OPEN ||
-      curtok.type === $PUNC_PAREN_OPEN ||
-      curtok.type === $PUNC_PLUS ||
-      curtok.type === $PUNC_MIN ||
-      curtok.type === $PUNC_PLUS_PLUS ||
-      curtok.type === $PUNC_MIN_MIN ||
-      curtok.type === $PUNC_TILDE ||
-      curtok.type === $PUNC_DOT_DOT_DOT ||
-      curtok.type === $PUNC_COMMA ||
-      curtok.type === $PUNC_BRACKET_CLOSE ||
+      isIdentToken(tok_getType()) ||
+      isStringToken(tok_getType()) ||
+      isTemplateStart(tok_getType()) ||
+      isNumberToken(tok_getType()) ||
+      isRegexToken(tok_getType()) ||
+      tok_getType() === $PUNC_EXCL ||
+      tok_getType() === $PUNC_BRACKET_OPEN ||
+      tok_getType() === $PUNC_CURLY_OPEN ||
+      tok_getType() === $PUNC_PAREN_OPEN ||
+      tok_getType() === $PUNC_PLUS ||
+      tok_getType() === $PUNC_MIN ||
+      tok_getType() === $PUNC_PLUS_PLUS ||
+      tok_getType() === $PUNC_MIN_MIN ||
+      tok_getType() === $PUNC_TILDE ||
+      tok_getType() === $PUNC_DOT_DOT_DOT ||
+      tok_getType() === $PUNC_COMMA ||
+      tok_getType() === $PUNC_BRACKET_CLOSE ||
       false, 'expecting the start of an expression or `,` or `]`, a wide but limited set of valid tokens');
   }
   function ASSERT_skipToAfterNew(what, lexerFlags) {
@@ -1975,22 +1989,22 @@ function Parser(code, options = {}) {
     skipRex(lexerFlags);
     // No validation. Too expensive. Instead trust that the fallback scanner will still work. This is just a hint.
     ASSERT_VALID(
-      isIdentToken(curtok.type) ||
-      isStringToken(curtok.type) ||
-      isTemplateStart(curtok.type) ||
-      isNumberToken(curtok.type) ||
-      isRegexToken(curtok.type) ||
-      curtok.type === $PUNC_EXCL ||
-      curtok.type === $PUNC_BRACKET_OPEN ||
-      curtok.type === $PUNC_CURLY_OPEN ||
-      curtok.type === $PUNC_PAREN_OPEN ||
-      curtok.type === $PUNC_PLUS ||
-      curtok.type === $PUNC_MIN ||
-      curtok.type === $PUNC_PLUS_PLUS ||
-      curtok.type === $PUNC_MIN_MIN ||
-      curtok.type === $PUNC_TILDE ||
-      curtok.type === $PUNC_DOT_DOT_DOT || // should lead to an error, but the lexer can certainly return it
-      curtok.type === $PUNC_DOT ||
+      isIdentToken(tok_getType()) ||
+      isStringToken(tok_getType()) ||
+      isTemplateStart(tok_getType()) ||
+      isNumberToken(tok_getType()) ||
+      isRegexToken(tok_getType()) ||
+      tok_getType() === $PUNC_EXCL ||
+      tok_getType() === $PUNC_BRACKET_OPEN ||
+      tok_getType() === $PUNC_CURLY_OPEN ||
+      tok_getType() === $PUNC_PAREN_OPEN ||
+      tok_getType() === $PUNC_PLUS ||
+      tok_getType() === $PUNC_MIN ||
+      tok_getType() === $PUNC_PLUS_PLUS ||
+      tok_getType() === $PUNC_MIN_MIN ||
+      tok_getType() === $PUNC_TILDE ||
+      tok_getType() === $PUNC_DOT_DOT_DOT || // should lead to an error, but the lexer can certainly return it
+      tok_getType() === $PUNC_DOT ||
       false, 'expecting the start of an expression or `.`, a wide but limited set of valid tokens');
   }
   function ASSERT_skipToSwitchBody(what, lexerFlags) {
@@ -2000,7 +2014,7 @@ function Parser(code, options = {}) {
     // Next token must be `case`, `default`, or `}`, with likely some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID(curtok.type === $ID_case || curtok.type === $ID_default || curtok.type === $PUNC_CURLY_CLOSE, 'not many options, wanted case default }', curtok);
+    ASSERT_VALID(tok_getType() === $ID_case || tok_getType() === $ID_default || tok_getType() === $PUNC_CURLY_CLOSE, 'not many options, wanted case default }');
   }
   function ASSERT_skipToBindingStart(what, lexerFlags) {
     skipToBindingStart(lexerFlags);
@@ -2008,7 +2022,7 @@ function Parser(code, options = {}) {
   function skipToBindingStart(lexerFlags) {
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID(isIdentToken(curtok.type) || curtok.type === $PUNC_BRACKET_OPEN || curtok.type === $PUNC_CURLY_OPEN || curtok.type === $PUNC_DOT_DOT_DOT, 'not many options, wanted ident ... [ {', curtok);
+    ASSERT_VALID(isIdentToken(tok_getType()) || tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_DOT_DOT_DOT, 'not many options, wanted ident ... [ {');
   }
   function ASSERT_skipToBindingStartGrouped(what, lexerFlags) {
     skipToBindingStartGrouped(lexerFlags);
@@ -2017,7 +2031,7 @@ function Parser(code, options = {}) {
     // Same as bindingStart but it may also encounter a closing parenthesis (params)
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID(isIdentToken(curtok.type) || curtok.type === $PUNC_BRACKET_OPEN || curtok.type === $PUNC_CURLY_OPEN || curtok.type === $PUNC_DOT_DOT_DOT || curtok.type === $PUNC_PAREN_CLOSE, 'not many options, wanted ident ... [ { )', curtok);
+    ASSERT_VALID(isIdentToken(tok_getType()) || tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_DOT_DOT_DOT || tok_getType() === $PUNC_PAREN_CLOSE, 'not many options, wanted ident ... [ { )');
   }
   function ASSERT_skipToColonParenOpen(what, lexerFlags) {
     skipToColonParenOpen(lexerFlags);
@@ -2026,7 +2040,7 @@ function Parser(code, options = {}) {
     // Next token must be `:`, or `(`, with unlikely some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( curtok.type === $PUNC_COLON || curtok.type === $PUNC_PAREN_OPEN, 'not many options, wanted : (', curtok);
+    ASSERT_VALID( tok_getType() === $PUNC_COLON || tok_getType() === $PUNC_PAREN_OPEN, 'not many options, wanted : (');
   }
   function ASSERT_skipToIdentParenOpen(what, lexerFlags) {
     skipToIdentParenOpen(lexerFlags);
@@ -2035,7 +2049,7 @@ function Parser(code, options = {}) {
     // Next token must be ident, or `(`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_PAREN_OPEN, 'not many options, wanted ident (', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_PAREN_OPEN, 'not many options, wanted ident (');
   }
   function ASSERT_skipToIdentStarParenOpen(what, lexerFlags) {
     skipToIdentStarParenOpen(lexerFlags);
@@ -2044,7 +2058,7 @@ function Parser(code, options = {}) {
     // Next token must be ident, `*`, or `(`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_STAR || curtok.type === $PUNC_PAREN_OPEN, 'not many options, wanted ident * (', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_STAR || tok_getType() === $PUNC_PAREN_OPEN, 'not many options, wanted ident * (');
   }
   function ASSERT_skipToIdentStarCurlyOpen(what, lexerFlags) {
     skipToIdentStarCurlyOpen(lexerFlags);
@@ -2053,7 +2067,7 @@ function Parser(code, options = {}) {
     // Next token must be ident, `*`, or `{`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_STAR || curtok.type === $PUNC_CURLY_OPEN, 'not many options, wanted ident * {', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_STAR || tok_getType() === $PUNC_CURLY_OPEN, 'not many options, wanted ident * {');
   }
   function ASSERT_skipToCommaCurlyClose(what, lexerFlags) {
     skipToCommaCurlyClose(lexerFlags);
@@ -2062,7 +2076,7 @@ function Parser(code, options = {}) {
     // Next token must be comma or `}`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE, 'not many options, wanted , }', curtok);
+    ASSERT_VALID( tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE, 'not many options, wanted , }');
   }
   function ASSERT_skipToIdentCurlyOpen(what, lexerFlags) {
     skipToIdentCurlyOpen(lexerFlags);
@@ -2071,7 +2085,7 @@ function Parser(code, options = {}) {
     // Next token must be ident, or `{`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_CURLY_OPEN, 'not many options, wanted ident {', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_OPEN, 'not many options, wanted ident {');
   }
   function ASSERT_skipToIdentCurlyClose(what, lexerFlags) {
     skipToIdentCurlyClose(lexerFlags);
@@ -2080,7 +2094,7 @@ function Parser(code, options = {}) {
     // Next token must be ident, or `}`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_CURLY_CLOSE, 'not many options, wanted ident }', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_CLOSE, 'not many options, wanted ident }');
   }
   function ASSERT_skipToIdentStarCurlyOpenParenOpenString(what, lexerFlags) {
     skipToIdentStarCurlyOpenParenOpenString(lexerFlags);
@@ -2089,7 +2103,7 @@ function Parser(code, options = {}) {
     // Next token is whatever is valid after the `import` keyword (ident, star, curly open, string, or paren open)
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_STAR || curtok.type === $PUNC_CURLY_OPEN || curtok.type === $PUNC_PAREN_OPEN || isStringToken(curtok.type), 'not many options, wanted ident string * { (', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_STAR || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_PAREN_OPEN || isStringToken(tok_getType()), 'not many options, wanted ident string * { (');
   }
   function ASSERT_skipToAwaitParenOpen(what, lexerFlags) {
     skipToAwaitParenOpen(lexerFlags);
@@ -2098,7 +2112,7 @@ function Parser(code, options = {}) {
     // Next token must be `await`, or `(`. For example, after the `for` keyword
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(curtok.type) || curtok.type === $PUNC_PAREN_OPEN, 'not many options, wanted ident (', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_PAREN_OPEN, 'not many options, wanted ident (');
   }
   function ASSERT_skipToIdentStringNumberSquareOpen(what, lexerFlags) {
     skipToIdentStringNumberSquareOpen(lexerFlags);
@@ -2108,7 +2122,7 @@ function Parser(code, options = {}) {
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
     // Note: big int is okay here...
-    ASSERT_VALID( isIdentToken(curtok.type) || isStringToken(curtok.type) || isNumberToken(curtok.type) || curtok.type === $PUNC_BRACKET_OPEN, 'not many options, wanted ident number string [', curtok);
+    ASSERT_VALID( isIdentToken(tok_getType()) || isStringToken(tok_getType()) || isNumberToken(tok_getType()) || tok_getType() === $PUNC_BRACKET_OPEN, 'not many options, wanted ident number string [');
   }
 
   function skipIdentSafeSlowAndExpensive(lexerFlags, leftHandSideExpression) {
@@ -2118,7 +2132,7 @@ function Parser(code, options = {}) {
     // processing the ident for special cases that normally determine whether the next token is a div, regex, or any
     // this check is relatively slow but there's a plan to make these enums, which would improve things
 
-    switch (curtok.type) {
+    switch (tok_getType()) {
       case $ID_delete:
       case $ID_typeof:
       case $ID_void:
@@ -2198,7 +2212,7 @@ function Parser(code, options = {}) {
       parent: null,
       type: SCOPE_LAYER_GLOBAL,
       names: HAS_NO_BINDINGS, // Map (when necessary)
-      dupeParamErrorToken: NO_DUPE_PARAMS,
+      dupeParamErrorOffset: NO_DUPE_PARAMS, // 0 means "none", otherwise it's the linear (offset + 1) of the token, a value that is only used for reporting an error anyways
     };
 
     ASSERT(scoop._type = S(SCOPE_LAYER_GLOBAL), '(debugging)');
@@ -2219,7 +2233,7 @@ function Parser(code, options = {}) {
       names: HAS_NO_BINDINGS, // Map (when necessary)
       // For arrows, dupe params can only be checked when seeing the arrow. `([a,a]);` is fine.
       // For function declarations in sloppy, this can only be validated once the inner directives are parsed
-      dupeParamErrorToken: NO_DUPE_PARAMS,
+      dupeParamErrorOffset: NO_DUPE_PARAMS, // 0 means "none", otherwise it's the linear (offset + 1) of the token, a value that is only used for reporting an error anyways
     };
     ASSERT(scoopNew._type = S(scopeType), '(debugging)');
     ASSERT(scoopNew.isScope = true, '(debugging)');
@@ -2476,9 +2490,9 @@ function Parser(code, options = {}) {
     // Scan the lex var path and apply the rules outlined above for each level.
     // If nothing throws, mark the var on the current lexvar level and move to the parent lexvar, rinse and repeat
     let isLexBinding = SCOPE_bindingTypeIsLex(bindingType);
-    let s = scoop;
+    let currScoop = scoop;
     do {
-      let value = s.names === HAS_NO_BINDINGS || !s.names.has(canonName) ? BINDING_TYPE_NONE : s.names.get(canonName);
+      let value = currScoop.names === HAS_NO_BINDINGS || !currScoop.names.has(canonName) ? BINDING_TYPE_NONE : currScoop.names.get(canonName);
       if (value !== BINDING_TYPE_NONE && SCOPE_bindingTypeIsLex(value)) {
         // There already was a binding of any kind with the same name on this statement level, or a variable declaration
         // of the same name in a statement that is a descendent of the current statement parent. This is the error.
@@ -2503,13 +2517,13 @@ function Parser(code, options = {}) {
           THROW('Found a var binding that is duplicate of a lexical binding on the same or lower statement level');
         }
       }
-      if (s === scoop) {
+      if (currScoop === scoop) {
         // Things to only check in the statement/scope level where they appear
         if (value !== BINDING_TYPE_NONE && isLexBinding) {
           THROW('Can not create a lexical binding for `' + canonName + '` because there already exists a binding on the same statement level');
         }
         else if (value === BINDING_TYPE_ARG && bindingType === BINDING_TYPE_ARG) {
-          s.dupeParamErrorToken = curtok; // TOFIX: point to proper token
+          currScoop.dupeParamErrorOffset = tok_getStart() + 1; // TOFIX: point to proper token
         }
       }
       if (value === BINDING_TYPE_CATCH_IDENT || value === BINDING_TYPE_CATCH_OTHER) {
@@ -2523,10 +2537,10 @@ function Parser(code, options = {}) {
           THROW('Can not create a binding for `' + canonName + '` because was already bound as a catch clause binding');
         }
       }
-      if (s.names === HAS_NO_BINDINGS) s.names = new Map;
-      s.names.set(canonName, bindingType);
-      s = s.parent;
-    } while (s && s.type !== SCOPE_LAYER_FUNC_ROOT);
+      if (currScoop.names === HAS_NO_BINDINGS) currScoop.names = new Map;
+      currScoop.names.set(canonName, bindingType);
+      currScoop = currScoop.parent;
+    } while (currScoop && currScoop.type !== SCOPE_LAYER_FUNC_ROOT);
   }
   function SCOPE_bindingTypeIsLex(t) {
     ASSERT_BINDING_TYPE(t);
@@ -2558,7 +2572,7 @@ function Parser(code, options = {}) {
         // [x]: `((x,x)) => 5`
         // [x]: `((x,x) => x)`
         // [v]: `((x,x))`
-        scoop.dupeParamErrorToken = curtok; // TODO: use correct token
+        scoop.dupeParamErrorOffset = tok_getStart() + 1; // TODO: use correct token
       } else if (options_webCompat === WEB_COMPAT_ON && value === BINDING_TYPE_FUNC_LEX && fdState === FDS_LEX) {
         // https://tc39.es/ecma262/#sec-block-duplicates-allowed-static-semantics
         // > It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate entries, unless the
@@ -2579,7 +2593,7 @@ function Parser(code, options = {}) {
         // [v]: ((x,x))
         // [x]: ((x,x) = x)
         // [x]: ((x,x) => x)
-        scoop.dupeParamErrorToken = curtok; // TODO: use correct token
+        scoop.dupeParamErrorOffset = tok_getStart() + 1; // TODO: use correct token
       } else if (bindingType === BINDING_TYPE_CATCH_IDENT || bindingType === BINDING_TYPE_CATCH_OTHER) {
         // I guess we ignore this case...
         // [v]: `e => { try {} catch (e) {} }`
@@ -2626,7 +2640,7 @@ function Parser(code, options = {}) {
             // [v]: ((x,x))
             // [x]: ((x,x) = x)
             // [x]: ((x,x) => x)
-            scoop.dupeParamErrorToken = curtok; // TODO: use correct token
+            scoop.dupeParamErrorOffset = tok_getStart() + 1; // TODO: use correct token
           }
         }
       }
@@ -2644,42 +2658,50 @@ function Parser(code, options = {}) {
     let isStrict = hasAllFlags(lexerFlags, LF_STRICT_MODE);
     let hadOctal = false; // Edge case to guard against: `"x\077";"use strict";` is an error
     // note: there may be multiple (bogus or valid) directives...
-    while (isStringToken(curtok.type)) {
+    while (isStringToken(tok_getType())) {
       // we must first parse as usual to confirm this is an isolated string and not
       // something like `''.foo` or `'' + x`. We can't easily scan forward in this
       // case since asi is only applied when the next token would cause a syntax
       // error. There many tokens to check. However this is a fairly cold path since
       // this will almost never happen outside of "use strict" so perhaps a pervasive
       // scan here is not so bad... And let's face it; trivial cases are quickly found.
-      let stringToken = curtok;
-      let stringTokenCanon = tok_getCanon();
+      let $tt_stringToken = __oldtok;
+      let $t_stringToken_line = tok_getLine();
+      let $t_stringToken_column = tok_getColumn();
+      let $t_stringToken_start = tok_getStart();
+
+      let stringCanon = tok_getCanon();
       ASSERT_skipDiv($G_STRING, lexerFlags); // statement start means div
-      _AST_setLiteral(astProp, stringToken, stringTokenCanon, true);
+      _AST_setLiteral(astProp, $tt_stringToken, stringCanon, true);
 
       // Remember the next token. Do a regular parse. If the next token is still the same token then there was no tail
       // and we can assume ASI will happen.
-      let nextToken = curtok;
+      let $tt_nextToken = __oldtok;
+      let $t_nextToken_line = tok_getLine();
+      let $t_nextToken_column = tok_getColumn();
+      let $t_nextToken_start = tok_getStart();
+
       // Since this must be the start of a block, we only have to care about a semi in this case
-      if (curtok.type !== $PUNC_SEMI) {
+      if (tok_getType() !== $PUNC_SEMI) {
         // [v]: `"use strict" + x`   (valid, but it's not strict mode)
         // [v]: `"use strict", x`  (valid, but it's not strict mode)
         // [v]: `"use strict" \n x`  (valid and strict mode)
-        parseExpressionAfterLiteral(lexerFlags, stringToken, astProp);
-        if (curtok.type !== $PUNC_SEMI) {
+        parseExpressionAfterLiteral(lexerFlags, $tt_stringToken, astProp);
+        if (tok_getType() !== $PUNC_SEMI) {
           // [v]: `"use strict" + x`   (valid, but it's not strict mode)
-          parseExpressionFromOp(lexerFlags, stringToken, NOT_ASSIGNABLE, astProp);
-          if (curtok.type === $PUNC_COMMA) {
+          parseExpressionFromOp(lexerFlags, $tt_stringToken, NOT_ASSIGNABLE, astProp);
+          if (tok_getType() === $PUNC_COMMA) {
             // [v]: `"use strict", x`  (valid, but it's not strict mode)
-            _parseExpressions(lexerFlags, stringToken, NOT_ASSIGNABLE, astProp);
+            _parseExpressions(lexerFlags, $tt_stringToken, NOT_ASSIGNABLE, astProp);
           }
         }
       }
 
-      if (curtok === nextToken) {
+      if (tok_getStart() === $t_nextToken_start) {
         // There was no tail, no op, no comma, so this was ASI, I hope. Or an error.
         // This is a directive. It may be nonsense, but it's a string in the head so it's a directive.
 
-        let dir = tok_sliceInput(stringToken.start + 1, stringToken.stop - 1)
+        let dir = tok_sliceInput($tt_stringToken.start + 1, $tt_stringToken.stop - 1)
 
         // Check all directives for octals because strict mode may be enabled by a directive later in the same block
         // and that would still cause a previous sibling directive with octal escape to be an error.
@@ -2702,7 +2724,7 @@ function Parser(code, options = {}) {
           // though this should have been set.
           // I've identified three cases:
           // - legacy octal literals
-          //    - this can be caught now by checking the curtok.type
+          //    - this can be caught now by checking the tok_getType()
           // - octal escapes in string literals
           //    - the string literal can be scanned ... this is kind of dirty. ideally we'd pass a new flag but that's a
           //      can of worms I'd rather not open here.
@@ -2713,7 +2735,7 @@ function Parser(code, options = {}) {
 
           // Note: the next two checks are not needed if we already were strict because the lexer would have done that
           if (!isStrict) {
-            if (curtok.type === $NUMBER_OLD) {
+            if (tok_getType() === $NUMBER_OLD) {
               // - `"use strict" \n 0123`
               THROW('Illegal legacy octal literal in strict mode');
             }
@@ -2722,7 +2744,7 @@ function Parser(code, options = {}) {
               // [v]: `"x\\0"`
               // [x]: `"x\\0"; "use strict";`
               // [v]: `"x\\\\0"; "use strict";`
-              THROW_TOKEN('Octal in directive with strict mode directive or in strict mode is always illegal');
+              THROW('Octal in directive with strict mode directive or in strict mode is always illegal');
             }
           }
 
@@ -2732,7 +2754,7 @@ function Parser(code, options = {}) {
         if (AST_directiveNodes && !babelCompat) {
           AST_setNodeDangerously(astProp, { // we know we will overwrite the existing string node
             type: 'Directive',
-            loc: AST_getClosedLoc(stringToken),
+            loc: AST_getClosedLoc($tt_stringToken.line, $tt_stringToken.column, $tt_stringToken.start),
             directive: dir,
           });
           parseSemiOrAsi(lexerFlags);
@@ -2741,7 +2763,7 @@ function Parser(code, options = {}) {
           parseSemiOrAsi(lexerFlags);
           AST_setNodeDangerously(astProp, { // we are going to clobber a value
             type: 'ExpressionStatement',
-            loc: AST_getClosedLoc(stringToken),
+            loc: AST_getClosedLoc($tt_stringToken.line, $tt_stringToken.column, $tt_stringToken.start),
             expression: AST_popNode(astProp),
             directive: dir,
           });
@@ -2750,7 +2772,7 @@ function Parser(code, options = {}) {
         parseSemiOrAsi(lexerFlags);
         AST_setNodeDangerously(astProp, { // we are going to clobber a value
           type: 'ExpressionStatement',
-          loc: AST_getClosedLoc(stringToken),
+          loc: AST_getClosedLoc($tt_stringToken.line, $tt_stringToken.column, $tt_stringToken.start),
           expression: AST_popNode(astProp),
         });
         break; // end of directives
@@ -2759,13 +2781,13 @@ function Parser(code, options = {}) {
 
     if (hadOctal && isStrict) {
       // This throws for any directive with an octal if use strict was enabled before or by any directive
-      THROW_TOKEN('Octal in directive with strict mode directive or in strict mode is always illegal');
+      THROW('Octal in directive with strict mode directive or in strict mode is always illegal');
     }
 
     return hadUseStrict;
   }
 
-  function parseBodyPartsWithDirectives(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon, isGlobalToplevel, fdState, astProp) {
+  function parseBodyPartsWithDirectives(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, paramsSimple, dupeParamErrorOffset, $tt_functionNameTokenToVerify, functionNameToVerifyCanon, isGlobalToplevel, fdState, astProp) {
     ASSERT(parseBodyPartsWithDirectives.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT([PARAMS_SOME_COMPLEX, PARAMS_SOME_NONSTRICT, PARAMS_ALL_SIMPLE].includes(paramsSimple), 'paramsSimple enum', paramsSimple);
@@ -2785,22 +2807,22 @@ function Parser(code, options = {}) {
         THROW('Can only declare use strict if func params are "simple"');
       }
 
-      if (!wasStrict && functionNameTokenToVerify !== NO_ID_TO_VERIFY &&
+      if (!wasStrict && $tt_functionNameTokenToVerify !== NO_ID_TO_VERIFY &&
         // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
         // Check the idents that are only keywords in strict mode. We've already checked everything else.
-        isStrictOnlyKeyword(functionNameTokenToVerify, functionNameTokenToVerifyCanon)
+        isStrictOnlyKeyword($tt_functionNameTokenToVerify, functionNameToVerifyCanon)
       ) {
-        THROW('Can not use reserved keyword `' + functionNameTokenToVerifyCanon + '` in strict mode as id for function that has a use strict directive');
+        THROW('Can not use reserved keyword `' + functionNameToVerifyCanon + '` in strict mode as id for function that has a use strict directive');
       }
 
       lexerFlags |= LF_STRICT_MODE;
     }
 
-    if (dupeParamErrorToken !== NO_DUPE_PARAMS && (paramsSimple === PARAMS_SOME_COMPLEX || isStrict)) {
-      THROW_TOKEN('Function had duplicate params', dupeParamErrorToken);
+    if (dupeParamErrorOffset !== NO_DUPE_PARAMS && (paramsSimple === PARAMS_SOME_COMPLEX || isStrict)) {
+      THROW_TOKEN('Function had duplicate params', dupeParamErrorOffset, dupeParamErrorOffset + 1);
     }
 
-    while (curtok.type !== $EOF && curtok.type !== $PUNC_CURLY_CLOSE) {
+    while (tok_getType() !== $EOF && tok_getType() !== $PUNC_CURLY_CLOSE) {
       parseBodyPart(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, isGlobalToplevel, NOT_LABELLED, fdState, PARENT_NOT_LABEL, astProp);
     }
 
@@ -2827,11 +2849,11 @@ function Parser(code, options = {}) {
   function parseStatementHeader(lexerFlags, headProp) {
     ASSERT(typeof lexerFlags === 'number', 'lexerflags number');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_TEMPLATE), 'I think template resets itself');
-    ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN, 'all callers should have called `skipToParenOpenOrDie()` which should verify this invariant');
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'all callers should have called `skipToParenOpenOrDie()` which should verify this invariant');
 
     ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, lexerFlags);
     parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), headProp);
-    if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Missing closing paren of statement header, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_PAREN_CLOSE) THROW('Missing closing paren of statement header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     ASSERT_skipToStatementStart($PUNC_PAREN_CLOSE, lexerFlags);
   }
 
@@ -2861,9 +2883,9 @@ function Parser(code, options = {}) {
     // [v]: `x \n /foo/g`              // NO ASI because it can be a division (x/foo/g)
     // [v]: `debugger \n /foo/`        // ASI because it cannot be a division (regex /foo/)
     // [v]: `debugger \n /foo/g`       // ASI because it cannot be a division (regex /foo/g)
-    ASSERT_VALID((!isRegexToken(curtok.type) && curtok.type !== $PUNC_DIV && curtok.type !== $PUNC_DIV_EQ) || ASSERT_ASI_REGEX_NEXT || (ASSERT_ASI_REGEX_NEXT = false), 'The next token starts with a forward slash but neither a division nor a regular expression is legal here. This should be handled elsewhere.');
+    ASSERT_VALID((!isRegexToken(tok_getType()) && tok_getType() !== $PUNC_DIV && tok_getType() !== $PUNC_DIV_EQ) || ASSERT_ASI_REGEX_NEXT || (ASSERT_ASI_REGEX_NEXT = false), 'The next token starts with a forward slash but neither a division nor a regular expression is legal here. This should be handled elsewhere.');
 
-    if (curtok.type === $PUNC_SEMI) {
+    if (tok_getType() === $PUNC_SEMI) {
       ASSERT_skipToStatementStart(';', lexerFlags);
       return;
     }
@@ -2871,12 +2893,11 @@ function Parser(code, options = {}) {
     ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'this case should have been caught sooner');
 
     // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-    if (curtok.type === $PUNC_CURLY_CLOSE || tok_getNlwas() === true || curtok.type === $EOF) {
+    if (tok_getType() === $PUNC_CURLY_CLOSE || tok_getNlwas() === true || tok_getType() === $EOF) {
       tok_asi();
     } else {
       $log('parse error at curent token');
-      $log('current token:', curtok);
-      THROW('Unable to ASI, token: ' + curtok);
+      THROW('Unable to ASI, token: ' + curtok); // TODO: remove curtok
     }
   }
 
@@ -2885,70 +2906,73 @@ function Parser(code, options = {}) {
     ASSERT_LABELSET(labelSet);
 
     // nested statements like that of if, while, for, try, etc
-    if (curtok.type === $EOF) THROW('Statement must have a sub-statement but found EOF instead');
+    if (tok_getType() === $EOF) THROW('Statement must have a sub-statement but found EOF instead');
     parseBodyPart(lexerFlags, scoop, labelSet, UNDEF_EXPORTS, UNDEF_EXPORTS, NOT_GLOBAL_TOPLEVEL, isLabelled, fdState, nestedLabels, astProp);
   }
 
   function parseBodyPart(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, isGlobalToplevel, isLabelled, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseBodyPart.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
-    ASSERT(curtok.type !== $ERROR && curtok.type !== $EOF, 'token type should not have $error or $eof at this point');
+    ASSERT(tok_getType() !== $ERROR && tok_getType() !== $EOF && tok_getType() !== $ASI, 'token type should not have $error or $eof or $asi at this point');
     ASSERT(isLabelled === IS_LABELLED || isLabelled === NOT_LABELLED, 'isLabelled enum');
     ASSERT_LABELSET(labelSet);
 
     ASSERT(!void(ASSERT_ASI_REGEX_NEXT = false));
 
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       parseIdentStatement(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, isGlobalToplevel, isLabelled, fdState, nestedLabels, astProp);
       return;
     }
 
-    if (isPunctuatorToken(curtok.type)) {
+    if (isPunctuatorToken(tok_getType())) {
       parsePunctuatorStatement(lexerFlags, scoop, labelSet, astProp);
       return;
     }
 
-    if (isNumberToken(curtok.type)) {
+    if (isNumberToken(tok_getType())) {
       parseFromNumberStatement(lexerFlags, astProp);
       return;
     }
 
-    if (isStringToken(curtok.type)) {
+    if (isStringToken(tok_getType())) {
       parseFromStringStatement(lexerFlags, astProp);
       return;
     }
 
-    if (isTickToken(curtok.type)) {
-      parseTickStatement(lexerFlags, curtok, astProp);
+    if (isTickToken(tok_getType())) {
+      let $tt_tickToken = __oldtok;
+      let $t_tickToken_line = tok_getLine();
+      let $t_tickToken_column = tok_getColumn();
+      let $t_tickToken_start = tok_getStart();
+      parseTickStatement(lexerFlags, $tt_tickToken, astProp);
       return;
     }
 
-    if (isRegexToken(curtok.type)) {
+    if (isRegexToken(tok_getType())) {
       parseFromRegexStatement(lexerFlags, astProp);
       return;
     }
 
-    if (curtok.type === $ERROR) {
-      THROW_TOKEN('Lexer error: ' + tok_lexError(), curtok );
+    if (tok_getType() === $ERROR) {
+      THROW_TOKEN('Lexer error: ' + tok_lexError(), tok_getStart(), tok_getStop());
       return;
     }
 
     THROW_TOKEN('Unexpected token'
       // <SCRUB DEV>
-      + ': ' + T(curtok.type)
+      + ': ' + T(tok_getType())
       // </SCRUB DEV>
-      , curtok
-      , tok_lexError()
+      , tok_getStart(), tok_getStop()
     );
   }
 
   // ### functions
 
-  function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, asyncToken, functionToken, optionalIdent, isLabelled, fdState, astProp) {
+  function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, $tt_asyncToken, $tt_functionToken, optionalIdent, isLabelled, fdState, astProp) {
     ASSERT(parseFunctionDeclaration.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerflags number');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(curtok === functionToken, 'should not have skipped token yet');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT(tok_getStart() === $tt_functionToken.start, 'should not have skipped token yet');
     ASSERT_FDS(fdState);
     ASSERT(isLabelled === IS_LABELLED || isLabelled === NOT_LABELLED, 'isLabelled enum');
 
@@ -2986,16 +3010,23 @@ function Parser(code, options = {}) {
      o={async foo(){}}
     */
     ASSERT_skipToIdentStarParenOpen($ID_function, lexerFlags); // TODO: why is this called for an async generator expression? maybe rename this func?
-    let starToken = UNDEF_STAR;
-    if (curtok.type === $PUNC_STAR) {
-      starToken = curtok;
+    let $tt_starToken = UNDEF_STAR;
+    let $t_starToken_line = 0;
+    let $t_starToken_column = 0;
+    let $t_starToken_start = 0;
+    if (tok_getType() === $PUNC_STAR) {
+      $tt_starToken = __oldtok;
+      $t_starToken_line = tok_getLine();
+      $t_starToken_column = tok_getColumn();
+      $t_starToken_start = tok_getStart();
+
       if (isFuncDecl === IS_FUNC_DECL && fdState === FDS_IFELSE) {
         // [x]: `foo: function *f(){}`
-        THROW_TOKEN('Labelled function statements must be plain functions, not generators', starToken);
+        THROW_TOKEN('Labelled function statements must be plain functions, not generators', $tt_starToken.start, $tt_starToken.stop);
       }
       ASSERT_skipToIdentParenOpen('*', lexerFlags);
-      if (asyncToken !== UNDEF_ASYNC && !allowAsyncGenerators) {
-        THROW_TOKEN('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018', asyncToken);
+      if ($tt_asyncToken !== UNDEF_ASYNC && !allowAsyncGenerators) {
+        THROW_TOKEN('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018', $tt_asyncToken.start, $tt_asyncToken.stop);
       }
     }
 
@@ -3021,21 +3052,21 @@ function Parser(code, options = {}) {
       if (fdState === FDS_IFELSE) {
         // - `if (x) foo: function f(){}`
         // - `if (x); else foo: function f(){}`
-        THROW_TOKEN('A "labelled function declaration" is never allowed inside an if-else', functionToken);
+        THROW_TOKEN('A "labelled function declaration" is never allowed inside an if-else', $tt_functionToken.start, $tt_functionToken.stop);
       }
       if (fdState === FDS_ILLEGAL) {
         // - `while (x) foo: function f(){}`
         // - `for (;;) foo: function f(){}`
         // - `with (x) foo: function f(){}`
-        THROW_TOKEN('A "labelled function declaration" is not allowed in this situation', functionToken);
+        THROW_TOKEN('A "labelled function declaration" is not allowed in this situation', $tt_functionToken.start, $tt_functionToken.stop);
       }
-      if (asyncToken !== UNDEF_ASYNC) {
+      if ($tt_asyncToken !== UNDEF_ASYNC) {
         // - `foo: async function f(){}`
-        THROW_TOKEN('A "labelled function declaration" can not be async', asyncToken);
+        THROW_TOKEN('A "labelled function declaration" can not be async', $tt_asyncToken.start, $tt_asyncToken.stop);
       }
-      if (starToken !== UNDEF_STAR) {
+      if ($tt_starToken !== UNDEF_STAR) {
         // - `foo: function *f(){}`
-        THROW_TOKEN('A "labelled function declaration" can not be a generator', starToken);
+        THROW_TOKEN('A "labelled function declaration" can not be a generator', $tt_starToken.start, $tt_starToken.stop);
       }
       // Put the generic webcompat error last to make all modes as similar as possible
       if (options_webCompat === WEB_COMPAT_OFF || hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
@@ -3045,25 +3076,25 @@ function Parser(code, options = {}) {
     else if (fdState === FDS_IFELSE) {
       // NOT labelled!
 
-      if (asyncToken !== UNDEF_ASYNC) {
+      if ($tt_asyncToken !== UNDEF_ASYNC) {
         // - `if (x) async function f(){}`
-        THROW_TOKEN('An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', asyncToken);
+        THROW_TOKEN('An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tt_asyncToken.start, $tt_asyncToken.stop);
       }
-      if (starToken !== UNDEF_STAR) {
+      if ($tt_starToken !== UNDEF_STAR) {
         // - `if (x) function *f(){}`
-        THROW_TOKEN('A generator function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', starToken);
+        THROW_TOKEN('A generator function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tt_starToken.start, $tt_starToken.stop);
       }
       // Put the generic webcompat error last to make all modes as similar as possible
       if (options_webCompat === WEB_COMPAT_OFF || hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
         // - `while (x) function f(){}`
         // - `with (x) function f(){}`
-        THROW_TOKEN('A function declaration can only be the child of an `if`/`else` in sloppy web compat mode', functionToken);
+        THROW_TOKEN('A function declaration can only be the child of an `if`/`else` in sloppy web compat mode', $tt_functionToken.start, $tt_functionToken.stop);
       }
 
       // Labelled func decls do not leak their name into global space (but they do for a label in a block!)
       // IfStatements always consider a func decl as if wrapped in a block, so never leak its name outward
       scoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FAKE_BLOCK, 'special "fake-block" function statement for label');
-      ASSERT(scoop.$funcName = curtok._str); // meh. just for debugggin.
+      ASSERT(scoop.$funcName = tok_sliceInput(tok_getStart(), tok_getStop())); // meh. just for debugggin.
 
       // TLDR: labelled functions are always statements and use same binding propagation rules as non-labelled functions
       // This rule ONLY applies to plain functions. Async / generators or other types of declarations are illegal here!
@@ -3072,7 +3103,7 @@ function Parser(code, options = {}) {
       // https://tc39.es/ecma262/#prod-LabelledItem
       // A function declaration is allowed as child of a label, but that case does not allow async/star
       // This case is a "labelled function declaration"
-      THROW_TOKEN('Cannot parse a function declaration here, only expecting statements here', functionToken);
+      THROW_TOKEN('Cannot parse a function declaration here, only expecting statements here', $tt_functionToken.start, $tt_functionToken.stop);
     }
     else {
       // This is always fine in es6+
@@ -3086,24 +3117,31 @@ function Parser(code, options = {}) {
       optionalIdent,
       NOT_CONSTRUCTOR,
       NOT_METHOD,
-      asyncToken,
-      starToken,
+      $tt_asyncToken,
+      $tt_starToken,
       UNDEF_GET,
       UNDEF_SET,
-      asyncToken === UNDEF_ASYNC ? functionToken : asyncToken,
+      $tt_asyncToken === UNDEF_ASYNC ? $tt_functionToken : $tt_asyncToken,
       fdState,
       astProp
     );
   }
-  function parseFunctionExpression(lexerFlags, asyncToken, functionToken, astProp) {
+  function parseFunctionExpression(lexerFlags, $tt_asyncToken, $tt_functionToken, astProp) {
     ASSERT(parseFunctionExpression.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token', asyncToken);
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token', $tt_asyncToken);
 
-    let starToken = UNDEF_STAR;
-    if (curtok.type === $PUNC_STAR) {
-      starToken = curtok;
+    let $tt_starToken = UNDEF_STAR;
+    let $t_starToken_line = 0;
+    let $t_starToken_column = 0;
+    let $t_starToken_start = 0;
+    if (tok_getType() === $PUNC_STAR) {
+      $tt_starToken = __oldtok;
+      $t_starToken_line = tok_getLine();
+      $t_starToken_column = tok_getColumn();
+      $t_starToken_start = tok_getStart();
+
       ASSERT_skipToIdentParenOpen('*', lexerFlags);
-      if (asyncToken !== UNDEF_ASYNC && !allowAsyncGenerators) {
+      if ($tt_asyncToken !== UNDEF_ASYNC && !allowAsyncGenerators) {
         THROW('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018');
       }
     }
@@ -3116,27 +3154,32 @@ function Parser(code, options = {}) {
       IDENT_REQUIRED,
       NOT_CONSTRUCTOR,
       NOT_METHOD,
-      asyncToken,
-      starToken,
+      $tt_asyncToken,
+      $tt_starToken,
       UNDEF_GET,
       UNDEF_SET,
-      asyncToken === UNDEF_ASYNC ? functionToken : asyncToken,
+      $tt_asyncToken === UNDEF_ASYNC ? $tt_functionToken : $tt_asyncToken,
       FDS_ILLEGAL, // this flag is not relevant for func exprs
       astProp
     );
   }
-  function parseAsyncFunctionDecl(lexerFlags, asyncToken, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp) {
+  function parseAsyncFunctionDecl(lexerFlags, $tt_asyncToken, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp) {
     ASSERT(parseAsyncFunctionDecl.length === arguments.length, 'arg count');
-    ASSERT(curtok.type === $ID_function, 'already checked, not yet consumed');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT(tok_getType() === $ID_function, 'already checked, not yet consumed');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+
+    let $tt_functionToken = __oldtok;
+    let $t_functionToken_line = tok_getLine();
+    let $t_functionToken_column = tok_getColumn();
+    let $t_functionToken_start = tok_getStart();
 
     let canonName = parseFunctionDeclaration(
       lexerFlags,
       scoop,
       fromStmtOrExpr === IS_EXPRESSION ? NOT_FUNC_DECL : IS_FUNC_DECL,
       fromStmtOrExpr === IS_EXPRESSION ? IS_FUNC_EXPR : NOT_FUNC_EXPR,
-      asyncToken,
-      curtok, // `function`
+      $tt_asyncToken,
+      $tt_functionToken, // `function`
       (isExport === IS_EXPORT || fromStmtOrExpr === IS_EXPRESSION) ? IDENT_OPTIONAL : IDENT_REQUIRED,
       isLabelled,
       fdState,
@@ -3162,21 +3205,21 @@ function Parser(code, options = {}) {
     optionalIdent,
     isClassConstructor,
     isMethod,
-    asyncToken,
-    starToken,
-    getToken,
-    setToken,
-    firstToken, // for range in AST, `function` or `async` or method name/modifiers
+    $tt_asyncToken,
+    $tt_starToken,
+    $tt_getToken,
+    $tt_setToken,
+    $tt_firstToken, // for range in AST, `function` or `async` or method name/modifiers
     fdState, // for errors and scoping
     astProp
   ) {
     ASSERT(arguments.length === parseFunctionAfterKeyword.length, 'arg count must match');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
     ASSERT((isFuncDecl === IS_FUNC_DECL) === (outerScoop !== DO_NOT_BIND), 'outerScoop is only used for func decl ids and required there', isFuncDecl === IS_FUNC_DECL, outerScoop !== DO_NOT_BIND);
-    ASSERT(typeof firstToken === 'object' && firstToken && typeof firstToken.type === 'number', 'token', firstToken);
+    ASSERT(typeof $tt_firstToken === 'object' && $tt_firstToken && typeof $tt_firstToken.type === 'number', 'token', $tt_firstToken);
     ASSERT_FDS(fdState);
 
     /*
@@ -3203,15 +3246,15 @@ function Parser(code, options = {}) {
 
     if (babelCompat && isMethod !== NOT_METHOD) {
       // Babel extends the Function node to be an ObjectMethod /  ClassMethod, rather than .value
-      AST_set('generator', starToken !== UNDEF_STAR);
-      AST_set('async', asyncToken !== UNDEF_ASYNC);
+      AST_set('generator', $tt_starToken !== UNDEF_STAR);
+      AST_set('async', $tt_asyncToken !== UNDEF_ASYNC);
     } else if (acornCompat) {
       AST_open(astProp, {
         type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
-        loc: AST_getBaseLoc(firstToken),
+        loc: AST_getBaseLoc($tt_firstToken),
         // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
-        generator: starToken !== UNDEF_STAR,
-        async: asyncToken !== UNDEF_ASYNC,
+        generator: $tt_starToken !== UNDEF_STAR,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         expression: false,
         id: undefined,
         params: [],
@@ -3220,21 +3263,21 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
-        loc: AST_getBaseLoc(firstToken),
+        loc: AST_getBaseLoc($tt_firstToken),
         // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
-        generator: starToken !== UNDEF_STAR,
-        async: asyncToken !== UNDEF_ASYNC,
+        generator: $tt_starToken !== UNDEF_STAR,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         id: undefined,
         params: [],
         body: undefined,
       });
     }
 
-    if (asyncToken !== UNDEF_ASYNC) {
+    if ($tt_asyncToken !== UNDEF_ASYNC) {
       if (!allowAsyncFunctions) {
         THROW('Async functions are not supported in the currently targeted version, they are >= ES8 / ES2017');
       }
-      if (starToken !== UNDEF_STAR && !allowAsyncGenerators) {
+      if ($tt_starToken !== UNDEF_STAR && !allowAsyncGenerators) {
         THROW('Async generator functions are not supported in the currently targeted version, they are >= ES9 / ES2018');
       }
     }
@@ -3244,19 +3287,25 @@ function Parser(code, options = {}) {
 
     // need to track whether the name was eval/args because if the func body is strict mode then it should still throw
     // retroactively for having that name. a bit annoying.
-    let functionNameTokenToVerify = NO_ID_TO_VERIFY;
-    let functionNameTokenToVerifyCanon = '';
+    let $tt_functionNameTokenToVerify = NO_ID_TO_VERIFY;
+    let $t_functionNameTokenToVerify_line = 0;
+    let $t_functionNameTokenToVerify_column = 0;
+    let $t_functionNameTokenToVerify_start = 0;
+    let functionNameToVerifyCanon = '';
 
     let canonName = '';
-    if (isIdentToken(curtok.type)) {
-      functionNameTokenToVerify = curtok; // if not strict mode yet but this func has a directive, check it again
-      functionNameTokenToVerifyCanon = tok_getCanon();
+    if (isIdentToken(tok_getType())) {
+      $tt_functionNameTokenToVerify = __oldtok; // if not strict mode yet but this func has a directive, check it again
+      $t_functionNameTokenToVerify_line = tok_getLine();
+      $t_functionNameTokenToVerify_column = tok_getColumn();
+      $t_functionNameTokenToVerify_start = tok_getStart();
+      functionNameToVerifyCanon = tok_getCanon();
 
       // properly inherit the async/gen state from the outer scope (func decls) or current function (func expr)
       let bindingFlags = (
         sansFlag(lexerFlags, LF_IN_GENERATOR | LF_IN_ASYNC)
         |
-        getFuncIdentAsyncGenState(isRealFuncExpr, lexerFlags, starToken, asyncToken)
+        getFuncIdentAsyncGenState(isRealFuncExpr, lexerFlags, $tt_starToken, $tt_asyncToken)
       );
 
       // A function name is bound lexically, except when directly in script-goal global scope or any-goal function scope
@@ -3266,13 +3315,13 @@ function Parser(code, options = {}) {
         (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)
       ) ? BINDING_TYPE_FUNC_VAR : BINDING_TYPE_FUNC_LEX;
 
-      canonName = functionNameTokenToVerifyCanon;
+      canonName = functionNameToVerifyCanon;
 
       // Note: must verify id here and not after asserting the existence of the directive because by then the lexer flag
       // for async will have been merged and `async function await(){}` would be illegal.
       // The binding of a function could be considered lexical, but is probably the only lexical case that can be `let`
       // The id is passed forward and validated on a subset, if it turns out the func has a use strict directive.
-      fatalBindingIdentCheck(functionNameTokenToVerify, functionNameTokenToVerifyCanon, curtok.type === $ID_let ? BINDING_TYPE_VAR : nameBindingType, bindingFlags);
+      fatalBindingIdentCheck($tt_functionNameTokenToVerify, functionNameToVerifyCanon, tok_getType() === $ID_let ? BINDING_TYPE_VAR : nameBindingType, bindingFlags);
 
       // declarations bind in outer scope, expressions bind in inner scope, methods bind ...  ehh?
       if (isFuncDecl === IS_FUNC_DECL) {
@@ -3286,7 +3335,7 @@ function Parser(code, options = {}) {
       ASSERT(innerScoop._ = 'func scope');
 
       ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-      AST_setIdent('id', functionNameTokenToVerify, functionNameTokenToVerifyCanon);
+      AST_setIdent('id', $tt_functionNameTokenToVerify, functionNameToVerifyCanon);
     } else if (isFuncDecl === IS_FUNC_DECL && optionalIdent === IDENT_REQUIRED) {
       THROW('Function decl missing required ident');
     } else {
@@ -3298,13 +3347,13 @@ function Parser(code, options = {}) {
     // note: we dont reset the template lexer flag here. instead we do it at any place where we parse curly pairs
     //       this fixes the problem of parsing arrow functions where we can't tell whether the next token is part
     //       of the arrow expression until after parsing and processing that token. that needs curly pair checks.
-    lexerFlags = resetLexerFlagsForFuncAndArrow(lexerFlags, starToken, asyncToken, NOT_ARROW);
+    lexerFlags = resetLexerFlagsForFuncAndArrow(lexerFlags, $tt_starToken, $tt_asyncToken, NOT_ARROW);
 
     // super() is allowed in constructor param defaults so deal with the flag now...
     // these flags dont reset in arrows so only do it here
     if (isClassConstructor === IS_CONSTRUCTOR) {
-      ASSERT(asyncToken === UNDEF_ASYNC, 'class constructors are not async');
-      ASSERT(starToken === UNDEF_STAR, 'class constructors are not generators');
+      ASSERT($tt_asyncToken === UNDEF_ASYNC, 'class constructors are not async');
+      ASSERT($tt_starToken === UNDEF_STAR, 'class constructors are not generators');
       ASSERT(isMethod === IS_METHOD, 'class constructors are methods');
       // you can use `super()` in arg defaults so set it up now
       lexerFlags |= LF_IN_CONSTRUCTOR;
@@ -3326,16 +3375,16 @@ function Parser(code, options = {}) {
     parseFunctionFromParams(
       lexerFlags,
       innerScoop,
-      asyncToken === UNDEF_ASYNC ? FROM_OTHER_FUNC_ARG : FROM_ASYNC_ARG,
+      $tt_asyncToken === UNDEF_ASYNC ? FROM_OTHER_FUNC_ARG : FROM_ASYNC_ARG,
       isFuncDecl === IS_FUNC_DECL ? IS_STATEMENT : IS_EXPRESSION,
       isClassConstructor,
-      functionNameTokenToVerify,
-      functionNameTokenToVerifyCanon,
+      $tt_functionNameTokenToVerify,
+      functionNameToVerifyCanon,
       isMethod,
-      asyncToken,
-      starToken,
-      getToken,
-      setToken
+      $tt_asyncToken,
+      $tt_starToken,
+      $tt_getToken,
+      $tt_setToken
     );
 
     if (!babelCompat || isMethod === NOT_METHOD) { // Babel extends the Function node to be a ClassMethod, rather than .value
@@ -3344,40 +3393,40 @@ function Parser(code, options = {}) {
 
     return canonName;
   }
-  function getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, starToken) {
+  function getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, $tt_starToken) {
     ASSERT(getFuncIdentGeneratorState.length === arguments.length, 'arg count');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
     ASSERT(isRealFuncExpr === IS_FUNC_EXPR || isRealFuncExpr === NOT_FUNC_EXPR, 'isRealFuncExpr enum');
 
     // function idents can never be `yield` with the module goal
     if (hasAllFlags(enclosingScopeFlags, LF_STRICT_MODE)) return LF_IN_GENERATOR;
 
-    if (isRealFuncExpr === IS_FUNC_EXPR) return starToken !== UNDEF_STAR ? LF_IN_GENERATOR : 0;
+    if (isRealFuncExpr === IS_FUNC_EXPR) return $tt_starToken !== UNDEF_STAR ? LF_IN_GENERATOR : 0;
     return hasAnyFlag(enclosingScopeFlags, LF_IN_GENERATOR) ? LF_IN_GENERATOR : 0;
   }
-  function getFuncIdentAsyncState(isRealFuncExpr, enclosingScopeFlags, asyncToken) {
+  function getFuncIdentAsyncState(isRealFuncExpr, enclosingScopeFlags, $tt_asyncToken) {
     ASSERT(getFuncIdentAsyncState.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT(isRealFuncExpr === IS_FUNC_EXPR || isRealFuncExpr === NOT_FUNC_EXPR, 'isRealFuncExpr enum (2)');
 
     // function idents can never be `await` with the module goal
     if (goalMode === GOAL_MODULE) return LF_IN_ASYNC;
 
-    if (isRealFuncExpr === IS_FUNC_EXPR) return asyncToken !== UNDEF_ASYNC ? LF_IN_ASYNC : 0;
+    if (isRealFuncExpr === IS_FUNC_EXPR) return $tt_asyncToken !== UNDEF_ASYNC ? LF_IN_ASYNC : 0;
     return hasAnyFlag(enclosingScopeFlags, LF_IN_ASYNC) ? LF_IN_ASYNC : 0;
   }
-  function getFuncIdentAsyncGenState(isRealFuncExpr, enclosingScopeFlags, starToken, asyncToken) {
+  function getFuncIdentAsyncGenState(isRealFuncExpr, enclosingScopeFlags, $tt_starToken, $tt_asyncToken) {
     ASSERT(getFuncIdentAsyncGenState.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
 
-    return getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, starToken) |
-      getFuncIdentAsyncState(isRealFuncExpr, enclosingScopeFlags, asyncToken)
+    return getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, $tt_starToken) |
+      getFuncIdentAsyncState(isRealFuncExpr, enclosingScopeFlags, $tt_asyncToken)
   }
-  function resetLexerFlagsForFuncAndArrow(lexerFlags, starToken, asyncToken, funcType) {
+  function resetLexerFlagsForFuncAndArrow(lexerFlags, $tt_starToken, $tt_asyncToken, funcType) {
     ASSERT(resetLexerFlagsForFuncAndArrow.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
 
     // this resets lexerflags for parsing a function from the arguments onwards or for the body of an arrow
     lexerFlags =
@@ -3390,10 +3439,10 @@ function Parser(code, options = {}) {
 
     // the function name can inherit this state from the enclosing scope but all other parts of a function will
     // be parsed according to the state of hte currently defined function
-    if (asyncToken !== UNDEF_ASYNC) {
+    if ($tt_asyncToken !== UNDEF_ASYNC) {
       lexerFlags |= LF_IN_ASYNC;
     }
-    if (starToken !== UNDEF_STAR) {
+    if ($tt_starToken !== UNDEF_STAR) {
       lexerFlags |= LF_IN_GENERATOR;
     }
 
@@ -3402,12 +3451,12 @@ function Parser(code, options = {}) {
 
     return lexerFlags;
   }
-  function parseFunctionFromParams(lexerFlags, scoop, bindingFrom, expressionState, isClassConstructor, functionNameTokenToVerify, functionNameTokenToVerifyCanon, isMethod, asyncToken, starToken, getToken, setToken) {
+  function parseFunctionFromParams(lexerFlags, scoop, bindingFrom, expressionState, isClassConstructor, $tt_functionNameTokenToVerify, functionNameToVerifyCanon, isMethod, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken) {
     ASSERT(parseFunctionFromParams.length === arguments.length, 'arg count should match');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
     ASSERT(typeof lexerFlags === 'number');
 
     // - `function f(a){}`
@@ -3416,28 +3465,29 @@ function Parser(code, options = {}) {
     //          ^
 
     let paramScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FUNC_PARAMS, 'parseFunctionFromParams(arg)');
-    ASSERT(!void(scoop._funcName = functionNameTokenToVerify && functionNameTokenToVerify._str));
+    ASSERT(!void(scoop._funcName = $tt_functionNameTokenToVerify && $tt_functionNameTokenToVerify._str));
     // `yield` can certainly NOT be a var name if either parent or current function was a generator, so track it
-    let paramsSimple = parseFuncArguments(lexerFlags | LF_NO_ASI, paramScoop, bindingFrom, asyncToken, starToken, getToken, setToken);
-    ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'the paretocurlyopen should already throw (not assert) if the next token is not a curly open');
+    let paramsSimple = parseFuncArguments(lexerFlags | LF_NO_ASI, paramScoop, bindingFrom, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken);
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'the paretocurlyopen should already throw (not assert) if the next token is not a curly open');
 
-    if (isMethod === IS_METHOD && paramScoop.dupeParamErrorToken !== NO_DUPE_PARAMS) {
+    let dupeParamErrorOffset = paramScoop.dupeParamErrorOffset;
+    if (isMethod === IS_METHOD && dupeParamErrorOffset !== NO_DUPE_PARAMS) {
       // Dupe params are never allowed in methods
-      THROW_TOKEN('Method had duplicate params', paramScoop.dupeParamErrorToken);
+      THROW_TOKEN('Method had duplicate params', dupeParamErrorOffset, dupeParamErrorOffset + 1);
     }
 
     let finalFuncScope = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseFunctionFromParams(body)');
-    ASSERT(!void(finalFuncScope._funcName = functionNameTokenToVerify && functionNameTokenToVerify._str));
+    ASSERT(!void(finalFuncScope._funcName = $tt_functionNameTokenToVerify && $tt_functionNameTokenToVerify._str));
     if (options_exposeScopes) AST_set('$scope', finalFuncScope);
-    parseFunctionBody(lexerFlags, finalFuncScope, EMPTY_LABEL_SET, expressionState, paramsSimple, paramScoop.dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon);
+    parseFunctionBody(lexerFlags, finalFuncScope, EMPTY_LABEL_SET, expressionState, paramsSimple, dupeParamErrorOffset, $tt_functionNameTokenToVerify, functionNameToVerifyCanon);
   }
-  function parseFuncArguments(lexerFlags, scoop, bindingFrom, asyncToken, starToken, getToken, setToken) {
+  function parseFuncArguments(lexerFlags, scoop, bindingFrom, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken) {
     // parseArguments
     ASSERT(arguments.length === parseFuncArguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
 
     // - `function f(a){}`
     //              ^
@@ -3448,7 +3498,7 @@ function Parser(code, options = {}) {
 
     let paramsSimple = PARAMS_ALL_SIMPLE;
 
-    if (curtok.type !== $PUNC_PAREN_OPEN) {
+    if (tok_getType() !== $PUNC_PAREN_OPEN) {
       THROW('Must have func arguments next but did not find `(`');
     }
     ASSERT_skipToBindingStartGrouped($PUNC_PAREN_OPEN, lexerFlags);
@@ -3458,17 +3508,17 @@ function Parser(code, options = {}) {
     // - `x = {f(a){}}`
     //           ^
 
-    if (curtok.type === $PUNC_PAREN_CLOSE) {
+    if (tok_getType() === $PUNC_PAREN_CLOSE) {
       // - `function f(){}`
       //               ^
-      if (setToken !== UNDEF_SET) {
+      if ($tt_setToken !== UNDEF_SET) {
         // - `x = {set f(){}}`
         //               ^
         THROW('Setters must have exactly one parameter');
       }
       ASSERT_skipToCurlyOpenOrDie($PUNC_PAREN_CLOSE, lexerFlags);
     }
-    else if (getToken !== UNDEF_GET) {
+    else if ($tt_getToken !== UNDEF_GET) {
       // - `x = {get f(x){}}`
       //               ^
       THROW('Getters can not have any parameters');
@@ -3479,39 +3529,43 @@ function Parser(code, options = {}) {
       // - `x = {f(a,b){}}`
       //           ^
       // Skip dupe checks because dupe param names are allowed in sloppy mode if the params are all "simple"
-      paramsSimple = parseBindings(lexerFlags, scoop, BINDING_TYPE_ARG, bindingFrom, ASSIGNMENT_IS_DEFAULT, setToken, UNDEF_EXPORTS, UNDEF_EXPORTS, 'params');
+      paramsSimple = parseBindings(lexerFlags, scoop, BINDING_TYPE_ARG, bindingFrom, ASSIGNMENT_IS_DEFAULT, $tt_setToken, UNDEF_EXPORTS, UNDEF_EXPORTS, 'params');
       AST_destruct('params');
-      ASSERT(curtok.type !== $PUNC_COMMA, 'the trailing func comma case should already be caught by now');
-      if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Missing function param definition closing parenthesis, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      ASSERT(tok_getType() !== $PUNC_COMMA, 'the trailing func comma case should already be caught by now');
+      if (tok_getType() !== $PUNC_PAREN_CLOSE) THROW('Missing function param definition closing parenthesis, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       ASSERT_skipToCurlyOpenOrDie($PUNC_PAREN_CLOSE, lexerFlags);
     }
 
     return paramsSimple;
   }
 
-  function parseFunctionBody(lexerFlags, scoop, labelSet, blockType, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon) {
+  function parseFunctionBody(lexerFlags, scoop, labelSet, blockType, paramsSimple, dupeParamErrorOffset, $tt_functionNameTokenToVerify, functionNameToVerifyCanon) {
     ASSERT(parseFunctionBody.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof lexerFlags === 'number');
     ASSERT(typeof labelSet === 'object');
-    ASSERT_VALID(curtok.type === $PUNC_CURLY_OPEN, 'block opening token should already have been confirmed, but not yet consumed');
+    ASSERT_VALID(tok_getType() === $PUNC_CURLY_OPEN, 'block opening token should already have been confirmed, but not yet consumed');
     ASSERT([PARAMS_SOME_COMPLEX, PARAMS_SOME_NONSTRICT, PARAMS_ALL_SIMPLE].includes(paramsSimple), 'paramsSimple enum', paramsSimple);
     ASSERT_LABELSET(labelSet);
 
     let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION);
 
-    let curlyToken = curtok;
+    let $tt_curlyToken = __oldtok;
+    let $t_curlyToken_line = tok_getLine();
+    let $t_curlyToken_column = tok_getColumn();
+    let $t_curlyToken_start = tok_getStart();
+
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlagsNoTemplate); // [v]: `(x)=>{/x/}`  TODO: next must be statement start or `}`
     AST_open('body', {
       type: 'BlockStatement',
-      loc: AST_getBaseLoc(curlyToken),
+      loc: AST_getBaseLoc($tt_curlyToken),
       body: [],
     });
     if (options_exposeScopes) AST_set('$scope', scoop);
 
-    parseBodyPartsWithDirectives(lexerFlagsNoTemplate, scoop, labelSet, UNDEF_EXPORTS, UNDEF_EXPORTS, paramsSimple, dupeParamErrorToken, functionNameTokenToVerify, functionNameTokenToVerifyCanon, NOT_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
+    parseBodyPartsWithDirectives(lexerFlagsNoTemplate, scoop, labelSet, UNDEF_EXPORTS, UNDEF_EXPORTS, paramsSimple, dupeParamErrorOffset, $tt_functionNameTokenToVerify, functionNameToVerifyCanon, NOT_GLOBAL_TOPLEVEL, FDS_VAR, 'body');
 
-    if (curtok.type !== $PUNC_CURLY_CLOSE) THROW('Missing function body closing curly, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_CURLY_CLOSE) THROW('Missing function body closing curly, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     if (blockType === IS_EXPRESSION) {
       // arrow with block, function expression
       ASSERT_skipDiv($PUNC_CURLY_CLOSE, lexerFlags);
@@ -3522,7 +3576,7 @@ function Parser(code, options = {}) {
     }
     AST_close('BlockStatement');
 
-    if (curtok.type === $PUNC_EQ) {
+    if (tok_getType() === $PUNC_EQ) {
       THROW('Object destructuring is not allowed at the start of statement or arrow body, must wrap the object in parenthesis for that to work');
     }
   }
@@ -3536,15 +3590,19 @@ function Parser(code, options = {}) {
 
     // all statement starting keywords;
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
-    switch (identToken.type) {
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
+    switch ($tt_identToken.type) {
       case $ID_async:
         // we deal with async here because it can be a valid label in sloppy mode
         // TODO: test case to this change
         ASSERT_skipDiv($ID_async, lexerFlags); // TODO: async could be ident, so `async/b` is a division
-        if (curtok.type === $PUNC_COLON) return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
-        parseAsyncStatement(lexerFlags, scoop, identToken, identTokenCanon, NOT_EXPORT, UNDEF_EXPORTS, isLabelled, fdState, astProp);
+        if (tok_getType() === $PUNC_COLON) return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp);
+        parseAsyncStatement(lexerFlags, scoop, $tt_identToken, identCanon, NOT_EXPORT, UNDEF_EXPORTS, isLabelled, fdState, astProp);
         return;
 
       case $ID_break:
@@ -3581,7 +3639,7 @@ function Parser(code, options = {}) {
 
       case $ID_function:
         ASSERT(scoop, 'should have a scoop at this point');
-        parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, identToken, IDENT_REQUIRED, isLabelled, fdState, astProp);
+        parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, $tt_identToken, IDENT_REQUIRED, isLabelled, fdState, astProp);
         return;
 
       case $ID_if:
@@ -3602,7 +3660,7 @@ function Parser(code, options = {}) {
           // declarations not allowed
           parseLetExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp);
         } else {
-          parseLetDeclaration(lexerFlags, identToken, scoop, labelSet, fdState, nestedLabels, astProp);
+          parseLetDeclaration(lexerFlags, $tt_identToken, scoop, labelSet, fdState, nestedLabels, astProp);
         }
         return;
 
@@ -3645,19 +3703,23 @@ function Parser(code, options = {}) {
   function parseFromNumberStatement(lexerFlags, astProp) {
     ASSERT(parseFromNumberStatement.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
-    ASSERT(isNumberToken(curtok.type));
+    ASSERT(isNumberToken(tok_getType()));
 
-    let numberToken = curtok;
+    let $tt_numberToken = __oldtok;
+    let $t_numberToken_line = tok_getLine();
+    let $t_numberToken_column = tok_getColumn();
+    let $t_numberToken_start = tok_getStart();
+
     ASSERT_skipDiv($G_NUMBER, lexerFlags); // note: this can be any tail, semi, asi, etc
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(numberToken),
-      expression: AST_getNumberNode(numberToken),
+      loc: AST_getBaseLoc($tt_numberToken),
+      expression: AST_getNumberNode($tt_numberToken),
     });
-    parseExpressionAfterLiteral(lexerFlags, numberToken, 'expression');
-    if (curtok.type === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, numberToken, initNotAssignable(), 'expression');
+    parseExpressionAfterLiteral(lexerFlags, $tt_numberToken, 'expression');
+    if (tok_getType() === $PUNC_COMMA) {
+      _parseExpressions(lexerFlags, $tt_numberToken, initNotAssignable(), 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
@@ -3665,20 +3727,24 @@ function Parser(code, options = {}) {
   function parseFromStringStatement(lexerFlags, astProp) {
     ASSERT(parseFromStringStatement.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
-    ASSERT(isStringToken(curtok.type));
+    ASSERT(isStringToken(tok_getType()));
 
-    let stringToken = curtok;
-    let stringTokenCanon = tok_getCanon();
+    let $tt_stringToken = __oldtok;
+    let $t_stringToken_line = tok_getLine();
+    let $t_stringToken_column = tok_getColumn();
+    let $t_stringToken_start = tok_getStart();
+
+    let stringCanon = tok_getCanon();
     ASSERT_skipDiv($G_STRING, lexerFlags); // note: this can be any tail, semi, asi, etc
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(stringToken),
-      expression: AST_getStringNode(stringToken, stringTokenCanon, false),
+      loc: AST_getBaseLoc($tt_stringToken),
+      expression: AST_getStringNode($tt_stringToken, stringCanon, false),
     });
-    parseExpressionAfterLiteral(lexerFlags, stringToken, 'expression');
-    if (curtok.type === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, stringToken, initNotAssignable(), 'expression');
+    parseExpressionAfterLiteral(lexerFlags, $tt_stringToken, 'expression');
+    if (tok_getType() === $PUNC_COMMA) {
+      _parseExpressions(lexerFlags, $tt_stringToken, initNotAssignable(), 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
@@ -3686,70 +3752,75 @@ function Parser(code, options = {}) {
   function parseFromRegexStatement(lexerFlags, astProp) {
     ASSERT(parseFromRegexStatement.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
-    ASSERT(isRegexToken(curtok.type));
+    ASSERT(isRegexToken(tok_getType()), 'current token is regex', T(tok_getType()));
 
-    let regexToken = curtok;
+    let $tt_regexToken = __oldtok;
+    let $t_regexToken_line = tok_getLine();
+    let $t_regexToken_column = tok_getColumn();
+    let $t_regexToken_start = tok_getStart();
+
     ASSERT_skipDiv($G_REGEX, lexerFlags); // note: this can be any tail, semi, asi, etc
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(regexToken),
-      expression: AST_getRegexNode(regexToken),
+      loc: AST_getBaseLoc($tt_regexToken),
+      expression: AST_getRegexNode($tt_regexToken),
     });
-    parseExpressionAfterLiteral(lexerFlags, regexToken, 'expression');
-    if (curtok.type === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, regexToken, initNotAssignable(), 'expression');
+    parseExpressionAfterLiteral(lexerFlags, $tt_regexToken, 'expression');
+    if (tok_getType() === $PUNC_COMMA) {
+      _parseExpressions(lexerFlags, $tt_regexToken, initNotAssignable(), 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
 
-  function parseTickStatement(lexerFlags, tickToken, astProp) {
+  function parseTickStatement(lexerFlags, $tt_tickToken, astProp) {
     ASSERT(parseTickStatement.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
+    ASSERT($tt_tickToken.start === tok_getStart(), 'not yet skipped');
 
-    if (isBadTickToken(curtok.type)) {
-      THROW('Template contained an illegal escape, illegal in a statement', ''+curtok);
+    if (isBadTickToken($tt_tickToken.type)) {
+      return THROW_TOKEN2('Template contained an illegal escape, illegal in a statement', $tt_tickToken.start, $tt_tickToken.start + 1); // TODO: use stop
     }
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(tickToken),
+      loc: AST_getBaseLoc($tt_tickToken),
       expression: undefined,
     });
-    parseTickExpression(lexerFlags, tickToken, 'expression');
-    parseExpressionAfterLiteral(lexerFlags, tickToken, 'expression');
-    if (curtok.type === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, tickToken, initNotAssignable(), 'expression');
+    parseTickExpression(lexerFlags, $tt_tickToken, 'expression');
+    parseExpressionAfterLiteral(lexerFlags, $tt_tickToken, 'expression');
+    if (tok_getType() === $PUNC_COMMA) {
+      _parseExpressions(lexerFlags, $tt_tickToken, initNotAssignable(), 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
 
-  function parseAsyncStatement(lexerFlags, scoop, asyncToken, asyncTokenCanon, isExport, exportedBindings, isLabelled, fdState, astProp) {
+  function parseAsyncStatement(lexerFlags, scoop, $tt_asyncToken, $tt_asyncCanon, isExport, exportedBindings, isLabelled, fdState, astProp) {
     ASSERT(parseAsyncStatement.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
 
     // an async statement is almost the same as an expression but it needs to know whether it was in fact
     // an expression or not so it knows how to apply the statement semi/asi.
     // at this point already verified not to be a label.
     // only the `async function ...` form does NOT require a semi as a statement. all other forms do.
     // A statement needs to pass on the scoop because the async func decl needs to record its id in that outer scope
-    _parseAsync(lexerFlags, scoop, IS_STATEMENT, asyncToken, asyncTokenCanon, NOT_NEW_ARG, isExport, ASSIGN_EXPR_IS_OK, exportedBindings, isLabelled, fdState, NOT_LHSE, astProp);
+    _parseAsync(lexerFlags, scoop, IS_STATEMENT, $tt_asyncToken, $tt_asyncCanon, NOT_NEW_ARG, isExport, ASSIGN_EXPR_IS_OK, exportedBindings, isLabelled, fdState, NOT_LHSE, astProp);
   }
-  function parseAsyncExpression(lexerFlags, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, leftHandSideExpression, astProp) {
+  function parseAsyncExpression(lexerFlags, $tt_asyncToken, $tt_asyncCanon, isNewArg, isExport, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(parseAsyncExpression.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
-    // parsed the `async` keyword (-> asyncToken)
-    return _parseAsync(lexerFlags, DO_NOT_BIND, IS_EXPRESSION, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, UNDEF_EXPORTS, NOT_LABELLED, FDS_ILLEGAL, leftHandSideExpression, astProp);
+    // parsed the `async` keyword (-> $tt_asyncToken)
+    return _parseAsync(lexerFlags, DO_NOT_BIND, IS_EXPRESSION, $tt_asyncToken, $tt_asyncCanon, isNewArg, isExport, allowAssignment, UNDEF_EXPORTS, NOT_LABELLED, FDS_ILLEGAL, leftHandSideExpression, astProp);
   }
-  function _parseAsync(lexerFlags, scoop, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, isExport, allowAssignment, exportedBindings, isLabelled, fdState, leftHandSideExpression, astProp) {
+  function _parseAsync(lexerFlags, scoop, fromStmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, isExport, allowAssignment, exportedBindings, isLabelled, fdState, leftHandSideExpression, astProp) {
     ASSERT(_parseAsync.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop = string', astProp);
-    ASSERT(asyncToken !== UNDEF_ASYNC && asyncToken.type === $ID_async, 'async token should be passed on');
-    ASSERT(curtok !== asyncToken, 'should have consumed the async keyword');
+    ASSERT($tt_asyncToken !== UNDEF_ASYNC && $tt_asyncToken.type === $ID_async, 'async token should be passed on');
+    ASSERT(tok_getStart() !== $tt_asyncToken.start, 'should have consumed the async keyword');
     ASSERT(scoop === DO_NOT_BIND || scoop, 'potentially need scoop, for async func decls (only)');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     // this function will parse tail but NOT parse op and rhs.
@@ -3827,13 +3898,13 @@ function Parser(code, options = {}) {
     //   - else: `async(..)`
     // - else: `async` as a var name
 
-    if (curtok.type === $EOF || !allowAsyncFunctions) {
-      return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
+    if (tok_getType() === $EOF || !allowAsyncFunctions) {
+      return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, allowAssignment, astProp);
     }
 
     let newlineAfterAsync = tok_getNlwas() === true;
 
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       // - `async foo ...`
       //          ^
       // - `async eval => {}`
@@ -3853,20 +3924,20 @@ function Parser(code, options = {}) {
         // - `async \n in obj`
         // - `async \n instanceof obj`
         // - `async \n function f(){}`
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, allowAssignment, astProp);
       }
 
-      if (curtok.type === $ID_function) {
+      if (tok_getType() === $ID_function) {
         // - `async function f(){}`
-        if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('An async function expression is not allowed here', asyncToken);
-        return parseAsyncFunctionDecl(lexerFlags, asyncToken, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp);
+        if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('An async function expression is not allowed here', $tt_asyncToken.start, $tt_asyncToken.stop);
+        return parseAsyncFunctionDecl(lexerFlags, $tt_asyncToken, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp);
       }
 
-      if (curtok.type === $ID_in || curtok.type === $ID_instanceof) {
+      if (tok_getType() === $ID_in || tok_getType() === $ID_instanceof) {
         // - `async in x`
         // - `async instanceof x`
 
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, allowAssignment, astProp);
       }
 
       // - `async foo => ..`                        ok
@@ -3881,12 +3952,12 @@ function Parser(code, options = {}) {
         //              ^
         THROW('Cannot apply `new` to an (async) arrow');
       }
-      if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('An async function expression is not allowed here', asyncToken);
-      parseParenlessArrowAfterAsync(lexerFlags, fromStmtOrExpr, allowAssignment, asyncToken, astProp);
+      if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('An async function expression is not allowed here', $tt_asyncToken.start, $tt_asyncToken.stop);
+      parseParenlessArrowAfterAsync(lexerFlags, fromStmtOrExpr, allowAssignment, $tt_asyncToken, astProp);
       return NOT_ASSIGNABLE;
     }
 
-    if (curtok.type === $PUNC_PAREN_OPEN) {
+    if (tok_getType() === $PUNC_PAREN_OPEN) {
       // - `async (y);`
       //          ^
       // - `async (x) => x`
@@ -3904,14 +3975,14 @@ function Parser(code, options = {}) {
         // - `new async();`
         // - `new async() =>x`                   --> error, arrow not allowed as new arg
         // Do not parse the paren because it belongs to the `new` op
-        AST_setIdent('callee', asyncToken, asyncTokenCanon);
+        AST_setIdent('callee', $tt_asyncToken, asyncCanon);
         return IS_ASSIGNABLE; // I mean ...
       }
 
       if (fromStmtOrExpr === IS_STATEMENT) {
         AST_open(astProp, {
           type: 'ExpressionStatement',
-          loc: AST_getBaseLoc(asyncToken),
+          loc: AST_getBaseLoc($tt_asyncToken),
           expression: undefined,
         });
         astProp = 'expression'
@@ -3921,10 +3992,10 @@ function Parser(code, options = {}) {
         // - `new async();`
         // - `new async() => x`     (error because arrow is an AssignmentExpression and new does not accept that)
         // Note that if it turns out to be an arrow, the parser will throw when seeing `=>` unexpectedly
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, allowAssignment, astProp);
       }
 
-      let r = parseGroupToplevels(lexerFlags, fromStmtOrExpr, allowAssignment, asyncToken, asyncTokenCanon, newlineAfterAsync ? IS_ASYNC_PREFIXED : NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
+      let r = parseGroupToplevels(lexerFlags, fromStmtOrExpr, allowAssignment, $tt_asyncToken, asyncCanon, newlineAfterAsync ? IS_ASYNC_PREFIXED : NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
 
       if (fromStmtOrExpr === IS_STATEMENT) {
         AST_close('ExpressionStatement');
@@ -3941,7 +4012,7 @@ function Parser(code, options = {}) {
     // - `async \n [x]`
     // - `(async \n [x])`
     // - `new async;`
-    return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp);
+    return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, allowAssignment, astProp);
   }
 
   function isAssignable(state) {
@@ -3970,10 +4041,10 @@ function Parser(code, options = {}) {
     return override | ((state | NOT_ASSIGNABLE | IS_ASSIGNABLE) ^ (NOT_ASSIGNABLE | IS_ASSIGNABLE));
   }
 
-  function parseAwait(lexerFlags, awaitToken, awaitTokenCanon, isNewArg, allowAssignment, astProp) {
+  function parseAwait(lexerFlags, $tt_awaitToken, awaitCanon, isNewArg, allowAssignment, astProp) {
     ASSERT(parseAwait.length === arguments.length, 'arg count');
-    ASSERT(awaitToken.type === $ID_await, 'await token');
-    ASSERT(awaitToken !== curtok, 'await should have been skipped');
+    ASSERT($tt_awaitToken.type === $ID_await, 'await token');
+    ASSERT($tt_awaitToken.start !== tok_getStart(), 'await should have been skipped');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // in module: only if lexerFlags allow await (inside async code)
@@ -3981,16 +4052,16 @@ function Parser(code, options = {}) {
     // (`await` when not a keyword _is_ assignable)
 
     if (hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
-      return parseAwaitKeyword(lexerFlags, awaitToken, isNewArg, astProp);
+      return parseAwaitKeyword(lexerFlags, $tt_awaitToken, isNewArg, astProp);
     }
-    else if (goalMode === GOAL_SCRIPT) {
-      return parseAwaitVar(lexerFlags, awaitToken, awaitTokenCanon, isNewArg, allowAssignment, astProp)
+
+    if (goalMode === GOAL_SCRIPT) {
+      return parseAwaitVar(lexerFlags, $tt_awaitToken, awaitCanon, isNewArg, allowAssignment, astProp)
     }
-    else {
-      THROW('Cannot use `await` as var when goal=module but found `await` outside an async function');
-    }
+
+    return THROW_TOKEN2('Cannot use `await` as var when goal=module but found `await` outside an async function',tok_getStart(), tok_getStart() + 1); // TODO: use stop
   }
-  function parseAwaitKeyword(lexerFlags, awaitToken, isNewArg, astProp) {
+  function parseAwaitKeyword(lexerFlags, $tt_awaitToken, isNewArg, astProp) {
     if (isNewArg === IS_NEW_ARG) {
       // - `async function f(){ new await x; }`
       // - `async function f(){ [new await foo] }`
@@ -4025,14 +4096,14 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'AwaitExpression',
-      loc: AST_getBaseLoc(awaitToken),
+      loc: AST_getBaseLoc($tt_awaitToken),
       argument: undefined,
     });
 
     // - `await ()=>x` is an error (arrows are assignable)
     parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument'); // await expr arg is never optional
 
-    if (curtok.type === $PUNC_STAR_STAR) {
+    if (tok_getType() === $PUNC_STAR_STAR) {
       THROW('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)');
     }
 
@@ -4048,7 +4119,7 @@ function Parser(code, options = {}) {
     // See tests/testcases/await/arrow_piggy/autogen.md
     return NOT_ASSIGNABLE | PIGGY_BACK_SAW_AWAIT;
   }
-  function parseAwaitVar(lexerFlags, awaitToken, awaitTokenCanon, isNewArg, allowAssignment, astProp) {
+  function parseAwaitVar(lexerFlags, $tt_awaitToken, awaitCanon, isNewArg, allowAssignment, astProp) {
     ASSERT(parseAwaitVar.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     // Consider `await` a regular var name, not a keyword
@@ -4059,8 +4130,8 @@ function Parser(code, options = {}) {
     // - `new await;`
     // - `typeof await;`
 
-    let assignable = parseIdentOrParenlessArrow(lexerFlags, awaitToken, awaitTokenCanon, IS_ASSIGNABLE, allowAssignment, astProp);
-    assignable = parseValueTail(lexerFlags, awaitToken, assignable, isNewArg, NOT_LHSE, astProp);
+    let assignable = parseIdentOrParenlessArrow(lexerFlags, $tt_awaitToken, awaitCanon, IS_ASSIGNABLE, allowAssignment, astProp);
+    assignable = parseValueTail(lexerFlags, $tt_awaitToken, assignable, isNewArg, NOT_LHSE, astProp);
 
     // For module goal see: https://tc39.github.io/ecma262/#prod-AwaitExpression
     // For script mode see: https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
@@ -4080,37 +4151,41 @@ function Parser(code, options = {}) {
     ASSERT(parseBlockStatement.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof lexerFlags === 'number');
-    ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'should have thrown if curtok.c wasnt a curly when calling this function');
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'should have thrown if current wasnt a curly when calling this function');
     ASSERT_LABELSET(labelSet);
 
     let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI); // TODO: validate these. Are they for arrow inside a template?
 
-    let curlyToken = curtok;
+    let $tt_curlyToken = __oldtok;
+    let $t_curlyToken_line = tok_getLine();
+    let $t_curlyToken_column = tok_getColumn();
+    let $t_curlyToken_start = tok_getStart();
+
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlagsNoTemplate); // [v]: `(x)=>{/x/}` TODO: next must be statement start, or `}`
     if (babelCompat) {
       // (All BlockStatements receive the `directives` property in the Babel AST... even when it can't have any directives.)
       AST_open(astProp, {
         type: 'BlockStatement',
-        loc: AST_getBaseLoc(curlyToken),
+        loc: AST_getBaseLoc($tt_curlyToken),
         directives: [],
         body: [],
       });skipToStatementStart
     } else {
       AST_open(astProp, {
         type: 'BlockStatement',
-        loc: AST_getBaseLoc(curlyToken),
+        loc: AST_getBaseLoc($tt_curlyToken),
         body: [],
       });
     }
     if (options_exposeScopes) AST_set('$scope', scoop);
-    while (curtok.type !== $EOF && curtok.type !== $PUNC_CURLY_CLOSE) {
+    while (tok_getType() !== $EOF && tok_getType() !== $PUNC_CURLY_CLOSE) {
       parseNestedBodyPart(lexerFlagsNoTemplate, scoop, labelSet, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL,'body');
     }
-    if (curtok.type === $EOF) THROW('Unexpected EOF while parsing a block');
+    if (tok_getType() === $EOF) THROW('Unexpected EOF while parsing a block');
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlags);
     AST_close('BlockStatement');
 
-    if (curtok.type === $PUNC_EQ) {
+    if (tok_getType() === $PUNC_EQ) {
       THROW('A statement can not start with object destructuring assignment (because block)');
     }
   }
@@ -4119,7 +4194,11 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parseBreakStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let breakToken = curtok;
+    let $tt_breakToken = __oldtok;
+    let $t_breakToken_line = tok_getLine();
+    let $t_breakToken_column = tok_getColumn();
+    let $t_breakToken_start = tok_getStart();
+
     ASSERT_skipToStatementStart($ID_break, lexerFlags); // Note: the statement start would also parse an ident
 
     // A `break` may be followed by another identifier which must then be a valid label.
@@ -4129,15 +4208,19 @@ function Parser(code, options = {}) {
     // `break` with label is only valid if the label exists in the current statement tree
 
     // Note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-    if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
-      let labelToken = curtok;
-      let labelTokenCanon = tok_getCanon();
-      if (!findLabel(labelSet, labelTokenCanon, FROM_BREAK)) {
-        THROW('The label (`' + tok_sliceInput(labelToken.start, labelToken.stop) + '`) for this `break` was not defined in the current label set, which is illegal');
+    if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
+      let $tt_labelToken = __oldtok;
+      let $t_labelToken_line = tok_getLine();
+      let $t_labelToken_column = tok_getColumn();
+      let $t_labelToken_start = tok_getStart();
+
+      let labelCanon = tok_getCanon();
+      if (!findLabel(labelSet, labelCanon, FROM_BREAK)) {
+        THROW('The label (`' + tok_sliceInput($tt_labelToken.start, $tt_labelToken.stop) + '`) for this `break` was not defined in the current label set, which is illegal');
       }
       ASSERT_skipToStatementStart($G_IDENT, lexerFlags);
 
-      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // We have already asserted to be inside a loop/switch so that's fine
         // - `label: for(;;) break label \n /foo/`
@@ -4149,15 +4232,15 @@ function Parser(code, options = {}) {
 
       AST_setNode(astProp, {
         type: 'BreakStatement',
-        loc: AST_getClosedLoc(breakToken),
-        label: AST_getIdentNode(labelToken, labelTokenCanon),
+        loc: AST_getClosedLoc($t_breakToken_line, $t_breakToken_column, $t_breakToken_start),
+        label: AST_getIdentNode($tt_labelToken, labelCanon),
       });
     } else if (hasNoFlag(lexerFlags, LF_IN_ITERATION | LF_IN_SWITCH)) {
       // This is a `break` that is not inside a loop or switch
       // [v]: `if (x) break`
       THROW('Can only `break` without label inside a `switch` or loop');
     } else {
-      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // We have already asserted to be inside a loop/switch so that's fine
         // - `for(;;) break \n /foo/`
@@ -4171,7 +4254,7 @@ function Parser(code, options = {}) {
 
       AST_setNode(astProp, {
         type: 'BreakStatement',
-        loc: AST_getClosedLoc(breakToken),
+        loc: AST_getClosedLoc($t_breakToken_line, $t_breakToken_column, $t_breakToken_start),
         label: null,
       });
     }
@@ -4224,38 +4307,52 @@ function Parser(code, options = {}) {
   function parseConstStatement(lexerFlags, scoop, isLabelled, fdState, astProp) {
     ASSERT(parseConstStatement.length === arguments.length, 'arg count');
 
-    let constToken = curtok;
+    let $tt_constToken = __oldtok;
+    let $t_constToken_line = tok_getLine();
+    let $t_constToken_column = tok_getColumn();
+    let $t_constToken_start = tok_getStart();
+
     ASSERT_skipToBindingStart($ID_const, lexerFlags);
 
     if (isLabelled === IS_LABELLED || fdState === FDS_ILLEGAL || fdState === FDS_IFELSE) {
       THROW('Cannot parse a class declaration here, only expecting statements here');
     }
 
-    parseAnyVarDeclaration(lexerFlags, constToken, scoop, BINDING_TYPE_CONST, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    parseAnyVarDeclaration(lexerFlags, $tt_constToken, scoop, BINDING_TYPE_CONST, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
   }
 
   function parseContinueStatement(lexerFlags, scoop, labelSet, astProp) {
     ASSERT(arguments.length === parseContinueStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    // continue is only valid inside a loop, fenced by functions
-    if (hasNoFlag(lexerFlags, LF_IN_ITERATION)) THROW('Can only `continue` inside a loop');
+    let $tt_continueToken = __oldtok;
+    let $t_continueToken_line = tok_getLine();
+    let $t_continueToken_column = tok_getColumn();
+    let $t_continueToken_start = tok_getStart();
 
-    let continueToken = curtok;
+    // continue is only valid inside a loop, fenced by functions
+    if (hasNoFlag(lexerFlags, LF_IN_ITERATION)) {
+      return THROW_TOKEN2('Can only `continue` inside a loop', $t_continueToken_start, $t_continueToken_start + 1);
+    }
+
     ASSERT_skipToStatementStart($ID_continue, lexerFlags); // Note: statement start also includes an ident
 
     // a continue may be followed by another identifier which must then be a valid label.
     // otherwise it's just a continue to the nearest loop (most likely).
 
     // note: must check eof/semi as well otherwise the value would be mandatory and parser would throw
-    if (isIdentToken(curtok.type) && tok_getNlwas() === false) {
-      let labelToken = curtok;
-      let labelTokenCanon = tok_getCanon();
+    if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
+      let $tt_labelToken = __oldtok;
+      let $t_labelToken_line = tok_getLine();
+      let $t_labelToken_column = tok_getColumn();
+      let $t_labelToken_start = tok_getStart();
+
+      let labelCanon = tok_getCanon();
       let set = labelSet;
       let found = false;
       while (set) {
         if (set.iterationLabels) {
-          if (set.iterationLabels.includes(labelTokenCanon)) {
+          if (set.iterationLabels.includes(labelCanon)) {
             found = true;
             break;
           }
@@ -4263,11 +4360,11 @@ function Parser(code, options = {}) {
         set = set.parentLabels;
       }
       if (!found) {
-        THROW('This `continue` had a label (`' + labelTokenCanon + '`) that was not defined in the current label set as the direct parent of a loop, which would be required');
+        THROW('This `continue` had a label (`' + labelCanon + '`) that was not defined in the current label set as the direct parent of a loop, which would be required');
       }
 
       ASSERT_skipToStatementStart($G_IDENT, lexerFlags);
-      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // Must be in loop, we checked this at the beginning
         // - `label: for (;;) continue label \n /foo/`
@@ -4279,11 +4376,11 @@ function Parser(code, options = {}) {
 
       AST_setNode(astProp, {
         type: 'ContinueStatement',
-        loc: AST_getClosedLoc(continueToken),
-        label: AST_getIdentNode(labelToken, labelTokenCanon),
+        loc: AST_getClosedLoc($tt_continueToken.line, $tt_continueToken.column, $tt_continueToken.start),
+        label: AST_getIdentNode($tt_labelToken, labelCanon),
       });
     } else {
-      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // Must be in loop, we checked this at the beginning
         // - `for (;;) continue \n /foo/`
@@ -4295,16 +4392,20 @@ function Parser(code, options = {}) {
       }
       AST_setNode(astProp, {
         type: 'ContinueStatement',
-        loc: AST_getClosedLoc(continueToken),
+        loc: AST_getClosedLoc($tt_continueToken.line, $tt_continueToken.column, $tt_continueToken.start),
         label: null,
       });
     }
   }
 
   function parseDebuggerStatement(lexerFlags, astProp) {
-    let debuggerToken = curtok;
+    let $tt_debuggerToken = __oldtok;
+    let $t_debuggerToken_line = tok_getLine();
+    let $t_debuggerToken_column = tok_getColumn();
+    let $t_debuggerToken_start = tok_getStart();
+
     ASSERT_skipToStatementStart($ID_debugger, lexerFlags);
-    if (isRegexToken(curtok.type)) {
+    if (isRegexToken(tok_getType())) {
       if (tok_getNlwas() === false) THROW('Missing semi-colon after debugger keyword');
       // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
       // - `debugger \n /foo/`
@@ -4315,7 +4416,7 @@ function Parser(code, options = {}) {
     }
     AST_setNode(astProp, {
       type: 'DebuggerStatement',
-      loc: AST_getClosedLoc(debuggerToken),
+      loc: AST_getClosedLoc($tt_debuggerToken.line, $tt_debuggerToken.column, $tt_debuggerToken.start),
     });
   }
 
@@ -4323,24 +4424,28 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parseDoStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let doToken = curtok;
+    let $tt_doToken = __oldtok;
+    let $t_doToken_line = tok_getLine();
+    let $t_doToken_column = tok_getColumn();
+    let $t_doToken_start = tok_getStart();
+
     ASSERT_skipToStatementStart($ID_do, lexerFlags); // Note: most likely is a block...
     AST_open(astProp, {
       type: 'DoWhileStatement',
-      loc: AST_getBaseLoc(doToken),
+      loc: AST_getBaseLoc($tt_doToken),
       body: undefined,
       test: undefined,
     });
     // if the next part does not start with `{` then it is not a block and ASI can not happen. otherwise dont care here
     // note that functions and classes DO get ASI
-    parseNestedBodyPart((curtok.type !== $PUNC_CURLY_OPEN ? lexerFlags : lexerFlags) | LF_IN_ITERATION, scoop, labelSet, NOT_LABELLED, FDS_ILLEGAL, PARENT_NOT_LABEL, 'body');
-    if (curtok.type !== $ID_while) THROW('A `do` must be followed by a `while`, but found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    parseNestedBodyPart((tok_getType() !== $PUNC_CURLY_OPEN ? lexerFlags : lexerFlags) | LF_IN_ITERATION, scoop, labelSet, NOT_LABELLED, FDS_ILLEGAL, PARENT_NOT_LABEL, 'body');
+    if (tok_getType() !== $ID_while) THROW('A `do` must be followed by a `while`, but found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     ASSERT_skipToParenOpenOrDie($ID_while, lexerFlags);
     parseStatementHeader(lexerFlags, 'test');
     // > 11.9.1: In ECMAScript 2015, Automatic Semicolon Insertion adds a semicolon at the end of a do-while statement if the
     // > semicolon is missing. This change aligns the specification with the actual behaviour of most existing implementations.
     // Note: no line terminator is required for this to proc. So `do;while(x)y` is valid (!)
-    if (curtok.type !== $PUNC_SEMI) {
+    if (tok_getType() !== $PUNC_SEMI) {
       // Since ES6 the last semi (`;`) of a do-while is suseptible to ASI rules
       // These apply even without a newline, similar to blocks or function declarations
       // - `do ; while (x) y`
@@ -4363,15 +4468,19 @@ function Parser(code, options = {}) {
     // `export default async(x);`
     // `export default async.x;`
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
     ASSERT_skipRex($ID_async, lexerFlags); // function, arrow, or value-tail (for it can be a legacy async)
 
     // note: default export doesnt care as much about function type
-    if (curtok.type === $ID_function) {
+    if (tok_getType() === $ID_function) {
       // `export default async function f(){}`
       // `export default async function(){}`
-      return parseAsyncStatement(lexerFlags, scoop, identToken, identTokenCanon, IS_EXPORT, exportedBindings, NOT_LABELLED, FDS_VAR, 'declaration');
+      return parseAsyncStatement(lexerFlags, scoop, $tt_identToken, identCanon, IS_EXPORT, exportedBindings, NOT_LABELLED, FDS_VAR, 'declaration');
       // no semi
     }
 
@@ -4385,7 +4494,7 @@ function Parser(code, options = {}) {
     // > export default [lookahead ∉ { function, async [no LineTerminator here] function, class }] AssignmentExpression [+In, ~Yield, ~Await] ;
     // > AssignmentExpression[In, Yield, Await] : AsyncArrowFunction [?In, ?Yield, ?Await]
     // so `export default async () => {};` should be fine
-    parseAsyncExpression(lexerFlags, identToken, identTokenCanon, NOT_NEW_ARG, IS_EXPORT, ASSIGN_EXPR_IS_OK, NOT_LHSE, 'declaration');
+    parseAsyncExpression(lexerFlags, $tt_identToken, identCanon, NOT_NEW_ARG, IS_EXPORT, ASSIGN_EXPR_IS_OK, NOT_LHSE, 'declaration');
 
     // (this won't have any other name than "default")
     // bound names: "*default*"
@@ -4393,12 +4502,12 @@ function Parser(code, options = {}) {
     // exported names: "default"
     parseSemiOrAsi(lexerFlags);
   }
-  function parseExportDefault(lexerFlags, scoop, exportToken, exportedNames, exportedBindings, astProp) {
+  function parseExportDefault(lexerFlags, scoop, $tt_exportToken, exportedNames, exportedBindings, astProp) {
     ASSERT(parseExportDefault.length === arguments.length, 'arg count');
 
     AST_open(astProp, {
       type: 'ExportDefaultDeclaration',
-      loc: AST_getBaseLoc(exportToken),
+      loc: AST_getBaseLoc($tt_exportToken),
       declaration: undefined,
     });
 
@@ -4413,7 +4522,7 @@ function Parser(code, options = {}) {
     addNameToExports(exportedNames, 'default');
     addBindingToExports(exportedBindings, '*default*');
 
-    if (curtok.type === $ID_class) {
+    if (tok_getType() === $ID_class) {
       // - `export default class {}`
       // - `export default class x{}`
 
@@ -4421,16 +4530,22 @@ function Parser(code, options = {}) {
       addBindingToExports(exportedBindings, exportedNameCanon);
       // no semi
     }
-    else if (curtok.type === $ID_function) {
+    else if (tok_getType() === $ID_function) {
       // - `export default function f(){}`
       // - `export default function* f(){}`
       // - `export default function(){}`
       // - `export default function* (){}`
-      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, curtok, IDENT_OPTIONAL, NOT_LABELLED, FDS_VAR, 'declaration');
+
+      let $tt_functionToken = __oldtok;
+      let $t_functionToken_line = tok_getLine();
+      let $t_functionToken_column = tok_getColumn();
+      let $t_functionToken_start = tok_getStart();
+
+      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, $tt_functionToken, IDENT_OPTIONAL, NOT_LABELLED, FDS_VAR, 'declaration');
       addBindingToExports(exportedBindings, exportedNameCanon);
       // no semi
     }
-    else if (curtok.type === $ID_async) {
+    else if (tok_getType() === $ID_async) {
       parseExportDefaultAsync(lexerFlags, scoop, exportedNames, exportedBindings);
     }
     else {
@@ -4443,7 +4558,7 @@ function Parser(code, options = {}) {
 
     AST_close('ExportDefaultDeclaration');
   }
-  function parseExportStar(lexerFlags, exportToken, exportedNames, astProp) {
+  function parseExportStar(lexerFlags, $tt_exportToken, exportedNames, astProp) {
     ASSERT(parseExportStar.length === arguments.length, 'arg count');
 
     // - `export * from "x"`
@@ -4454,7 +4569,7 @@ function Parser(code, options = {}) {
     // Must skip `as` or `from`, but we'll check for those explicitly here, so just skipAny
     ASSERT_skipAny($PUNC_STAR, lexerFlags);
 
-    if (curtok.type === $ID_as) {
+    if (tok_getType() === $ID_as) {
       // - `export * as y from "x"`
       //           ^
 
@@ -4464,65 +4579,77 @@ function Parser(code, options = {}) {
 
       ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
       // note: the exported _name_ can be any identifier, keywords included
-      let exportedNameToken = curtok;
-      let exportedNameTokenCanon = tok_getCanon();
+      let $tt_exportedNameToken = __oldtok;
+      let $t_exportedNameToken_line = tok_getLine();
+      let $t_exportedNameToken_column = tok_getColumn();
+      let $t_exportedNameToken_start = tok_getStart();
 
-      addNameToExports(exportedNames, exportedNameTokenCanon);
+      let exportedNameCanon = tok_getCanon();
+
+      addNameToExports(exportedNames, exportedNameCanon);
 
       // Must skip `from` but we'll check for that explicitly next, so just skipAny
-      ASSERT_skipAny(curtok._str, lexerFlags);
+      skipAny(lexerFlags);
 
-      if (curtok.type !== $ID_from) {
-        return THROW('Expected to find `as` or `from`, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (tok_getType() !== $ID_from) {
+        return THROW('Expected to find `as` or `from`, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       }
 
       ASSERT_skipToStringOrDie($ID_from, lexerFlags); // Will throw if next token is not a string
 
-      let sourceToken = curtok;
-      let sourceTokenCanon = tok_getCanon();
+      let $tt_sourceToken = __oldtok;
+      let $t_sourceToken_line = tok_getLine();
+      let $t_sourceToken_column = tok_getColumn();
+      let $t_sourceToken_start = tok_getStart();
+
+      let sourceCanon = tok_getCanon();
       ASSERT_skipToStatementStart($G_STRING, lexerFlags);
 
       parseSemiOrAsi(lexerFlags);
 
       AST_setNode(astProp, {
         type: 'ExportNamedDeclaration',
-        loc: AST_getClosedLoc(exportToken),
+        loc: AST_getClosedLoc($tt_exportToken.line, $tt_exportToken.column, $tt_exportToken.start),
         specifiers: [{
           type: 'ExportNamespaceSpecifier',
-          loc: AST_getClosedLoc(exportToken),
-          exported: AST_getIdentNode(exportedNameToken, exportedNameTokenCanon),
+          loc: AST_getClosedLoc($tt_exportToken.line, $tt_exportToken.column, $tt_exportToken.start),
+          exported: AST_getIdentNode($tt_exportedNameToken, exportedNameCanon),
         }],
         declaration: null,
-        source: AST_getStringNode(sourceToken, sourceTokenCanon, false),
+        source: AST_getStringNode($tt_sourceToken, sourceCanon, false),
       });
 
       return;
     }
 
-    if (curtok.type !== $ID_from) {
-      return THROW('Expected to find `as` or `from`, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $ID_from) {
+      return THROW('Expected to find `as` or `from`, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     }
 
     ASSERT_skipToStringOrDie($ID_from, lexerFlags); // Will throw if next token is not a string
 
-    let sourceToken = curtok;
-    let sourceTokenCanon = tok_getCanon();
+    let $tt_sourceToken = __oldtok;
+    let $t_sourceToken_line = tok_getLine();
+    let $t_sourceToken_column = tok_getColumn();
+    let $t_sourceToken_start = tok_getStart();
+
+    let sourceCanon = tok_getCanon();
     ASSERT_skipToStatementStart($G_STRING, lexerFlags);
 
     parseSemiOrAsi(lexerFlags);
 
     AST_setNode(astProp, {
       type: 'ExportAllDeclaration',
-      loc: AST_getClosedLoc(exportToken),
-      source: AST_getStringNode(sourceToken, sourceTokenCanon, false),
+      loc: AST_getClosedLoc($tt_exportToken.line, $tt_exportToken.column, $tt_exportToken.start),
+      source: AST_getStringNode($tt_sourceToken, sourceCanon, false),
     });
   }
-  function parseExportNamed(lexerFlags, scoop, exportToken, exportedNames, exportedBindings, astProp) {
+  function parseExportNamed(lexerFlags, scoop, $tt_exportToken, exportedNames, exportedBindings, astProp) {
     ASSERT(parseExportNamed.length === arguments.length, 'arg count');
 
     AST_open(astProp, {
       type: 'ExportNamedDeclaration',
-      loc: AST_getBaseLoc(exportToken),
+      loc: AST_getBaseLoc($tt_exportToken),
       specifiers: [],
       declaration: undefined,
       source: undefined,
@@ -4530,7 +4657,7 @@ function Parser(code, options = {}) {
 
     let needsSemi = true;
 
-    if (curtok.type === $PUNC_CURLY_OPEN) {
+    if (tok_getType() === $PUNC_CURLY_OPEN) {
       AST_set('declaration', null);
       // export {}
       // export {} from "x"
@@ -4546,15 +4673,19 @@ function Parser(code, options = {}) {
       ASSERT(tmpExportedBindings._i = ++uid_counter);
       parseExportObject(lexerFlags, tmpExportedNames, tmpExportedBindings);
 
-      if (curtok.type === $ID_from) {
+      if (tok_getType() === $ID_from) {
         // drop the tmp lists
         ASSERT_skipToStringOrDie($ID_from, lexerFlags);
         // TODO: what happens to dupe exported bindings or exported names here?
-        let fromToken = curtok;
-        let fromTokenCanon = tok_getCanon();
+        let $tt_fromToken = __oldtok;
+        let $t_fromToken_line = tok_getLine();
+        let $t_fromToken_column = tok_getColumn();
+        let $t_fromToken_start = tok_getStart();
+
+        let fromCanon = tok_getCanon();
 
         ASSERT_skipToStatementStart($G_STRING, lexerFlags);
-        AST_setStringLiteral('source', fromToken, fromTokenCanon, false);
+        AST_setStringLiteral('source', $tt_fromToken, fromCanon, false);
       } else {
         AST_set('source', null);
         // pump the names into the real sets now
@@ -4562,31 +4693,43 @@ function Parser(code, options = {}) {
         tmpExportedBindings.forEach(name => addBindingToExports(exportedBindings, name));
       }
     }
-    else if (curtok.type === $ID_var) {
+    else if (tok_getType() === $ID_var) {
       // export var <bindings>
-      let varToken = curtok;
+      let $tt_varToken = __oldtok;
+      let $t_varToken_line = tok_getLine();
+      let $t_varToken_column = tok_getColumn();
+      let $t_varToken_start = tok_getStart();
+
       ASSERT_skipToBindingStart($ID_var , lexerFlags);
-      parseAnyVarDeclaration(lexerFlags, varToken, scoop, BINDING_TYPE_VAR, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
+      parseAnyVarDeclaration(lexerFlags, $tt_varToken, scoop, BINDING_TYPE_VAR, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
       AST_set('source', null);
       needsSemi = false; // Note: If we parse the semi below then the loc will be incorrect
     }
-    else if (curtok.type === $ID_let) {
+    else if (tok_getType() === $ID_let) {
       // export let <bindings>
-      let letToken = curtok;
+      let $tt_letToken = __oldtok;
+      let $t_letToken_line = tok_getLine();
+      let $t_letToken_column = tok_getColumn();
+      let $t_letToken_start = tok_getStart();
+
       ASSERT_skipToBindingStart($ID_let, lexerFlags);
-      parseAnyVarDeclaration(lexerFlags, letToken, scoop, BINDING_TYPE_LET, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
+      parseAnyVarDeclaration(lexerFlags, $tt_letToken, scoop, BINDING_TYPE_LET, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
       AST_set('source', null);
       needsSemi = false; // Note: If we parse the semi below then the loc will be incorrect
     }
-    else if (curtok.type === $ID_const) {
+    else if (tok_getType() === $ID_const) {
       // export const <bindings>
-      let constToken = curtok;
+      let $tt_constToken = __oldtok;
+      let $t_constToken_line = tok_getLine();
+      let $t_constToken_column = tok_getColumn();
+      let $t_constToken_start = tok_getStart();
+
       ASSERT_skipToBindingStart($ID_const, lexerFlags);
-      parseAnyVarDeclaration(lexerFlags, constToken, scoop, BINDING_TYPE_CONST, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
+      parseAnyVarDeclaration(lexerFlags, $tt_constToken, scoop, BINDING_TYPE_CONST, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
       AST_set('source', null);
       needsSemi = false; // Note: If we parse the semi below then the loc will be incorrect
     }
-    else if (curtok.type === $ID_class) {
+    else if (tok_getType() === $ID_class) {
       // export class ...
       let exportedNameCanon = parseClassDeclaration(lexerFlags, scoop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX,'declaration');
       addNameToExports(exportedNames, exportedNameCanon);
@@ -4594,29 +4737,39 @@ function Parser(code, options = {}) {
       needsSemi = false;
       AST_set('source', null);
     }
-    else if (curtok.type === $ID_function) {
+    else if (tok_getType() === $ID_function) {
       // - `export function f(){}`
       //           ^^^^^^^^
       // - `export function* f(){}`
       //           ^^^^^^^^
       // (anonymous should not be allowed but parsers seem to do it anyways)
-      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, curtok, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
+
+      let $tt_functionToken = __oldtok;
+      let $t_functionToken_line = tok_getLine();
+      let $t_functionToken_column = tok_getColumn();
+      let $t_functionToken_start = tok_getStart();
+
+      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, UNDEF_ASYNC, $tt_functionToken, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
       addNameToExports(exportedNames, exportedNameCanon);
       addBindingToExports(exportedBindings, exportedNameCanon);
       AST_set('source', null);
       needsSemi = false;
     }
-    else if (curtok.type === $ID_async) {
+    else if (tok_getType() === $ID_async) {
       // - `export async function f(){}`
       //           ^^^^^
       // - `export async function *f(){}`
       //           ^^^^^
       // (note: no arrows here because we require a name)
-      let asyncToken = curtok;
+      let $tt_asyncToken = __oldtok;
+      let $t_asyncToken_line = tok_getLine();
+      let $t_asyncToken_column = tok_getColumn();
+      let $t_asyncToken_start = tok_getStart();
+
       // TODO: test case to this change
       ASSERT_skipDiv($ID_async, lexerFlags); // TODO: async could be ident, so `async/b` is a division
 
-      if (curtok.type !== $ID_function) {
+      if (tok_getType() !== $ID_function) {
         // - `export async \n a => b`
         THROW('Can only export async functions (not arrows), did not find a function');
       }
@@ -4625,7 +4778,12 @@ function Parser(code, options = {}) {
         THROW('Async can not be followed by a newline as it results in `export async;`, which is not valid (and probably not what you wanted)');
       }
 
-      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, asyncToken, curtok, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
+      let $tt_functionToken = __oldtok;
+      let $t_functionToken_line = tok_getLine();
+      let $t_functionToken_column = tok_getColumn();
+      let $t_functionToken_start = tok_getStart();
+
+      let exportedNameCanon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $tt_asyncToken, $tt_functionToken, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
       addNameToExports(exportedNames, exportedNameCanon);
       addBindingToExports(exportedBindings, exportedNameCanon);
       AST_set('source', null);
@@ -4633,12 +4791,12 @@ function Parser(code, options = {}) {
     }
     else {
       // `export foo;`
-      THROW('Unknown export type `' + tok_sliceInput(curtok.start, curtok.stop) + '` (note: you can only export individual vars through `export {foo};`)');
+      THROW('Unknown export type `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` (note: you can only export individual vars through `export {foo};`)');
     }
 
     if (needsSemi) {
       // The variable (let/const/var) decls will consume the semi for us
-      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
         ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'Export cases can only appear on the toplevel as a statement so ASI is always valid here');
         // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
         // `export {} \n /foo/`
@@ -4681,25 +4839,31 @@ function Parser(code, options = {}) {
     // ExportedNames is a list of any symbol that's exported by name (most importantly `x` in `export {x}` since that's
     // the only export that doesn't end up in the scope). All exports must also be a global binding of some sort.
 
+    let $tt_exportToken = __oldtok;
+    let $t_exportToken_line = tok_getLine();
+    let $t_exportToken_column = tok_getColumn();
+    let $t_exportToken_start = tok_getStart();
+
     // export sans default can do; var, let, const, function, async function, function *, class
     // export with default can do: function, async function, function *, class, and any assignment expression
     // regarding asi; classes and function decls dont get asi, anything else does. `default` does not change this.
     // note: the regular function, async function, and class may have no name only with `default`
-    if (goalMode !== GOAL_MODULE) THROW('The `export` keyword can only be used with the module goal');
+    if (goalMode !== GOAL_MODULE) {
+      return THROW_TOKEN2('The `export` keyword can only be used with the module goal', $t_exportToken_start, $t_exportToken_start + 1);
+    }
     if (isGlobalToplevel === NOT_GLOBAL_TOPLEVEL) THROW('The `export` keyword is only supported at the top level');
 
-    let exportToken = curtok;
     ASSERT_skipToIdentStarCurlyOpen($ID_export, lexerFlags);
 
-    if (curtok.type === $ID_default) {
-      return parseExportDefault(lexerFlags, scoop, exportToken, exportedNames, exportedBindings, astProp);
+    if (tok_getType() === $ID_default) {
+      return parseExportDefault(lexerFlags, scoop, $tt_exportToken, exportedNames, exportedBindings, astProp);
     }
 
-    if (curtok.type === $PUNC_STAR) {
-      return parseExportStar(lexerFlags, exportToken, exportedNames, astProp);
+    if (tok_getType() === $PUNC_STAR) {
+      return parseExportStar(lexerFlags, $tt_exportToken, exportedNames, astProp);
     }
 
-    return parseExportNamed(lexerFlags, scoop, exportToken, exportedNames, exportedBindings, astProp);
+    return parseExportNamed(lexerFlags, scoop, $tt_exportToken, exportedNames, exportedBindings, astProp);
   }
   function addNameToExports(exportedNames, exportedName) {
     ASSERT(exportedNames !== DO_NOT_BIND, 'use UNDEF_EXPORTS for exportedNames, not DO_NOT_BIND');
@@ -4719,39 +4883,48 @@ function Parser(code, options = {}) {
     ASSERT(parseExportObject.length === arguments.length, 'arg count');
     // - `export {...} from 'x'`
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
-    while (isIdentToken(curtok.type)) {
-      let nameToken = curtok; // left of the `as`
-      let nameTokenCanon = tok_getCanon(); // left of the `as`
-      let exportedNameToken = curtok; // right of the `as`, if present at all, otherwise same as name
-      let exportedNameTokenCanon = tok_getCanon(); // right of the `as`, if present at all, otherwise same as name
+    while (isIdentToken(tok_getType())) {
+      // left of the `as`
+      let $tt_nameToken = __oldtok;
+      let $t_nameToken_line = tok_getLine();
+      let $t_nameToken_column = tok_getColumn();
+      let $t_nameToken_start = tok_getStart();
+      let nameCanon = tok_getCanon(); // left of the `as`
+
+      // right of the `as`, if present at all, otherwise same as name
+      let $tt_exportedNameToken = __oldtok;
+      let $t_exportedNameToken_line = tok_getLine();
+      let $t_exportedNameToken_column = tok_getColumn();
+      let $t_exportedNameToken_start = tok_getStart();
+      let exportedNameCanon = tok_getCanon(); // right of the `as`, if present at all, otherwise same as name
+
       ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
-      // while the `nameToken` should be a valid non-keyword identifier, it also has to be bound and as such we
+      // while the `$tt_nameToken` should be a valid non-keyword identifier, it also has to be bound and as such we
       // don't have to check it here since we already apply bind checks anyways and binding would apply this check
-      if (curtok.type === $ID_as) { // `export {x as y}` NOT `export {x:y}`
+      if (tok_getType() === $ID_as) { // `export {x as y}` NOT `export {x:y}`
         ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
         // note: the exported _name_ can be any identifier, keywords included
-        exportedNameToken = curtok;
-        exportedNameTokenCanon = tok_getCanon();
+        $tt_exportedNameToken = __oldtok;
+        exportedNameCanon = tok_getCanon();
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
 
-      addNameToExports(tmpExportedNames, exportedNameTokenCanon);
-      addBindingToExports(tmpExportedBindings, nameTokenCanon);
+      addNameToExports(tmpExportedNames, exportedNameCanon);
+      addBindingToExports(tmpExportedBindings, nameCanon);
 
       AST_setNode('specifiers', {
         type: 'ExportSpecifier',
-        loc: AST_getClosedLoc(nameToken),
-        local: AST_getIdentNode(nameToken, nameTokenCanon),
-        exported: AST_getIdentNode(exportedNameToken, exportedNameTokenCanon),
+        loc: AST_getClosedLoc($tt_nameToken.line, $tt_nameToken.column, $tt_nameToken.start),
+        local: AST_getIdentNode($tt_nameToken, nameCanon),
+        exported: AST_getIdentNode($tt_exportedNameToken, exportedNameCanon),
       });
 
-      if (curtok.type === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
-      else if (curtok.type !== $PUNC_CURLY_CLOSE) THROW('Unexpected token while parsing export object');
+      if (tok_getType() === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
+      else if (tok_getType() !== $PUNC_CURLY_CLOSE) THROW('Unexpected token while parsing export object');
     }
-    if (curtok.type !== $PUNC_CURLY_CLOSE) {
-      $log('Error: Invalid export token: ' + curtok);
-      if (curtok.type === $PUNC_DOT_DOT_DOT) THROW('Export object cannot have spread');
-      if (curtok.type === $PUNC_COLON) THROW('Export object uses `as` to alias (`{a as y}`), not colon (`{a: y}`)');
+    if (tok_getType() !== $PUNC_CURLY_CLOSE) {
+      if (tok_getType() === $PUNC_DOT_DOT_DOT) THROW('Export object cannot have spread');
+      if (tok_getType() === $PUNC_COLON) THROW('Export object uses `as` to alias (`{a as y}`), not colon (`{a: y}`)');
       THROW('Export object can only have "shorthand" `{x}` or "as" `{x as y}');
     }
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlags);
@@ -4801,55 +4974,67 @@ function Parser(code, options = {}) {
     scoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FOR_HEADER, 'parseForStatement(header)');
     ASSERT(scoop._funcName = '(for has no name)');
 
-    let forToken = curtok;
+    let $tt_forToken = __oldtok;
+    let $t_forToken_line = tok_getLine();
+    let $t_forToken_column = tok_getColumn();
+    let $t_forToken_start = tok_getStart();
+
     ASSERT_skipToAwaitParenOpen($ID_for, lexerFlags);
-    let awaitable = curtok.type === $ID_await;
+    let awaitable = tok_getType() === $ID_await;
     if (awaitable) {
       if (!allowAsyncGenerators) THROW('The `for await` syntax is not supported by the currently targeted language version');
       if (hasNoFlag(lexerFlags, LF_IN_ASYNC)) THROW('Can only use `for-await` inside an async function');
       ASSERT_skipToParenOpenOrDie($ID_await, lexerFlags);
-    } else if (curtok.type !== $PUNC_PAREN_OPEN) {
-      THROW('Missing opening paren of the `for` header, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    } else if (tok_getType() !== $PUNC_PAREN_OPEN) {
+      THROW('Missing opening paren of the `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     }
     ASSERT_skipToExpressionStartSemi($PUNC_PAREN_OPEN, lexerFlags);
-    parseForHeader(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), forToken, scoop, awaitable, astProp);
-    if (curtok.type !== $PUNC_PAREN_CLOSE) {
-      THROW('Missing closing paren of the `for` header, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    parseForHeader(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), $tt_forToken, scoop, awaitable, astProp);
+    if (tok_getType() !== $PUNC_PAREN_CLOSE) {
+      THROW('Missing closing paren of the `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     }
     ASSERT_skipToStatementStart($PUNC_PAREN_CLOSE, lexerFlags);
-    if (curtok.type === $EOF) THROW('Missing `for` child statement');
+    if (tok_getType() === $EOF) THROW('Missing `for` child statement');
     parseNestedBodyPart(lexerFlags | LF_IN_ITERATION, scoop, labelSet, NOT_LABELLED, FDS_ILLEGAL, PARENT_NOT_LABEL, 'body');
     AST_close(['ForStatement', 'ForInStatement', 'ForOfStatement']);
   }
-  function parseForHeaderVar(lexerFlags, forToken, scoop, awaitable, astProp) {
+  function parseForHeaderVar(lexerFlags, $tt_forToken, scoop, awaitable, astProp) {
     ASSERT(parseForHeaderVar.length === arguments.length, 'arg count');
 
     // - `for (var x of y);`
     //         ^
     // - `for (var x;;);`
-    let varToken = curtok;
+    let $tt_varToken = __oldtok;
+    let $t_varToken_line = tok_getLine();
+    let $t_varToken_column = tok_getColumn();
+    let $t_varToken_start = tok_getStart();
+
     ASSERT_skipToBindingStart($ID_var , lexerFlags);
-    parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, varToken, scoop, BINDING_TYPE_VAR, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tt_varToken, scoop, BINDING_TYPE_VAR, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     // No need to dupe-check scope here
 
     // var decls are assignable
-    return parseForHeaderRest(lexerFlags, forToken, varToken, awaitable, IS_ASSIGNABLE, false, astProp);
+    return parseForHeaderRest(lexerFlags, $tt_forToken, $tt_varToken, awaitable, IS_ASSIGNABLE, false, astProp);
   }
-  function parseForHeaderLet(lexerFlags, forToken, scoop, awaitable, astProp) {
+  function parseForHeaderLet(lexerFlags, $tt_forToken, scoop, awaitable, astProp) {
     ASSERT(parseForHeaderLet.length === arguments.length, 'arg count');
 
     // - `for (let x of y);`
     //         ^
     // - `for (let x;;);`
-    let letIdentToken = curtok;
-    let letIdentTokenCanon = tok_getCanon();
+    let $tt_letIdentToken = __oldtok;
+    let $t_letIdentToken_line = tok_getLine();
+    let $t_letIdentToken_column = tok_getColumn();
+    let $t_letIdentToken_start = tok_getStart();
+
+    let letIdentCanon = tok_getCanon();
     let assignable = ASSIGNABLE_UNDETERMINED;
     let wasNotDecl = false;
     ASSERT_skipDiv($ID_let, lexerFlags); // div; if let is varname then next token can be next line statement start and if that starts with forward slash it's a div
 
     // [v]: `for (let x of y);`
     //                ^
-    if (isIdentToken(curtok.type) || curtok.type === $PUNC_BRACKET_OPEN || curtok.type === $PUNC_CURLY_OPEN) {
+    if (isIdentToken(tok_getType()) || tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN) {
       // [v]: `for (let x of y);`
       //                ^
       // [v]: `for (let [x] in y);`
@@ -4862,7 +5047,7 @@ function Parser(code, options = {}) {
       // [v]: `for (let x;;);`
       // [v]: `for (let [x] = x;;);`
       // [v]: `for (let {x} = x;;);`
-      if (curtok.type === $ID_in) {
+      if (tok_getType() === $ID_in) {
         // Edge case makes `let` to be parsed as a var name in sloppy mode
         // TODO: actually, this is probably a syntax error because static semantics are applied after locking in parser choices...
         // [v]: `for (let in x)`
@@ -4871,12 +5056,12 @@ function Parser(code, options = {}) {
           // [x]: `for (let in x)`
           THROW('Let binding missing binding names as `let` cannot be a var name in strict mode');
         }
-        AST_setIdent(astProp, letIdentToken, letIdentTokenCanon);
+        AST_setIdent(astProp, $tt_letIdentToken, letIdentCanon);
         wasNotDecl = true;
       } else {
         // [v]: `for (let x of y);`
         //                ^
-        parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, letIdentToken, scoop, BINDING_TYPE_LET, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+        parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tt_letIdentToken, scoop, BINDING_TYPE_LET, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
       }
       assignable = initAssignable(assignable); // decls are assignable (`let` as a var name should be as well)
     } else if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
@@ -4911,31 +5096,31 @@ function Parser(code, options = {}) {
       // [x]: `for (let() of y);`
       // [v]: `for (let();;);`
 
-      ASSERT(curtok.type !== $PUNC_BRACKET_CLOSE, 'case handled above');
-      ASSERT(curtok.type !== $ID_in, 'case handled above');
+      ASSERT(tok_getType() !== $PUNC_BRACKET_CLOSE, 'case handled above');
+      ASSERT(tok_getType() !== $ID_in, 'case handled above');
 
-      if (curtok.type === $ID_of) {
+      if (tok_getType() === $ID_of) {
         // [x]: `for (let of y);`
         THROW('A `for (let of ...)` is always illegal');
-      } else if (curtok.type === $PUNC_COMMA) {
+      } else if (tok_getType() === $PUNC_COMMA) {
         // [x]: `for (let , x;;);`
         //                ^
         // Note: we are inside a for-header so we don't care about assignable or the await/yield flags here
-        AST_setIdent(astProp, letIdentToken, letIdentTokenCanon);
-        _parseExpressions(lexerFlags, letIdentToken, initNotAssignable(), astProp);
+        AST_setIdent(astProp, $tt_letIdentToken, letIdentCanon);
+        _parseExpressions(lexerFlags, $tt_letIdentToken, initNotAssignable(), astProp);
         assignable = NOT_ASSIGNABLE;
 
         AST_wrapClosedCustom(astProp, {
           type: 'ForStatement',
-          loc: AST_getBaseLoc(forToken),
+          loc: AST_getBaseLoc($tt_forToken),
           init: undefined,
           test: undefined,
           update: undefined,
           body: undefined,
         }, 'init');
 
-        return parseForFromSemi(lexerFlags, letIdentToken, astProp);
-      } else if (curtok.type !== $PUNC_SEMI) {
+        return parseForFromSemi(lexerFlags, $tt_letIdentToken, astProp);
+      } else if (tok_getType() !== $PUNC_SEMI) {
         // [x]: `for(let.a of 0);`
         // [v]: `for (let.foo in x);`
         // [x]: `for (let() in x);`
@@ -4946,8 +5131,8 @@ function Parser(code, options = {}) {
         // [x]: `for (let=10;;);`
         // [v]: `for (let.foo;;);`
         // [v]: `for (let();;);`
-        assignable = parseValueAfterIdent(lexerFlags, letIdentToken, letIdentTokenCanon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_OK, astProp);
-        if (curtok.type === $ID_of) {
+        assignable = parseValueAfterIdent(lexerFlags, $tt_letIdentToken, letIdentCanon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_OK, astProp);
+        if (tok_getType() === $ID_of) {
           // [x]: `for (let.a of x);`
           THROW('Cannot use `let` as a var name on the left side in a `for-of` header');
         }
@@ -4956,39 +5141,43 @@ function Parser(code, options = {}) {
 
           AST_wrapClosedCustom(astProp, {
             type: 'ForStatement',
-            loc: AST_getBaseLoc(forToken),
+            loc: AST_getBaseLoc($tt_forToken),
             init: undefined,
             test: undefined,
             update: undefined,
             body: undefined,
           }, 'init');
 
-          return parseForFromSemi(lexerFlags, letIdentToken, astProp);
+          return parseForFromSemi(lexerFlags, $tt_letIdentToken, astProp);
         }
       } else {
         // [v]: `for (let;;);`
         //               ^
-        AST_setIdent(astProp, letIdentToken, letIdentTokenCanon);
+        AST_setIdent(astProp, $tt_letIdentToken, letIdentCanon);
         assignable = NOT_ASSIGNABLE;
       }
     }
 
-    return parseForHeaderRest(lexerFlags, forToken, letIdentToken, awaitable, assignable, wasNotDecl, astProp);
+    return parseForHeaderRest(lexerFlags, $tt_forToken, $tt_letIdentToken, awaitable, assignable, wasNotDecl, astProp);
   }
-  function parseForHeaderConst(lexerFlags, forToken, scoop, awaitable, astProp) {
+  function parseForHeaderConst(lexerFlags, $tt_forToken, scoop, awaitable, astProp) {
     ASSERT(parseForHeaderConst.length === arguments.length, 'arg count');
 
     // - `for (const x of y);`
     //         ^
     // - `for (const x;;);`
-    let constToken = curtok;
+    let $tt_constToken = __oldtok;
+    let $t_constToken_line = tok_getLine();
+    let $t_constToken_column = tok_getColumn();
+    let $t_constToken_start = tok_getStart();
+
     ASSERT_skipToBindingStart($ID_const, lexerFlags);
-    parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, constToken, scoop, BINDING_TYPE_CONST, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tt_constToken, scoop, BINDING_TYPE_CONST, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
 
     // const decl is assignable
-    return parseForHeaderRest(lexerFlags, forToken, constToken, awaitable, IS_ASSIGNABLE, false, astProp);
+    return parseForHeaderRest(lexerFlags, $tt_forToken, $tt_constToken, awaitable, IS_ASSIGNABLE, false, astProp);
   }
-  function parseForHeaderEmpty(lexerFlags, forToken, awaitable, astProp) {
+  function parseForHeaderEmpty(lexerFlags, $tt_forToken, awaitable, astProp) {
     ASSERT(parseForHeaderEmpty.length === arguments.length, 'arg count');
 
     // - `for (;;);`
@@ -4999,7 +5188,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ForStatement',
-      loc: AST_getBaseLoc(forToken),
+      loc: AST_getBaseLoc($tt_forToken),
       init: null, // yes, null, not undefined
       test: undefined,
       update: undefined,
@@ -5008,7 +5197,7 @@ function Parser(code, options = {}) {
 
     return _parseForFromSemi(lexerFlags, astProp);
   }
-  function parseForHeaderCurly(lexerFlags, forToken, awaitable, astProp) {
+  function parseForHeaderCurly(lexerFlags, $tt_forToken, awaitable, astProp) {
     ASSERT(parseForHeaderCurly.length === arguments.length, 'arg count');
 
     // for-in, for-of, for-await
@@ -5023,11 +5212,15 @@ function Parser(code, options = {}) {
     // - `for ({x};;);`
     // - `for ({x}.y in z);`
 
-    let curlyToken = curtok;
+    let $tt_curlyToken = __oldtok;
+    let $t_curlyToken_line = tok_getLine();
+    let $t_curlyToken_column = tok_getColumn();
+    let $t_curlyToken_start = tok_getStart();
+
 
     let destructible = parseObjectOuter(lexerFlags | LF_IN_FOR_LHS, DO_NOT_BIND, BINDING_TYPE_NONE, SKIP_INIT, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     if (hasAllFlags(destructible, MUST_DESTRUCT)) {
-      if (curtok.type !== $PUNC_EQ && curtok.type !== $ID_of && curtok.type !== $ID_in) {
+      if (tok_getType() !== $PUNC_EQ && tok_getType() !== $ID_of && tok_getType() !== $ID_in) {
         // - `for ({a=b};;);`
         return THROW('Cannot use lhs as regular for-loop because it must destruct');
       }
@@ -5040,10 +5233,10 @@ function Parser(code, options = {}) {
       // [v]: `for ({eval = 0} ;;);`     // No writing to eval going on here
       destructible = sansFlag(destructible, MUST_DESTRUCT);
     }
-    let assignable = parsePatternTailInForHeader(lexerFlags, curlyToken, $PUNC_CURLY_CLOSE, ASSIGNABLE_UNDETERMINED, destructible, awaitable, astProp);
-    return parseForHeaderRest(lexerFlags, forToken, curlyToken, awaitable, assignable, true, astProp);
+    let assignable = parsePatternTailInForHeader(lexerFlags, $tt_curlyToken, $PUNC_CURLY_CLOSE, ASSIGNABLE_UNDETERMINED, destructible, awaitable, astProp);
+    return parseForHeaderRest(lexerFlags, $tt_forToken, $tt_curlyToken, awaitable, assignable, true, astProp);
   }
-  function parseForHeaderBracket(lexerFlags, forToken, awaitable, astProp) {
+  function parseForHeaderBracket(lexerFlags, $tt_forToken, awaitable, astProp) {
     ASSERT(parseForHeaderBracket.length === arguments.length, 'arg count');
 
     // for-in, for-of, for-await
@@ -5058,13 +5251,17 @@ function Parser(code, options = {}) {
     // - `for ([x];;);`
     // - `for ([x].y in z);`
 
-    let squareToken = curtok;
+    let $tt_squareToken = __oldtok;
+    let $t_squareToken_line = tok_getLine();
+    let $t_squareToken_column = tok_getColumn();
+    let $t_squareToken_start = tok_getStart();
+
 
     let destructible = parseArrayOuter(lexerFlags | LF_IN_FOR_LHS, DO_NOT_BIND, BINDING_TYPE_NONE, SKIP_INIT, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     ASSERT(!hasAllFlags(destructible, MUST_DESTRUCT | CANT_DESTRUCT), 'parseArrayOuter should throw for must/cant destruct state');
 
     if (hasAllFlags(destructible, MUST_DESTRUCT)) {
-      if (curtok.type !== $PUNC_EQ && curtok.type !== $ID_of && curtok.type !== $ID_in) {
+      if (tok_getType() !== $PUNC_EQ && tok_getType() !== $ID_of && tok_getType() !== $ID_in) {
         // - `for ({a=b};;);`
         return THROW('Cannot use lhs as regular for-loop because it must destruct');
       }
@@ -5072,13 +5269,17 @@ function Parser(code, options = {}) {
       // - `for ([{x=y}]=x in x) ;`
       destructible = sansFlag(destructible, MUST_DESTRUCT);
     }
-    let assignable = parsePatternTailInForHeader(lexerFlags, squareToken, $PUNC_BRACKET_CLOSE, ASSIGNABLE_UNDETERMINED, destructible, awaitable, astProp);
-    return parseForHeaderRest(lexerFlags, forToken, squareToken, awaitable, assignable, true, astProp);
+    let assignable = parsePatternTailInForHeader(lexerFlags, $tt_squareToken, $PUNC_BRACKET_CLOSE, ASSIGNABLE_UNDETERMINED, destructible, awaitable, astProp);
+    return parseForHeaderRest(lexerFlags, $tt_forToken, $tt_squareToken, awaitable, assignable, true, astProp);
   }
-  function parseForHeaderOther(lexerFlags, forToken, awaitable, astProp) {
+  function parseForHeaderOther(lexerFlags, $tt_forToken, awaitable, astProp) {
     ASSERT(parseForHeaderOther.length === arguments.length, 'arg count');
 
-    let startOfForHeaderToken = curtok;
+    let $tt_startOfForHeaderToken = __oldtok;
+    let $t_startOfForHeaderToken_line = tok_getLine();
+    let $t_startOfForHeaderToken_column = tok_getColumn();
+    let $t_startOfForHeaderToken_start = tok_getStart();
+
 
     // If the LHS is an object or array then it must cover an AssignmentPattern. In this case it may have an
     // initializer for any of its part or the lhs as a while (so `for ([]=1 in x);` is valid). There are tests.
@@ -5107,9 +5308,9 @@ function Parser(code, options = {}) {
     // - `for (a=>b in c);`    // error
     // - `for (a=>b in c);`    // error
     let assignable = parseValue(lexerFlags | LF_IN_FOR_LHS, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
-    return parseForHeaderRest(lexerFlags, forToken, startOfForHeaderToken, awaitable, assignable, true, astProp);
+    return parseForHeaderRest(lexerFlags, $tt_forToken, $tt_startOfForHeaderToken, awaitable, assignable, true, astProp);
   }
-  function parseForHeader(lexerFlags, forToken, scoop, awaitable, astProp) {
+  function parseForHeader(lexerFlags, $tt_forToken, scoop, awaitable, astProp) {
     ASSERT(arguments.length === parseForHeader.length, 'arg count');
     ASSERT(typeof awaitable === 'boolean');
 
@@ -5128,29 +5329,29 @@ function Parser(code, options = {}) {
     // - `for (x of y);`
     //         ^
 
-    switch (curtok.type) {
+    switch (tok_getType()) {
       case $ID_var:
-        return parseForHeaderVar(lexerFlags, forToken, scoop, awaitable, astProp);
+        return parseForHeaderVar(lexerFlags, $tt_forToken, scoop, awaitable, astProp);
 
       case $ID_let:
-        return parseForHeaderLet(lexerFlags, forToken, scoop, awaitable, astProp);
+        return parseForHeaderLet(lexerFlags, $tt_forToken, scoop, awaitable, astProp);
 
       case $ID_const:
-        return parseForHeaderConst(lexerFlags, forToken, scoop, awaitable, astProp);
+        return parseForHeaderConst(lexerFlags, $tt_forToken, scoop, awaitable, astProp);
 
       case $PUNC_SEMI:
-        return parseForHeaderEmpty(lexerFlags, forToken, awaitable, astProp);
+        return parseForHeaderEmpty(lexerFlags, $tt_forToken, awaitable, astProp);
 
       case $PUNC_CURLY_OPEN:
-        return parseForHeaderCurly(lexerFlags, forToken, awaitable, astProp);
+        return parseForHeaderCurly(lexerFlags, $tt_forToken, awaitable, astProp);
 
       case $PUNC_BRACKET_OPEN:
-        return parseForHeaderBracket(lexerFlags, forToken, awaitable, astProp);
+        return parseForHeaderBracket(lexerFlags, $tt_forToken, awaitable, astProp);
     }
 
-    return parseForHeaderOther(lexerFlags, forToken, awaitable, astProp);
+    return parseForHeaderOther(lexerFlags, $tt_forToken, awaitable, astProp);
   }
-  function parseForHeaderRest(lexerFlags, forToken, startOfForHeaderToken, awaitable, assignable, wasNotDecl, astProp) {
+  function parseForHeaderRest(lexerFlags, $tt_forToken, $tt_startOfForHeaderToken, awaitable, assignable, wasNotDecl, astProp) {
     ASSERT(parseForHeaderRest.length === arguments.length, 'arg count');
 
     // in all cases either; parse a var, let, const, or assignment expression
@@ -5164,19 +5365,19 @@ function Parser(code, options = {}) {
     // - `for (x;;);`
     //          ^
 
-    if (curtok.type === $ID_of) {
-      return parseForFromIn(lexerFlags, forToken, awaitable, assignable, astProp);
+    if (tok_getType() === $ID_of) {
+      return parseForFromIn(lexerFlags, $tt_forToken, awaitable, assignable, astProp);
     }
 
     if (awaitable) return THROW('`for await` only accepts the `for-of` type');
 
-    if (curtok.type === $ID_in) {
-      return parseForFromOf(lexerFlags, forToken, assignable, astProp);
+    if (tok_getType() === $ID_in) {
+      return parseForFromOf(lexerFlags, $tt_forToken, assignable, astProp);
     }
 
     AST_wrapClosedCustom(astProp, {
       type: 'ForStatement',
-      loc: AST_getBaseLoc(forToken),
+      loc: AST_getBaseLoc($tt_forToken),
       init: undefined,
       test: undefined,
       update: undefined,
@@ -5189,19 +5390,19 @@ function Parser(code, options = {}) {
       //             ^
       // [x]: `for (a+b in c) d;`
       // [x]: `for (a+b of c) d;`
-      parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, startOfForHeaderToken, assignable, 'init');
+      parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, $tt_startOfForHeaderToken, assignable, 'init');
     }
 
-    return parseForFromSemi(lexerFlags, startOfForHeaderToken, astProp);
+    return parseForFromSemi(lexerFlags, $tt_startOfForHeaderToken, astProp);
   }
-  function parseForFromIn(lexerFlags, forToken, awaitable, assignable, astProp) {
+  function parseForFromIn(lexerFlags, $tt_forToken, awaitable, assignable, astProp) {
     ASSERT(parseForFromIn.length === arguments.length, 'arg count');
 
     if (notAssignable(assignable)) return THROW('Left part of for-of must be assignable');
 
     AST_wrapClosedCustom(astProp, {
       type: 'ForOfStatement',
-      loc: AST_getBaseLoc(forToken),
+      loc: AST_getBaseLoc($tt_forToken),
       left: undefined,
       right: undefined,
       await: awaitable, // as per https://github.com/estree/estree/pull/138
@@ -5212,7 +5413,7 @@ function Parser(code, options = {}) {
     // Note that this rhs is an AssignmentExpression, _not_ a SequenceExpression
     parseExpression(lexerFlags, 'right');
   }
-  function parseForFromOf(lexerFlags, forToken, assignable, astProp) {
+  function parseForFromOf(lexerFlags, $tt_forToken, assignable, astProp) {
     ASSERT(parseForFromOf.length === arguments.length, 'arg count');
 
     if (notAssignable(assignable)) {
@@ -5225,7 +5426,7 @@ function Parser(code, options = {}) {
     }
     AST_wrapClosedCustom(astProp, {
       type: 'ForInStatement',
-      loc: AST_getBaseLoc(forToken),
+      loc: AST_getBaseLoc($tt_forToken),
       left: undefined,
       right: undefined,
       body: undefined,
@@ -5234,53 +5435,53 @@ function Parser(code, options = {}) {
     // `for (a in b=c) ..`
     parseExpressions(lexerFlags, 'right');
   }
-  function parseForFromSemi(lexerFlags, startOfForHeaderToken, astProp) {
+  function parseForFromSemi(lexerFlags, $tt_startOfForHeaderToken, astProp) {
     ASSERT(parseForFromSemi.length === arguments.length, 'arg count');
 
-    let hadComma = curtok.type === $PUNC_COMMA;
+    let hadComma = tok_getType() === $PUNC_COMMA;
     if (hadComma) {
       // - `for (a, b;;);`
       //          ^
       // - `for (a, b in c);`
       // - `for (a, b of c);`
-      _parseExpressions(lexerFlags | LF_IN_FOR_LHS, startOfForHeaderToken, initNotAssignable(), 'init');
+      _parseExpressions(lexerFlags | LF_IN_FOR_LHS, $tt_startOfForHeaderToken, initNotAssignable(), 'init');
     }
 
-    if (curtok.type !== $PUNC_SEMI) {
-      if (hadComma && (curtok.type === $ID_of || curtok.type === $ID_in)) {
+    if (tok_getType() !== $PUNC_SEMI) {
+      if (hadComma && (tok_getType() === $ID_of || tok_getType() === $ID_in)) {
         // note: `x in y` is valid so `for(a,x in y)` will parse up to the `)`. since `of` is not an op it stops at `of`.
         // [x]: `for (a,b of c) d;`
         return THROW('Comma not allowed in left side of `for-in`/`for-of` header');
       }
-      return THROW('Missing first semi in `for` header, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      return THROW('Missing first semi in `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     }
 
     return _parseForFromSemi(lexerFlags, astProp);
   }
   function _parseForFromSemi(lexerFlags, astProp) {
     ASSERT(_parseForFromSemi.length === arguments.length, 'arg count');
-    ASSERT(curtok.type === $PUNC_SEMI, 'should be explicitly checked by caller');
+    ASSERT(tok_getType() === $PUNC_SEMI, 'should be explicitly checked by caller');
 
     ASSERT_skipToExpressionStartSemi(';', lexerFlags);
 
-    if (curtok.type === $PUNC_SEMI) {
+    if (tok_getType() === $PUNC_SEMI) {
       AST_set('test', null);
     } else {
       parseExpressions(lexerFlags, 'test');
-      if (curtok.type !== $PUNC_SEMI) {
-        THROW('Missing second semi in `for` header, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (tok_getType() !== $PUNC_SEMI) {
+        THROW('Missing second semi in `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       }
     }
 
     ASSERT_skipToExpressionStartGrouped(';', lexerFlags); // the second semi may immediately be followed by `)`
 
-    if (curtok.type === $PUNC_PAREN_CLOSE) {
+    if (tok_getType() === $PUNC_PAREN_CLOSE) {
       AST_set('update', null);
     } else {
       parseExpressions(lexerFlags, 'update');
     }
   }
-  function parsePatternTailInForHeader(lexerFlags, patternStartToken, closingPuncType, assignable, destructible, awaitable, astProp) {
+  function parsePatternTailInForHeader(lexerFlags, $tt_patternStartToken, closingPuncType, assignable, destructible, awaitable, astProp) {
     ASSERT(parsePatternTailInForHeader.length === arguments.length, 'arg count');
 
     assignable = hasAnyFlag(destructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
@@ -5288,7 +5489,7 @@ function Parser(code, options = {}) {
     // Have to make sure this is not a compound assignment to a pattern. And have to do it before the tail (`[].x+=y`)
     // - `for ([] = x;;);`
     // - `for ([] = x in y);`
-    if (curtok.type !== $PUNC_EQ && isCompoundAssignment(curtok.type)) {
+    if (tok_getType() !== $PUNC_EQ && isCompoundAssignment(tok_getType())) {
       // - `for ([] += x;;);`
       // - `for ([] /= x in y);`
       return THROW('Cannot compound assign to an object or array pattern');
@@ -5303,7 +5504,7 @@ function Parser(code, options = {}) {
     // - `for ([] in x`
     //            ^
     // Unnecessary overhead most of the time but it makes certain edge cases just easier to deal with
-    assignable = parseValueTail(lexerFlags | LF_IN_FOR_LHS, patternStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+    assignable = parseValueTail(lexerFlags | LF_IN_FOR_LHS, $tt_patternStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
 
     // - `for ([].foo in x);`
     //                ^
@@ -5314,7 +5515,7 @@ function Parser(code, options = {}) {
     // - `for ([] of x);`
     // - `for ([] ;;);`
 
-    if (curtok.type === $PUNC_SEMI) {
+    if (tok_getType() === $PUNC_SEMI) {
       // - `for ({a};;);`
       // - `for ([a];;);`
       if (awaitable) {
@@ -5323,7 +5524,7 @@ function Parser(code, options = {}) {
         THROW('Can not use `for-await` with a regular `for` loop, only `for-of`');
       }
     }
-    else if (curtok.type === $ID_in) {
+    else if (tok_getType() === $ID_in) {
       // - `for ({} in y);`
       // - `for ({} = y in y);`
       // - `for ({x} = y in z);`
@@ -5339,7 +5540,7 @@ function Parser(code, options = {}) {
       if (notAssignable(assignable)) THROW('The for-header lhs binding pattern is not destructible');
       AST_destruct(astProp);
     }
-    else if (curtok.type === $ID_of) {
+    else if (tok_getType() === $ID_of) {
       // - `for ({} on y);`
       // - `for ({} = y on y);`
       // - `for ({x} = y on z);`
@@ -5357,15 +5558,15 @@ function Parser(code, options = {}) {
       if (notAssignable(assignable)) THROW('The for-header lhs binding pattern is not destructible');
       AST_destruct(astProp);
     }
-    else if (curtok.type === $PUNC_EQ) {
+    else if (tok_getType() === $PUNC_EQ) {
       // This can be fine if inside a regular `for-loop`. Only if we see `in` or `of` before the `;` are we in trouble.
-      parseExpressionFromOp(lexerFlags| LF_IN_FOR_LHS, patternStartToken, assignable, astProp);
-      if (curtok.type === $PUNC_SEMI) {
+      parseExpressionFromOp(lexerFlags| LF_IN_FOR_LHS, $tt_patternStartToken, assignable, astProp);
+      if (tok_getType() === $PUNC_SEMI) {
         // This is fiiiine
         // - `for ([] = x ;;);`
         // - `for ({} = x ;;);`
         assignable = NOT_ASSIGNABLE;
-      } else if (curtok.type === $ID_in || curtok.type === $ID_of) {
+      } else if (tok_getType() === $ID_in || tok_getType() === $ID_of) {
         // - `for ([] = x in y);`
         // - `for ({} = x of y);`
         // https://tc39.github.io/ecma262/#sec-for-in-and-for-of-statements-static-semantics-early-errors
@@ -5398,18 +5599,18 @@ function Parser(code, options = {}) {
       // assignment, so all we have to do now is continue parsing a regular value and assert that this must be a
       // regular for-loop, so the value must be followed by a semi. Hence, we don't care about assignability here.
       // We also don't care about the yield/await piggies because we are in a for-header, never a function header.
-      parseOptionalDestructibleRestOfExpression(lexerFlags, patternStartToken, BINDING_TYPE_NONE, assignable, destructible, closingPuncType, astProp);
+      parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_patternStartToken, BINDING_TYPE_NONE, assignable, destructible, closingPuncType, astProp);
 
       // [v]: `for ([] + x;;);`
       //                  ^
-      if (curtok.type === $PUNC_COMMA) {
+      if (tok_getType() === $PUNC_COMMA) {
         // Don't care about assignable await/yield flags
         // [v]: `for ([], x;;);`
         //              ^
-        _parseExpressions(lexerFlags, patternStartToken, initNotAssignable(), astProp);
+        _parseExpressions(lexerFlags, $tt_patternStartToken, initNotAssignable(), astProp);
       }
 
-      if (curtok.type !== $PUNC_SEMI) {
+      if (tok_getType() !== $PUNC_SEMI) {
         // [x]: `for ([]);`
         //              ^
         // [x]: `for ([]);`
@@ -5426,11 +5627,15 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parseIfStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let ifToken = curtok;
+    let $tt_ifToken = __oldtok;
+    let $t_ifToken_line = tok_getLine();
+    let $t_ifToken_column = tok_getColumn();
+    let $t_ifToken_start = tok_getStart();
+
     ASSERT_skipToParenOpenOrDie($ID_if, lexerFlags);
     AST_open(astProp, {
       type: 'IfStatement',
-      loc: AST_getBaseLoc(ifToken),
+      loc: AST_getBaseLoc($tt_ifToken),
       test: undefined,
       consequent: undefined,
       alternate: undefined,
@@ -5444,7 +5649,7 @@ function Parser(code, options = {}) {
 
     parseStatementHeader(lexerFlags, 'test');
     parseNestedBodyPart(lexerFlags, scoop, labelSet, NOT_LABELLED, FDS_IFELSE, PARENT_NOT_LABEL, 'consequent');
-    if (curtok.type === $ID_else) {
+    if (tok_getType() === $ID_else) {
       ASSERT_skipToStatementStart($ID_else, lexerFlags);
       parseNestedBodyPart(lexerFlags, scoop, labelSet, NOT_LABELLED, FDS_IFELSE, PARENT_NOT_LABEL, 'alternate');
     } else {
@@ -5469,12 +5674,16 @@ function Parser(code, options = {}) {
     // import x, {...} from 'x'
     // (cannot create a var named `yield` or `await` or `let` this way)
 
-    let importToken = curtok;
+    let $tt_importToken = __oldtok;
+    let $t_importToken_line = tok_getLine();
+    let $t_importToken_column = tok_getColumn();
+    let $t_importToken_start = tok_getStart();
+
 
     ASSERT_skipToIdentStarCurlyOpenParenOpenString($ID_import, lexerFlags);
-    if (curtok.type === $PUNC_PAREN_OPEN) {
+    if (tok_getType() === $PUNC_PAREN_OPEN) {
       // This must be dynamic `import()` or an error
-      return parseDynamicImportStatement(lexerFlags, importToken, astProp);
+      return parseDynamicImportStatement(lexerFlags, $tt_importToken, astProp);
     }
 
     // Note: since `import()` is valid in non-global, and in non-module-goal, we have to check the token after `import` first
@@ -5484,42 +5693,42 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ImportDeclaration',
-      loc: AST_getBaseLoc(importToken),
+      loc: AST_getBaseLoc($tt_importToken),
       specifiers: [],
       source: undefined,
     });
 
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       // import x from 'x'
       //        ^
       // import x, * as z from 'x'
       // import x, {...} from 'x'
       parseImportDefault(lexerFlags, scoop);
-      if (curtok.type === $PUNC_COMMA) {
+      if (tok_getType() === $PUNC_COMMA) {
         // import x, * as z from 'x'
         //         ^
         // import x, {...} from 'x'
         //         ^
         ASSERT_skipToIdentStarCurlyOpen(',', lexerFlags);  // TODO: next must be `*` or `{` or ident
-        if (curtok.type === $PUNC_STAR) {
+        if (tok_getType() === $PUNC_STAR) {
           // import x, * as z from 'x'
           parseImportNamespace(lexerFlags, scoop);
-        } else if (curtok.type === $PUNC_CURLY_OPEN) {
+        } else if (tok_getType() === $PUNC_CURLY_OPEN) {
           // import x, {...} from 'x'
           parseImportObject(lexerFlags, scoop);
         } else {
           THROW('Can only import star or object after default');
         }
-      } else if (curtok.type !== $ID_from) {
+      } else if (tok_getType() !== $ID_from) {
         THROW('Missing export source');
       } else {
         // `import x from 'x'`
         ASSERT_skipToStringOrDie($ID_from, lexerFlags);
       }
-    } else if (curtok.type === $PUNC_STAR) {
+    } else if (tok_getType() === $PUNC_STAR) {
       // import * as y from 'x'
       parseImportNamespace(lexerFlags, scoop);
-    } else if (curtok.type === $PUNC_CURLY_OPEN) {
+    } else if (tok_getType() === $PUNC_CURLY_OPEN) {
       // import {} from 'x'
       // import {a} from 'x'
       // import {a as b} from 'x'
@@ -5533,18 +5742,22 @@ function Parser(code, options = {}) {
       // - `import \n / x`
       //              ^
 
-      if (!isStringToken(curtok.type)) {
-        THROW('Expected a valid token after the `import` keyword, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (!isStringToken(tok_getType())) {
+        THROW('Expected a valid token after the `import` keyword, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       }
     }
 
     // `import 'foo'` is valid but otherwise this is an error (validated by skipToStringOrDie)
-    ASSERT(isStringToken(curtok.type), 'skipToStringOrDie should throw if the next token is not a string, all branches should have enforced it');
+    ASSERT(isStringToken(tok_getType()), 'skipToStringOrDie should throw if the next token is not a string, all branches should have enforced it');
 
-    let sourceToken = curtok;
-    let sourceTokenCanon = tok_getCanon();
+    let $tt_sourceToken = __oldtok;
+    let $t_sourceToken_line = tok_getLine();
+    let $t_sourceToken_column = tok_getColumn();
+    let $t_sourceToken_start = tok_getStart();
+
+    let sourceCanon = tok_getCanon();
     ASSERT_skipToStatementStart($G_STRING, lexerFlags); // semi or asi
-    AST_setStringLiteral('source', sourceToken, sourceTokenCanon, false);
+    AST_setStringLiteral('source', $tt_sourceToken, sourceCanon, false);
     parseSemiOrAsi(lexerFlags);
     AST_close('ImportDeclaration');
   }
@@ -5555,16 +5768,20 @@ function Parser(code, options = {}) {
     //        ^
     // import x, * as z from 'x'
     // import x, {...} from 'x'
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
-    fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_CONST, lexerFlags);
-    SCOPE_addLexBinding(scoop, identTokenCanon, BINDING_TYPE_LET, FDS_LEX); // TODO: confirm `let`
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
+    fatalBindingIdentCheck($tt_identToken, identCanon, BINDING_TYPE_CONST, lexerFlags);
+    SCOPE_addLexBinding(scoop, identCanon, BINDING_TYPE_LET, FDS_LEX); // TODO: confirm `let`
     ASSERT_skipToAsCommaFrom($G_IDENT, lexerFlags);
 
     AST_setNode('specifiers', {
       type: 'ImportDefaultSpecifier',
-      loc: AST_getClosedLoc(identToken),
-      local: AST_getIdentNode(identToken, identTokenCanon),
+      loc: AST_getClosedLoc($tt_identToken.line, $tt_identToken.column, $tt_identToken.start),
+      local: AST_getIdentNode($tt_identToken, identCanon),
     });
   }
   function parseImportObject(lexerFlags, scoop) {
@@ -5573,37 +5790,47 @@ function Parser(code, options = {}) {
     // - `import {...} from 'x'`
     //           ^
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
-    while (isIdentToken(curtok.type)) {
-      let nameToken = curtok; // left of the `as` token
-      let nameTokenCanon = tok_getCanon(); // left of the `as` token
-      let localToken = curtok; // right of the `as` token, otherwise same as nameToken
-      let localTokenCanon = tok_getCanon(); // right of the `as` token, otherwise same as nameToken
+    while (isIdentToken(tok_getType())) {
+      // left of the `as` token
+      let $tt_nameToken = __oldtok;
+      let $t_nameToken_line = tok_getLine();
+      let $t_nameToken_column = tok_getColumn();
+      let $t_nameToken_start = tok_getStart();
+      let nameCanon = tok_getCanon(); // left of the `as` token
+
+      // right of the `as` token, otherwise same as $tt_nameToken
+      let $tt_localToken = __oldtok;
+      let $t_localToken_line = tok_getLine();
+      let $t_localToken_column = tok_getColumn();
+      let $t_localToken_start = tok_getStart();
+      let localCanon = tok_getCanon(); // right of the `as` token, otherwise same as $tt_nameToken
+
       ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
 
       // https://tc39.github.io/ecma262/#sec-createimportbinding
       // The concrete Environment Record method CreateImportBinding for module Environment Records creates a new initialized
       // immutable indirect binding for the name N. A binding must not already exist in this Environment Record for N.
 
-      if (curtok.type === $ID_as) {
+      if (tok_getType() === $ID_as) {
         ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
-        localToken = curtok;
-        localTokenCanon = tok_getCanon();
+        $tt_localToken = __oldtok;
+        localCanon = tok_getCanon();
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
-      fatalBindingIdentCheck(localToken, localTokenCanon, BINDING_TYPE_CONST, lexerFlags);
-      SCOPE_addLexBinding(scoop, localTokenCanon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
+      fatalBindingIdentCheck($tt_localToken, localCanon, BINDING_TYPE_CONST, lexerFlags);
+      SCOPE_addLexBinding(scoop, localCanon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
 
       AST_setNode('specifiers', {
         type: 'ImportSpecifier',
-        loc: AST_getClosedLoc(nameToken),
-        imported: AST_getIdentNode(nameToken, nameTokenCanon),
-        local: AST_getIdentNode(localToken, localTokenCanon),
+        loc: AST_getClosedLoc($tt_nameToken.line, $tt_nameToken.column, $tt_nameToken.start),
+        imported: AST_getIdentNode($tt_nameToken, nameCanon),
+        local: AST_getIdentNode($tt_localToken, localCanon),
       });
 
-      if (curtok.type === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
-      else if (curtok.type !== $PUNC_CURLY_CLOSE) THROW('Unexpected character while parsing export object');
+      if (tok_getType() === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
+      else if (tok_getType() !== $PUNC_CURLY_CLOSE) THROW('Unexpected character while parsing export object');
     }
-    if (curtok.type !== $PUNC_CURLY_CLOSE) THROW('Missing import definition closing curly, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_CURLY_CLOSE) THROW('Missing import definition closing curly, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     // - `import {...} from 'x'`
     //               ^
     ASSERT_skipToFromOrDie($PUNC_CURLY_CLOSE, lexerFlags);
@@ -5614,39 +5841,51 @@ function Parser(code, options = {}) {
 
     // import * as x from 'y'
     //        ^
-    let starToken = curtok;
+    let $tt_starToken = __oldtok;
+    let $t_starToken_line = tok_getLine();
+    let $t_starToken_column = tok_getColumn();
+    let $t_starToken_start = tok_getStart();
+
     ASSERT_skipToAsOrDie('*', lexerFlags);
     ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
-    let localToken = curtok;
-    let localTokenCanon = tok_getCanon();
+    let $tt_localToken = __oldtok;
+    let $t_localToken_line = tok_getLine();
+    let $t_localToken_column = tok_getColumn();
+    let $t_localToken_start = tok_getStart();
+
+    let localCanon = tok_getCanon();
     // next must be `from` (default must come first, if present, and object can not be used together with star)
     ASSERT_skipToFromOrDie($G_IDENT, lexerFlags);
-    fatalBindingIdentCheck(localToken, localTokenCanon, BINDING_TYPE_CONST, lexerFlags);
-    SCOPE_addLexBinding(scoop, localTokenCanon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
+    fatalBindingIdentCheck($tt_localToken, localCanon, BINDING_TYPE_CONST, lexerFlags);
+    SCOPE_addLexBinding(scoop, localCanon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
 
     AST_setNode('specifiers', {
       type: 'ImportNamespaceSpecifier',
-      loc: AST_getClosedLoc(starToken),
-      local: AST_getIdentNode(localToken, localTokenCanon),
+      loc: AST_getClosedLoc($tt_starToken.line, $tt_starToken.column, $tt_starToken.start),
+      local: AST_getIdentNode($tt_localToken, localCanon),
     });
 
-    ASSERT(curtok.type === $ID_from, 'already validated by skipToFromOrDie, above');
+    ASSERT(tok_getType() === $ID_from, 'already validated by skipToFromOrDie, above');
     ASSERT_skipToStringOrDie($ID_from, lexerFlags);
   }
 
-  function parseLetDeclaration(lexerFlags, letToken, scoop, labelSet, fdState, nestedLabels, astProp) {
+  function parseLetDeclaration(lexerFlags, $tt_letToken, scoop, labelSet, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLetDeclaration.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
-    ASSERT(identToken.type === $ID_let, 'should pass on the let token');
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
+    ASSERT($tt_identToken.type === $ID_let, 'should pass on the let token');
 
     // next token is ident, {, or [ in most cases. In sloppy mode it can also be any valid value tail, operator, and ASI-able.
     ASSERT_skipDiv($ID_let, lexerFlags); // in `let/foo/g` the `/` is always a division, so parse div
 
     // parsing `let` as a declaration if the next token is an ident, `[`, or `{`
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       // - `let x`
       // - `let x, y`
       // - `let x, [y]`
@@ -5661,8 +5900,12 @@ function Parser(code, options = {}) {
       // and likewise, `let \n yield` does not trigger ASI inside a generator. So `let \n await 0` and `let \n yield 0`
       // is always going to trigger a syntax error.
 
-      let bindingToken = curtok;
-      let bindingTokenCanon = tok_getCanon();
+      let $tt_bindingToken = __oldtok;
+      let $t_bindingToken_line = tok_getLine();
+      let $t_bindingToken_column = tok_getColumn();
+      let $t_bindingToken_start = tok_getStart();
+
+      let bindingCanon = tok_getCanon();
 
       // This is a let with a newline following it and the next token is a reserved word.
       // This must now be a let-expression or a syntax error
@@ -5674,7 +5917,7 @@ function Parser(code, options = {}) {
       // The next logic is: if there's no error, it's fine to bind. If there is an error, then if it concerns any of
       // these pseudo keywords they will still trigger an error (because the errors are early errors) so we throw.
       // In all other cases, apply the ASI and treat the next ident as an expression.
-      let identBindingErrorMsg = tok_getNlwas() === true ? nonFatalBindingIdentCheck(bindingToken, bindingTokenCanon, BINDING_TYPE_LET, lexerFlags) : '';
+      let identBindingErrorMsg = tok_getNlwas() === true ? nonFatalBindingIdentCheck($tt_bindingToken, bindingCanon, BINDING_TYPE_LET, lexerFlags) : '';
       if (identBindingErrorMsg !== '') {
         // This is now a slow error path
 
@@ -5682,25 +5925,26 @@ function Parser(code, options = {}) {
           // This is the case of pseudo keywords. Note that `let \n await` will never trigger ASI and
           // `let \n await 0` would ASI therefor throw a syntax error because it's parsed as a let declaration, anyways.
           // In contrast, `let \n await;` is only an error in the context where `await` must be a keyword.
-          [$ID_await, $ID_yield, $ID_arguments, $ID_eval, $ID_implements, $ID_interface, $ID_let, $ID_package, $ID_private, $ID_protected, $ID_public, $ID_static].includes(curtok.type)
+          [$ID_await, $ID_yield, $ID_arguments, $ID_eval, $ID_implements, $ID_interface, $ID_let, $ID_package, $ID_private, $ID_protected, $ID_public, $ID_static].includes(tok_getType())
         ) {
           // This must be an error now. ASI was not applicable but the var was (still) not a valid binding ident, so *boom*
-          return THROW('Attempted to create a `let` binding on special reserved keyword `' + tok_sliceInput(bindingToken.start, bindingToken.stop) + '` but: ' + identBindingErrorMsg);
+          return THROW('Attempted to create a `let` binding on special reserved keyword `' + tok_sliceInput($tt_bindingToken.start, $tt_bindingToken.stop) + '` but: ' + identBindingErrorMsg);
         }
 
         if (hasAnyFlag(lexerFlags, LF_NO_ASI)) {
-          return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tok_sliceInput(bindingToken.start, bindingToken.stop) + '`) and ASI does not apply here');
+          return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tok_sliceInput($tt_bindingToken.start, $tt_bindingToken.stop) + '`) and ASI does not apply here');
         }
 
-        return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tok_sliceInput(bindingToken.start, bindingToken.stop) + '`)');
+        return THROW('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tok_sliceInput($tt_bindingToken.start, $tt_bindingToken.stop) + '`)');
       }
 
 
       // This is any regular `let` declaration with an ident and no newline but the ident may cause a keyword error
       // - `let foo`
       // - `do let while(x)'               (totally invalid because do-while requires newline or semi)
-      parseAnyVarDeclaration(lexerFlags, letToken, scoop, BINDING_TYPE_LET, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
-    } else if (curtok.type === $PUNC_BRACKET_OPEN || curtok.type === $PUNC_CURLY_OPEN) {
+      parseAnyVarDeclaration(lexerFlags, $tt_letToken, scoop, BINDING_TYPE_LET, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    }
+    else if (tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN) {
       // let declaration on (at least) a pattern
       // - `let [x]`
       // - `let [x], y`
@@ -5710,22 +5954,27 @@ function Parser(code, options = {}) {
       // - `let {x}, y`
       // - `let {x}, {y}`
       // - `let \n {x}`
-      parseAnyVarDeclaration(lexerFlags, letToken, scoop, BINDING_TYPE_LET, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
-    } else if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      THROW('Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode');
+      parseAnyVarDeclaration(lexerFlags, $tt_letToken, scoop, BINDING_TYPE_LET, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    }
+    else if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+      return THROW_TOKEN('Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode', $t_identToken_start, $t_identToken_start + 1); // TODO: use stop
     } else {
       // let expression statement
       // TODO: add test case `let: function f(){}`
-      _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
+      _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp);
     }
   }
   function parseLetExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLetExpressionStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
-    ASSERT(identToken.type === $ID_let, 'should pass on the let token');
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
+    ASSERT($tt_identToken.type === $ID_let, 'should pass on the let token');
 
     // next token is ident, {, or [ in most cases. In sloppy mode it can also be any valid value tail, operator, and ASI-able.
     ASSERT_skipDiv($ID_let, lexerFlags); // in `let/foo/g` the `/` is always a division, so parse div
@@ -5734,7 +5983,7 @@ function Parser(code, options = {}) {
       THROW('`let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode');
     }
 
-    if (curtok.type === $PUNC_BRACKET_OPEN) {
+    if (tok_getType() === $PUNC_BRACKET_OPEN) {
       // https://tc39.es/ecma262/#prod-ExpressionStatement
       // No ASI exception here. A `let [` can simply not start an expression statement, and there's no other way to
       // validly parse it, so it's an error here.
@@ -5742,37 +5991,37 @@ function Parser(code, options = {}) {
     }
 
     // let expression statement
-    _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
+    _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp);
   }
-  function _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp) {
+  function _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp) {
     ASSERT(_parseLetAsPlainVarNameExpressionStatement.length === arguments.length, 'arg count');
-    ASSERT(identToken.type === $ID_let, 'should pass on the let token');
-    ASSERT(identToken !== curtok, 'the `let` token should have been skipped');
+    ASSERT($tt_identToken.type === $ID_let, 'should pass on the let token');
+    ASSERT($tt_identToken.start !== tok_getStart(), 'the `let` token should have been skipped');
     ASSERT(hasNoFlag(lexerFlags, LF_STRICT_MODE), 'sloppy mode should be asserted at call site');
     ASSERT_LABELSET(labelSet);
-    ASSERT(curtok.type !== $PUNC_BRACKET_OPEN, 'should invalidate expr stmt starting with `let [` before calling this func');
+    ASSERT(tok_getType() !== $PUNC_BRACKET_OPEN, 'should invalidate expr stmt starting with `let [` before calling this func');
 
-    if (curtok.type === $EOF) {
+    if (tok_getType() === $EOF) {
       parseSemiOrAsi(lexerFlags);
       AST_setNode(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getClosedLoc(identToken),
-        expression: AST_getIdentNode(identToken, identTokenCanon),
+        loc: AST_getClosedLoc($tt_identToken.line, $tt_identToken.column, $tt_identToken.start),
+        expression: AST_getIdentNode($tt_identToken, identCanon),
       });
-    } else if (curtok.type === $PUNC_COLON) {
-      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
+    } else if (tok_getType() === $PUNC_COLON) {
+      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp);
     } else {
       AST_open(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getBaseLoc(identToken),
+        loc: AST_getBaseLoc($tt_identToken),
         expression: undefined,
       });
-      let assignable = parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
-      assignable = parseValueTail(lexerFlags, identToken, assignable, NOT_NEW_ARG, NOT_LHSE, 'expression');
-      parseExpressionFromOp(lexerFlags, identToken, assignable, 'expression');
-      if (curtok.type === $PUNC_COMMA) {
+      let assignable = parseIdentOrParenlessArrow(lexerFlags, $tt_identToken, identCanon, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
+      assignable = parseValueTail(lexerFlags, $tt_identToken, assignable, NOT_NEW_ARG, NOT_LHSE, 'expression');
+      parseExpressionFromOp(lexerFlags, $tt_identToken, assignable, 'expression');
+      if (tok_getType() === $PUNC_COMMA) {
         // Don't care about assignable await/yield flags
-        _parseExpressions(lexerFlags, identToken, initNotAssignable(), 'expression');
+        _parseExpressions(lexerFlags, $tt_identToken, initNotAssignable(), 'expression');
       }
       parseSemiOrAsi(lexerFlags);
       AST_close('ExpressionStatement');
@@ -5780,24 +6029,32 @@ function Parser(code, options = {}) {
   }
 
   function parseReturnStatement(lexerFlags, astProp) {
-    if (!allowGlobalReturn && hasAllFlags(lexerFlags, LF_IN_GLOBAL)) THROW('Not configured to parse `return` statement in global, bailing');
+    ASSERT(parseReturnStatement.length === arguments.length, 'arg count');
 
-    let returnToken = curtok;
+    let $tt_returnToken = __oldtok;
+    let $t_returnToken_line = tok_getLine();
+    let $t_returnToken_column = tok_getColumn();
+    let $t_returnToken_start = tok_getStart();
+
+    if (!allowGlobalReturn && hasAllFlags(lexerFlags, LF_IN_GLOBAL)) {
+      return THROW_TOKEN2('Not configured to parse `return` statement in global, bailing', $t_returnToken_start, $t_returnToken_start + 1);
+    }
+
     ASSERT_skipToStatementStart($ID_return, lexerFlags); // Either an expression on the same line or a statement on the next (which includes exprs)
     AST_open(astProp, {
       type: 'ReturnStatement',
-      loc: AST_getBaseLoc(returnToken),
+      loc: AST_getBaseLoc($tt_returnToken),
       argument: undefined,
     });
 
-    if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+    if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
       // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
       // - `return \n /foo/`
       // - `return \n /foo/x`
       tok_asi();
       AST_set('argument', null);
     } else {
-      if (tok_getNlwas() === false && curtok.type !== $EOF && curtok.type !== $PUNC_SEMI && curtok.type !== $PUNC_CURLY_CLOSE) {
+      if (tok_getNlwas() === false && tok_getType() !== $EOF && tok_getType() !== $PUNC_SEMI && tok_getType() !== $PUNC_CURLY_CLOSE) {
         parseExpressions(lexerFlags, 'argument');
       }
       else {
@@ -5813,11 +6070,15 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parseSwitchStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let switchToken = curtok;
+    let $tt_switchToken = __oldtok;
+    let $t_switchToken_line = tok_getLine();
+    let $t_switchToken_column = tok_getColumn();
+    let $t_switchToken_start = tok_getStart();
+
     ASSERT_skipToParenOpenOrDie($ID_switch, lexerFlags);
     AST_open(astProp, {
       type: 'SwitchStatement',
-      loc: AST_getBaseLoc(switchToken),
+      loc: AST_getBaseLoc($tt_switchToken),
       discriminant: undefined,
       cases: [],
     });
@@ -5825,14 +6086,14 @@ function Parser(code, options = {}) {
     // TODO: in what valid case is LF_IN_TEMPLATE relevant? switch cant appear directly in a template
     let lexerFlagsForSwitch = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_IN_GLOBAL | LF_NO_ASI);
     parseStatementHeader(lexerFlagsForSwitch, 'discriminant');
-    if (curtok.type !== $PUNC_CURLY_OPEN) THROW('Missing opening curly of `switch` body, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_CURLY_OPEN) THROW('Missing opening curly of `switch` body, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     ASSERT_skipToSwitchBody($PUNC_CURLY_OPEN, lexerFlagsForSwitch);
 
     let casesScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_SWITCH, 'parseSwitchStatement');
     ASSERT(casesScoop._funcName = '(switch has no name)');
     parseSwitchCases(lexerFlagsForSwitch | LF_IN_SWITCH, casesScoop, labelSet, 'cases');
 
-    if (curtok.type !== $PUNC_CURLY_CLOSE) THROW('Missing the closing curly of the switch body, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_CURLY_CLOSE) THROW('Missing the closing curly of the switch body, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, lexerFlags);
     AST_close('SwitchStatement');
   }
@@ -5842,25 +6103,33 @@ function Parser(code, options = {}) {
 
     let hadDefault = false;
     while (true) {
-      if (curtok.type === $ID_case) {
-        let caseToken = curtok;
+      if (tok_getType() === $ID_case) {
+        let $tt_caseToken = __oldtok;
+        let $t_caseToken_line = tok_getLine();
+        let $t_caseToken_column = tok_getColumn();
+        let $t_caseToken_start = tok_getStart();
+
         ASSERT_skipToExpressionStart($ID_case, lexerFlags);
         AST_open(astProp, {
           type: 'SwitchCase',
-          loc: AST_getBaseLoc(caseToken),
+          loc: AST_getBaseLoc($tt_caseToken),
           test: undefined,
           consequent: [],
         });
         parseExpressions(lexerFlags, 'test');
-        if (curtok.type !== $PUNC_COLON) THROW('Missing colon after case expr');
-      } else if (curtok.type === $ID_default) {
+        if (tok_getType() !== $PUNC_COLON) THROW('Missing colon after case expr');
+      } else if (tok_getType() === $ID_default) {
         if (hadDefault) THROW('Found second `default` in same switch');
         hadDefault = true;
-        let defaultToken = curtok;
+        let $tt_defaultToken = __oldtok;
+        let $t_defaultToken_line = tok_getLine();
+        let $t_defaultToken_column = tok_getColumn();
+        let $t_defaultToken_start = tok_getStart();
+
         ASSERT_skipToColonOrDie($ID_default, lexerFlags);
         AST_open(astProp, {
           type: 'SwitchCase',
-          loc: AST_getBaseLoc(defaultToken),
+          loc: AST_getBaseLoc($tt_defaultToken),
           test: null, // yes, null
           consequent: [],
         });
@@ -5868,7 +6137,7 @@ function Parser(code, options = {}) {
         break;
       }
       ASSERT_skipToStatementStart(':', lexerFlags);
-      while (curtok.type !== $EOF && curtok.type !== $PUNC_CURLY_CLOSE && (curtok.type !== $ID_case && curtok.type !== $ID_default)) {
+      while (tok_getType() !== $EOF && tok_getType() !== $PUNC_CURLY_CLOSE && (tok_getType() !== $ID_case && tok_getType() !== $ID_default)) {
         parseNestedBodyPart(lexerFlags, scoop, labelSet, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL, 'consequent');
       }
       AST_close('SwitchCase');
@@ -5876,11 +6145,15 @@ function Parser(code, options = {}) {
   }
 
   function parseThrowStatement(lexerFlags, astProp) {
-    let throwToken = curtok;
+    let $tt_throwToken = __oldtok;
+    let $t_throwToken_line = tok_getLine();
+    let $t_throwToken_column = tok_getColumn();
+    let $t_throwToken_start = tok_getStart();
+
     ASSERT_skipToExpressionStart($ID_throw, lexerFlags); // The arg is mandatory so next token cannot start a statement
     AST_open(astProp, {
       type: 'ThrowStatement',
-      loc: AST_getBaseLoc(throwToken),
+      loc: AST_getBaseLoc($tt_throwToken),
       argument: undefined,
     });
     if (tok_getNlwas() === true) THROW('Found a newline between `throw` and its argument but that is not allowed');
@@ -5894,11 +6167,15 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parseTryStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let tryToken = curtok;
+    let $tt_tryToken = __oldtok;
+    let $t_tryToken_line = tok_getLine();
+    let $t_tryToken_column = tok_getColumn();
+    let $t_tryToken_start = tok_getStart();
+
     ASSERT_skipToCurlyOpenOrDie($ID_try, lexerFlags);
     AST_open(astProp, {
       type: 'TryStatement',
-      loc: AST_getBaseLoc(tryToken),
+      loc: AST_getBaseLoc($tt_tryToken),
       block: undefined,
       handler: undefined,
       finalizer: undefined,
@@ -5909,15 +6186,19 @@ function Parser(code, options = {}) {
     parseBlockStatement(lexerFlags, tryScoop, labelSet, 'block');
 
     let hasEither = false;
-    if (curtok.type === $ID_catch) {
+    if (tok_getType() === $ID_catch) {
       // parseCatch
       hasEither = true;
-      let catchToken = curtok;
+      let $tt_catchToken = __oldtok;
+      let $t_catchToken_line = tok_getLine();
+      let $t_catchToken_column = tok_getColumn();
+      let $t_catchToken_start = tok_getStart();
+
       ASSERT_skipAny($ID_catch, lexerFlags);
-      ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN || curtok.type === $PUNC_CURLY_OPEN, 'limited options, expecting { (, explicitly checked later', curtok);
+      ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN || tok_getType() === $PUNC_CURLY_OPEN, 'limited options, expecting { (, explicitly checked later');
       AST_open('handler', {
         type: 'CatchClause',
-        loc: AST_getBaseLoc(catchToken),
+        loc: AST_getBaseLoc($tt_catchToken),
         param: undefined,
         body: undefined,
       });
@@ -5934,7 +6215,7 @@ function Parser(code, options = {}) {
 
       // Catch clause is optional since es10
 
-      if (curtok.type === $PUNC_CURLY_OPEN) {
+      if (tok_getType() === $PUNC_CURLY_OPEN) {
         if (!allowOptionalCatchBinding) {
           THROW('Missing the `catch` clause. Optional catch clause is only supported since ES10  ES2019');
         }
@@ -5942,7 +6223,7 @@ function Parser(code, options = {}) {
         // https://github.com/estree/estree/pull/167/files
         // [v]: `try {} catch {}`
         AST_set('param', null);
-      } else if (curtok.type === $PUNC_PAREN_OPEN) {
+      } else if (tok_getType() === $PUNC_PAREN_OPEN) {
         // - catch clause cannot have a default
         // - catch clause can be written to, cannot already be declared, so it's like a `let` binding
         // - there's an explicit rule disallowing lexical bindings with same name as catch var so just record it as lex
@@ -5976,18 +6257,24 @@ function Parser(code, options = {}) {
         //                     ^
 
         ASSERT_skipToBindingStart($PUNC_PAREN_OPEN, lexerFlags); // Cannot be `)` so don't check for it
-        if (curtok.type === $PUNC_PAREN_CLOSE) THROW('The catch clause must have a binding');
-        parseBinding(lexerFlags | LF_NO_ASI, curtok, catchHeadScoop, BINDING_TYPE_CATCH_OTHER, FROM_CATCH, ASSIGNMENT_IS_DEFAULT, UNDEF_EXPORTS, UNDEF_EXPORTS, 'param');
+        if (tok_getType() === $PUNC_PAREN_CLOSE) THROW('The catch clause must have a binding');
 
-        if (curtok.type === $PUNC_COMMA) THROW('Catch clause requires exactly one parameter, not more (and no trailing comma)');
-        if (curtok.type === $PUNC_EQ) THROW('Catch clause parameter does not support default values');
-        if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Missing right paren for the catch clause, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+        let $tt_bindingToken = __oldtok;
+        let $t_bindingToken_line = tok_getLine();
+        let $t_bindingToken_column = tok_getColumn();
+        let $t_bindingToken_start = tok_getStart();
+
+        parseBinding(lexerFlags | LF_NO_ASI, $tt_bindingToken, catchHeadScoop, BINDING_TYPE_CATCH_OTHER, FROM_CATCH, ASSIGNMENT_IS_DEFAULT, UNDEF_EXPORTS, UNDEF_EXPORTS, 'param');
+
+        if (tok_getType() === $PUNC_COMMA) THROW('Catch clause requires exactly one parameter, not more (and no trailing comma)');
+        if (tok_getType() === $PUNC_EQ) THROW('Catch clause parameter does not support default values');
+        if (tok_getType() !== $PUNC_PAREN_CLOSE) THROW('Missing right paren for the catch clause, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
         ASSERT_skipToCurlyOpenOrDie($PUNC_PAREN_CLOSE, lexerFlags);
       } else {
-        THROW('Missing start of catch clause (`(`) or start of catch body (`{`), found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead')
+        THROW('Missing start of catch clause (`(`) or start of catch body (`{`), found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead')
       }
 
-      ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'should have thrown if curtok.c is not curly at this point');
+      ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'should have thrown if not curly at this point');
 
       parseBlockStatement(lexerFlags, catchBodyScoop, labelSet, 'body');
       AST_close('CatchClause');
@@ -5995,7 +6282,7 @@ function Parser(code, options = {}) {
       AST_set('handler', null);
     }
 
-    if (curtok.type === $ID_finally) {
+    if (tok_getType() === $ID_finally) {
       // parseFinally
       hasEither = true;
       ASSERT_skipToCurlyOpenOrDie($ID_finally, lexerFlags);
@@ -6012,20 +6299,28 @@ function Parser(code, options = {}) {
   }
 
   function parseVarStatement(lexerFlags, scoop, astProp) {
-    let varToken = curtok;
+    let $tt_varToken = __oldtok;
+    let $t_varToken_line = tok_getLine();
+    let $t_varToken_column = tok_getColumn();
+    let $t_varToken_start = tok_getStart();
+
     ASSERT_skipToBindingStart($ID_var, lexerFlags);
-    parseAnyVarDeclaration(lexerFlags, varToken, scoop, BINDING_TYPE_VAR, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    parseAnyVarDeclaration(lexerFlags, $tt_varToken, scoop, BINDING_TYPE_VAR, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
   }
 
   function parseWhileStatement(lexerFlags, scoop, labelSet, astProp) {
     ASSERT(arguments.length === parseWhileStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    let whileToken = curtok;
+    let $tt_whileToken = __oldtok;
+    let $t_whileToken_line = tok_getLine();
+    let $t_whileToken_column = tok_getColumn();
+    let $t_whileToken_start = tok_getStart();
+
     ASSERT_skipToParenOpenOrDie($ID_while, lexerFlags);
     AST_open(astProp, {
       type: 'WhileStatement',
-      loc: AST_getBaseLoc(whileToken),
+      loc: AST_getBaseLoc($tt_whileToken),
       test: undefined,
       body: undefined,
     });
@@ -6036,7 +6331,7 @@ function Parser(code, options = {}) {
 
   function parseIdentLabelOrExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp) {
     ASSERT(parseIdentLabelOrExpressionStatement.length === arguments.length, 'arg count');
-    ASSERT(isIdentToken(curtok.type), 'should not have consumed the ident yet', T(curtok.type));
+    ASSERT(isIdentToken(tok_getType()), 'should not have consumed the ident yet');
     ASSERT(typeof astProp === 'string', 'should be string');
     ASSERT_LABELSET(labelSet);
 
@@ -6054,42 +6349,46 @@ function Parser(code, options = {}) {
     // however, we also need to get the next token to check for the colon to determine the label path
 
     // note: this node may be replaced by a label node but we can't know that here without backtracking
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
 
     // TODO: in most of the cases below where it leads to a label an error "keyword label" should be thrown immediately
 
-    ASSERT(curtok.type !== $ID_function, 'function ident is already checked before this func');
+    ASSERT(tok_getType() !== $ID_function, 'function ident is already checked before this func');
 
     // For the sake of simplicity, and because this function should not hit very frequently, we'll take the slow path
     skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE);
 
-    if (curtok.type === $PUNC_COLON) {
+    if (tok_getType() === $PUNC_COLON) {
       // Ident to be verified not to be reserved in the label parser
-      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp);
+      return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp);
     }
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(identToken),
+      loc: AST_getBaseLoc($tt_identToken),
       expression: undefined,
     });
-    parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, 'expression');
+    parseExpressionsAfterIdent(lexerFlags, $tt_identToken, identCanon, 'expression');
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
-  function parseDeleteExpression(lexerFlags, deleteToken, inputAssignable, astProp) {
+  function parseDeleteExpression(lexerFlags, $tt_deleteToken, inputAssignable, astProp) {
     AST_open(astProp, {
       type: 'UnaryExpression',
-      loc: AST_getBaseLoc(deleteToken),
+      loc: AST_getBaseLoc($tt_deleteToken),
       operator: 'delete',
       prefix: true,
       argument: undefined,
     });
     let assignable = ASSIGNABLE_UNDETERMINED;
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       assignable = parseDeleteIdent(lexerFlags, astProp);
-    } else if (curtok.type === $PUNC_PAREN_OPEN) {
+    } else if (tok_getType() === $PUNC_PAREN_OPEN) {
       // This case has to be confirmed not to just wrap an ident in parens
       // `delete (foo)`
       // `delete ((foo).x)`
@@ -6104,7 +6403,7 @@ function Parser(code, options = {}) {
       assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
     }
     AST_close('UnaryExpression');
-    if (curtok.type === $PUNC_STAR_STAR) {
+    if (tok_getType() === $PUNC_STAR_STAR) {
       THROW('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)');
     }
     ASSERT(assignable !== ASSIGNABLE_UNDETERMINED, 'every branch should update this');
@@ -6131,20 +6430,28 @@ function Parser(code, options = {}) {
     // - `delete (foo) => x`
     // - `delete ((foo) => x)`
 
-    ASSERT(curtok.type === $PUNC_PAREN_OPEN, 'this is why we are here');
+    ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'this is why we are here');
 
-    let outerParenToken = curtok;
+    let $tt_outerParenToken = __oldtok;
+    let $t_outerParenToken_line = tok_getLine();
+    let $t_outerParenToken_column = tok_getColumn();
+    let $t_outerParenToken_start = tok_getStart();
+
     let outerLexerflags = lexerFlags;
 
     let parens = 1;
     let pees = [curtok]; // rare use of arrays because we need to remember where it was opened for locs in ASTs (edge case path meh)
     // Cannot asi inside `delete (...)`, the `in` restriction stuff does not apply inside the arg
     lexerFlags = sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS);
-    let parenToken = curtok;
+    let $tt_parenToken = __oldtok;
+    let $t_parenToken_line = tok_getLine();
+    let $t_parenToken_column = tok_getColumn();
+    let $t_parenToken_start = tok_getStart();
+
     ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // `delete (/x/.y)`, for bonus points
-    while (curtok.type === $PUNC_PAREN_OPEN) {
+    while (tok_getType() === $PUNC_PAREN_OPEN) {
       ++parens;
-      parenToken = curtok;
+      $tt_parenToken = __oldtok;
       pees[pees.length] = curtok;
 
       // Note: next is expression start or `)` in case of `delete (()=>{})`
@@ -6153,11 +6460,15 @@ function Parser(code, options = {}) {
     // Now parse a group and pass it a special flag that changes the semantics of the return value
     // It's an ugly hack :( all caused by `delete ((((a, b) => c).d))` being hard to custom parse
 
-    let possibleIdentToken = curtok;
+    let $tt_possibleIdentToken = __oldtok;
+    let $t_possibleIdentToken_line = tok_getLine();
+    let $t_possibleIdentToken_column = tok_getColumn();
+    let $t_possibleIdentToken_start = tok_getStart();
+
 
     let assignableOrJustIdent = _parseGroupToplevels(
       lexerFlags,
-      parenToken,
+      $tt_parenToken,
       IS_EXPRESSION,
       parens === 1 ? ASSIGN_EXPR_IS_ERROR : ASSIGN_EXPR_IS_OK,
       IS_DELETE_ARG,
@@ -6175,9 +6486,9 @@ function Parser(code, options = {}) {
     // the group parser parses one rhs paren so there may not be any parens left to consume here
     let canBeErrorCase = hasAnyFlag(assignableOrJustIdent, IS_SINGLE_IDENT_WRAP_A | IS_SINGLE_IDENT_WRAP_NA);
     while (--parens > 0) { // this only passes for inner parens
-      let openParenToken = pees.pop();
+      let $tt_openParenToken = pees.pop();
       // `delete ((foo).bar)`, parse a tail then continue parsing parens
-      if (curtok.type !== $PUNC_PAREN_CLOSE) {
+      if (tok_getType() !== $PUNC_PAREN_CLOSE) {
 
         // After closing a paren, this is no longer an issue
         assignable = sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
@@ -6187,32 +6498,32 @@ function Parser(code, options = {}) {
         // `delete ((foo)++)`
         // `delete ((true)++)`       -- (note that this is not `assignable`)
         // `delete ((await x))`      -- runtime error, exception: syntax error in func arg default
-        let nowAssignable = parseValueTail(lexerFlags, openParenToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+        let nowAssignable = parseValueTail(lexerFlags, $tt_openParenToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
         assignable = mergeAssignable(nowAssignable, assignable);
-        assignable = parseExpressionFromOp(lexerFlags, openParenToken, assignable, astProp);
-        if (curtok.type === $PUNC_COMMA) assignable = _parseExpressions(lexerFlags, openParenToken, assignable, astProp);
+        assignable = parseExpressionFromOp(lexerFlags, $tt_openParenToken, assignable, astProp);
+        if (tok_getType() === $PUNC_COMMA) assignable = _parseExpressions(lexerFlags, $tt_openParenToken, assignable, astProp);
         canBeErrorCase = false;
-        if (curtok.type !== $PUNC_PAREN_CLOSE) {
-          return THROW('Expecting at least one more closing paren, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+        if (tok_getType() !== $PUNC_PAREN_CLOSE) {
+          return THROW('Expecting at least one more closing paren, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
         }
       }
       // at least one rhs paren must appear now
       ASSERT_skipDiv($PUNC_PAREN_CLOSE, outerLexerflags);
-      if (curtok.type === $PUNC_EQ_GT) {
+      if (tok_getType() === $PUNC_EQ_GT) {
         // This means the code is deleting an arrow that is wrapped in parentheses
         // The case for deleting an unwrapped arrow is handled elsewhere
         // `delete ((a)) => b)`
         // `delete (((x)) => x)`
         THROW('Arrow is illegal here');
       }
-      if (babelCompat) AST_babelParenthesizesClosed(outerParenToken, astProp);
+      if (babelCompat) AST_babelParenthesizesClosed($tt_outerParenToken, astProp);
     }
-    if (babelCompat) AST_babelParenthesizesClosed(outerParenToken, astProp);
+    if (babelCompat) AST_babelParenthesizesClosed($tt_outerParenToken, astProp);
     ASSERT(hasAllFlags(lexerFlags, LF_NO_ASI), 'should not be allowed to parse asi inside a group');
     lexerFlags = sansFlag(lexerFlags, LF_NO_ASI); // TODO: `(delete (((x))) \n x)` can still not ASI
 
     ASSERT(parens === 0 && pees.length === 1, 'should unwind all the parens', parens, pees.length, pees);
-    if (curtok.type === $PUNC_EQ_GT) {
+    if (tok_getType() === $PUNC_EQ_GT) {
       // This means the code is deleting an arrow that is NOT wrapped in parentheses
       // `delete (x) => b)`
       // `delete (0) => x)`
@@ -6222,10 +6533,14 @@ function Parser(code, options = {}) {
     // this is after the outer most rhs paren. we still have to check whether we can parse a tail (but no op)
     // - `delete (foo).foo`
     // - `delete (foo)++`        -- wait is this even legal?
-    let prevtok = curtok;
-    parseValueTail(lexerFlags, outerParenToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
-    if (curtok === prevtok && canBeErrorCase && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      ASSERT(isIdentToken(possibleIdentToken.type), 'this state is verified through piggies and if it wasnt an ident then this should never be reached', possibleIdentToken);
+    let $tt_prevtok = __oldtok;
+    let $t_prevtok_line = tok_getLine();
+    let $t_prevtok_column = tok_getColumn();
+    let $t_prevtok_start = tok_getStart();
+
+    parseValueTail(lexerFlags, $tt_outerParenToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+    if (tok_getStart() === $tt_prevtok.start && canBeErrorCase && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+      ASSERT(isIdentToken($tt_possibleIdentToken.type), 'this state is verified through piggies and if it wasnt an ident then this should never be reached', $tt_possibleIdentToken);
       // https://tc39.github.io/ecma262/#sec-delete-operator-static-semantics-early-errors
       // strict mode only
       // This is the group-wrapped variant, which still holds the above rule
@@ -6236,8 +6551,8 @@ function Parser(code, options = {}) {
       // [v]: `delete (this);`
       // [x]: `delete (yield);` // (yield expression is not allowed in this position and we're assuming strict mode so can't be a var)
       // [x]: `delete (await);` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==afterIdentToken)
-      // [x]: `delete (super);` // super can't be referenced without a call or property so would be curtok!==afterIdentToken
-      if (possibleIdentToken.type !== $ID_null && possibleIdentToken.type !== $ID_true && possibleIdentToken.type !== $ID_false && possibleIdentToken.type !== $ID_this && possibleIdentToken.type !== $ID_await) { // super edge case so dont care about the slowness
+      // [x]: `delete (super);` // super can't be referenced without a call or property so would be current token !== $tt_afterIdentToken
+      if ($tt_possibleIdentToken.type !== $ID_null && $tt_possibleIdentToken.type !== $ID_true && $tt_possibleIdentToken.type !== $ID_false && $tt_possibleIdentToken.type !== $ID_this && $tt_possibleIdentToken.type !== $ID_await) { // super edge case so dont care about the slowness
         THROW('Bad delete case, can not delete an ident wrapped in parens');
       }
     }
@@ -6251,8 +6566,12 @@ function Parser(code, options = {}) {
     // `delete foo[await x]`
     // `delete foo[yield x]`
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
     // - `delete foo`
     //           ^
     // - `delete foo.bar`
@@ -6264,13 +6583,17 @@ function Parser(code, options = {}) {
     // This is the `delete` _arg_, which may be a keyword. If not, then the next token cannot be a regex.
     skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE);
 
-    let afterIdentToken = curtok; // store to assert whether anything after the ident was parsed
-    let afterIdentTokenNlwas = tok_getNlwas();
+    let $tt_afterIdentToken = __oldtok;
+    let $t_afterIdentToken_line = tok_getLine();
+    let $t_afterIdentToken_column = tok_getColumn();
+    let $t_afterIdentToken_start = tok_getStart();
+ // store to assert whether anything after the ident was parsed
+    let $t_afterIdentTokenNlwas = tok_getNlwas();
 
     // Note: assignable is relevant if it somehow contained an await or yield; TODO: citation needed
-    let assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_ERROR, 'argument');
+    let assignable = parseValueAfterIdent(lexerFlags, $tt_identToken, identCanon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_ERROR, 'argument');
 
-    if (curtok === afterIdentToken && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+    if (tok_getStart() === $tt_afterIdentToken.start && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
       // https://tc39.github.io/ecma262/#sec-delete-operator-static-semantics-early-errors
       // - It is a Syntax Error if the UnaryExpression is contained in strict mode code and the derived UnaryExpression is PrimaryExpression:IdentifierReference .
       //   - Note that IdentifierReference does NOT includes keywords. In particular, that means `null`, `true`, and `false` do not trigger this error.
@@ -6278,7 +6601,7 @@ function Parser(code, options = {}) {
       // (So in strict mode you can't do `delete foo;` and `delete (foo);` and `delete (((foo)));` etc)
 
       // Due to ASI this is a tad difficult to do without AST or even token stream but we can just confirm whether
-      // the object reference to curtok remains the same. In that case only identToken was parsed as the value.
+      // the object reference to curtok remains the same. In that case only $tt_identToken was parsed as the value.
 
       // [x]: `delete foo;`
       // [v]: `delete null;`
@@ -6286,13 +6609,13 @@ function Parser(code, options = {}) {
       // [v]: `delete false;`
       // [v]: `delete this;`
       // [x]: `delete yield;` // (yield expression is not allowed in this position and we're assuming strict mode so can't be a var)
-      // [x]: `delete await;` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==afterIdentToken)
-      // [x]: `delete super;` // super can't be referenced without a call or property so would be curtok!==afterIdentToken
-      if (identToken.type !== $ID_null && identToken.type !== $ID_true && identToken.type !== $ID_false && identToken.type !== $ID_this && identToken.type !== $ID_await) { // super edge case so dont care about the slowness
+      // [x]: `delete await;` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==$tt_afterIdentToken)
+      // [x]: `delete super;` // super can't be referenced without a call or property so would be curtok!==$tt_afterIdentToken
+      if ($tt_identToken.type !== $ID_null && $tt_identToken.type !== $ID_true && $tt_identToken.type !== $ID_false && $tt_identToken.type !== $ID_this && $tt_identToken.type !== $ID_await) { // super edge case so dont care about the slowness
         THROW('Cannot delete an identifier without tail, in strict mode');
       }
     }
-    else if (afterIdentTokenNlwas > 0 && afterIdentToken.type === $PUNC_PAREN_OPEN && identToken.type === $ID_async && curtok.type === $PUNC_EQ_GT && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+    else if ($t_afterIdentTokenNlwas > 0 && $tt_afterIdentToken.type === $PUNC_PAREN_OPEN && $tt_identToken.type === $ID_async && tok_getType() === $PUNC_EQ_GT && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
       // - `delete async \n (...) => x`
       // which is effectively `delete async; () => x;`, which is still an error
       THROW('Cannot delete an identifier without tail, in strict mode');
@@ -6301,23 +6624,23 @@ function Parser(code, options = {}) {
     return assignable;
   }
 
-  function parseLabeledStatementInstead(lexerFlags, scoop, labelSet, identToken, identTokenCanon, fdState, nestedLabels, astProp) {
+  function parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tt_identToken, identCanon, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLabeledStatementInstead.length, 'arg count');
     ASSERT_LABELSET(labelSet);
     ASSERT(nestedLabels === PARENT_NOT_LABEL || nestedLabels instanceof Array, 'nestedLabels should be a list of names of uninterupted label parents');
 
     // This is an exception to the general case where eval and arguments are okay to use as label name. Thanks, spec.
-    if (identToken.type !== $ID_eval && identToken.type !== $ID_arguments) {
-      fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_NONE, lexerFlags);
+    if ($tt_identToken.type !== $ID_eval && $tt_identToken.type !== $ID_arguments) {
+      fatalBindingIdentCheck($tt_identToken, identCanon, BINDING_TYPE_NONE, lexerFlags);
     }
 
     let set = labelSet;
     while (set) {
-      if (set['#' + identTokenCanon]) THROW('Saw the same label twice which is not allowed');
+      if (set['#' + identCanon]) THROW('Saw the same label twice which is not allowed');
       set = set.parentLabels;
     }
     labelSet = wrapLabelSet(labelSet, 'labelled statement');
-    labelSet['#' + identTokenCanon] = true;
+    labelSet['#' + identCanon] = true;
     ASSERT_skipToStatementStart(':', lexerFlags);
 
     if (fdState === FDS_IFELSE) {
@@ -6326,15 +6649,15 @@ function Parser(code, options = {}) {
     }
 
     if (nestedLabels === PARENT_NOT_LABEL) {
-      nestedLabels = [identTokenCanon];
+      nestedLabels = [identCanon];
     } else {
-      nestedLabels[nestedLabels.length] = identTokenCanon;
+      nestedLabels[nestedLabels.length] = identCanon;
     }
 
     // We have already consumed the colon for the label so the next token must start the child-statement of this label
     // Scan forward to see whether we are about to parse a loop statement. If so we can mark nestedLabels for `continue`
-    if (isIdentToken(curtok.type) && (
-      curtok.type === $ID_for || curtok.type === $ID_while || curtok.type === $ID_do
+    if (isIdentToken(tok_getType()) && (
+      tok_getType() === $ID_for || tok_getType() === $ID_while || tok_getType() === $ID_do
     )) {
       // Either the next statement is invalid or it will be a valid iteration statement
       labelSet.iterationLabels = nestedLabels; // When scanning labels for `continue`, only visit these arrays
@@ -6342,8 +6665,8 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'LabeledStatement',
-      loc: AST_getBaseLoc(identToken),
-      label: AST_getIdentNode(identToken, identTokenCanon),
+      loc: AST_getBaseLoc($tt_identToken),
+      label: AST_getIdentNode($tt_identToken, identCanon),
       body: undefined,
     });
     parseNestedBodyPart(lexerFlags, scoop, labelSet, IS_LABELLED, fdState, nestedLabels, 'body');
@@ -6354,7 +6677,7 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parsePunctuatorStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    if (curtok.type === $PUNC_CURLY_OPEN) {
+    if (tok_getType() === $PUNC_CURLY_OPEN) {
       let blockScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_BLOCK, 'parsePunctuatorStatement.block');
       ASSERT(blockScoop._funcName = '(block has no name)');
       // TODO: does block not have its own (fresh) label set?
@@ -6362,14 +6685,14 @@ function Parser(code, options = {}) {
       return;
     }
 
-    if (curtok.type === $PUNC_SEMI) {
+    if (tok_getType() === $PUNC_SEMI) {
       parseEmptyStatement(lexerFlags, astProp);
       return;
     }
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(curtok),
+      loc: AST_getOpenLoc(tok_getLine(), tok_getColumn(), tok_getStart()),
       expression: undefined,
     });
     // Note: an arrow would create a new scope and there is no other way to introduce a new binding from here on out
@@ -6379,11 +6702,15 @@ function Parser(code, options = {}) {
   }
 
   function parseEmptyStatement(lexerFlags, astProp) {
-    let semiToken = curtok;
+    let $tt_semiToken = __oldtok;
+    let $t_semiToken_line = tok_getLine();
+    let $t_semiToken_column = tok_getColumn();
+    let $t_semiToken_start = tok_getStart();
+
     ASSERT_skipToStatementStart(';', lexerFlags);
     AST_setNode(astProp, {
       type: 'EmptyStatement',
-      loc: AST_getClosedLoc(semiToken),
+      loc: AST_getClosedLoc($tt_semiToken.line, $tt_semiToken.column, $tt_semiToken.start),
     });
   }
 
@@ -6391,13 +6718,17 @@ function Parser(code, options = {}) {
     ASSERT(arguments.length === parseWithStatement.length, 'arg count');
     ASSERT_LABELSET(labelSet);
 
-    if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) THROW('The `with` statement is not allowed in strict mode');
+    let $tt_withToken = __oldtok;
+    let $t_withToken_line = tok_getLine();
+    let $t_withToken_column = tok_getColumn();
+    let $t_withToken_start = tok_getStart();
 
-    let withToken = curtok;
+    if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) THROW_TOKEN2('The `with` statement is not allowed in strict mode', $t_withToken_start, $t_withToken_start + 1);
+
     ASSERT_skipToParenOpenOrDie($ID_with, lexerFlags);
     AST_open(astProp, {
       type: 'WithStatement',
-      loc: AST_getBaseLoc(withToken),
+      loc: AST_getBaseLoc($tt_withToken),
       object: undefined,
       body: undefined,
     });
@@ -6406,7 +6737,7 @@ function Parser(code, options = {}) {
     AST_close('WithStatement');
   }
 
-  function parseAnyVarDeclaration(lexerFlags, bindingToken, scoop, bindingType, bindingOrigin, exportedNames, exportedBindings, astProp) {
+  function parseAnyVarDeclaration(lexerFlags, $tt_bindingToken, scoop, bindingType, bindingOrigin, exportedNames, exportedBindings, astProp) {
     ASSERT(parseAnyVarDeclaration.length === arguments.length, 'arg count');
     ASSERT(bindingType === BINDING_TYPE_VAR || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_CONST, 'only three kinds here');
     ASSERT_BINDING_ORIGIN(bindingOrigin);
@@ -6418,12 +6749,12 @@ function Parser(code, options = {}) {
     // - `for (let x of y);`
     //             ^
 
-    if (!isIdentToken(curtok.type) && curtok.type !== $PUNC_BRACKET_OPEN && curtok.type !== $PUNC_CURLY_OPEN) THROW('Expected identifier, or array/object destructuring, next token is: ' + curtok);
+    if (!isIdentToken(tok_getType()) && tok_getType() !== $PUNC_BRACKET_OPEN && tok_getType() !== $PUNC_CURLY_OPEN) THROW('Expected identifier, or array/object destructuring');
     let keyword = bindingType === BINDING_TYPE_VAR ? 'var' : bindingType === BINDING_TYPE_LET ? 'let' : 'const';
 
     AST_open(astProp, {
       type: 'VariableDeclaration',
-      loc: AST_getBaseLoc(bindingToken),
+      loc: AST_getBaseLoc($tt_bindingToken),
       kind: keyword,
       declarations: [],
     });
@@ -6436,9 +6767,9 @@ function Parser(code, options = {}) {
     AST_close(['VariableDeclaration', 'ExpressionStatement']); //  expr in case of `let` in sloppy
   }
 
-  function parseBindings(lexerFlags, scoop, bindingType, bindingOrigin, defaultOptions, setToken, exportedNames, exportedBindings, astProp) {
+  function parseBindings(lexerFlags, scoop, bindingType, bindingOrigin, defaultOptions, $tt_setToken, exportedNames, exportedBindings, astProp) {
     ASSERT(parseBindings.length === arguments.length, 'expecting all args');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
     ASSERT_BINDING_ORIGIN(bindingOrigin);
     ASSERT_BINDING_TYPE(bindingType);
 
@@ -6456,14 +6787,18 @@ function Parser(code, options = {}) {
     // TODO: if bindingType=let then also consider it could be a var name
     let many = 0;
     let inited = false;
-    let startWasObjectOrArray = curtok.type === $PUNC_BRACKET_OPEN || curtok.type === $PUNC_CURLY_OPEN;
+    let startWasObjectOrArray = tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN;
     let paramsSimple = PARAMS_ALL_SIMPLE;
     do {
       ++many;
-      let bindingStartToken = curtok;
-      let wasRest = bindingStartToken.type === $PUNC_DOT_DOT_DOT;
+      let $tt_bindingStartToken = __oldtok;
+      let $t_bindingStartToken_line = tok_getLine();
+      let $t_bindingStartToken_column = tok_getColumn();
+      let $t_bindingStartToken_start = tok_getStart();
+
+      let wasRest = $tt_bindingStartToken.type === $PUNC_DOT_DOT_DOT;
       // ident or destructuring of object/array or rest arg
-      let paramSimple = parseBinding(lexerFlags, bindingStartToken, scoop, bindingType, bindingOrigin, defaultOptions, exportedNames, exportedBindings, astProp);
+      let paramSimple = parseBinding(lexerFlags, $tt_bindingStartToken, scoop, bindingType, bindingOrigin, defaultOptions, exportedNames, exportedBindings, astProp);
       ASSERT([PARAM_UNDETERMINED, PARAM_WAS_SIMPLE, PARAM_WAS_NON_STRICT_SIMPLE, PARAM_WAS_COMPLEX, PARAM_WAS_COMPLEX_HAD_INIT].includes(paramSimple), 'paramSimple enum', paramSimple);
       if (paramSimple === PARAM_WAS_COMPLEX_HAD_INIT) {
         inited = true;
@@ -6478,12 +6813,12 @@ function Parser(code, options = {}) {
         }
       }
       if (wasRest) {
-        ASSERT(curtok.type === $PUNC_PAREN_CLOSE, 'the "rest is last and no init" check should happen elsewhere and before this point');
+        ASSERT(tok_getType() === $PUNC_PAREN_CLOSE, 'the "rest is last and no init" check should happen elsewhere and before this point');
         break;
       }
-      if (curtok.type !== $PUNC_COMMA) break;
+      if (tok_getType() !== $PUNC_COMMA) break;
       ASSERT_skipToBindingStartGrouped(',', lexerFlags);
-      if (curtok.type === $PUNC_PAREN_CLOSE) {
+      if (tok_getType() === $PUNC_PAREN_CLOSE) {
         // `function f(a,)`
         // (arrows do not go through here)
         if (bindingType === BINDING_TYPE_ARG) {
@@ -6499,10 +6834,10 @@ function Parser(code, options = {}) {
         }
       }
     } while (true);
-    if (many !== 1 && setToken !== UNDEF_SET) {
+    if (many !== 1 && $tt_setToken !== UNDEF_SET) {
       THROW('Setters require exactly one parameter');
     }
-    if (bindingOrigin === FROM_FOR_HEADER && (curtok.type === $ID_in || curtok.type === $ID_of)) {
+    if (bindingOrigin === FROM_FOR_HEADER && (tok_getType() === $ID_in || tok_getType() === $ID_of)) {
       if (many !== 1) {
         THROW('For-in and for-of can only have one binding, found ' + many);
       }
@@ -6518,7 +6853,7 @@ function Parser(code, options = {}) {
         startWasObjectOrArray ||
         options_webCompat === WEB_COMPAT_OFF ||
         bindingType !== BINDING_TYPE_VAR ||
-        curtok.type === $ID_of ||
+        tok_getType() === $ID_of ||
         hasAllFlags(lexerFlags, LF_STRICT_MODE))
       ) {
         THROW('For-in and for-of binding can not have an init');
@@ -6526,13 +6861,13 @@ function Parser(code, options = {}) {
     }
     return paramsSimple;
   }
-  function parseBinding(lexerFlags, bindingStartToken, scoop, bindingType, bindingOrigin, defaultsOption, exportedNames, exportedBindings, astProp) {
+  function parseBinding(lexerFlags, $tt_bindingStartToken, scoop, bindingType, bindingOrigin, defaultsOption, exportedNames, exportedBindings, astProp) {
     // returns whether a binding had an init (necessary to validate for-header bindings)
     ASSERT(arguments.length === parseBinding.length, 'expecting args');
     ASSERT(defaultsOption === ASSIGNMENT_IS_INIT || defaultsOption === ASSIGNMENT_IS_DEFAULT, 'defaultsOption enum');
     ASSERT_BINDING_TYPE(bindingType);
     ASSERT_BINDING_ORIGIN(bindingOrigin);
-    ASSERT(bindingStartToken === curtok);
+    ASSERT($tt_bindingStartToken.start === tok_getStart());
     // note: a "binding pattern" means a var/let/const var declaration with name or destructuring pattern
 
     // [v]: `try {} catch (e) {}`
@@ -6541,12 +6876,16 @@ function Parser(code, options = {}) {
     let mustHaveInit = false;
     let paramSimple = PARAM_UNDETERMINED; // simple if "valid in es5" (list of idents, no inits)
 
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       // - `var foo = bar;`
       //        ^^^
-      let bindingTok = curtok;
+      let $tt_bindingTok = __oldtok;
+      let $t_bindingTok_line = tok_getLine();
+      let $t_bindingTok_column = tok_getColumn();
+      let $t_bindingTok_start = tok_getStart();
+
       let bindingTokCanon = tok_getCanon();
-      fatalBindingIdentCheck(bindingTok, bindingTokCanon, bindingType, lexerFlags);
+      fatalBindingIdentCheck($tt_bindingTok, bindingTokCanon, bindingType, lexerFlags);
       if (bindingType === BINDING_TYPE_CATCH_OTHER) {
         // See details of specific catch var exceptions in the catch parser
         bindingType = BINDING_TYPE_CATCH_IDENT;
@@ -6554,15 +6893,19 @@ function Parser(code, options = {}) {
       SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, bindingTokCanon);
       addNameToExports(exportedNames, bindingTokCanon);
       addBindingToExports(exportedBindings, bindingTokCanon);
-      let identToken = curtok;
-      let identTokenCanon = tok_getCanon();
+      let $tt_identToken = __oldtok;
+      let $t_identToken_line = tok_getLine();
+      let $t_identToken_column = tok_getColumn();
+      let $t_identToken_start = tok_getStart();
+
+      let identCanon = tok_getCanon();
       // note: if this is the end of the var decl and there is no semi the next line can start with a regex
-      ASSERT_skipRex(bindingTok._str, lexerFlags); // next is `=` or `,` or `;` or asi-continuation
-      AST_setIdent(astProp, identToken, identTokenCanon);
+      ASSERT_skipRex($tt_bindingTok._str, lexerFlags); // next is `=` or `,` or `;` or asi-continuation
+      AST_setIdent(astProp, $tt_identToken, identCanon);
 
       if (
         hasNoFlag(lexerFlags, LF_STRICT_MODE) &&
-        nonFatalBindingIdentCheck(bindingTok, bindingTokCanon, bindingType, lexerFlags | LF_STRICT_MODE) !== ''
+        nonFatalBindingIdentCheck($tt_bindingTok, bindingTokCanon, bindingType, lexerFlags | LF_STRICT_MODE) !== ''
       ) {
         // In this case we are in sloppy mode but the name would fail in strict mode. It is still possible for this
         // function to become strict mode if it turns out it has the "use strict" flag. So check for that, and throw an
@@ -6575,7 +6918,7 @@ function Parser(code, options = {}) {
         paramSimple = PARAM_WAS_SIMPLE; // could still be complex if init
       }
     }
-    else if (curtok.type === $PUNC_CURLY_OPEN) {
+    else if (tok_getType() === $PUNC_CURLY_OPEN) {
       ASSERT(bindingType !== BINDING_TYPE_NONE, 'must bind as something'); // TODO: why only this branch?
       let destructible = parseObjectOuter(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
       verifyDestructibleForBinding(destructible, bindingType);
@@ -6584,13 +6927,13 @@ function Parser(code, options = {}) {
       // note: throw for `const {};` and `for (const {};;);` but not `for (const {} in obj);`
       if (
         (bindingOrigin !== FROM_CATCH) &&
-        (bindingOrigin !== FROM_FOR_HEADER || (curtok.type !== $ID_in && curtok.type !== $ID_of)) &&
+        (bindingOrigin !== FROM_FOR_HEADER || (tok_getType() !== $ID_in && tok_getType() !== $ID_of)) &&
         (bindingType === BINDING_TYPE_CONST || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_VAR)
       ) {
         mustHaveInit = true;
       }
     }
-    else if (curtok.type === $PUNC_BRACKET_OPEN) {
+    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
       let destructible = parseArrayOuter(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
       verifyDestructibleForBinding(destructible, bindingType);
       AST_destruct(astProp);
@@ -6598,23 +6941,23 @@ function Parser(code, options = {}) {
       // note: throw for `const {};` and `for (const {};;);` but not `for (const {} in obj);`
       if (
         (bindingOrigin !== FROM_CATCH) &&
-        (bindingOrigin !== FROM_FOR_HEADER || (curtok.type !== $ID_in && curtok.type !== $ID_of)) &&
+        (bindingOrigin !== FROM_FOR_HEADER || (tok_getType() !== $ID_in && tok_getType() !== $ID_of)) &&
         (bindingType === BINDING_TYPE_CONST || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_VAR)
       ) {
         mustHaveInit = true;
       }
     }
-    else if (curtok.type === $PUNC_DOT_DOT_DOT) {
+    else if (tok_getType() === $PUNC_DOT_DOT_DOT) {
       if (bindingType !== BINDING_TYPE_ARG) THROW('Rest is not allowed as toplevel for var/let/const declaration binding');
       let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_PAREN_CLOSE, bindingType, UNDEF_ASYNC, exportedNames, exportedBindings, astProp);
       verifyDestructibleForBinding(subDestruct, bindingType);
       paramSimple = PARAM_WAS_COMPLEX;
     }
-    else if (curtok.type !== $PUNC_PAREN_CLOSE) {
+    else if (tok_getType() !== $PUNC_PAREN_CLOSE) {
       THROW('Expected to parse a(nother) binding but none was found');
     }
 
-    if (curtok.type === $PUNC_EQ) {
+    if (tok_getType() === $PUNC_EQ) {
       if (bindingOrigin === FROM_CATCH) THROW('Catch clause can not have init / default');
       ASSERT_skipToExpressionStart('=', lexerFlags); // x(foo=/bar/){}
       paramSimple = PARAM_WAS_COMPLEX_HAD_INIT; // if this is an arg the arg is not "simple"
@@ -6625,7 +6968,7 @@ function Parser(code, options = {}) {
         // - `try {} catch ([a] = b) {}`
         AST_wrapClosedCustom(astProp, {
           type: 'AssignmentPattern',
-          loc: AST_getBaseLoc(bindingStartToken),
+          loc: AST_getBaseLoc($tt_bindingStartToken),
           left: undefined,
           right: undefined,
         }, 'left');
@@ -6636,7 +6979,7 @@ function Parser(code, options = {}) {
         ASSERT(defaultsOption === ASSIGNMENT_IS_INIT, 'two options');
         AST_wrapClosedCustom('declarations', {
           type: 'VariableDeclarator',
-          loc: AST_getBaseLoc(bindingStartToken),
+          loc: AST_getBaseLoc($tt_bindingStartToken),
           id: undefined,
           init: undefined,
         }, 'id');
@@ -6647,12 +6990,12 @@ function Parser(code, options = {}) {
     else if (mustHaveInit) {
       THROW('Declaration destructuring must have init');
     }
-    else if (bindingType === BINDING_TYPE_CONST && (bindingOrigin !== FROM_FOR_HEADER || (curtok.type === $PUNC_SEMI || curtok.type === $PUNC_COMMA))) {
+    else if (bindingType === BINDING_TYPE_CONST && (bindingOrigin !== FROM_FOR_HEADER || (tok_getType() === $PUNC_SEMI || tok_getType() === $PUNC_COMMA))) {
       // only exception is a for-header where the next token is `in` or `of` instead of `=`
       THROW('Constants must be initialized');
     }
     else if (defaultsOption === ASSIGNMENT_IS_INIT) {
-      if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
         if (bindingOrigin === FROM_FOR_HEADER) {
           // [x] `for (var x \n /foo/;;);`
           THROW('Illegal regex after binding declaration in `for` header');
@@ -6662,7 +7005,7 @@ function Parser(code, options = {}) {
       }
       AST_setNodeDangerously('declarations', { // we will clobber the current value
         type: 'VariableDeclarator',
-        loc: AST_getClosedLoc(bindingStartToken),
+        loc: AST_getClosedLoc($tt_bindingStartToken.line, $tt_bindingStartToken.column, $tt_bindingStartToken.start),
         id: AST_popNode('declarations'),
         init: null,
       });
@@ -6676,17 +7019,17 @@ function Parser(code, options = {}) {
     return paramSimple;
   }
 
-  function fatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags) {
+  function fatalBindingIdentCheck($tt_identToken, identCanon, bindingType, lexerFlags) {
     ASSERT(fatalBindingIdentCheck.length === arguments.length, 'arg count');
-    ASSERT(isIdentToken(identToken.type), 'ident check on ident tokens ok', identToken);
+    ASSERT(isIdentToken($tt_identToken.type), 'ident check on ident tokens ok', $tt_identToken);
     ASSERT_BINDING_TYPE(bindingType);
 
-    let str = nonFatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags);
-    if (str !== '') THROW_TOKEN(`Cannot use this name (${tok_sliceInput(identToken.start, identToken.stop)}) as a variable name because: ${str}`, identToken);
+    let str = nonFatalBindingIdentCheck($tt_identToken, identCanon, bindingType, lexerFlags);
+    if (str !== '') THROW_TOKEN(`Cannot use this name (${tok_sliceInput($tt_identToken.start, $tt_identToken.stop)}) as a variable name because: ${str}`, $tt_identToken.start, $tt_identToken.stop);
   }
-  function nonFatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags) {
+  function nonFatalBindingIdentCheck($tt_identToken, identCanon, bindingType, lexerFlags) {
     ASSERT(nonFatalBindingIdentCheck.length === arguments.length, 'expecting all args');
-    ASSERT(isIdentToken(identToken.type), 'ident check on ident tokens ok', identToken);
+    ASSERT(isIdentToken($tt_identToken.type), 'ident check on ident tokens ok', $tt_identToken);
     ASSERT_BINDING_TYPE(bindingType);
 
     // TODO: this check can be drastically improved.
@@ -6695,22 +7038,22 @@ function Parser(code, options = {}) {
 
     // If an ident has a unicode escape then its .canon must be shorter than its .str
     // If the lens are equal then the .type also applies to the .canon and we can skip slow checks for that edge case
-    if ((identToken.stop - identToken.start) === identTokenCanon.length) {
-      if (identToken.type === $IDENT) return ''; // If the type is non-special (then so is the .canon) then no error
-      return nonFatalBindingIdentCheckByEnum(lexerFlags, identToken, identTokenCanon, bindingType);
+    if (($tt_identToken.stop - $tt_identToken.start) === identCanon.length) {
+      if ($tt_identToken.type === $IDENT) return ''; // If the type is non-special (then so is the .canon) then no error
+      return nonFatalBindingIdentCheckByEnum(lexerFlags, $tt_identToken, identCanon, bindingType);
     }
     // This ident had an escape. This is a pretty exceptional situation so I'm okay with the slow path.
-    return nonFatalBindingIdentCheckByString(lexerFlags, identToken, identTokenCanon, bindingType);
+    return nonFatalBindingIdentCheckByString(lexerFlags, $tt_identToken, identCanon, bindingType);
   }
-  function nonFatalBindingIdentCheckByEnum(lexerFlags, identToken, identTokenCanon, bindingType) {
+  function nonFatalBindingIdentCheckByEnum(lexerFlags, $tt_identToken, identCanon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByEnum.length === arguments.length, 'arg count');
-    ASSERT(identToken._str === identTokenCanon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
+    ASSERT($tt_identToken._str === identCanon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
 
     // This doesn't get hit very often as there's a simple ==$IDENT check that takes the brink
     // of these keyword checks. Since most cases that would fall through would lead to an error, it's only
     // idents like `from` or `of` which may lead to this point. Those don't appear very frequently :)
     // TODO: This switch could be reduced through another ident type flag. Not convinced that's worth anything.
-    switch (identToken.type) {
+    switch ($tt_identToken.type) {
       // keywords
       case $ID_break:
       case $ID_case:
@@ -6771,7 +7114,7 @@ function Parser(code, options = {}) {
       // `eval` and `arguments` edge case paths
       case $ID_eval:
       case $ID_arguments:
-        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identTokenCanon +'` in strict mode';
+        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identCanon +'` in strict mode';
         return '';
 
       // strict mode only future reserved keyword:
@@ -6812,11 +7155,11 @@ function Parser(code, options = {}) {
     // valid binding name
     return '';
   }
-  function nonFatalBindingIdentCheckByString(lexerFlags, identToken, identTokenCanon, bindingType) {
+  function nonFatalBindingIdentCheckByString(lexerFlags, $tt_identToken, identCanon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByString.length === arguments.length, 'arg count');
-    ASSERT(identToken._str !== identTokenCanon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
+    ASSERT($tt_identToken._str !== identCanon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
 
-    switch (identTokenCanon) {
+    switch (identCanon) {
       // keywords
       case 'break':
       case 'case':
@@ -6877,7 +7220,7 @@ function Parser(code, options = {}) {
       // `eval` and `arguments` edge case paths
       case 'eval':
       case 'arguments':
-        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identTokenCanon +'` in strict mode';
+        if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) return 'Cannot create a binding named `'+ identCanon +'` in strict mode';
         return '';
 
       // strict mode only future reserved keyword:
@@ -6927,31 +7270,35 @@ function Parser(code, options = {}) {
     ASSERT(parseExpression.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astProp string');
 
-    let startToken = curtok;
+    let $tt_startToken = __oldtok;
+    let $t_startToken_line = tok_getLine();
+    let $t_startToken_column = tok_getColumn();
+    let $t_startToken_start = tok_getStart();
+
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
-    return parseExpressionFromOp(lexerFlags, startToken, assignable, astProp);
+    return parseExpressionFromOp(lexerFlags, $tt_startToken, assignable, astProp);
   }
-  function parseExpressionAfterLiteral(lexerFlags, literalToken, astProp) {
+  function parseExpressionAfterLiteral(lexerFlags, $tt_literalToken, astProp) {
     ASSERT(parseExpressionAfterLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
 
     // assume we just parsed and skipped a literal (string/number/regex/array/object)
-    let assignable = parseValueTail(lexerFlags, literalToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
-    parseExpressionFromOp(lexerFlags, literalToken, assignable, astProp);
+    let assignable = parseValueTail(lexerFlags, $tt_literalToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
+    parseExpressionFromOp(lexerFlags, $tt_literalToken, assignable, astProp);
   }
-  function parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, astProp) {
+  function parseExpressionAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, astProp) {
     ASSERT(parseExpressionAfterIdent.length === arguments.length, 'arg count');
     ASSERT_BINDING_TYPE(bindingType);
 
-    let assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
+    let assignable = parseValueAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
     ASSERT(typeof assignable === 'number', 'assignanum', assignable);
-    assignable = parseExpressionFromOp(lexerFlags, identToken, assignable, astProp);
+    assignable = parseExpressionFromOp(lexerFlags, $tt_identToken, assignable, astProp);
     ASSERT(typeof assignable === 'number', 'assignanum', assignable);
     return assignable;
   }
-  function parseExpressionAfterAsyncAsVarName(lexerFlags, stmtOrExpr, asyncToken, asyncTokenCanon, isNewArg, allowAssignment, astProp) {
+  function parseExpressionAfterAsyncAsVarName(lexerFlags, stmtOrExpr, $tt_asyncToken, asyncCanon, isNewArg, allowAssignment, astProp) {
     ASSERT(arguments.length === parseExpressionAfterAsyncAsVarName.length, 'arg count');
-    ASSERT(asyncToken !== UNDEF_ASYNC && asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken !== UNDEF_ASYNC && $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // This token named "async" has already been verified not to be a bunch of things.
@@ -6960,25 +7307,25 @@ function Parser(code, options = {}) {
     if (stmtOrExpr === IS_STATEMENT) {
       AST_open(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getBaseLoc(asyncToken),
+        loc: AST_getBaseLoc($tt_asyncToken),
         expression: undefined,
       });
       astProp = 'expression'
     }
 
     let assignable = NOT_ASSIGNABLE;
-    if (curtok.type === $PUNC_EQ_GT) {
+    if (tok_getType() === $PUNC_EQ_GT) {
       // Note: param name is `async` and there is nothing else so args guaranteed to be simple
-      assignable |= parseArrowParenlessFromPunc(lexerFlags, asyncToken, asyncToken, asyncTokenCanon, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
+      assignable |= parseArrowParenlessFromPunc(lexerFlags, $tt_asyncToken, $tt_asyncToken, asyncCanon, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
     } else {
-      assignable = parseIdentOrParenlessArrow(lexerFlags, asyncToken, asyncTokenCanon, IS_ASSIGNABLE, allowAssignment, astProp);
-      assignable = parseValueTail(lexerFlags, asyncToken, assignable, isNewArg, NOT_LHSE, astProp);
+      assignable = parseIdentOrParenlessArrow(lexerFlags, $tt_asyncToken, asyncCanon, IS_ASSIGNABLE, allowAssignment, astProp);
+      assignable = parseValueTail(lexerFlags, $tt_asyncToken, assignable, isNewArg, NOT_LHSE, astProp);
       if (stmtOrExpr === IS_STATEMENT) {
         // in expressions operator precedence is handled elsewhere. in statements this is the start,
-        assignable = parseExpressionFromOp(lexerFlags, asyncToken, assignable, astProp);
-        if (curtok.type === $PUNC_COMMA) {
+        assignable = parseExpressionFromOp(lexerFlags, $tt_asyncToken, assignable, astProp);
+        if (tok_getType() === $PUNC_COMMA) {
           // - `async, b`
-          _parseExpressions(lexerFlags, asyncToken, NOT_ASSIGNABLE, astProp);
+          _parseExpressions(lexerFlags, $tt_asyncToken, NOT_ASSIGNABLE, astProp);
         }
       }
     }
@@ -6990,13 +7337,13 @@ function Parser(code, options = {}) {
     }
     return assignable;
   }
-  function parseParenlessArrowAfterAsync(lexerFlags, fromStmtOrExpr, allowAssignment, asyncToken, astProp) {
+  function parseParenlessArrowAfterAsync(lexerFlags, fromStmtOrExpr, allowAssignment, $tt_asyncToken, astProp) {
     ASSERT(parseParenlessArrowAfterAsync.length === arguments.length, 'arg count');
-    ASSERT(curtok.type !== $ID_function, '(Function and newline have already been asserted)');
+    ASSERT(tok_getType() !== $ID_function, '(Function and newline have already been asserted)');
     ASSERT(tok_getNlwas() === false, '(Function and newline have already been asserted)');
-    ASSERT(isIdentToken(curtok.type), 'dont have to skip the ident to assert it having to be an arrow');
+    ASSERT(isIdentToken(tok_getType()), 'dont have to skip the ident to assert it having to be an arrow');
     ASSERT_ASSIGN_EXPR(allowAssignment);
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
 
     // We must parse an async arrow without parens now. We still have to validate the arg name too.
     // - `async foo => foo`
@@ -7010,31 +7357,35 @@ function Parser(code, options = {}) {
     if (fromStmtOrExpr === IS_STATEMENT) {
       AST_open(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getBaseLoc(asyncToken),
+        loc: AST_getBaseLoc($tt_asyncToken),
         expression: undefined,
       });
       astProp = 'expression'
     }
 
-    if (curtok.type === $ID_await) {
+    if (tok_getType() === $ID_await) {
       // - `async await => {}`
       THROW('Cannot use `await` as an arg name with async arrows');
     }
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
     let isSimple = PARAMS_ALL_SIMPLE;
     // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
-    if (isStrictOnlyKeyword(identToken, identTokenCanon)) {
+    if (isStrictOnlyKeyword($tt_identToken, identCanon)) {
       // - `async eval => {}`
       // - `async eval => {"use strict"}`
       // - `async package => {}`
       // - `async package => {"use strict"}`
       isSimple = PARAMS_SOME_NONSTRICT;
     }
-    ASSERT_skipToArrowOrDie($G_IDENT, lexerFlags); // this was `async <curtok>` and curtok is not a keyword
+    ASSERT_skipToArrowOrDie($G_IDENT, lexerFlags); // this was `async <currtok>` and current token is not a keyword
 
-    let assignable = parseArrowParenlessFromPunc(lexerFlags, asyncToken, identToken, identTokenCanon, allowAssignment, isSimple, asyncToken, astProp);
+    let assignable = parseArrowParenlessFromPunc(lexerFlags, $tt_asyncToken, $tt_identToken, identCanon, allowAssignment, isSimple, $tt_asyncToken, astProp);
 
     if (fromStmtOrExpr === IS_STATEMENT) {
       parseSemiOrAsi(lexerFlags); // this is not a func decl!
@@ -7043,16 +7394,16 @@ function Parser(code, options = {}) {
 
     return assignable;
   }
-  function isStrictOnlyKeyword(identToken, identTokenCanon) {
+  function isStrictOnlyKeyword($tt_identToken, identCanon) {
     ASSERT(isStrictOnlyKeyword.length === arguments.length, 'arg count');
 
-    if (identTokenCanon.length === (identToken.stop - identToken.start)) {
-      return isStrictOnlyKeywordByEnum(identToken);
+    if (identCanon.length === ($tt_identToken.stop - $tt_identToken.start)) {
+      return isStrictOnlyKeywordByEnum($tt_identToken);
     }
-    return isStrictOnlyKeywordByString(identTokenCanon);
+    return isStrictOnlyKeywordByString(identCanon);
   }
-  function isStrictOnlyKeywordByEnum(identToken) {
-    switch (identToken.type) {
+  function isStrictOnlyKeywordByEnum($tt_identToken) {
+    switch ($tt_identToken.type) {
       case $ID_eval:
       case $ID_arguments:
       case $ID_implements:
@@ -7068,9 +7419,9 @@ function Parser(code, options = {}) {
     }
     return false;
   }
-  function isStrictOnlyKeywordByString(identTokenCanon) {
+  function isStrictOnlyKeywordByString(identCanon) {
     // Note: check canon because in strict these are keywords and they are not allowed to have escapes; so treat same
-    switch (identTokenCanon) {
+    switch (identCanon) {
       case 'eval':
       case 'arguments':
       case 'implements':
@@ -7086,35 +7437,40 @@ function Parser(code, options = {}) {
     }
     return false
   }
-  function parseExpressionFromOp(lexerFlags, firstExprToken, assignable, astProp) {
+  function parseExpressionFromOp(lexerFlags, $tt_firstExprToken, assignable, astProp) {
     ASSERT(parseExpressionFromOp.length === arguments.length, 'arg count');
     ASSERT(typeof assignable === 'number', 'assignable num');
 
-    if (isCompoundAssignment(curtok.type)) {
+    if (isCompoundAssignment(tok_getType())) {
       if (notAssignable(assignable)) {
-        THROW('Cannot assign to lhs (starting with `' + tok_sliceInput(firstExprToken.start, firstExprToken.stop) + '`) because it is not a valid assignment target');
+        THROW('Cannot assign to lhs (starting with `' + tok_sliceInput($tt_firstExprToken.start, $tt_firstExprToken.stop) + '`) because it is not a valid assignment target');
       }
-      assignable = parseExpressionFromAssignmentOp(lexerFlags, firstExprToken, assignable, astProp);
+      assignable = parseExpressionFromAssignmentOp(lexerFlags, $tt_firstExprToken, assignable, astProp);
     } else {
-      assignable = parseExpressionFromBinaryOp(lexerFlags, firstExprToken, assignable, astProp)
+      assignable = parseExpressionFromBinaryOp(lexerFlags, $tt_firstExprToken, assignable, astProp)
     }
 
     return assignable;
   }
-  function parseExpressionFromAssignmentOp(lexerFlags, firstAssignmentToken, lhsAssignable, astProp) {
+  function parseExpressionFromAssignmentOp(lexerFlags, $tt_firstAssignmentToken, lhsAssignable, astProp) {
     ASSERT(parseExpressionFromAssignmentOp.length === arguments.length, 'arg count');
 
-    AST_convertArrayToPattern(curtok, astProp)
+    let $tt_eqToken = __oldtok;
+    let $t_eqToken_line = tok_getLine();
+    let $t_eqToken_column = tok_getColumn();
+    let $t_eqToken_start = tok_getStart();
+
+    AST_convertArrayToPattern($tt_eqToken, astProp)
 
     // Note: assignment to object/array is caught elsewhere
     AST_wrapClosedCustom(astProp, {
       type: 'AssignmentExpression',
-      loc: AST_getBaseLoc(firstAssignmentToken),
+      loc: AST_getBaseLoc($tt_firstAssignmentToken),
       left: undefined,
-      operator: tok_sliceInput(curtok.start, curtok.stop),
+      operator: tok_sliceInput(tok_getStart(), tok_getStop()),
       right: undefined,
     }, 'left');
-    ASSERT_skipToExpressionStart(curtok._str, lexerFlags);
+    skipToExpressionStart(lexerFlags);
 
     let rhsAssignable = parseExpression(lexerFlags, 'right');
     AST_close('AssignmentExpression');
@@ -7124,63 +7480,71 @@ function Parser(code, options = {}) {
     // - `a = b = x`
     // Reset assignability because further assignments should be parsed immediately and since this will now never
     // become a "simple assignment target", for all further intentions and purposes this won't be assigned to.
-    ASSERT(curtok.type !== $PUNC_EQ);
+    ASSERT(tok_getType() !== $PUNC_EQ);
     return setNotAssignable(mergeAssignable(rhsAssignable, lhsAssignable));
   }
-  function parseExpressionFromBinaryOp(lexerFlags, firstExprToken, assignable, astProp) {
+  function parseExpressionFromBinaryOp(lexerFlags, $tt_firstExprToken, assignable, astProp) {
     ASSERT(parseExpressionFromBinaryOp.length === arguments.length, 'arg count');
 
     if (hasAllFlags(assignable, PIGGY_BACK_WAS_ARROW)) return assignable;
 
     let first = true;
-    while (isNonAssignBinOp(curtok.type, lexerFlags) || curtok.type === $PUNC_QMARK) {
-      if (curtok.type === $PUNC_QMARK) {
-        let nowAssignable = parseExpressionFromTernaryOp(lexerFlags, firstExprToken, astProp);
+    while (isNonAssignBinOp(tok_getType(), lexerFlags) || tok_getType() === $PUNC_QMARK) {
+      if (tok_getType() === $PUNC_QMARK) {
+        let nowAssignable = parseExpressionFromTernaryOp(lexerFlags, $tt_firstExprToken, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
       } else {
-        let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, firstExprToken, astProp);
+        let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tt_firstExprToken, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
       }
 
       // note: this is a nice error message for `5+5=10`
-      if (curtok.type === $PUNC_EQ) {
+      if (tok_getType() === $PUNC_EQ) {
         THROW('Cannot assign a value to non-assignable value');
       }
 
       first = false;
     }
-    if (isCompoundAssignment(curtok.type)) {
+    if (isCompoundAssignment(tok_getType())) {
       // [x]: `[]=n/f>>=v`
       THROW('Can not have an assignment after a non-assignment operator');
     }
     return assignable;
   }
-  function parseExpressionFromBinaryOpOnlyStronger(lexerFlags, exprStartToken, astProp) {
+  function parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tt_exprStartToken, astProp) {
     ASSERT(parseExpressionFromBinaryOpOnlyStronger.length === arguments.length, 'arg count');
     // parseBinary
     // Now parsing the rhs (b) after an operator
     // - `a + b`
     // - `a instanceof b`
     // - `a ** b`
-    let opToken = curtok;
-    let opType = opToken.type;
+    let $tt_opToken = __oldtok;
+    let $t_opToken_line = tok_getLine();
+    let $t_opToken_column = tok_getColumn();
+    let $t_opToken_start = tok_getStart();
+
+    let opType = $tt_opToken.type;
     let AST_nodeName = (opType === $PUNC_AND_AND || opType === $PUNC_OR_OR) ? 'LogicalExpression' : 'BinaryExpression';
     AST_wrapClosedCustom(astProp, {
       type: AST_nodeName,
-      loc: AST_getBaseLoc(exprStartToken),
+      loc: AST_getBaseLoc($tt_exprStartToken),
       left: undefined,
-      operator: tok_sliceInput(opToken.start, opToken.stop),
+      operator: tok_sliceInput($tt_opToken.start, $tt_opToken.stop),
       right: undefined,
     }, 'left');
-    ASSERT_skipToExpressionStart(opToken, lexerFlags);
-    let rightExprStartToken = curtok;
+    ASSERT_skipToExpressionStart($tt_opToken, lexerFlags);
+    let $tt_rightExprStartToken = __oldtok;
+    let $t_rightExprStartToken_line = tok_getLine();
+    let $t_rightExprStartToken_column = tok_getColumn();
+    let $t_rightExprStartToken_start = tok_getStart();
+
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'right');
 
     // If the next op is stronger than this one go deeper now. Only the `**` non-assign binary op also does this
     // for if the previous op was also `**` (and we don't need other checks because it is the strongest binary op).
     // TODO: dedupe the op check which now happens here and at the higher level again
-    while ((isNonAssignBinOp(curtok.type, lexerFlags) && getStrength(curtok) > getStrength(opToken)) || curtok.type === $PUNC_STAR_STAR) {
-      let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, rightExprStartToken,'right');
+    while ((isNonAssignBinOp(tok_getType(), lexerFlags) && getStrength(tok_getType(), tok_getStart()) > getStrength($tt_opToken.type, $tt_opToken.start)) || tok_getType() === $PUNC_STAR_STAR) {
+      let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tt_rightExprStartToken,'right');
       assignable = mergeAssignable(nowAssignable, assignable);
     }
 
@@ -7188,7 +7552,7 @@ function Parser(code, options = {}) {
 
     return assignable;
   }
-  function parseExpressionFromTernaryOp(lexerFlags, firstExprToken, astProp) {
+  function parseExpressionFromTernaryOp(lexerFlags, $tt_firstExprToken, astProp) {
     // parseTernary
     // > LogicalORExpression ? AssignmentExpression[+In] : AssignmentExpression
     // - `a ? b : c`
@@ -7200,7 +7564,7 @@ function Parser(code, options = {}) {
     // - `a ? b : yield c`
     AST_wrapClosedCustom(astProp, {
       type: 'ConditionalExpression',
-      loc: AST_getBaseLoc(firstExprToken),
+      loc: AST_getBaseLoc($tt_firstExprToken),
       test: undefined,
       consequent: undefined,
       alternate: undefined,
@@ -7210,8 +7574,8 @@ function Parser(code, options = {}) {
     // the `in` is allowed between as well because there can be no ambiguity
     // TODO: add testcase where NO_ASI is necessary. Not sure it is but can't determine that it is not. Go fuzzer?
     let midAssignable = parseExpression(sansFlag(lexerFlags, LF_IN_FOR_LHS) | LF_NO_ASI, 'consequent');
-    if (curtok.type !== $PUNC_COLON) {
-      if (curtok.type === $PUNC_COMMA) THROW('Can not use comma inside ternary expressions');
+    if (tok_getType() !== $PUNC_COLON) {
+      if (tok_getType() === $PUNC_COMMA) THROW('Can not use comma inside ternary expressions');
       THROW('Unexpected character inside ternary');
     }
     ASSERT_skipToExpressionStart(':', lexerFlags);
@@ -7221,31 +7585,35 @@ function Parser(code, options = {}) {
     return setNotAssignable(midAssignable | rhsAssignable);
   }
 
-  function parseExpressionsAfterIdent(lexerFlags, identToken, identTokenCanon, astProp) {
+  function parseExpressionsAfterIdent(lexerFlags, $tt_identToken, identCanon, astProp) {
     ASSERT(parseExpressionsAfterIdent.length === arguments.length, 'arg count');
 
-    let assignableForPiggies = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_NONE, astProp)
-    if (curtok.type === $PUNC_COMMA) {
-      assignableForPiggies = _parseExpressions(lexerFlags, identToken, assignableForPiggies, astProp);
+    let assignableForPiggies = parseExpressionAfterIdent(lexerFlags, $tt_identToken, identCanon, BINDING_TYPE_NONE, astProp)
+    if (tok_getType() === $PUNC_COMMA) {
+      assignableForPiggies = _parseExpressions(lexerFlags, $tt_identToken, assignableForPiggies, astProp);
     }
     return assignableForPiggies;
   }
   function parseExpressions(lexerFlags, astProp) {
     ASSERT(arguments.length === parseExpressions.length, 'arg count');
 
-    let startOfFirstExprToken = curtok;
+    let $tt_startOfFirstExprToken = __oldtok;
+    let $t_startOfFirstExprToken_line = tok_getLine();
+    let $t_startOfFirstExprToken_column = tok_getColumn();
+    let $t_startOfFirstExprToken_start = tok_getStart();
+
     let assignableForPiggies = parseExpression(lexerFlags, astProp);
-    if (curtok.type === $PUNC_COMMA) {
-      assignableForPiggies = _parseExpressions(lexerFlags, startOfFirstExprToken, assignableForPiggies, astProp);
+    if (tok_getType() === $PUNC_COMMA) {
+      assignableForPiggies = _parseExpressions(lexerFlags, $tt_startOfFirstExprToken, assignableForPiggies, astProp);
     }
     return assignableForPiggies;
   }
-  function _parseExpressions(lexerFlags, startOfFirstExprToken, assignableForPiggies, astProp) {
+  function _parseExpressions(lexerFlags, $tt_startOfFirstExprToken, assignableForPiggies, astProp) {
     ASSERT(arguments.length === _parseExpressions.length, 'arg count');
-    ASSERT(curtok.type === $PUNC_COMMA, 'confirm at callsite');
+    ASSERT(tok_getType() === $PUNC_COMMA, 'confirm at callsite');
     AST_wrapClosedIntoArrayCustom(astProp, {
       type: 'SequenceExpression',
-      loc: AST_getBaseLoc(startOfFirstExprToken),
+      loc: AST_getBaseLoc($tt_startOfFirstExprToken),
       expressions: undefined,
     }, 'expressions');
     assignableForPiggies = __parseExpressions(lexerFlags, assignableForPiggies, 'expressions');
@@ -7259,7 +7627,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToExpressionStart(',', lexerFlags);
       let nowAssignable = parseExpression(lexerFlags, astProp);
       assignableForPiggies |= nowAssignable; // make sure to propagate the await/yield flags
-    } while (curtok.type === $PUNC_COMMA);
+    } while (tok_getType() === $PUNC_COMMA);
     return setNotAssignable(assignableForPiggies);
   }
 
@@ -7290,21 +7658,21 @@ function Parser(code, options = {}) {
       return true;
     }
 
-    if (curtok.type === $ID_in) {
+    if (tok_getType() === $ID_in) {
       return hasNoFlag(lexerFlags, LF_IN_FOR_LHS);
     }
 
     return true;
   }
 
-  function getStrength(token) {
+  function getStrength(type, offset) {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
     // the spec is super implicit about operator precedent. you can only discover it by tracing the grammar.
     // note: this function doesnt contain all things that have precedent. most of them are also implicitly
     // determined by parsing mechanisms. stuff here is mostly about disambiguating binary ops.
     // (note that unary ops simply don't consume further binary ops AST-wise so they dont appear in this table)
 
-    switch (token.type) {
+    switch (type) {
       case $PUNC_STAR_STAR: return 15;
       case $PUNC_STAR: return 14;
       case $PUNC_DIV: return 14;
@@ -7333,7 +7701,7 @@ function Parser(code, options = {}) {
       case $PUNC_QMARK: return 4;
     }
 
-    THROW('Unknown operator [' + tok_sliceInput(token.start, token.stop) + ']'); // other ops should not be handled by this function. dont think this should be possible in prod (it means lexer allowed a new op)
+    THROW('Unknown operator', offset); // other ops should not be handled by this function. dont think this should be possible in prod (it means lexer allowed a new op)
   }
 
   function parseValue(lexerFlags, allowAssignment, isNewArg, leftHandSideExpression, astProp) {
@@ -7344,30 +7712,38 @@ function Parser(code, options = {}) {
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(typeof astProp === 'string', 'astProp string');
 
-    let startToken = curtok;
+    let $tt_startToken = __oldtok;
+    let $t_startToken_line = tok_getLine();
+    let $t_startToken_column = tok_getColumn();
+    let $t_startToken_start = tok_getStart();
+
     let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MUST, isNewArg, allowAssignment, leftHandSideExpression, astProp);
     // isNewArg is relevant for tail because call parens should be parsed by the new-parser, not call-parser
     // eg. `new foo()` should NOT be `new (foo())` / `(new foo)()` but we do allow `new foo.bar()`
-    return parseValueTail(lexerFlags, startToken, assignable, isNewArg, leftHandSideExpression, astProp);
+    return parseValueTail(lexerFlags, $tt_startToken, assignable, isNewArg, leftHandSideExpression, astProp);
   }
-  function parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, allowAssignment, astProp) {
+  function parseValueAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, allowAssignment, astProp) {
     ASSERT(parseValueAfterIdent.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_BINDING_TYPE(bindingType);
 
     // only parses head+body+tail but STOPS at ops
-    let assignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
-    return parseValueTail(lexerFlags, identToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+    let assignable = parseValueHeadBodyAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
+    return parseValueTail(lexerFlags, $tt_identToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
   function parseYieldValueMaybe(lexerFlags, astProp) {
     ASSERT(parseYieldValueMaybe.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
 
-    let argStartToken = curtok;
+    let $tt_argStartToken = __oldtok;
+    let $t_argStartToken_line = tok_getLine();
+    let $t_argStartToken_column = tok_getColumn();
+    let $t_argStartToken_start = tok_getStart();
+
     let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MAYBE, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
     // TODO: how to properly solve this when there are no tokens? can we even do that? (-> lexer head)
-    if (curtok === argStartToken) return YIELD_WITHOUT_VALUE;
-    assignable = parseValueTail(lexerFlags, argStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+    if (tok_getStart() === $t_argStartToken_start) return YIELD_WITHOUT_VALUE;
+    assignable = parseValueTail(lexerFlags, $tt_argStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
     // I dont think we need to propagate the await/yield state of the arg of a yield expression, do we?
     if (isAssignable(assignable)) return WITH_ASSIGNABLE;
     return WITH_NON_ASSIGNABLE;
@@ -7383,70 +7759,83 @@ function Parser(code, options = {}) {
     // - await expression
 
     // do not include the suffix (property, call, etc)
-    let startToken = curtok;
+    let $tt_startToken = __oldtok;
+    let $t_startToken_line = tok_getLine();
+    let $t_startToken_column = tok_getColumn();
+    let $t_startToken_start = tok_getStart();
+
 
     // return whether the value is assignable (only for regular var names)
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       return parseValueHeadBodyIdent(lexerFlags, isNewArg, BINDING_TYPE_NONE, allowAssignment, leftHandSideExpression, astProp);
     }
 
-    if (isNumberStringRegex(curtok.type)) {
-      let litToken = curtok;
-      let litTokenCanon = tok_getCanon();
+    if (isNumberStringRegex(tok_getType())) {
+      let $tt_litToken = __oldtok;
+      let $t_litToken_line = tok_getLine();
+      let $t_litToken_column = tok_getColumn();
+      let $t_litToken_start = tok_getStart();
+
+      let litCanon = tok_getCanon();
       skipDiv(lexerFlags); // Next can be any binary operator, anything that closes the current context (`}`, `)`, `]`)
-      AST_setLiteral(astProp, litToken, litTokenCanon);
+      AST_setLiteral(astProp, $tt_litToken, litCanon);
       return NOT_ASSIGNABLE;
     }
 
-    if (isTemplateStart(curtok.type)) {
-      parseTickExpression(lexerFlags, curtok, astProp);
+    if (isTemplateStart(tok_getType())) {
+      let $tt_tickToken = __oldtok;
+      let $t_tickToken_line = tok_getLine();
+      let $t_tickToken_column = tok_getColumn();
+      let $t_tickToken_start = tok_getStart();
+
+      parseTickExpression(lexerFlags, $tt_tickToken, astProp);
       return NOT_ASSIGNABLE;
     }
 
-    if (isPunctuatorToken(curtok.type)) {
-      if (curtok.type === $PUNC_CURLY_OPEN) {
+    if (isPunctuatorToken(tok_getType())) {
+      if (tok_getType() === $PUNC_CURLY_OPEN) {
         let skipInit = allowAssignment === ASSIGN_EXPR_IS_OK && leftHandSideExpression === NOT_LHSE && isNewArg === NOT_NEW_ARG ? PARSE_INIT : SKIP_INIT;
         let wasDestruct = parseObjectOuter(lexerFlags, DO_NOT_BIND, BINDING_TYPE_NONE, skipInit, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         return _parseValueHeadBodyAfterObjArr(wasDestruct);
       }
 
-      if (curtok.type === $PUNC_BRACKET_OPEN) {
+      if (tok_getType() === $PUNC_BRACKET_OPEN) {
         let skipInit = allowAssignment === ASSIGN_EXPR_IS_OK && leftHandSideExpression === NOT_LHSE && isNewArg === NOT_NEW_ARG ? PARSE_INIT : SKIP_INIT;
         let wasDestruct = parseArrayOuter(lexerFlags, DO_NOT_BIND, BINDING_TYPE_NONE, skipInit, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         return _parseValueHeadBodyAfterObjArr(wasDestruct);
       }
 
-      if (curtok.type === $PUNC_PAREN_OPEN) {
+      if (tok_getType() === $PUNC_PAREN_OPEN) {
         // do not parse arrow/group tail, regardless
         return parseGroupToplevels(lexerFlags, IS_STATEMENT, allowAssignment, UNDEF_ASYNC, '', NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
       }
 
-      if (curtok.type === $PUNC_PLUS_PLUS) {
+      if (tok_getType() === $PUNC_PLUS_PLUS) {
         return parseUpdatePrefix(lexerFlags, isNewArg, leftHandSideExpression, '++', astProp);
       }
 
-      if (curtok.type === $PUNC_MIN_MIN) {
+      if (tok_getType() === $PUNC_MIN_MIN) {
         return parseUpdatePrefix(lexerFlags, isNewArg, leftHandSideExpression, '--', astProp);
       }
 
-      if (curtok.type === $PUNC_PLUS) {
+      if (tok_getType() === $PUNC_PLUS) {
         return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '+', astProp);
       }
 
-      if (curtok.type === $PUNC_MIN) {
+      if (tok_getType() === $PUNC_MIN) {
         return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '-', astProp);
       }
 
-      if (curtok.type === $PUNC_EXCL) {
+      if (tok_getType() === $PUNC_EXCL) {
         return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '!', astProp);
       }
 
-      if (curtok.type === $PUNC_TILDE) {
+      if (tok_getType() === $PUNC_TILDE) {
         return parseUnary(lexerFlags, isNewArg, leftHandSideExpression, '~', astProp);
       }
     }
 
-    ASSERT(startToken === curtok, 'anything that consumed something should return in that branch ...');
+    ASSERT($t_startToken_start === tok_getStart(), 'anything that consumed something should return in that branch ...');
     if (maybe === PARSE_VALUE_MUST) {
       // Slow always-error path
 
@@ -7456,9 +7845,9 @@ function Parser(code, options = {}) {
       // - `new.target`
       // - `new.fail`
       // - `(.fail)`
-      ASSERT(curtok.type !== $NUMBER_DEC, 'should be checked elsewhere');
+      ASSERT(tok_getType() !== $NUMBER_DEC, 'should be checked elsewhere');
 
-      if (curtok.type === $PUNC_DOT_DOT_DOT) {
+      if (tok_getType() === $PUNC_DOT_DOT_DOT) {
         // The `...` token should be confirmed at any and only points where it might be legal
         // [x]: `let x = ...y;`
         // [x]: `foo[...x];`
@@ -7466,10 +7855,10 @@ function Parser(code, options = {}) {
         // [x]: `y, ...x => x`
         // [x]: `...x => x`
         // [x]: `import(...a);`
-        THROW('Unexpected spread/rest dots');
+        return THROW_TOKEN2('Unexpected spread/rest dots', tok_getStart(), tok_getStart() + 1);
       }
 
-      if (curtok.type === $PUNC_DOT) {
+      if (tok_getType() === $PUNC_DOT) {
         // - `foo[.bar]`    or something silly like that...?
         THROW('Unexpected dot');
       }
@@ -7514,20 +7903,24 @@ function Parser(code, options = {}) {
   }
   function parseValueHeadBodyIdent(lexerFlags, isNewArg, bindingType, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(arguments.length === parseValueHeadBodyIdent.length, 'arg count');
-    ASSERT(isIdentToken(curtok.type), 'token should not yet have been consumed because the next token depends on its value and so you cant consume this ahead of time...');
+    ASSERT(isIdentToken(tok_getType()), 'token should not yet have been consumed because the next token depends on its value and so you cant consume this ahead of time...');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
     skipIdentSafeSlowAndExpensive(lexerFlags, leftHandSideExpression);
 
-    return parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp);
+    return parseValueHeadBodyAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp);
   }
-  function parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp) {
+  function parseValueHeadBodyAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(parseValueHeadBodyAfterIdent.length === arguments.length, 'expecting args');
-    ASSERT(isIdentToken(identToken.type), 'should have consumed token. make sure you checked whether the token after can be div or regex...');
-    ASSERT(identToken !== curtok, 'should have consumed this');
+    ASSERT(isIdentToken($tt_identToken.type), 'should have consumed token. make sure you checked whether the token after can be div or regex...');
+    ASSERT($tt_identToken.start !== tok_getStart(), 'should have consumed this');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(isNewArg === NOT_NEW_ARG || allowAssignment === ASSIGN_EXPR_IS_ERROR, 'new arg does not allow assignments');
@@ -7553,50 +7946,50 @@ function Parser(code, options = {}) {
     // - class
     let assignable = ASSIGNABLE_UNDETERMINED;
     // note: curtok token has been skipped prior to this call.
-    switch (identToken.type) {
+    switch ($tt_identToken.type) {
       case $ID_arguments:
         assignable = verifyEvalArgumentsVar(lexerFlags);
-        if (curtok.type === $PUNC_EQ_GT) {
+        if (tok_getType() === $PUNC_EQ_GT) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
             THROW('Can not use `arguments` as arg name in strict mode');
           }
-          return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, identTokenCanon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
+          return parseArrowParenlessFromPunc(lexerFlags, $tt_identToken, $tt_identToken, identCanon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
         }
-        AST_setIdent(astProp, identToken, identTokenCanon);
+        AST_setIdent(astProp, $tt_identToken, identCanon);
         return assignable;
       case $ID_async:
-        return parseAsyncExpression(lexerFlags, identToken, identTokenCanon, isNewArg, NOT_EXPORT, allowAssignment, leftHandSideExpression, astProp);
+        return parseAsyncExpression(lexerFlags, $tt_identToken, identCanon, isNewArg, NOT_EXPORT, allowAssignment, leftHandSideExpression, astProp);
       case $ID_await:
-        return parseAwait(lexerFlags, identToken, identTokenCanon, isNewArg, allowAssignment, astProp);
+        return parseAwait(lexerFlags, $tt_identToken, identCanon, isNewArg, allowAssignment, astProp);
       case $ID_class:
         // - `(class x {})`
         // - `(class x {}.foo)`
         // - `(class x {}.foo())`
         // - `(class x {}())`
         // - `async function f(){   (fail = class extends (await x) {}) => {}   }`
-        return parseClassExpression(lexerFlags, identToken, astProp);
+        return parseClassExpression(lexerFlags, $tt_identToken, astProp);
       case $ID_delete:
         ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
         if (isNewArg === IS_NEW_ARG) THROW('Cannot delete inside `new`');
-        return parseDeleteExpression(lexerFlags, identToken, assignable, astProp);
+        return parseDeleteExpression(lexerFlags, $tt_identToken, assignable, astProp);
       case $ID_eval:
         assignable = verifyEvalArgumentsVar(lexerFlags);
-        if (curtok.type === $PUNC_EQ_GT) {
+        if (tok_getType() === $PUNC_EQ_GT) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
             THROW('Can not use `eval` as arg name in strict mode');
           }
-          return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, identTokenCanon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
+          return parseArrowParenlessFromPunc(lexerFlags, $tt_identToken, $tt_identToken, identCanon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, UNDEF_ASYNC, astProp);
         }
-        AST_setIdent(astProp, identToken, identTokenCanon);
+        AST_setIdent(astProp, $tt_identToken, identCanon);
         return assignable;
       case $ID_false:
-        return parseFalseKeyword(identToken, astProp);
+        return parseFalseKeyword($tt_identToken, astProp);
       case $ID_function:
-        parseFunctionExpression(lexerFlags, UNDEF_ASYNC, identToken, astProp);
+        parseFunctionExpression(lexerFlags, UNDEF_ASYNC, $tt_identToken, astProp);
         return NOT_ASSIGNABLE;
       case $ID_import:
-        if (curtok.type === $PUNC_PAREN_OPEN) {
-          return parseDynamicImport(lexerFlags, identToken, astProp);
+        if (tok_getType() === $PUNC_PAREN_OPEN) {
+          return parseDynamicImport(lexerFlags, $tt_identToken, astProp);
         }
         return THROW('Import keyword only allowed on toplevel or in a dynamic import');
       case $ID_let:
@@ -7615,7 +8008,7 @@ function Parser(code, options = {}) {
 
         assignable = initAssignable(assignable);
 
-        return parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, assignable, allowAssignment, astProp);
+        return parseIdentOrParenlessArrow(lexerFlags, $tt_identToken, identCanon, assignable, allowAssignment, astProp);
       case $ID_new:
         // - `new x`
         // - `new x()`
@@ -7623,16 +8016,16 @@ function Parser(code, options = {}) {
         // - `async function f(){   (fail = new x(await x)) => {}   }`
         // - `async function f(){   (fail = new (await x)) => {}   }`
         // - `async function f(){   (fail = new f[await x]) => {}   }`
-        let newAssignable = parseNewKeyword(lexerFlags, identToken, identTokenCanon, astProp);
+        let newAssignable = parseNewKeyword(lexerFlags, $tt_identToken, identCanon, astProp);
         return setNotAssignable(newAssignable); // note: property in `new x().y` is not parsed yet. new expr is never assignable
       case $ID_null:
-        return parseNullKeyword(identToken, astProp);
+        return parseNullKeyword($tt_identToken, astProp);
       case $ID_super:
-        return parseSuperKeyword(lexerFlags, identToken, astProp);
+        return parseSuperKeyword(lexerFlags, $tt_identToken, astProp);
       case $ID_true:
-        return parseTrueKeyword(identToken, astProp);
+        return parseTrueKeyword($tt_identToken, astProp);
       case $ID_this:
-        return parseThisKeyword(identToken, astProp);
+        return parseThisKeyword($tt_identToken, astProp);
       case $ID_typeof:
         // [v]: `delete typeof true`
         // [x]: `(typeof 3 ** 2)`
@@ -7645,12 +8038,12 @@ function Parser(code, options = {}) {
         // [x]: `([typeof x]) => x;`
         // [v]: `x + typeof y.x`
         ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
-        return _parseUnary(lexerFlags, identToken, 'typeof', isNewArg, astProp);
+        return _parseUnary(lexerFlags, $tt_identToken, 'typeof', isNewArg, astProp);
       case $ID_void:
         // [x]: `[void x] = x;`
         // [v]: `[void x]`
         ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
-        return _parseUnary(lexerFlags, identToken, 'void', isNewArg, astProp);
+        return _parseUnary(lexerFlags, $tt_identToken, 'void', isNewArg, astProp);
       case $ID_yield:
         // - `x + yield`
         // - `delete yield`
@@ -7660,7 +8053,7 @@ function Parser(code, options = {}) {
         // - `new yield`
         // - `function *f(){ new yield }`
         // - `x = x + yield`
-        return parseYield(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp);
+        return parseYield(lexerFlags, $tt_identToken, identCanon, allowAssignment, astProp);
     }
 
     // - `x` but not `true`
@@ -7669,20 +8062,20 @@ function Parser(code, options = {}) {
     // if (!checkIdentReadable(lexerFlags, bindingType, identToken)) {
     //   THROW('Illegal keyword encountered; is not a value [' + tok_sliceInput(identToken.start, identToken.stop) + ']');
     // }
-    fatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags);
+    fatalBindingIdentCheck($tt_identToken, identCanon, bindingType, lexerFlags);
     assignable = initAssignable(assignable);
 
-    return parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, assignable, allowAssignment, astProp);
+    return parseIdentOrParenlessArrow(lexerFlags, $tt_identToken, identCanon, assignable, allowAssignment, astProp);
   }
 
   function verifyEvalArgumentsVar(lexerFlags) {
     if (hasNoFlag(lexerFlags, LF_STRICT_MODE)) return IS_ASSIGNABLE;
 
-    if (isCompoundAssignment(curtok.type)) {
+    if (isCompoundAssignment(tok_getType())) {
       THROW('Cannot assign to `eval` and `arguments` in strict mode');
     }
 
-    switch (curtok.type) {
+    switch (tok_getType()) {
       case $PUNC_PLUS_PLUS:
       case $PUNC_MIN_MIN:
         THROW('Cannot assign to `eval` and `arguments` in strict mode');
@@ -7691,57 +8084,57 @@ function Parser(code, options = {}) {
     return NOT_ASSIGNABLE;
   }
 
-  function parseTrueKeyword(trueToken, astProp) {
+  function parseTrueKeyword($tt_trueToken, astProp) {
     if (babelCompat) {
       AST_setNode(astProp, {
         type: 'BooleanLiteral',
-        loc: AST_getClosedLoc(trueToken),
+        loc: AST_getClosedLoc($tt_trueToken.line, $tt_trueToken.column, $tt_trueToken.start),
         value: true,
       });
     } else {
       AST_setNode(astProp, {
         type: 'Literal',
-        loc: AST_getClosedLoc(trueToken),
+        loc: AST_getClosedLoc($tt_trueToken.line, $tt_trueToken.column, $tt_trueToken.start),
         value: true,
         raw: 'true',
       });
     }
     return NOT_ASSIGNABLE;
   }
-  function parseFalseKeyword(falseToken, astProp) {
+  function parseFalseKeyword($tt_falseToken, astProp) {
     if (babelCompat) {
       AST_setNode(astProp, {
         type: 'BooleanLiteral',
-        loc: AST_getClosedLoc(falseToken),
+        loc: AST_getClosedLoc($tt_falseToken.line, $tt_falseToken.column, $tt_falseToken.start),
         value: false,
       });
     } else {
       AST_setNode(astProp, {
         type: 'Literal',
-        loc: AST_getClosedLoc(falseToken),
+        loc: AST_getClosedLoc($tt_falseToken.line, $tt_falseToken.column, $tt_falseToken.start),
         value: false,
         raw: 'false',
       });
     }
     return NOT_ASSIGNABLE;
   }
-  function parseNullKeyword(nullToken, astProp) {
+  function parseNullKeyword($tt_nullToken, astProp) {
     if (babelCompat) {
       AST_setNode(astProp, {
         type: 'NullLiteral',
-        loc: AST_getClosedLoc(nullToken),
+        loc: AST_getClosedLoc($tt_nullToken.line, $tt_nullToken.column, $tt_nullToken.start),
       });
     } else {
       AST_setNode(astProp, {
         type: 'Literal',
-        loc: AST_getClosedLoc(nullToken),
+        loc: AST_getClosedLoc($tt_nullToken.line, $tt_nullToken.column, $tt_nullToken.start),
         value: null,
         raw: 'null',
       });
     }
     return NOT_ASSIGNABLE;
   }
-  function parseSuperKeyword(lexerFlags, superToken, astProp) {
+  function parseSuperKeyword(lexerFlags, $tt_superToken, astProp) {
     // https://tc39.github.io/ecma262/#table-17
     // > GetSuperBase()	Return the object that is the base for super property accesses bound in this Environment Record.
     // > The object is derived from this Environment Record's [[HomeObject]] field. The value undefined indicates that
@@ -7782,13 +8175,13 @@ function Parser(code, options = {}) {
 
     AST_setNode(astProp, {
       type: 'Super',
-      loc: AST_getClosedLoc(superToken),
+      loc: AST_getClosedLoc($tt_superToken.line, $tt_superToken.column, $tt_superToken.start),
     });
 
     // now confirm the tail
     // TODO: should we just parse the tail now? I don't think so ... also don't think it's important to do now
 
-    if (curtok.type === $PUNC_PAREN_OPEN) {
+    if (tok_getType() === $PUNC_PAREN_OPEN) {
       // super()
       // super(..)
       if (hasNoFlag(lexerFlags, LF_SUPER_CALL)) THROW('Can only use `super()` in constructors of classes that extend another class');
@@ -7796,11 +8189,11 @@ function Parser(code, options = {}) {
       return NOT_ASSIGNABLE;
     }
 
-    if (curtok.type === $PUNC_BRACKET_OPEN || curtok.type === $PUNC_DOT) {
+    if (tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_DOT) {
       // super.foo
       // super[foo]
       if (hasNoFlag(lexerFlags, LF_SUPER_PROP)) {
-        if (curtok.type === $PUNC_BRACKET_OPEN)  {
+        if (tok_getType() === $PUNC_BRACKET_OPEN)  {
           THROW('Can only use `super[foo]` in class or object methods or in arrows nested in those methods/arrows');
         } else {
           THROW('Can only use `super.foo` in class or object methods or in arrows nested in those methods/arrows');
@@ -7812,7 +8205,7 @@ function Parser(code, options = {}) {
 
     THROW('The `super` keyword can only be used as call or member expression');
   }
-  function parseNewKeyword(lexerFlags, newToken, newTokenCanon, astProp) {
+  function parseNewKeyword(lexerFlags, $tt_newToken, newCanon, astProp) {
     // Just parsed the `new` keyword at the start of an expression, should already have
     // been consumed (but `new new x` is a valid expression so we can't assert it)
 
@@ -7827,10 +8220,10 @@ function Parser(code, options = {}) {
     // - `new (await foo);`
     // - `new x(await foo);`
 
-    if (curtok.type === $PUNC_DOT) return parseNewDotTarget(lexerFlags, newToken, newTokenCanon, astProp);
-    return parseNewExpression(lexerFlags, newToken, astProp);
+    if (tok_getType() === $PUNC_DOT) return parseNewDotTarget(lexerFlags, $tt_newToken, newCanon, astProp);
+    return parseNewExpression(lexerFlags, $tt_newToken, astProp);
   }
-  function parseNewDotTarget(lexerFlags, newToken, newTokenCanon, astProp) {
+  function parseNewDotTarget(lexerFlags, $tt_newToken, newCanon, astProp) {
     // - `new.target`
     // - `new.foo`
 
@@ -7841,23 +8234,27 @@ function Parser(code, options = {}) {
       THROW('Must be inside/nested a regular function to use `new.target`');
     }
     ASSERT_skipToTargetOrDie('.', lexerFlags); // already asserted the dot. For now, the valid followup is `target`
-    let propertyToken = curtok;
-    let propertyTokenCanon = tok_getCanon();
+    let $tt_propertyToken = __oldtok;
+    let $t_propertyToken_line = tok_getLine();
+    let $t_propertyToken_column = tok_getColumn();
+    let $t_propertyToken_start = tok_getStart();
+
+    let propertyCanon = tok_getCanon();
     ASSERT_skipDiv($ID_target, lexerFlags); // new.target / foo
 
     AST_setNode(astProp, {
       type: 'MetaProperty',
-      loc: AST_getClosedLoc(newToken),
-      meta: AST_getIdentNode(newToken, newTokenCanon),
-      property: AST_getIdentNode(propertyToken, propertyTokenCanon),
+      loc: AST_getClosedLoc($tt_newToken.line, $tt_newToken.column, $tt_newToken.start),
+      meta: AST_getIdentNode($tt_newToken, newCanon),
+      property: AST_getIdentNode($tt_propertyToken, propertyCanon),
     });
 
     return NOT_ASSIGNABLE;
   }
-  function parseNewExpression(lexerFlags, newToken, astProp) {
+  function parseNewExpression(lexerFlags, $tt_newToken, astProp) {
     AST_open(astProp, {
       type: 'NewExpression',
-      loc: AST_getBaseLoc(newToken),
+      loc: AST_getBaseLoc($tt_newToken),
       arguments: [],
       callee: undefined,
     });
@@ -7893,7 +8290,7 @@ function Parser(code, options = {}) {
     // - `new await x()()`
     // - `new b↵++c;`
 
-    if (isIdentToken(curtok.type) && curtok.type === $ID_import) {
+    if (isIdentToken(tok_getType()) && tok_getType() === $ID_import) {
       // We'll have to revisit this one when `import.meta` becomes spec, but for now this is fine to prevent here.
       THROW('Cannot use dynamic import as an argument to `new`, the spec simply does not allow it');
     }
@@ -7904,30 +8301,34 @@ function Parser(code, options = {}) {
     // [x]: `async function f(){ (x = new x(await x)) => {} }`
     return setNotAssignable(assignableForPiggies);
   }
-  function parseThisKeyword(thisToken, astProp) {
+  function parseThisKeyword($tt_thisToken, astProp) {
     AST_setNode(astProp, {
       type: 'ThisExpression',
-      loc: AST_getClosedLoc(thisToken),
+      loc: AST_getClosedLoc($tt_thisToken.line, $tt_thisToken.column, $tt_thisToken.start),
     });
     return NOT_ASSIGNABLE;
   }
   function parseUnary(lexerFlags, isNewArg, leftHandSideExpression, opName, astProp) {
     ASSERT(parseUnary.length === arguments.length, 'arg count');
     ASSERT(typeof opName === 'string', 'opname string');
-    ASSERT(curtok._str === opName, 'should match', opName, curtok+'');
+    ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === opName, 'should match', opName);
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
 
     if (leftHandSideExpression === ONLY_LHSE) return THROW('The unary expression `' + opName + '` is not allowed here');
 
-    let unaryToken = curtok;
-    ASSERT_skipToExpressionStart(unaryToken._str, lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
+    let $tt_unaryToken = __oldtok;
+    let $t_unaryToken_line = tok_getLine();
+    let $t_unaryToken_column = tok_getColumn();
+    let $t_unaryToken_start = tok_getStart();
 
-    return _parseUnary(lexerFlags, unaryToken, opName, isNewArg, astProp);
+    ASSERT_skipToExpressionStart($tt_unaryToken._str, lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
+
+    return _parseUnary(lexerFlags, $tt_unaryToken, opName, isNewArg, astProp);
   }
-  function _parseUnary(lexerFlags, unaryToken, opName, isNewArg, astProp) {
+  function _parseUnary(lexerFlags, $tt_unaryToken, opName, isNewArg, astProp) {
     ASSERT(_parseUnary.length === arguments.length, 'arg count');
     ASSERT(['+', '-', '~', '!', 'void', 'typeof'].includes(opName), '++, --, delete, new, yield, and await have special parsers', opName);
-    ASSERT(unaryToken._str === opName, 'should match', opName, unaryToken+'');
+    ASSERT($tt_unaryToken._str === opName, 'should match', opName, $tt_unaryToken+'');
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
 
     if (isNewArg === IS_NEW_ARG) return THROW('Cannot `' + opName + '` inside `new`');
@@ -7939,7 +8340,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'UnaryExpression',
-      loc: AST_getBaseLoc(unaryToken),
+      loc: AST_getBaseLoc($tt_unaryToken),
       operator: opName,
       prefix: true,
       argument: undefined,
@@ -7948,7 +8349,7 @@ function Parser(code, options = {}) {
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
     AST_close('UnaryExpression');
 
-    if (curtok.type === $PUNC_STAR_STAR) {
+    if (tok_getType() === $PUNC_STAR_STAR) {
       // [x]: `~3 ** 2;`
       // [x]: `typeof 3 ** 2;`
       THROW('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)');
@@ -7961,7 +8362,7 @@ function Parser(code, options = {}) {
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'isNewArg enum');
     ASSERT(leftHandSideExpression === ONLY_LHSE || leftHandSideExpression === NOT_LHSE, 'leftHandSideExpression enum');
     ASSERT(opName === '--' || opName === '++', 'enum');
-    ASSERT(opName === curtok._str, 'should sync');
+    ASSERT(opName ===tok_sliceInput(tok_getStart(), tok_getStop()), 'should sync');
 
     // note: this is ++/-- PREFIX. This version does NOT have newline restrictions!
 
@@ -7976,11 +8377,15 @@ function Parser(code, options = {}) {
       return THROW('Cannot `new` on a `' + opName +'` expr');
     }
 
-    let puncToken = curtok;
+    let $tt_puncToken = __oldtok;
+    let $t_puncToken_line = tok_getLine();
+    let $t_puncToken_column = tok_getColumn();
+    let $t_puncToken_start = tok_getStart();
+
     ASSERT_skipToExpressionStart($G_PUNCTUATOR, lexerFlags); // next can be regex (++/x/.y), though it's very unlikely
     AST_open(astProp, {
       type: 'UpdateExpression',
-      loc: AST_getBaseLoc(puncToken),
+      loc: AST_getBaseLoc($tt_puncToken),
       argument: undefined,
       operator: opName,
       prefix: true,
@@ -7995,10 +8400,10 @@ function Parser(code, options = {}) {
     return setNotAssignable(assignable);
   }
 
-  function parseYield(lexerFlags, yieldIdentToken, yieldIdentTokenCanon, allowAssignment, astProp) {
+  function parseYield(lexerFlags, $tt_yieldIdentToken, yieldIdentCanon, allowAssignment, astProp) {
     ASSERT(arguments.length === parseYield.length, 'arg count');
-    ASSERT(yieldIdentToken !== curtok, 'should have consumed the ident already');
-    ASSERT(yieldIdentToken.type === $ID_yield, 'should receive the yield keyword token that was already consumed');
+    ASSERT($tt_yieldIdentToken.start !== tok_getStart(), 'should have consumed the ident already');
+    ASSERT($tt_yieldIdentToken.type === $ID_yield, 'should receive the yield keyword token that was already consumed');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // Parse an async arrow as a plain call to `async` first, inheriting the async/generator state. Then when you
@@ -8008,11 +8413,11 @@ function Parser(code, options = {}) {
     // and correct to account for [~Yield] if we see the arrow. It just fails.
 
     if (hasAnyFlag(lexerFlags, LF_IN_GENERATOR)) {
-      return parseYieldKeyword(lexerFlags, yieldIdentToken, allowAssignment, astProp);
+      return parseYieldKeyword(lexerFlags, $tt_yieldIdentToken, allowAssignment, astProp);
     }
-    return parseYieldVarname(lexerFlags, yieldIdentToken, yieldIdentTokenCanon, allowAssignment, astProp);
+    return parseYieldVarname(lexerFlags, $tt_yieldIdentToken, yieldIdentCanon, allowAssignment, astProp);
   }
-  function parseYieldKeyword(lexerFlags, yieldToken, allowAssignment, astProp) {
+  function parseYieldKeyword(lexerFlags, $tt_yieldToken, allowAssignment, astProp) {
     ASSERT(parseYieldKeyword.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
@@ -8034,11 +8439,11 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'YieldExpression',
-      loc: AST_getBaseLoc(yieldToken),
+      loc: AST_getBaseLoc($tt_yieldToken),
       delegate: undefined, // TODO: init to false
       argument: undefined,
     });
-    if (tok_getNlwas() === true && isRegexToken(curtok.type)) {
+    if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
       // This is an edge case where there is a newline and the next token is regex. In this case we inject ASI.
       // - `continue \n /foo/`
       // - `continue \n /foo/x`
@@ -8047,11 +8452,11 @@ function Parser(code, options = {}) {
       AST_set('argument', null);
       ASSERT(ASSERT_ASI_REGEX_NEXT = true); // This should be picked up at semi/asi parser and prevent an assertion error
     }
-    else if (curtok.type === $PUNC_STAR) {
+    else if (tok_getType() === $PUNC_STAR) {
       AST_set('delegate', true);
       parseYieldStarArgument(lexerFlags, 'argument');
     }
-    else if (curtok.type === $PUNC_STAR_STAR) {
+    else if (tok_getType() === $PUNC_STAR_STAR) {
       THROW('Cannot use `yield` to the left of the `**` operator');
     }
     else {
@@ -8060,8 +8465,8 @@ function Parser(code, options = {}) {
     }
     AST_close('YieldExpression');
 
-    if (curtok.type === $PUNC_QMARK) {
-      ASSERT(curtok.type === $PUNC_QMARK, 'just in case more tokens can start with `?`');
+    if (tok_getType() === $PUNC_QMARK) {
+      ASSERT(tok_getType() === $PUNC_QMARK, 'just in case more tokens can start with `?`');
       THROW('Can not have a `yield` expression on the left side of a ternary');
     }
 
@@ -8082,29 +8487,37 @@ function Parser(code, options = {}) {
     }
 
     ASSERT_skipToExpressionStart('*', lexerFlags); // next is any value
-    let valueStartToken = curtok;
+    let $tt_valueStartToken = __oldtok;
+    let $t_valueStartToken_line = tok_getLine();
+    let $t_valueStartToken_column = tok_getColumn();
+    let $t_valueStartToken_start = tok_getStart();
+
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp); // arg required, no newline restrictions
-    parseExpressionFromOp(lexerFlags, valueStartToken, assignable, astProp);
+    parseExpressionFromOp(lexerFlags, $tt_valueStartToken, assignable, astProp);
   }
-  function parseYieldVarname(lexerFlags, identToken, identTokenCanon, allowAssignment, astProp) {
+  function parseYieldVarname(lexerFlags, $tt_identToken, identCanon, allowAssignment, astProp) {
     ASSERT(parseYieldVarname.length === arguments.length, 'arg count');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // `yield` _must_ be a treated as a regular var binding now
 
     if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      THROW('Cannot use `yield` outside of generator functions when in strict mode');
+      return THROW_TOKEN('Cannot use `yield` outside of generator functions when in strict mode', $tt_identToken.start, $tt_identToken.start + 1); // TODO: use stop
     }
 
     // `yield` is a var name in sloppy mode:
-    let assignableFlags = parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, IS_ASSIGNABLE, allowAssignment, astProp);
+    let assignableFlags = parseIdentOrParenlessArrow(lexerFlags, $tt_identToken, identCanon, IS_ASSIGNABLE, allowAssignment, astProp);
     return copyPiggies(IS_ASSIGNABLE, assignableFlags);
   }
   function parseYieldArgument(lexerFlags, astProp) {
     ASSERT(parseYieldArgument.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
 
-    let yieldArgStartToken = curtok;
+    let $tt_yieldArgStartToken = __oldtok;
+    let $t_yieldArgStartToken_line = tok_getLine();
+    let $t_yieldArgStartToken_column = tok_getColumn();
+    let $t_yieldArgStartToken_start = tok_getStart();
+
     // there can be no newline between keyword `yield` and its argument (restricted production)
     let hadValue = tok_getNlwas() === true ? YIELD_WITHOUT_VALUE : parseYieldValueMaybe(lexerFlags, astProp);
     if (hadValue === YIELD_WITHOUT_VALUE) {
@@ -8112,44 +8525,44 @@ function Parser(code, options = {}) {
     } else {
       // Since this is parsing a yield expression it won't matter whether it also parsed an `await` or `yield`
       // inside the `yield` (like `yield (await foo)`) since it's invalid in args regardless.
-      parseExpressionFromOp(lexerFlags, yieldArgStartToken, hadValue === WITH_ASSIGNABLE ? IS_ASSIGNABLE : NOT_ASSIGNABLE, astProp);
+      parseExpressionFromOp(lexerFlags, $tt_yieldArgStartToken, hadValue === WITH_ASSIGNABLE ? IS_ASSIGNABLE : NOT_ASSIGNABLE, astProp);
     }
   }
 
-  function parseIdentOrParenlessArrow(lexerFlags, identToken, identTokenCanon, assignable, allowAssignment, astProp) {
+  function parseIdentOrParenlessArrow(lexerFlags, $tt_identToken, identCanon, assignable, allowAssignment, astProp) {
     ASSERT(parseIdentOrParenlessArrow.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // assume an identifier has just been parsed and that it should be considered a regular var name
     // (in the case of `await`, consider it a regular var)
-    if (curtok.type === $PUNC_EQ_GT) {
+    if (tok_getType() === $PUNC_EQ_GT) {
       ASSERT(isAssignable(assignable), 'not sure whether an arrow can be valid if the arg is marked as non-assignable');
-      return parseArrowParenlessFromPunc(lexerFlags, identToken, identToken, identTokenCanon, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
+      return parseArrowParenlessFromPunc(lexerFlags, $tt_identToken, $tt_identToken, identCanon, allowAssignment, PARAMS_ALL_SIMPLE, UNDEF_ASYNC, astProp);
     } else {
-      AST_setIdent(astProp, identToken, identTokenCanon);
+      AST_setIdent(astProp, $tt_identToken, identCanon);
       return assignable;
     }
   }
 
-  function parseArrowParenlessFromPunc(lexerFlags, arrowStartToken, identToken, identTokenCanon, allowAssignment, wasSimple, asyncToken, astProp) {
+  function parseArrowParenlessFromPunc(lexerFlags, $tt_arrowStartToken, $tt_identToken, identCanon, allowAssignment, wasSimple, $tt_asyncToken, astProp) {
     ASSERT(parseArrowParenlessFromPunc.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_VALID(allowAssignment === ASSIGN_EXPR_IS_OK, 'arrows are assignment expressions so it should lead to an error if those are not allowed');
 
-    if (curtok.type !== $PUNC_EQ_GT) {
+    if (tok_getType() !== $PUNC_EQ_GT) {
       // [x]: `function *g() { async yield = {}; }`
       THROW('An `async` followed by an identifier should lead to an arrow function, found something unexpected');
     }
-    if (hasAllFlags(lexerFlags, LF_IN_GENERATOR) && identToken.type === $ID_yield) {
+    if (hasAllFlags(lexerFlags, LF_IN_GENERATOR) && $tt_identToken.type === $ID_yield) {
       // [x]: `function *g() { async yield => {}; }`
       THROW('Arrows cannot be generators and parenless `yield` param in a generator would be parsing a yield expression and fail at the arrow');
     }
 
-    fatalBindingIdentCheck(identToken, identTokenCanon, BINDING_TYPE_ARG, lexerFlags); // TODO: confirm this isn't a duplicate check
+    fatalBindingIdentCheck($tt_identToken, identCanon, BINDING_TYPE_ARG, lexerFlags); // TODO: confirm this isn't a duplicate check
     // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
-    if (isStrictOnlyKeyword(identToken, identTokenCanon)) {
+    if (isStrictOnlyKeyword($tt_identToken, identCanon)) {
       // Throw error if body is or contains strict mode
       wasSimple = PARAMS_SOME_COMPLEX;
     }
@@ -8165,30 +8578,30 @@ function Parser(code, options = {}) {
       // - `async x \n => x`
       THROW('The arrow is a restricted production an there can not be a newline before `=>` token');
     }
-    ASSERT((identToken.type === $ID_eval || identToken.type === $ID_arguments) ? wasSimple === PARAMS_SOME_COMPLEX : true, 'eval and arguments must pass on complex so they throw if the body contains use strict');
-    ASSERT(!((identToken.type === $ID_eval || identToken.type === $ID_arguments) && hasAllFlags(lexerFlags, LF_STRICT_MODE)), 'caller should throw for eval/argument already in strict mode');
-    ASSERT(!(hasAnyFlag(lexerFlags, LF_STRICT_MODE) && identToken.type === $ID_yield), 'in strict mode this function will not be called by the parse yield function so we dont need to make an edge case for it');
+    ASSERT(($tt_identToken.type === $ID_eval || $tt_identToken.type === $ID_arguments) ? wasSimple === PARAMS_SOME_COMPLEX : true, 'eval and arguments must pass on complex so they throw if the body contains use strict');
+    ASSERT(!(($tt_identToken.type === $ID_eval || $tt_identToken.type === $ID_arguments) && hasAllFlags(lexerFlags, LF_STRICT_MODE)), 'caller should throw for eval/argument already in strict mode');
+    ASSERT(!(hasAnyFlag(lexerFlags, LF_STRICT_MODE) && $tt_identToken.type === $ID_yield), 'in strict mode this function will not be called by the parse yield function so we dont need to make an edge case for it');
 
     // arrow with single param
     if (babelCompat) {
       // Babel does not support `expression`: https://github.com/babel/babel/issues/6772#issuecomment-342935685
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc(arrowStartToken),
-        params: [AST_getIdentNode(identToken, identTokenCanon)],
+        loc: AST_getBaseLoc($tt_arrowStartToken),
+        params: [AST_getIdentNode($tt_identToken, identCanon)],
         id: null,
         generator: false,
-        async: asyncToken !== UNDEF_ASYNC,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         body: undefined,
       });
     } else {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc(arrowStartToken),
-        params: [AST_getIdentNode(identToken, identTokenCanon)],
+        loc: AST_getBaseLoc($tt_arrowStartToken),
+        params: [AST_getIdentNode($tt_identToken, identCanon)],
         id: null,
         generator: false,
-        async: asyncToken !== UNDEF_ASYNC,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         expression: undefined, // TODO: init to bool
         body: undefined,
       });
@@ -8198,40 +8611,40 @@ function Parser(code, options = {}) {
     let paramScoop = SCOPE_addLayer(arrowScoop, SCOPE_LAYER_ARROW_PARAMS, 'parseArrowParenlessFromPunc(arg)');
     ASSERT(paramScoop._ = 'parenless arrow scope');
     ASSERT(paramScoop._funcName = '(arrow has no name)');
-    SCOPE_addLexBinding(paramScoop, identTokenCanon, BINDING_TYPE_ARG, FDS_ILLEGAL);
+    SCOPE_addLexBinding(paramScoop, identCanon, BINDING_TYPE_ARG, FDS_ILLEGAL);
 
-    if (identToken.type === $ID_await && hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
+    if ($tt_identToken.type === $ID_await && hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
       // - `async function f(){ return await => {}; }`
       THROW('Cannot use `await` as an arrow parameter name inside another async function');
     }
 
-    parseArrowFromPunc(lexerFlags, paramScoop, asyncToken, allowAssignment, wasSimple);
+    parseArrowFromPunc(lexerFlags, paramScoop, $tt_asyncToken, allowAssignment, wasSimple);
     AST_close('ArrowFunctionExpression');
 
     return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW;
   }
 
-  function parseTickExpression(lexerFlags, tickToken, astProp) {
+  function parseTickExpression(lexerFlags, $tt_tickToken, astProp) {
     // parseTemplate
     ASSERT(parseTickExpression.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
-    ASSERT(hasNoFlag(lexerFlags, LF_IN_TEMPLATE) || isTemplateStart(curtok.type), 'if in template this function can only be called by the head of a nested template', T(curtok.type));
+    ASSERT(hasNoFlag(lexerFlags, LF_IN_TEMPLATE) || isTemplateStart(tok_getType()), 'if in template this function can only be called by the head of a nested template');
 
     // basically; parse tick. if head, keep parsing body until parsing tail
 
     AST_open(astProp, {
       type: 'TemplateLiteral',
-      loc: AST_getBaseLoc(tickToken),
+      loc: AST_getBaseLoc($tt_tickToken),
       expressions: [],
       quasis: [],
     });
 
     let awaitYieldFlagsFromAssignable = ASSIGNABLE_UNDETERMINED;
 
-    if (curtok.type === $TICK_PURE) {
+    if (tok_getType() === $TICK_PURE) {
       parseQuasiPart(lexerFlags, IS_QUASI_TAIL, false);
     }
-    else if (curtok.type === $TICK_HEAD) {
+    else if (tok_getType() === $TICK_HEAD) {
       parseQuasiPart(lexerFlags, NOT_QUASI_TAIL, false);
 
       let tmpLexerFlags = sansFlag(lexerFlags | LF_IN_TEMPLATE | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
@@ -8239,11 +8652,11 @@ function Parser(code, options = {}) {
       let wasTail = IS_QUASI_TAIL;
       do {
         awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, 'expressions');
-        wasTail = curtok.type === $TICK_TAIL || curtok.type === $TICK_BAD_TAIL ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
+        wasTail = tok_getType() === $TICK_TAIL || tok_getType() === $TICK_BAD_TAIL ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
         parseQuasiPart(lexerFlags, wasTail, false);
       } while (wasTail === NOT_QUASI_TAIL);
     }
-    else if (isBadTickToken(curtok.type)) {
+    else if (isBadTickToken(tok_getType())) {
       THROW('Template contained bad escape');
     }
     else {
@@ -8258,44 +8671,48 @@ function Parser(code, options = {}) {
 
   function parseQuasiPart(lexerFlags, wasTail, allowBadEscapes) {
     ASSERT(arguments.length === parseQuasiPart.length, 'arg count');
-    ASSERT_VALID(isTickToken(curtok.type), 'expect current token to be a tick pure, head, body, or tail', curtok.type);
+    ASSERT_VALID(isTickToken(tok_getType()), 'expect current token to be a tick pure, head, body, or tail');
 
-    let tickToken = curtok;
-    let tickTokenCanon = tok_getCanon();
+    let $tt_tickToken = __oldtok;
+    let $t_tickToken_line = tok_getLine();
+    let $t_tickToken_column = tok_getColumn();
+    let $t_tickToken_start = tok_getStart();
+
+    let tickCanon = tok_getCanon();
     let hasDoubleStart = false;
     let noCooked = false;
 
-    if (isBadTickToken(curtok.type)) {
-      if (!allowBadEscapes) THROW_TOKEN('Template contained an illegal escape, these are only allowed in _tagged_ templates in >=ES2018', tickToken);
+    if (isBadTickToken(tok_getType())) {
+      if (!allowBadEscapes) THROW_TOKEN('Template contained an illegal escape, these are only allowed in _tagged_ templates in >=ES2018', $tt_tickToken.start, $tt_tickToken.stop);
       noCooked = true;
     }
-    if (curtok.type === $TICK_PURE || curtok.type === $TICK_TAIL || curtok.type === $TICK_BAD_PURE || curtok.type === $TICK_BAD_TAIL) {
+    if (tok_getType() === $TICK_PURE || tok_getType() === $TICK_TAIL || tok_getType() === $TICK_BAD_PURE || tok_getType() === $TICK_BAD_TAIL) {
       skipDiv(lexerFlags); // First token after template is division
-    } else if (curtok.type === $TICK_HEAD || curtok.type === $TICK_BODY || curtok.type === $TICK_BAD_HEAD || curtok.type === $TICK_BAD_BODY) {
+    } else if (tok_getType() === $TICK_HEAD || tok_getType() === $TICK_BODY || tok_getType() === $TICK_BAD_HEAD || tok_getType() === $TICK_BAD_BODY) {
       ASSERT_skipToExpressionStart($G_TICK, lexerFlags); // First token in template expression can be regex
       hasDoubleStart = true; // the raw string of the token starts with the two-char delimiter `${` instead of one
     } else {
-      THROW_TOKEN('The first token after the template expression should be a continuation of the template', tickToken);
+      THROW_TOKEN('The first token after the template expression should be a continuation of the template', $tt_tickToken.start, $tt_tickToken.stop);
     }
 
     // https://github.com/estree/estree/issues/90#issuecomment-109140678
     // The raw value should normalize newlines (\r \r\n) to \n, but not \u000a
     // The cooked value should convert escapes to literals but skip further normalization
-    let closeWrapperLen = (tickToken.type === $TICK_HEAD || tickToken.type === $TICK_BODY || tickToken.type === $TICK_BAD_HEAD || tickToken.type === $TICK_BAD_BODY ? 2 : 1);
+    let closeWrapperLen = ($tt_tickToken.type === $TICK_HEAD || $tt_tickToken.type === $TICK_BODY || $tt_tickToken.type === $TICK_BAD_HEAD || $tt_tickToken.type === $TICK_BAD_BODY ? 2 : 1);
     // Note: the quasi may start with ` or } and end with ` or ${
-    let quasiValue = tok_sliceInput(tickToken.start + 1, tickToken.stop - closeWrapperLen);
+    let quasiValue = tok_sliceInput($tt_tickToken.start + 1, $tt_tickToken.stop - closeWrapperLen);
     if (acornCompat || babelCompat || templateNewlineNormalization) {
       // This normalization is almost lossy as you can't (trivially) reconstruct the original template now
       quasiValue = quasiValue.replace(/\r\n?/g, '\n');
     }
-    let cookedValue = noCooked ? null : tickTokenCanon;
+    let cookedValue = noCooked ? null : tickCanon;
 
     AST_open('quasis', {
       type: 'TemplateElement',
-      loc: AST_getBaseLocTemplate(tickToken),
+      loc: AST_getBaseLocTemplate($tt_tickToken),
       tail: wasTail === IS_QUASI_TAIL,
       value: {
-        // raw: (tickToken === $TICK_HEAD || tickToken === $TICK_BAD_HEAD ? '`' : '}') + quasiValue + (tickToken === $TICK_BODY || tickToken === $TICK_BAD_BODY ? '${' : '`'),
+        // raw: ($tt_tickToken === $TICK_HEAD || $tt_tickToken === $TICK_BAD_HEAD ? '`' : '}') + quasiValue + ($tt_tickToken === $TICK_BODY || $tt_tickToken === $TICK_BAD_BODY ? '${' : '`'),
         raw: quasiValue,
         cooked: cookedValue,
       },
@@ -8303,7 +8720,7 @@ function Parser(code, options = {}) {
     AST_closeTemplateElement(hasDoubleStart);
   }
 
-  function parseValueTail(lexerFlags, valueFirstToken, assignable, isNewArg, leftHandSideExpression, astProp) {
+  function parseValueTail(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, leftHandSideExpression, astProp) {
     ASSERT(parseValueTail.length === arguments.length, 'arg count');
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'isNewArg enum');
     ASSERT(leftHandSideExpression === ONLY_LHSE || leftHandSideExpression === NOT_LHSE, 'leftHandSideExpression enum');
@@ -8312,52 +8729,56 @@ function Parser(code, options = {}) {
 
     if (hasAllFlags(assignable, PIGGY_BACK_WAS_ARROW)) return assignable;
 
-    switch (curtok.type) {
+    switch (tok_getType()) {
       case $PUNC_DOT:
-        return _parseValueTailDotProperty(lexerFlags, valueFirstToken, assignable, isNewArg, astProp);
+        return _parseValueTailDotProperty(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp);
       case $PUNC_BRACKET_OPEN:
-        return _parseValueTailDynamicProperty(lexerFlags, valueFirstToken, assignable, isNewArg, astProp);
+        return _parseValueTailDynamicProperty(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp);
       case $PUNC_PAREN_OPEN:
-        return _parseValueTailCall(lexerFlags, valueFirstToken, assignable, isNewArg, astProp);
+        return _parseValueTailCall(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp);
       case $TICK_PURE:
       case $TICK_HEAD:
       case $TICK_BAD_PURE:
       case $TICK_BAD_HEAD:
         // isTemplateStart
-        return _parseValueTailTemplate(lexerFlags, valueFirstToken, assignable, isNewArg, astProp);
+        return _parseValueTailTemplate(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp);
       case $PUNC_PLUS_PLUS:
         if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
-        return parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, '++', astProp);
+        return parseValueTailUpdate(lexerFlags, $tt_valueFirstToken, assignable, leftHandSideExpression, '++', astProp);
       case $PUNC_MIN_MIN:
         if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
-        return parseValueTailUpdate(lexerFlags, valueFirstToken, assignable, leftHandSideExpression, '--', astProp);
+        return parseValueTailUpdate(lexerFlags, $tt_valueFirstToken, assignable, leftHandSideExpression, '--', astProp);
     }
 
     if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
     return assignable;
   }
-  function _parseValueTailDotProperty(lexerFlags, valueFirstToken, assignable, isNewArg, astProp) {
+  function _parseValueTailDotProperty(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp) {
     // parseMemberExpression dot
 
     ASSERT_skipToIdentOrDie('.', lexerFlags | LF_NOT_KEYWORD);
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
     ASSERT_skipDiv($G_IDENT, lexerFlags); // x.y / z is division
     AST_setNode(astProp, {
       type: 'MemberExpression',
-      loc: AST_getClosedLoc(valueFirstToken),
+      loc: AST_getClosedLoc($tt_valueFirstToken.line, $tt_valueFirstToken.column, $tt_valueFirstToken.start),
       object: AST_popNode(astProp),
-      property: AST_getIdentNode(identToken, identTokenCanon),
+      property: AST_getIdentNode($tt_identToken, identCanon),
       computed: false,
     });
-    return parseValueTail(lexerFlags, valueFirstToken, setAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+    return parseValueTail(lexerFlags, $tt_valueFirstToken, setAssignable(assignable), isNewArg, NOT_LHSE, astProp);
   }
-  function _parseValueTailDynamicProperty(lexerFlags, valueFirstToken, assignable, isNewArg, astProp) {
+  function _parseValueTailDynamicProperty(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp) {
     // parseMemberExpression dynamic
     // parseDynamicProperty
     AST_wrapClosedCustom(astProp, {
       type: 'MemberExpression',
-      loc: AST_getBaseLoc(valueFirstToken),
+      loc: AST_getBaseLoc($tt_valueFirstToken),
       object: undefined,
       property: undefined,
       computed: true,
@@ -8366,16 +8787,16 @@ function Parser(code, options = {}) {
     let nowAssignable = parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), 'property');
     // - `foo[await bar]`
     assignable = mergeAssignable(nowAssignable, assignable); // pass on piggies (yield, await, etc)
-    if (curtok.type !== $PUNC_BRACKET_CLOSE) THROW('Expected the closing bracket `]` for a dynamic property, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_BRACKET_CLOSE) THROW('Expected the closing bracket `]` for a dynamic property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
     AST_close('MemberExpression');
-    return parseValueTail(lexerFlags, valueFirstToken, setAssignable(assignable), isNewArg, NOT_LHSE, astProp); // member expressions are assignable
+    return parseValueTail(lexerFlags, $tt_valueFirstToken, setAssignable(assignable), isNewArg, NOT_LHSE, astProp); // member expressions are assignable
   }
-  function _parseValueTailCall(lexerFlags, valueFirstToken, assignable, isNewArg, astProp) {
-    ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN);
+  function _parseValueTailCall(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp) {
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN);
     if (isNewArg === IS_NEW_ARG) { // exception for `new`
       let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
-      if (curtok.type === $PUNC_EQ_GT) {
+      if (tok_getType() === $PUNC_EQ_GT) {
         THROW('The `new` keyword can not be applied to an arrow');
       }
       // new stops parsing the rhs after the first call args
@@ -8386,42 +8807,42 @@ function Parser(code, options = {}) {
       ASSERT(typeof astProp === 'string', 'should be string');
       AST_wrapClosedCustom(astProp, {
         type: 'CallExpression',
-        loc: AST_getBaseLoc(valueFirstToken),
+        loc: AST_getBaseLoc($tt_valueFirstToken),
         callee: undefined,
         arguments: [],
       }, 'callee');
       let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
       assignable = mergeAssignable(nowAssignable, assignable);
       AST_close('CallExpression');
-      assignable = parseValueTail(lexerFlags, valueFirstToken, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+      assignable = parseValueTail(lexerFlags, $tt_valueFirstToken, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
     }
 
     return assignable;
   }
-  function _parseValueTailTemplate(lexerFlags, valueFirstToken, assignable, isNewArg, astProp) {
+  function _parseValueTailTemplate(lexerFlags, $tt_valueFirstToken, assignable, isNewArg, astProp) {
     // parseTaggedTemplate
-    // Note: in es9+ (only) it is legal for _tagged_ templates to contain illegal escapes (`isBadTickToken(curtok.type)`)
+    // Note: in es9+ (only) it is legal for _tagged_ templates to contain illegal escapes (`isBadTickToken(tok_getType())`)
 
     // Tagged template is like a call but slightly special (and a very particular AST)
     AST_wrapClosedCustom(astProp, {
       type: 'TaggedTemplateExpression',
-      loc: AST_getBaseLoc(valueFirstToken),
+      loc: AST_getBaseLoc($tt_valueFirstToken),
       tag: undefined,
       quasi: undefined,
     }, 'tag');
 
     AST_open('quasi', {
       type: 'TemplateLiteral',
-      loc: AST_getBaseLoc(curtok),
+      loc: AST_getOpenLoc(tok_getLine(), tok_getColumn(), tok_getStart()),
       expressions: [],
       quasis: [],
     });
 
     let awaitYieldFlagsFromAssignable = ASSIGNABLE_UNDETERMINED;
-    if (curtok.type === $TICK_PURE || curtok.type === $TICK_BAD_PURE) {
+    if (tok_getType() === $TICK_PURE || tok_getType() === $TICK_BAD_PURE) {
       parseQuasiPart(lexerFlags, IS_QUASI_TAIL, allowBadEscapesInTaggedTemplates);
     }
-    else if (curtok.type === $TICK_HEAD || curtok.type === $TICK_BAD_HEAD) {
+    else if (tok_getType() === $TICK_HEAD || tok_getType() === $TICK_BAD_HEAD) {
       parseQuasiPart(lexerFlags, NOT_QUASI_TAIL, allowBadEscapesInTaggedTemplates);
 
       let tmpLexerFlags = sansFlag(lexerFlags | LF_IN_TEMPLATE | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
@@ -8429,34 +8850,34 @@ function Parser(code, options = {}) {
       let wasTail = IS_QUASI_TAIL;
       do {
         awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, 'expressions');
-        wasTail = (curtok.type === $TICK_TAIL || curtok.type === $TICK_BAD_TAIL) ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
+        wasTail = (tok_getType() === $TICK_TAIL || tok_getType() === $TICK_BAD_TAIL) ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
         parseQuasiPart(lexerFlags, wasTail, allowBadEscapesInTaggedTemplates);
       } while (wasTail === NOT_QUASI_TAIL);
     }
     else {
-      if (isBadTickToken(curtok.type)) THROW('Template containd bad escape');
+      if (isBadTickToken(tok_getType())) THROW('Template containd bad escape');
       THROW('Template should start as head or pure');
     }
 
     AST_close('TemplateLiteral');
     AST_close('TaggedTemplateExpression');
 
-    return parseValueTail(lexerFlags, valueFirstToken, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+    return parseValueTail(lexerFlags, $tt_valueFirstToken, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
   }
   function _parseValueTailNewArg(assignable) {
     // new rhs only parses a subset of tails
     return setNotAssignable(assignable); // maintain piggies
   }
-  function parseValueTailUpdate(lexerFlags, argStartToken, assignable, leftHandSideExpression, opName, astProp) {
+  function parseValueTailUpdate(lexerFlags, $tt_argStartToken, assignable, leftHandSideExpression, opName, astProp) {
     ASSERT(parseValueTailUpdate.length === arguments.length, 'arg count');
-    ASSERT(curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN, 'have not consumed the update op yet');
+    ASSERT(tok_getType() === $PUNC_PLUS_PLUS || tok_getType() === $PUNC_MIN_MIN, 'have not consumed the update op yet');
     ASSERT(opName === '--' || opName === '++', 'enum');
-    ASSERT(curtok._str === opName, 'should be in sync');
+    ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === opName, 'should be in sync');
 
     // note: this is ++/-- SUFFIX. This version DOES have newline restrictions!
 
     if (leftHandSideExpression === ONLY_LHSE) {
-      return THROW_TOKEN('A `' + opName + '` update expression is not allowed here', argStartToken);
+      return THROW_TOKEN2('A `' + opName + '` update expression is not allowed here', $tt_argStartToken.start, $tt_argStartToken.start + 1); // TODO: use stop
     }
 
     // if there is a newline between the previous value and UpdateExpression (++ or --) then it is not postfix
@@ -8495,7 +8916,7 @@ function Parser(code, options = {}) {
 
     AST_setNodeDangerously(astProp, {
       type: 'UpdateExpression',
-      loc: AST_getClosedLoc(argStartToken),
+      loc: AST_getClosedLoc($tt_argStartToken.line, $tt_argStartToken.column, $tt_argStartToken.start),
       argument: AST_popNode(astProp),
       operator: opName,
       prefix: false,
@@ -8509,16 +8930,20 @@ function Parser(code, options = {}) {
     lexerFlags = sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS);
 
     let assignable = ASSIGNABLE_UNDETERMINED;
-    if (curtok.type === $PUNC_PAREN_CLOSE) {
+    if (tok_getType() === $PUNC_PAREN_CLOSE) {
       ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags);
     } else {
       do {
-        if (curtok.type === $PUNC_DOT_DOT_DOT) {
-          let spreadToken = curtok;
+        if (tok_getType() === $PUNC_DOT_DOT_DOT) {
+          let $tt_spreadToken = __oldtok;
+          let $t_spreadToken_line = tok_getLine();
+          let $t_spreadToken_column = tok_getColumn();
+          let $t_spreadToken_start = tok_getStart();
+
           ASSERT_skipToExpressionStart('...', lexerFlags);
           AST_open(astProp, {
             type: 'SpreadElement',
-            loc: AST_getBaseLoc(spreadToken),
+            loc: AST_getBaseLoc($tt_spreadToken),
             argument: undefined,
           });
           let nowAssignable = parseExpression(lexerFlags, 'argument');
@@ -8528,36 +8953,36 @@ function Parser(code, options = {}) {
           let nowAssignable = parseExpression(lexerFlags, astProp);
           assignable = mergeAssignable(nowAssignable, assignable);
         }
-        if (curtok.type !== $PUNC_COMMA) break;
+        if (tok_getType() !== $PUNC_COMMA) break;
         ASSERT_skipToExpressionStartGrouped(',', lexerFlags);
-        if (curtok.type === $PUNC_PAREN_CLOSE) {
+        if (tok_getType() === $PUNC_PAREN_CLOSE) {
           // `x(a,b,)`
           if (allowTrailingFunctionComma) break;
           THROW('Targeted language version does not support trailing call arg comma');
         }
       } while (true);
-      if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Expecting closing paren `)` for the call, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (tok_getType() !== $PUNC_PAREN_CLOSE) THROW('Expecting closing paren `)` for the call, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags);
     }
     return sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
   }
-  function parseDynamicImportStatement(lexerFlags, importToken, astProp) {
+  function parseDynamicImportStatement(lexerFlags, $tt_importToken, astProp) {
     ASSERT(parseDynamicImportStatement.length === arguments.length, 'arg count');
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc(importToken),
+      loc: AST_getBaseLoc($tt_importToken),
       expression: undefined,
     });
-    parseDynamicImport(lexerFlags, importToken, 'expression');
-    let assignable = parseValueTail(lexerFlags, importToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, 'expression');
-    parseExpressionFromOp(lexerFlags, importToken, assignable, 'expression');
+    parseDynamicImport(lexerFlags, $tt_importToken, 'expression');
+    let assignable = parseValueTail(lexerFlags, $tt_importToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, 'expression');
+    parseExpressionFromOp(lexerFlags, $tt_importToken, assignable, 'expression');
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
-  function parseDynamicImport(lexerFlags, importToken, astProp) {
+  function parseDynamicImport(lexerFlags, $tt_importToken, astProp) {
     ASSERT(parseDynamicImport.length === arguments.length, 'arg count');
-    ASSERT(curtok.type === $PUNC_PAREN_OPEN, 'havent consumed the paren yet');
+    ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'havent consumed the paren yet');
 
     // NOTE: dynamic import is NOT bound to the module goal (!) Only to the version (ES2020+)
     if (!allowDynamicImport) {
@@ -8569,31 +8994,31 @@ function Parser(code, options = {}) {
     if (acornCompat) {
       AST_open(astProp, {
         type: 'ImportExpression',
-        loc: AST_getBaseLoc(importToken),
+        loc: AST_getBaseLoc($tt_importToken),
         source: undefined,
       });
     } else {
       AST_open(astProp, {
         type: 'CallExpression',
-        loc: AST_getBaseLoc(importToken),
+        loc: AST_getBaseLoc($tt_importToken),
         callee: undefined,
         arguments: [],
       });
       AST_setNode('callee', {
         type: 'Import',
-        loc: AST_getClosedLoc(importToken),
+        loc: AST_getClosedLoc($tt_importToken.line, $tt_importToken.column, $tt_importToken.start),
       });
     }
 
     ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, lexerFlags); // The arg to dynamic import is mandatory and an arbitrary expr
     // Note: the import call arg sets the +IN flag in the grammar (can't use `in` operator). So that's why we set it too
     let assignable = parseExpression(lexerFlags | LF_IN_FOR_LHS, acornCompat ? 'source' : 'arguments');
-    if (curtok.type !== $PUNC_PAREN_CLOSE) {
-      if (curtok.type === $PUNC_COMMA) {
+    if (tok_getType() !== $PUNC_PAREN_CLOSE) {
+      if (tok_getType() === $PUNC_COMMA) {
         // [x]: `import(a, b)`
         THROW('Dynamic `import` only expected exactly one argument and does not allow for a trailing comma');
       }
-      if (curtok.type === $ID_in) {
+      if (tok_getType() === $ID_in) {
         THROW('The dynamic import syntax explicitly forbids the `in` operator');
       }
       // [x]: `import(a b)`
@@ -8617,14 +9042,14 @@ function Parser(code, options = {}) {
     return assignable;
   }
 
-  function parseArrowFromPunc(lexerFlags, paramScoop, asyncToken, allowAssignment, paramsSimple) {
+  function parseArrowFromPunc(lexerFlags, paramScoop, $tt_asyncToken, allowAssignment, paramsSimple) {
     ASSERT(arguments.length === parseArrowFromPunc.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_skipToExpressionStart('=>', lexerFlags); // the `{` for a block is subsumed in the expr-start lexer hint
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     ASSERT(_path[_path.length - 1] && _path[_path.length - 1].params, 'params should be wrapped in arrow node now');
-    ASSERT(asyncToken === UNDEF_ASYNC || allowAsyncFunctions, 'async = es8 and this should be confirmed elsewhere');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || allowAsyncFunctions, 'async = es8 and this should be confirmed elsewhere');
 
     if (allowAssignment === ASSIGN_EXPR_IS_ERROR) {
       // - `delete foo => bar`
@@ -8640,18 +9065,18 @@ function Parser(code, options = {}) {
 
     if (options_exposeScopes) AST_set('$scope', paramScoop);
 
-    if (paramScoop.dupeParamErrorToken !== NO_DUPE_PARAMS) {
+    if (paramScoop.dupeParamErrorOffset !== NO_DUPE_PARAMS) {
       // Dupe params are never allowed in arrows (only in some cases for functions)
-      THROW_TOKEN('Arrow had duplicate params', paramScoop.dupeParamErrorToken);
+      THROW_TOKEN('Arrow had duplicate params', paramScoop.dupeParamErrorOffset, paramScoop.dupeParamErrorOffset + 1);
     }
 
     let insideForLhs = hasAllFlags(lexerFlags, LF_IN_FOR_LHS);
     let arrowInheritedFlags = lexerFlags & (LF_CAN_NEW_DOT_TARGET | LF_IN_CONSTRUCTOR);
 
-    lexerFlags = resetLexerFlagsForFuncAndArrow(lexerFlags, UNDEF_STAR, asyncToken, IS_ARROW);
+    lexerFlags = resetLexerFlagsForFuncAndArrow(lexerFlags, UNDEF_STAR, $tt_asyncToken, IS_ARROW);
     lexerFlags |= arrowInheritedFlags; // Some flags _are_ inherited by arrows (tests will show you the way)
 
-    if (curtok.type === $PUNC_CURLY_OPEN) {
+    if (tok_getType() === $PUNC_CURLY_OPEN) {
       // This means: "is the body of the arrow not a block?"
       // Skip for Babel: https://github.com/babel/babel/pull/6836
       if (!babelCompat) AST_set('expression', false);
@@ -8677,27 +9102,27 @@ function Parser(code, options = {}) {
 
     {
       // All checks in this block only serve to provide a nicer error message. Omitting them would still lead to an error.
-      if (insideForLhs && curtok.type === $ID_in) {
+      if (insideForLhs && tok_getType() === $ID_in) {
         THROW('Arrows cannot be lhs to for-in');
       }
       // Arrows cannot have tails. Most expressions will consume them, but not `x++` for example. So do after either path.
-      if (curtok.type === $PUNC_DOT) {
+      if (tok_getType() === $PUNC_DOT) {
         THROW('Block body arrows can not be immediately accessed without a group');
       }
-      if (curtok.type === $PUNC_PAREN_OPEN) {
+      if (tok_getType() === $PUNC_PAREN_OPEN) {
         THROW('Block body arrows can not be immediately invoked without a group');
       }
-      if (curtok.type === $PUNC_BRACKET_OPEN) {
+      if (tok_getType() === $PUNC_BRACKET_OPEN) {
         THROW('Block body arrows can not be immediately accessed without a group');
       }
-      if (isTemplateStart(curtok.type)) {
+      if (isTemplateStart(tok_getType())) {
         THROW('Block body arrows can not be immediately tagged without a group');
       }
-      if ((isCompoundAssignment(curtok.type) || isNonAssignBinOp(curtok.type, lexerFlags)) && (tok_getNlwas() === false || curtok.type === $PUNC_DIV)) {
+      if ((isCompoundAssignment(tok_getType()) || isNonAssignBinOp(tok_getType(), lexerFlags)) && (tok_getNlwas() === false || tok_getType() === $PUNC_DIV)) {
         // - `()=>{}+a'
         THROW('An arrow function can not be part of an operator to the right');
       }
-      if ((curtok.type === $PUNC_PLUS_PLUS || curtok.type === $PUNC_MIN_MIN) && tok_getNlwas() === false) {
+      if ((tok_getType() === $PUNC_PLUS_PLUS || tok_getType() === $PUNC_MIN_MIN) && tok_getNlwas() === false) {
         // - `()=>{}++'
         // - `()=>{}--'
         // - `()=>{}\n++x'
@@ -8708,22 +9133,26 @@ function Parser(code, options = {}) {
 
     return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW;
   }
-  function parseGroupToplevels(lexerFlags, asyncStmtOrExpr, allowAssignment, asyncToken, asyncTokenCanon, newlineAfterAsync, leftHandSideExpression, astProp) {
+  function parseGroupToplevels(lexerFlags, asyncStmtOrExpr, allowAssignment, $tt_asyncToken, asyncCanon, newlineAfterAsync, leftHandSideExpression, astProp) {
     ASSERT(parseGroupToplevels.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(curtok.type === $PUNC_PAREN_OPEN, 'should have thrown if not currently at paren open');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'should have thrown if not currently at paren open');
     ASSERT_ASSIGN_EXPR(allowAssignment);
-    let parenToken = curtok;
+    let $tt_parenToken = __oldtok;
+    let $t_parenToken_line = tok_getLine();
+    let $t_parenToken_column = tok_getColumn();
+    let $t_parenToken_start = tok_getStart();
+
 
     ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // Patterns are subsumed by exprs when it comes to skip
-    return _parseGroupToplevels(lexerFlags, parenToken, asyncStmtOrExpr, allowAssignment, NOT_DELETE_ARG, asyncToken, asyncTokenCanon, newlineAfterAsync, leftHandSideExpression, astProp);
+    return _parseGroupToplevels(lexerFlags, $tt_parenToken, asyncStmtOrExpr, allowAssignment, NOT_DELETE_ARG, $tt_asyncToken, asyncCanon, newlineAfterAsync, leftHandSideExpression, astProp);
   }
-  function _parseGroupToplevels(lexerFlagsBeforeParen, parenToken, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, isDeleteArg, asyncToken, asyncTokenCanon, newlineAfterAsync, leftHandSideExpression, astProp) {
+  function _parseGroupToplevels(lexerFlagsBeforeParen, $tt_parenToken, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, isDeleteArg, $tt_asyncToken, asyncCanon, newlineAfterAsync, leftHandSideExpression, astProp) {
     ASSERT(_parseGroupToplevels.length === arguments.length, 'arg count');
     ASSERT(newlineAfterAsync === NOT_ASYNC_PREFIXED || newlineAfterAsync === IS_ASYNC_PREFIXED, 'enum');
     ASSERT(typeof astProp === 'string');
-    ASSERT(parenToken !== curtok, 'paren should be skipped');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_parenToken.start !== tok_getStart(), 'paren should be skipped');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignmentForGroupToBeArrow);
     // = parseGroup(), = parseArrow()
     // will parse `=>` tail if it exists (except in async edge cases)
@@ -8732,7 +9161,11 @@ function Parser(code, options = {}) {
     // If this was `async` prefixed then the callsite will deal with the tail, arrow or not. This is because
     // it needs to take care of the `async \n (x) => z` case and clean up the AST properly.
 
-    let firstTokenAfterParen = curtok;
+    let $tt_firstTokenAfterParen = __oldtok;
+    let $t_firstTokenAfterParen_line = tok_getLine();
+    let $t_firstTokenAfterParen_column = tok_getColumn();
+    let $t_firstTokenAfterParen_start = tok_getStart();
+
 
     // notable remarks;
     // - empty group `()` is the only one that must be followed by an arrow (`=>`) unless async
@@ -8753,10 +9186,10 @@ function Parser(code, options = {}) {
     ASSERT(paramScoop._ = 'arrow scope');
     ASSERT(paramScoop._funcName = '(arrow has no name)');
 
-    if (curtok.type === $PUNC_PAREN_CLOSE) {
+    if (tok_getType() === $PUNC_PAREN_CLOSE) {
       // special case; the `()` here must be the arrow header or (possibly) an `async()` function call
 
-      if (asyncToken !== UNDEF_ASYNC) {
+      if ($tt_asyncToken !== UNDEF_ASYNC) {
         ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags); // can be `async() / x`     TODO: next must be `=>` or non-binop expr tail or asi continuation
         // all async prefixed cases are handled by special async call site
         // - `async ();`
@@ -8782,8 +9215,8 @@ function Parser(code, options = {}) {
           newlineAfterAsync,
           MIGHT_DESTRUCT,
           true,
-          asyncToken,
-          asyncTokenCanon,
+          $tt_asyncToken,
+          asyncCanon,
           ASSIGNABLE_UNDETERMINED,
           astProp
         );
@@ -8791,7 +9224,10 @@ function Parser(code, options = {}) {
 
       ASSERT_skipToArrowOrDie($PUNC_PAREN_CLOSE, lexerFlags);
 
-      if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('Arrow not allowed in this position', asyncToken === UNDEF_ASYNC ? parenToken : asyncToken);
+      if (leftHandSideExpression === ONLY_LHSE) {
+        let $tt_errorOffsetToken = $tt_asyncToken === UNDEF_ASYNC ? $tt_parenToken : $tt_asyncToken;
+        return THROW_TOKEN('Arrow not allowed in this position', $tt_errorOffsetToken.start, $tt_errorOffsetToken.start + 1); // TODO: use stop
+      }
 
       lexerFlags = lexerFlagsBeforeParen; // reset no_asi state to before the group
 
@@ -8808,21 +9244,21 @@ function Parser(code, options = {}) {
       if (babelCompat) {
         AST_open(astProp, {
           type: 'ArrowFunctionExpression',
-          loc: AST_getBaseLoc(parenToken),
+          loc: AST_getBaseLoc($tt_parenToken),
           params: [],
           id: null,
           generator: false,
-          async: asyncToken !== UNDEF_ASYNC,
+          async: $tt_asyncToken !== UNDEF_ASYNC,
           body: undefined,
         });
       } else {
         AST_open(astProp, {
           type: 'ArrowFunctionExpression',
-          loc: AST_getBaseLoc(parenToken),
+          loc: AST_getBaseLoc($tt_parenToken),
           params: [],
           id: null,
           generator: false,
-          async: asyncToken !== UNDEF_ASYNC,
+          async: $tt_asyncToken !== UNDEF_ASYNC,
           expression: undefined, // TODO: init to bool
           body: undefined,
         });
@@ -8842,8 +9278,8 @@ function Parser(code, options = {}) {
     let wasSimple = PARAMS_ALL_SIMPLE; // true if only idents and without assignment (so es5 valid)
     let mustBeArrow = false; // special case; a `...` must mean arrow, and a trailing comma must mean arrow as well
 
-    while (curtok.type !== $PUNC_PAREN_CLOSE) { // top-level group loop, list of ident, array, object, rest, and other expressions
-      if (isIdentToken(curtok.type)) {
+    while (tok_getType() !== $PUNC_PAREN_CLOSE) { // top-level group loop, list of ident, array, object, rest, and other expressions
+      if (isIdentToken(tok_getType())) {
         // - (x)
         // - (x = y)
         // - (x, y)
@@ -8855,18 +9291,18 @@ function Parser(code, options = {}) {
         // - (new x)
 
         // first scan next token to see what potential checks we need to apply
-        const identToken = curtok;
-        const identTokenCanon = tok_getCanon();
+        const $tt_identToken = __oldtok;
+        const identCanon = tok_getCanon();
         skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // because `(x/y)` and `(typeof /x/)` need different next token states
 
-        let wasAssignment = curtok.type === $PUNC_EQ;
-        let wasCommaOrEnd = curtok.type === $PUNC_COMMA || curtok.type === $PUNC_PAREN_CLOSE;
+        let wasAssignment = tok_getType() === $PUNC_EQ;
+        let wasCommaOrEnd = tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_PAREN_CLOSE;
 
-        ASSERT(toplevelComma || curtok.type !== $PUNC_PAREN_CLOSE || assignable === ASSIGNABLE_UNDETERMINED, 'for group with one simple element, delete edge case');
+        ASSERT(toplevelComma || tok_getType() !== $PUNC_PAREN_CLOSE || assignable === ASSIGNABLE_UNDETERMINED, 'for group with one simple element, delete edge case');
 
-        let exprAssignable = parseExpressionAfterIdent(lexerFlags, identToken, identTokenCanon, BINDING_TYPE_ARG, astProp);
+        let exprAssignable = parseExpressionAfterIdent(lexerFlags, $tt_identToken, identCanon, BINDING_TYPE_ARG, astProp);
         assignable = mergeAssignable(exprAssignable, assignable);
-        SCOPE_addLexBinding(paramScoop, identTokenCanon, BINDING_TYPE_ARG, FDS_ILLEGAL);
+        SCOPE_addLexBinding(paramScoop, identCanon, BINDING_TYPE_ARG, FDS_ILLEGAL);
 
         if (wasAssignment) {
           // [v]: `(foo = x) => {}`
@@ -8891,7 +9327,7 @@ function Parser(code, options = {}) {
           // - delete ((foo) => foo)
           // - delete ((foo).bar)
 
-          if (!toplevelComma && curtok.type === $PUNC_PAREN_CLOSE) {
+          if (!toplevelComma && tok_getType() === $PUNC_PAREN_CLOSE) {
             ASSERT(destructible === MIGHT_DESTRUCT, 'should not have parsed anything yet so destructible is still default');
             ASSERT(wasSimple === PARAMS_ALL_SIMPLE, 'should still be the default');
             // this must be the case where the group consists entirely of one ident, `(foo)`
@@ -8911,7 +9347,7 @@ function Parser(code, options = {}) {
             wasSimple = PARAMS_SOME_COMPLEX; // if we can't assign to it then the name is a keyword of sorts
           } else if (
             // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
-            isStrictOnlyKeyword(identToken, identTokenCanon)
+            isStrictOnlyKeyword($tt_identToken, identCanon)
           ) {
             // Mark the args as non-simple such that if the body contains a "use strict" directive, it will still throw
             // If already in strict mode then make an arrow illegal immediately.
@@ -8941,7 +9377,7 @@ function Parser(code, options = {}) {
           wasSimple = PARAMS_SOME_COMPLEX;
         }
       }
-      else if (curtok.type === $PUNC_CURLY_OPEN) {
+      else if (tok_getType() === $PUNC_CURLY_OPEN) {
         // note: grouped object/array literals are _never_ assignable
         // - ({})
         // - ({..})
@@ -8950,20 +9386,24 @@ function Parser(code, options = {}) {
         // - ({..}.foo)
         // - ({..}.foo = x)
         // - ({..} + foo)
-        let startOfPattern = curtok;
+        let $tt_startOfPattern = __oldtok;
+        let $t_startOfPattern_line = tok_getLine();
+        let $t_startOfPattern_column = tok_getColumn();
+        let $t_startOfPattern_start = tok_getStart();
+
         destructible |= parseObjectOuter(lexerFlags, paramScoop, BINDING_TYPE_ARG, PARSE_INIT, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         // - `({web: true,  __proto__: x, __proto__: y});`
-        if (curtok.type !== $PUNC_COMMA && curtok.type !== $PUNC_PAREN_CLOSE) {
+        if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_PAREN_CLOSE) {
           // Note: this is NOT destructible because we're in a group toplevel so an assignment would just be an
           // assignment, not a destructuring. And any tail would not lead to any kind of pattern. And destructuring
           // can not happen to groups, so `({x=y})=z` is not valid because of the parens. So cant destructure this.
           // Fixes `async ({} + 1) => x;`
           destructible |= CANT_DESTRUCT;
         }
-        assignable = parseAfterPatternInGroup(lexerFlags, startOfPattern, assignable, destructible, astProp);
+        assignable = parseAfterPatternInGroup(lexerFlags, $tt_startOfPattern, assignable, destructible, astProp);
         wasSimple = PARAMS_SOME_COMPLEX;
       }
-      else if (curtok.type === $PUNC_BRACKET_OPEN) {
+      else if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // note: grouped object/array literals are _never_ assignable
         // - ([])
         // - ([..])
@@ -8972,29 +9412,33 @@ function Parser(code, options = {}) {
         // - ([..].foo)
         // - ([..].foo = x)
         // - ([..] + foo)
-        let startOfPattern = curtok;
+        let $tt_startOfPattern = __oldtok;
+        let $t_startOfPattern_line = tok_getLine();
+        let $t_startOfPattern_column = tok_getColumn();
+        let $t_startOfPattern_start = tok_getStart();
+
         destructible |= parseArrayOuter(lexerFlags, paramScoop, BINDING_TYPE_ARG, PARSE_INIT, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         // - `([{web: true,  __proto__: x, __proto__: y}]);`
-        if (curtok.type !== $PUNC_COMMA && curtok.type !== $PUNC_PAREN_CLOSE) {
+        if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_PAREN_CLOSE) {
           // Note: this is NOT destructible because we're in a group toplevel so an assignment would just be an
           // assignment, not a destructuring. And any tail would not lead to any kind of pattern. And destructuring
           // can not happen to groups, so `({x=y})=z` is not valid because of the parens. So cant destructure this.
           // Fixes `async ({} + 1) => x;`
           destructible |= CANT_DESTRUCT;
         }
-        assignable = parseAfterPatternInGroup(lexerFlags, startOfPattern, assignable, destructible, astProp);
+        assignable = parseAfterPatternInGroup(lexerFlags, $tt_startOfPattern, assignable, destructible, astProp);
         wasSimple = PARAMS_SOME_COMPLEX;
       }
-      else if (curtok.type === $PUNC_DOT_DOT_DOT) {
+      else if (tok_getType() === $PUNC_DOT_DOT_DOT) {
         // top level group dots kinda have to be rest but there is an `async` edge case where it could be spread
         wasSimple = PARAMS_SOME_COMPLEX;
-        destructible |= parseArrowableTopRest(lexerFlags, paramScoop, asyncToken, astProp);
-        if (asyncToken !== UNDEF_ASYNC) {
+        destructible |= parseArrowableTopRest(lexerFlags, paramScoop, $tt_asyncToken, astProp);
+        if ($tt_asyncToken !== UNDEF_ASYNC) {
           // - `async(...x);`
           // - `async(...x,)`
           // - `async(...x,b)`
           // - `async(...x) => x`
-          if (curtok.type !== $PUNC_PAREN_CLOSE) {
+          if (tok_getType() !== $PUNC_PAREN_CLOSE) {
             // These cases are not valid as arrows so the header cannot destruct.
             // - `async (...x,)`
             // - `async (...x,b)`
@@ -9021,12 +9465,12 @@ function Parser(code, options = {}) {
         let exprAssignable = parseExpression(lexerFlags, astProp);
         // - `((a)) = b;`
         assignable = mergeAssignable(exprAssignable, assignable);
-        if (curtok.type === $PUNC_COMMA) {
+        if (tok_getType() === $PUNC_COMMA) {
           if (!toplevelComma) {
             toplevelComma = true;
             AST_wrapClosedIntoArrayCustom(rootAstProp, {
               type: 'SequenceExpression',
-              loc: AST_getBaseLoc(firstTokenAfterParen),
+              loc: AST_getBaseLoc($tt_firstTokenAfterParen),
               expressions: undefined,
             }, 'expressions');
             astProp = 'expressions';
@@ -9034,25 +9478,25 @@ function Parser(code, options = {}) {
           assignable = __parseExpressions(lexerFlags, assignable, astProp);
         }
         if (toplevelComma) {
-          if (babelCompat) AST_set('extra', {parenthesized: true, parenStart: parenToken.start});
+          if (babelCompat) AST_set('extra', {parenthesized: true, parenStart: $tt_parenToken.start});
           AST_close('SequenceExpression');
           assignable = setNotAssignable(assignable);
         }
-        if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Expected the closing paren `)` for the group, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+        if (tok_getType() !== $PUNC_PAREN_CLOSE) THROW('Expected the closing paren `)` for the group, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
         ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags);
 
-        if (asyncToken !== UNDEF_ASYNC) {
+        if ($tt_asyncToken !== UNDEF_ASYNC) {
           // the next token can not start something that appears in an arrow head so must be an async call
           // - `async("foo".bar);`
           //                    ^
           // - `async("foo".bar) => x`
           //                     ^
           // TODO: move this out because worst case you'll still have to do this down below so we shouldnt add repetitive complexity for this edge case
-          return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, CANT_DESTRUCT, false, asyncToken, asyncTokenCanon, assignable, rootAstProp);
+          return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, CANT_DESTRUCT, false, $tt_asyncToken, asyncCanon, assignable, rootAstProp);
         }
 
         if (babelCompat && !toplevelComma) {
-          AST_babelParenthesizesClosed(parenToken, astProp);
+          AST_babelParenthesizesClosed($tt_parenToken, astProp);
         }
 
         if (isDeleteArg === IS_DELETE_ARG) {
@@ -9067,12 +9511,12 @@ function Parser(code, options = {}) {
         return sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
       }
 
-      if (curtok.type !== $PUNC_COMMA) break;
+      if (tok_getType() !== $PUNC_COMMA) break;
 
       // Note: since this can also be an arrow header, the next token may be a `)` as well as expr start
       ASSERT_skipToExpressionStartGrouped(',', lexerFlags);
 
-      if (curtok.type === $PUNC_PAREN_CLOSE) {
+      if (tok_getType() === $PUNC_PAREN_CLOSE) {
         // [x]: `(a,)`
         //          ^
         // [v]: `async (a,);`
@@ -9101,7 +9545,7 @@ function Parser(code, options = {}) {
         // [v]: `async(x,)`
         // [v]: `async(x,) => x`
 
-        if (asyncToken === UNDEF_ASYNC) {
+        if ($tt_asyncToken === UNDEF_ASYNC) {
           if (allowTrailingFunctionComma) {
             // [v]: `(a,) => a`
             // This may only be valid in ES8+ and as an arrow. Any other case fails here.
@@ -9123,7 +9567,7 @@ function Parser(code, options = {}) {
         // only do this once
         AST_wrapClosedIntoArrayCustom(rootAstProp, {
           type: 'SequenceExpression',
-          loc: AST_getBaseLoc(firstTokenAfterParen),
+          loc: AST_getBaseLoc($tt_firstTokenAfterParen),
           expressions: undefined,
         }, 'expressions');
         astProp = 'expressions';
@@ -9132,7 +9576,7 @@ function Parser(code, options = {}) {
 
     if (toplevelComma) {
       assignable = setNotAssignable(assignable);
-      if (babelCompat) AST_set('extra', {parenthesized: true, parenStart: parenToken.start});
+      if (babelCompat) AST_set('extra', {parenthesized: true, parenStart: $tt_parenToken.start});
       AST_close('SequenceExpression');
     }
 
@@ -9144,16 +9588,16 @@ function Parser(code, options = {}) {
 
     destructible = copyPiggies(destructible, assignable);
 
-    if (curtok.type !== $PUNC_PAREN_CLOSE) {
+    if (tok_getType() !== $PUNC_PAREN_CLOSE) {
       // (I think this check is redundant ...)
-      THROW('Missing closing paren `)` for group, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      THROW('Missing closing paren `)` for group, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     }
     ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags);
 
     lexerFlags = lexerFlagsBeforeParen; // ASI can happen again
     verifyDestructible(destructible);
 
-    let isArrow = curtok.type === $PUNC_EQ_GT;
+    let isArrow = tok_getType() === $PUNC_EQ_GT;
 
     // First deal with arrow-error cases. But don't parse as async just yet (this is to dedupe the error checks)
     if (isArrow) {
@@ -9161,7 +9605,10 @@ function Parser(code, options = {}) {
 
       destructible |= PIGGY_BACK_WAS_ARROW; // Probably redundant...?
 
-      if (leftHandSideExpression === ONLY_LHSE) THROW_TOKEN('Arrow not allowed in this position', asyncToken === UNDEF_ASYNC ? parenToken : asyncToken);
+      if (leftHandSideExpression === ONLY_LHSE) {
+        let $tt_errorOffsetToken = $tt_asyncToken === UNDEF_ASYNC ? $tt_parenToken : $tt_asyncToken;
+        return THROW_TOKEN('Arrow not allowed in this position', $tt_errorOffsetToken.start, $tt_errorOffsetToken.start + 1); // TODO: use stop
+      }
 
       if (tok_getNlwas() === true) {
         // we can safely throw here because there's no way that the `=>` token is valid without an arrow header
@@ -9169,7 +9616,7 @@ function Parser(code, options = {}) {
       }
       if (hasAllFlags(destructible, CANT_DESTRUCT)) {
         // - `([...{a = b} = c]) => d;`
-        if (asyncToken !== UNDEF_ASYNC) THROW('The left hand side of the async arrow is not destructible so arrow is illegal');
+        if ($tt_asyncToken !== UNDEF_ASYNC) THROW('The left hand side of the async arrow is not destructible so arrow is illegal');
         else THROW('The left hand side of the arrow is not destructible so arrow is illegal');
       }
       if (hasAllFlags(destructible, DESTRUCT_ASSIGN_ONLY)) {
@@ -9253,7 +9700,7 @@ function Parser(code, options = {}) {
         // [v]: `async x => async ([a = await])`
         // [v]: `async x => async ([a = await b])`
 
-        if (asyncToken !== UNDEF_ASYNC) {
+        if ($tt_asyncToken !== UNDEF_ASYNC) {
           return THROW('The parameter header of an async arrow cannot contain `await` as varname nor as a keyword');
         }
         if (hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
@@ -9341,21 +9788,21 @@ function Parser(code, options = {}) {
       THROW('Group contained a value that must destruct but this was not an arrow so it is invalid');
     }
 
-    if (asyncToken !== UNDEF_ASYNC) {
+    if ($tt_asyncToken !== UNDEF_ASYNC) {
       // `async(a);`
       // `async(a = await x);`
       // `async(a) => x`
       // `async(a = await x) => x`
       destructible = copyPiggies(destructible, assignable);
-      return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, destructible, false, asyncToken, asyncTokenCanon, assignable, rootAstProp);
+      return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, destructible, false, $tt_asyncToken, asyncCanon, assignable, rootAstProp);
     }
 
     if (isArrow) {
       // arrow function
       // `(a) => {}`
 
-      ASSERT(asyncToken === UNDEF_ASYNC, 'checked above');
-      parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, UNDEF_ASYNC, parenToken, allowAssignmentForGroupToBeArrow, rootAstProp);
+      ASSERT($tt_asyncToken === UNDEF_ASYNC, 'checked above');
+      parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, UNDEF_ASYNC, $tt_parenToken.line, $tt_parenToken.column, $tt_parenToken.start, allowAssignmentForGroupToBeArrow, rootAstProp);
       // we just parsed an arrow. Whatever the state of await/yield was we can ignore that here.
       if (isDeleteArg === IS_DELETE_ARG) return NOT_SINGLE_IDENT_WRAP_NA;
       // Assignability resets after the arrow but an outer `async` could affect the inner arrow:
@@ -9369,7 +9816,7 @@ function Parser(code, options = {}) {
     }
 
     if (babelCompat && !toplevelComma) {
-      AST_babelParenthesizesClosed(parenToken, astProp);
+      AST_babelParenthesizesClosed($tt_parenToken, astProp);
     }
 
     // The remaining cases should be handled by caller
@@ -9417,8 +9864,8 @@ function Parser(code, options = {}) {
     return sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
   }
   function parseAfterPatternInGroup(lexerFlags, startOfPattern, assignable, destructible, astProp) {
-    ASSERT(curtok.type !== $PUNC_EQ, 'destruct assignments should be parsed at this point');
-    if (curtok.type !== $PUNC_COMMA && curtok.type !== $PUNC_PAREN_CLOSE) {
+    ASSERT(tok_getType() !== $PUNC_EQ, 'destruct assignments should be parsed at this point');
+    if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_PAREN_CLOSE) {
       // This is top level group so member expressions can not be destructured, however `(x.y)=z` should be valid
       // - ({}.x)
       //      ^
@@ -9457,7 +9904,7 @@ function Parser(code, options = {}) {
       assignable = mergeAssignable(exprAssignable, assignable);
 
       // If still not end of element of the group then parse a binary expression of some sort
-      if (curtok.type !== $PUNC_COMMA && curtok.type !== $PUNC_PAREN_CLOSE) {
+      if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_PAREN_CLOSE) {
         // [v]: `({} + 1);`
         //           ^
         // [x]: `({x} = await bar) => {}`
@@ -9492,14 +9939,14 @@ function Parser(code, options = {}) {
 
     return assignable;
   }
-  function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, groupDestructible, zeroArgs, asyncToken, asyncTokenCanon, assignable, astProp) {
+  function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, groupDestructible, zeroArgs, $tt_asyncToken, asyncCanon, assignable, astProp) {
     ASSERT(parseAfterAsyncGroup.length === arguments.length, 'arg count');
     ASSERT(typeof groupDestructible === 'number', 'destructible num');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // this is called after parsing a group that followed an `async` when it might be an async arrow
-    if (curtok.type === $PUNC_EQ_GT) {
+    if (tok_getType() === $PUNC_EQ_GT) {
       if (tok_getNlwas() === true) {
         THROW('The arrow is a restricted production an there can not be a newline before `=>` token');
       }
@@ -9522,7 +9969,7 @@ function Parser(code, options = {}) {
         //                    ^
         // - `async ({x=z}, y) => x;`          (shorthand default only valid as assign, never valid here)
         //                     ^
-        if (curtok.type === $PUNC_EQ_GT) {
+        if (tok_getType() === $PUNC_EQ_GT) {
           // - `async (a, ...b=fail) => a;`
           THROW('The group was not destructible and yet the next token is an arrow');
         }
@@ -9532,7 +9979,7 @@ function Parser(code, options = {}) {
       else if (zeroArgs) {
         // - `async () => foo`
         //             ^
-        parseArrowAfterAsyncNoArgGroup(lexerFlags, paramScoop, toplevelComma, asyncToken, allowAssignment, astProp);
+        parseArrowAfterAsyncNoArgGroup(lexerFlags, paramScoop, toplevelComma, $tt_asyncToken, allowAssignment, astProp);
       }
       else if (hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_AWAIT)) {
         // - `async (foo = await x) => foo`            (fail)
@@ -9553,7 +10000,7 @@ function Parser(code, options = {}) {
         ASSERT(!hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD), 'caller should have dealt with `yield` in arrow args');
         // - `async (foo) => foo`
         //                ^
-        parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, asyncToken, asyncToken, allowAssignment, astProp);
+        parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, $tt_asyncToken, $tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start, allowAssignment, astProp);
       }
     }
     else { // curtok != arrow
@@ -9566,8 +10013,8 @@ function Parser(code, options = {}) {
 
         AST_setNode(astProp, {
           type: 'CallExpression',
-          loc: AST_getClosedLoc(asyncToken),
-          callee: AST_getIdentNode(asyncToken, asyncTokenCanon),
+          loc: AST_getClosedLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
+          callee: AST_getIdentNode($tt_asyncToken, asyncCanon),
           arguments: [],
         });
       }
@@ -9577,15 +10024,15 @@ function Parser(code, options = {}) {
         // - `async \n (a, b, c);`
         //                      ^
 
-        AST_patchAsyncCall(asyncToken, asyncTokenCanon, astProp);
+        AST_patchAsyncCall($tt_asyncToken, asyncCanon, astProp);
       }
 
-      let assignable = parseValueTail(lexerFlags, asyncToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
+      let assignable = parseValueTail(lexerFlags, $tt_asyncToken, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
       if (fromStmtOrExpr === IS_STATEMENT) {
         // in expressions operator precedence is handled elsewhere. in statements this is the start,
-        assignable = parseExpressionFromOp(lexerFlags, asyncToken, assignable, astProp);
-        if (curtok.type === $PUNC_COMMA) {
-          assignable = _parseExpressions(lexerFlags, asyncToken, assignable, astProp);
+        assignable = parseExpressionFromOp(lexerFlags, $tt_asyncToken, assignable, astProp);
+        if (tok_getType() === $PUNC_COMMA) {
+          assignable = _parseExpressions(lexerFlags, $tt_asyncToken, assignable, astProp);
         }
         parseSemiOrAsi(lexerFlags);
       }
@@ -9597,9 +10044,9 @@ function Parser(code, options = {}) {
 
     if (fromStmtOrExpr === IS_STATEMENT) {
       // if this is an async arrow at the statement start then we should allow to parse a sequence here
-      if (curtok.type === $PUNC_COMMA) {
+      if (tok_getType() === $PUNC_COMMA) {
         // Note: since we're parsing expressions inside on the statement level we don't care about the assignable flags
-        _parseExpressions(lexerFlags, asyncToken, initNotAssignable(), astProp);
+        _parseExpressions(lexerFlags, $tt_asyncToken, initNotAssignable(), astProp);
       }
       parseSemiOrAsi(lexerFlags);
     }
@@ -9618,9 +10065,9 @@ function Parser(code, options = {}) {
     // - `async (a = (...await) => {});`
     return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW | (assignable & PIGGY_BACK_SAW_AWAIT);
   }
-  function parseArrowAfterAsyncNoArgGroup(lexerFlags, paramScoop, toplevelComma, asyncToken, allowAssignment, astProp) {
+  function parseArrowAfterAsyncNoArgGroup(lexerFlags, paramScoop, toplevelComma, $tt_asyncToken, allowAssignment, astProp) {
     ASSERT(parseArrowAfterAsyncNoArgGroup.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
 
     // The ast should look something like this now:
     // {
@@ -9636,43 +10083,43 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc(asyncToken),
+        loc: AST_getBaseLoc($tt_asyncToken),
         params: [],
         id: null,
         generator: false,
-        async: asyncToken !== UNDEF_ASYNC,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         body: undefined,
       });
     } else {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc(asyncToken),
+        loc: AST_getBaseLoc($tt_asyncToken),
         params: [],
         id: null,
         generator: false,
-        async: asyncToken !== UNDEF_ASYNC,
+        async: $tt_asyncToken !== UNDEF_ASYNC,
         expression: undefined, // TODO: init to bool
         body: undefined,
       });
     }
 
-    let assignable = parseArrowFromPunc(lexerFlags, paramScoop, asyncToken, allowAssignment, PARAMS_ALL_SIMPLE);
+    let assignable = parseArrowFromPunc(lexerFlags, paramScoop, $tt_asyncToken, allowAssignment, PARAMS_ALL_SIMPLE);
     AST_close('ArrowFunctionExpression');
     return assignable;
   }
 
-  function parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, asyncToken, arrowStartToken, allowAssignment, astProp) {
+  function parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, $tt_asyncToken, $t_arrowStart_line, $t_arrowStart_column, $t_arrowStart_start, allowAssignment, astProp) {
     ASSERT(parseArrowAfterGroup.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
-    AST_destructArrowParams(toplevelComma, asyncToken, arrowStartToken, astProp);
+    AST_destructArrowParams(toplevelComma, $tt_asyncToken, $t_arrowStart_line, $t_arrowStart_column, $t_arrowStart_start, astProp);
 
-    parseArrowFromPunc(lexerFlags, paramScoop, asyncToken, allowAssignment, wasSimple);
+    parseArrowFromPunc(lexerFlags, paramScoop, $tt_asyncToken, allowAssignment, wasSimple);
 
     AST_close('ArrowFunctionExpression');
   }
-  function parseArrowableTopRest(lexerFlags, scoop, asyncToken, astProp) {
+  function parseArrowableTopRest(lexerFlags, scoop, $tt_asyncToken, astProp) {
     // rest (can not be spread)
     // a `...` at the top-level of a group means this has to be an arrow header unless async'ed
     // a `...[x+y]` at the toplevel is an error
@@ -9685,14 +10132,14 @@ function Parser(code, options = {}) {
     // - async(...{destruct}) => x
     // - async(...<expr>);            // :(
 
-    let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_PAREN_CLOSE, BINDING_TYPE_ARG, asyncToken, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
-    if (asyncToken === UNDEF_ASYNC) {
-      if (hasAllFlags(subDestruct, CANT_DESTRUCT) || curtok.type === $PUNC_COMMA) {
+    let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_PAREN_CLOSE, BINDING_TYPE_ARG, $tt_asyncToken, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+    if ($tt_asyncToken === UNDEF_ASYNC) {
+      if (hasAllFlags(subDestruct, CANT_DESTRUCT) || tok_getType() === $PUNC_COMMA) {
         THROW('The ... argument must be destructible in an arrow header, found something that was not destructible');
       }
-      if (curtok.type === $PUNC_EQ) THROW('Cannot set a default on a rest value');
-      if (curtok.type === $PUNC_COMMA) THROW('Rest arg cannot have a trailing comma');
-      if (curtok.type !== $PUNC_PAREN_CLOSE) THROW('Rest arg must be last but did not find closing paren');
+      if (tok_getType() === $PUNC_EQ) THROW('Cannot set a default on a rest value');
+      if (tok_getType() === $PUNC_COMMA) THROW('Rest arg cannot have a trailing comma');
+      if (tok_getType() !== $PUNC_PAREN_CLOSE) THROW('Rest arg must be last but did not find closing paren');
     }
     // have to return it to invalidate stuff like `(...x=y)=>x`
     return subDestruct;
@@ -9714,7 +10161,7 @@ function Parser(code, options = {}) {
     // - ( <x> , [
     ASSERT(parseArrayLiteralPattern.length === arguments.length, 'arg count');
     ASSERT(skipInit === SKIP_INIT || skipInit === PARSE_INIT, 'skipInit is enum', skipInit);
-    ASSERT(curtok.type === $PUNC_BRACKET_OPEN, 'not yet consumed');
+    ASSERT(tok_getType() === $PUNC_BRACKET_OPEN, 'not yet consumed');
     ASSERT_BINDING_TYPE(bindingType);
 
     // const [a] = b;
@@ -9749,11 +10196,15 @@ function Parser(code, options = {}) {
     // we can parse `in` inside an array literal/destruct
     let lexerFlags = sansFlag(lexerFlagsBeforeParen, LF_IN_FOR_LHS);
 
-    let arrayOpenToken = curtok;
+    let $tt_arrayOpenToken = __oldtok;
+    let $t_arrayOpenToken_line = tok_getLine();
+    let $t_arrayOpenToken_column = tok_getColumn();
+    let $t_arrayOpenToken_start = tok_getStart();
+
     ASSERT_skipToExpressionStartSquareCloseComma($PUNC_BRACKET_OPEN, lexerFlags);
     AST_open(_astProp, {
       type: 'ArrayExpression',
-      loc: AST_getBaseLoc(arrayOpenToken),
+      loc: AST_getBaseLoc($tt_arrayOpenToken),
       elements: [],
     });
 
@@ -9762,7 +10213,7 @@ function Parser(code, options = {}) {
     let destructible = MIGHT_DESTRUCT;
 
     // skip leading commas
-    while (curtok.type === $PUNC_COMMA) {
+    while (tok_getType() === $PUNC_COMMA) {
       ASSERT_skipToExpressionStartSquareCloseComma(',', lexerFlags);
       AST_add(astProp, null);
     }
@@ -9770,9 +10221,13 @@ function Parser(code, options = {}) {
     let spreadStage = NO_SPREAD;
     let assignableYieldAwaitState = ASSIGNABLE_UNDETERMINED; // this is ONLY used to track await/yield state flags so we can propagate them back up
 
-    while (curtok.type !== $PUNC_BRACKET_CLOSE) {
-      let elementStartToken = curtok;
-      if (isIdentToken(curtok.type)) {
+    while (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+      let $tt_elementStartToken = __oldtok;
+      let $t_elementStartToken_line = tok_getLine();
+      let $t_elementStartToken_column = tok_getColumn();
+      let $t_elementStartToken_start = tok_getStart();
+
+      if (isIdentToken(tok_getType())) {
         // - `[x]`
         //     ^
         // - `[x, y]`
@@ -9789,16 +10244,16 @@ function Parser(code, options = {}) {
         // - in all other cases the binding must be a valid value ident (including true, false, typeof, etc)
         //   - some valid idents can not be assigned (`true`, `typeof`, etc) and are not destructible, not assignable
         // first scan next token to see what potential checks we need to apply (wrt the above comments)
-        const identToken = curtok;
-        const identTokenCanon = tok_getCanon();
+        const $tt_identToken = __oldtok;
+        const identCanon = tok_getCanon();
         skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // will properly deal with div/rex cases
 
-        let nextIsAssignment = curtok.type === $PUNC_EQ;
-        let nextIsCommaOrEnd = curtok.type === $PUNC_COMMA || curtok.type === $PUNC_BRACKET_CLOSE;
+        let nextIsAssignment = tok_getType() === $PUNC_EQ;
+        let nextIsCommaOrEnd = tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_BRACKET_CLOSE;
 
         // ASSIGN_EXPR_IS_OK because this might just be an array element, where something like an arrow is legit
         // [v]: `[async ()=>x]`      // requires ASSIGN_EXPR_IS_OK
-        let leftAssignable = parseValueHeadBodyAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
+        let leftAssignable = parseValueHeadBodyAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
         assignableYieldAwaitState |= leftAssignable;
 
         if (nextIsAssignment) {
@@ -9812,7 +10267,7 @@ function Parser(code, options = {}) {
           if (notAssignable(leftAssignable)) {
             // [x]: `[true = x] = x`
             // [x]: `[true = x]`
-            THROW('Cannot assign or destruct to keyword `' + tok_sliceInput(identToken.start, identToken.stop) + '`');
+            THROW('Cannot assign or destruct to keyword `' + tok_sliceInput($tt_identToken.start, $tt_identToken.stop) + '`');
           }
 
           // [v]: `let [x = a, y = b] = o`
@@ -9822,15 +10277,15 @@ function Parser(code, options = {}) {
           // If this isn't a binding, this is a noop
           // If this is inside a group, this is a noop if it turns out not to be an arrow
           // TODO: add test case for catch shadow
-          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
+          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identCanon);
           // If this is not an export declaration, the calls below will be noops
-          addNameToExports(exportedNames, identTokenCanon);
-          addBindingToExports(exportedBindings, identTokenCanon);
+          addNameToExports(exportedNames, identCanon);
+          addBindingToExports(exportedBindings, identCanon);
 
           // We should have just added an Identifier to the AST, so wrap that as left now
           AST_wrapClosedCustom(astProp, {
             type: 'AssignmentExpression',
-            loc: AST_getBaseLoc(identToken),
+            loc: AST_getBaseLoc($tt_identToken),
             left: undefined,
             operator: '=',
             right: undefined,
@@ -9858,10 +10313,10 @@ function Parser(code, options = {}) {
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
             // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
+            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identCanon);
             // If this is not an export declaration, the calls below will be noops
-            addNameToExports(exportedNames, identTokenCanon);
-            addBindingToExports(exportedBindings, identTokenCanon);
+            addNameToExports(exportedNames, identCanon);
+            addBindingToExports(exportedBindings, identCanon);
           }
         }
         else {
@@ -9891,12 +10346,12 @@ function Parser(code, options = {}) {
 
           // This value is not destructible on its own as there is no ident+more value body that is destructible
           // The optional tail may change this if it is a member expression
-          let nowDestruct = parseOptionalDestructibleRestOfExpression(lexerFlags, identToken, bindingType, leftAssignable, CANT_DESTRUCT, $PUNC_BRACKET_CLOSE, astProp);
+          let nowDestruct = parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_identToken, bindingType, leftAssignable, CANT_DESTRUCT, $PUNC_BRACKET_CLOSE, astProp);
           // We can ignore assignability here because the await/yield flags from the last call will be inside the destruct
           destructible |= nowDestruct;
         }
       }
-      else if (curtok.type === $PUNC_CURLY_OPEN) {
+      else if (tok_getType() === $PUNC_CURLY_OPEN) {
         // - [{}]
         //    ^
         // - [{..}]
@@ -9909,11 +10364,15 @@ function Parser(code, options = {}) {
         // - [{a:b}] = x
         // - [{a:1}.foo] = x
         // - `[{}.foo] = x`
-        let objOpenToken = curtok;
+        let $tt_objOpenToken = __oldtok;
+        let $t_objOpenToken_line = tok_getLine();
+        let $t_objOpenToken_column = tok_getColumn();
+        let $t_objOpenToken_start = tok_getStart();
+
         let objDestructible = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, astProp);
-        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, objOpenToken, bindingType, hasAllFlags(objDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, objDestructible, $PUNC_BRACKET_CLOSE, astProp);
+        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_objOpenToken, bindingType, hasAllFlags(objDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, objDestructible, $PUNC_BRACKET_CLOSE, astProp);
       }
-      else if (curtok.type === $PUNC_BRACKET_OPEN) {
+      else if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // - [[]]
         //    ^
         // - [[..]]
@@ -9927,11 +10386,15 @@ function Parser(code, options = {}) {
         // - `[[foo].food() = x] = x`           -- error
         // - `[[foo].length = x] = x`           -- ok
         // note: grouped object/array literals are never assignable
-        let arrOpenToken = curtok;
+        let $tt_arrOpenToken = __oldtok;
+        let $t_arrOpenToken_line = tok_getLine();
+        let $t_arrOpenToken_column = tok_getColumn();
+        let $t_arrOpenToken_start = tok_getStart();
+
         let arrDestructible = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, astProp);
-        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, arrOpenToken, bindingType, hasAllFlags(arrDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, arrDestructible, $PUNC_BRACKET_CLOSE, astProp);
+        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_arrOpenToken, bindingType, hasAllFlags(arrDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, arrDestructible, $PUNC_BRACKET_CLOSE, astProp);
       }
-      else if (curtok.type === $PUNC_DOT_DOT_DOT) {
+      else if (tok_getType() === $PUNC_DOT_DOT_DOT) {
         // TODO: > It is a Syntax Error if DestructuringAssignmentTarget is an ArrayLiteral or an ObjectLiteral.
         // TODO:   https://tc39.github.io/ecma262/#sec-destructuring-assignment-static-semantics-early-errors
         // TODO:   (I think this means `[...[x]] = x` is illegal)
@@ -9959,11 +10422,11 @@ function Parser(code, options = {}) {
 
         let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_BRACKET_CLOSE, bindingType, UNDEF_ASYNC, exportedNames, exportedBindings, astProp);
         destructible |= subDestruct;
-        if (curtok.type !== $PUNC_COMMA && curtok.type !== $PUNC_BRACKET_CLOSE) {
+        if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_BRACKET_CLOSE) {
           THROW('Encountered unexpected token after parsing spread/rest argument ');
         }
 
-        ASSERT(curtok.type !== $PUNC_COMMA || hasAllFlags(subDestruct, CANT_DESTRUCT), 'if comma then cannot destruct, should be dealt with in spread-parsing function');
+        ASSERT(tok_getType() !== $PUNC_COMMA || hasAllFlags(subDestruct, CANT_DESTRUCT), 'if comma then cannot destruct, should be dealt with in spread-parsing function');
         // if there are any other elements after this then this cannot be a destructible since that demands rest as last
         if (spreadStage === NO_SPREAD) spreadStage = LAST_SPREAD;
       }
@@ -9994,11 +10457,15 @@ function Parser(code, options = {}) {
         // syntax is introduced that violates this invariant). If that's assignment then it is a simple assignment. If
         // there is anything more to parse for the expression then the expression is not a simple assignment target.
         // Unfortunately this means a lot of manual parsing, but so be it. And we can probably abstract it.
-        let exprStartToken = curtok;
-        let wasParen = curtok.type === $PUNC_PAREN_OPEN;
+        let $tt_exprStartToken = __oldtok;
+        let $t_exprStartToken_line = tok_getLine();
+        let $t_exprStartToken_column = tok_getColumn();
+        let $t_exprStartToken_start = tok_getStart();
+
+        let wasParen = tok_getType() === $PUNC_PAREN_OPEN;
         let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
 
-        if (curtok.type === $PUNC_EQ) {
+        if (tok_getType() === $PUNC_EQ) {
           if (isAssignable(assignable)) {
             // [v]: `[x()[y] = a ] = z`
             //               ^
@@ -10010,7 +10477,7 @@ function Parser(code, options = {}) {
             //                 ^
             AST_wrapClosedCustom(astProp, {
               type: 'AssignmentExpression',
-              loc: AST_getBaseLoc(elementStartToken),
+              loc: AST_getBaseLoc($tt_elementStartToken),
               left: undefined,
               operator: '=',
               right: undefined,
@@ -10024,15 +10491,15 @@ function Parser(code, options = {}) {
           } else {
             // - `[2=x]`
             //      ^
-            THROW('Cannot assign to lhs (starting with `' + tok_sliceInput(elementStartToken.start, elementStartToken.stop) + '`)');
+            THROW('Cannot assign to lhs (starting with `' + tok_sliceInput($tt_elementStartToken.start, $tt_elementStartToken.stop) + '`)');
           }
         }
 
         // This will stop after the tail of the expression. If there was an operator, it will now be
         // the current token. And in that case the expression is NOT destructible in any way. Otherwise it could
         // be an destructuring assignment if it was assignable in the first place.
-        if (curtok.type !== $PUNC_COMMA && curtok.type !== $PUNC_BRACKET_CLOSE) {
-          assignable = parseExpressionFromOp(lexerFlags, exprStartToken, assignable, astProp);
+        if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_BRACKET_CLOSE) {
+          assignable = parseExpressionFromOp(lexerFlags, $tt_exprStartToken, assignable, astProp);
           assignable = setNotAssignable(assignable);
           destructible |= CANT_DESTRUCT;
         }
@@ -10061,11 +10528,11 @@ function Parser(code, options = {}) {
         }
       }
 
-      if (curtok.type !== $PUNC_COMMA) break; // end of the array
+      if (tok_getType() !== $PUNC_COMMA) break; // end of the array
       // skip one because a trailing comma does not add a `null` to the ast
 
       ASSERT_skipToExpressionStartSquareCloseComma(',', lexerFlags);
-      while (curtok.type === $PUNC_COMMA) {
+      while (tok_getType() === $PUNC_COMMA) {
         ASSERT_skipToExpressionStartSquareCloseComma(',', lexerFlags);
         AST_add(astProp, null);
       }
@@ -10078,14 +10545,14 @@ function Parser(code, options = {}) {
     }
     lexerFlags = lexerFlagsBeforeParen;
 
-    if (curtok.type !== $PUNC_BRACKET_CLOSE) {
+    if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
       // (I think this check is redundant)
-      THROW('Expected the closing bracket `]` for the array, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      THROW('Expected the closing bracket `]` for the array, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     }
     ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags); // a forward slash after ] has to be a division
     AST_close('ArrayExpression');
     if (skipInit === PARSE_INIT) {
-      destructible = parsePatternAssign(lexerFlags, arrayOpenToken, destructible, _astProp);
+      destructible = parsePatternAssign(lexerFlags, $tt_arrayOpenToken, destructible, _astProp);
     }
 
     // pick up the flags from assignable and put them in destructible
@@ -10109,7 +10576,7 @@ function Parser(code, options = {}) {
     // returns whether this object is destructible
     ASSERT(parseObjectLiteralPatternAndAssign.length === arguments.length, 'expecting all args');
     ASSERT(skipInit === SKIP_INIT || skipInit === PARSE_INIT, 'skipInit is enum', skipInit);
-    ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'not yet consumed');
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'not yet consumed');
 
     // parse an object literal or pattern
     // - {}
@@ -10129,24 +10596,28 @@ function Parser(code, options = {}) {
     // - {...x.x, y}
     // - {...x.x = y, y}
 
-    let curlyToken = curtok;
+    let $tt_curlyToken = __oldtok;
+    let $t_curlyToken_line = tok_getLine();
+    let $t_curlyToken_column = tok_getColumn();
+    let $t_curlyToken_start = tok_getStart();
+
     AST_open(astProp, {
       type: 'ObjectExpression',
-      loc: AST_getBaseLoc(curlyToken),
+      loc: AST_getBaseLoc($tt_curlyToken),
       properties: [],
     });
     let destructible = parseObjectLikePatternSansAssign(lexerFlags | LF_NO_ASI, scoop, bindingType, IS_EXPRESSION, exportedNames, exportedBindings, 'properties');
     AST_close('ObjectExpression');
     // this is immediately after the top-level object literal closed that we started parsing
     if (skipInit === PARSE_INIT) {
-      destructible = parsePatternAssign(lexerFlags, curlyToken, destructible, astProp);
+      destructible = parsePatternAssign(lexerFlags, $tt_curlyToken, destructible, astProp);
     }
 
     return destructible;
   }
   function parseObjectLikePatternSansAssign(outerLexerFlags, scoop, bindingType, isExpression, exportedNames, exportedBindings, astProp) {
     ASSERT(parseObjectLikePatternSansAssign.length === arguments.length, 'arg count');
-    ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'should have asserted to be at the curly open of an objlit or pattern here...', curtok);
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'should have asserted to be at the curly open of an objlit or pattern here...');
     // parse the body of something that looks like an object literal (obj lit, class body)
 
     let lexerFlags = sansFlag(outerLexerFlags, LF_IN_FOR_LHS | LF_IN_TEMPLATE);
@@ -10160,8 +10631,8 @@ function Parser(code, options = {}) {
     // need to confirm this for annex B web-compat __proto__.
 
     let hasThunderProto = false;
-    while (curtok.type !== $PUNC_CURLY_CLOSE) {
-      if (curtok.type === $PUNC_COMMA) {
+    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
+      if (tok_getType() === $PUNC_COMMA) {
         // - `{,}`
         //     ^
         THROW('Objects cant have comma without something preceding it');
@@ -10187,7 +10658,7 @@ function Parser(code, options = {}) {
       }
       destructible |= currentDestruct;
 
-      if (curtok.type !== $PUNC_COMMA) break;
+      if (tok_getType() !== $PUNC_COMMA) break;
       ASSERT_skipAny(',', lexerFlags);
     }
 
@@ -10195,12 +10666,12 @@ function Parser(code, options = {}) {
     lexerFlags = outerLexerFlags;
 
     if (isExpression === IS_EXPRESSION) {
-      if (curtok.type !== $PUNC_CURLY_CLOSE) {
-        THROW('Expected the closing curly `}` for an object, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (tok_getType() !== $PUNC_CURLY_CLOSE) {
+        THROW('Expected the closing curly `}` for an object, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       }
       ASSERT_skipDiv($PUNC_CURLY_CLOSE, lexerFlags); // ({...} / foo)
     } else {
-      if (curtok.type === $EOF) THROW('Unexpected EOF while parsing an object literal or pattern');
+      if (tok_getType() === $EOF) THROW('Unexpected EOF while parsing an object literal or pattern');
       ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, lexerFlags);
     }
 
@@ -10212,7 +10683,11 @@ function Parser(code, options = {}) {
     ASSERT(parseObjectLikePart.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
 
-    let startOfKeyToken = curtok;
+    let $tt_startOfKeyToken = __oldtok;
+    let $t_startOfKeyToken_line = tok_getLine();
+    let $t_startOfKeyToken_column = tok_getColumn();
+    let $t_startOfKeyToken_start = tok_getStart();
+
 
     let destructible = bindingType === BINDING_TYPE_ARG || bindingType === BINDING_TYPE_NONE ? MIGHT_DESTRUCT : MUST_DESTRUCT;
     let assignableForPiggies = ASSIGNABLE_UNDETERMINED; // propagate the await/yield state flags, if any (because `(x={a:await f})=>x` should be an error)
@@ -10240,7 +10715,7 @@ function Parser(code, options = {}) {
     // - `{async *key(){}}`
     // - `{...value}`      (this seems to be able to allow any value token including regexes, literals, idents)
 
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       // (This branch is the only case that can lead to objlit prop shorthand iif the next char is `}` or `,` or `=`)
       // All forms can have trailing comma but it will lead to an error in a rest pattern
 
@@ -10261,9 +10736,9 @@ function Parser(code, options = {}) {
       // - `async({await})=>x`    (the error case which requires PIGGY_BACK_SAW_AWAIT)
       // - `({yield})=>x`
 
-      destructible = parseObjectLikePartFromIdent(lexerFlags, startOfKeyToken, scoop, bindingType, exportedNames, exportedBindings, astProp);
+      destructible = parseObjectLikePartFromIdent(lexerFlags, $tt_startOfKeyToken, scoop, bindingType, exportedNames, exportedBindings, astProp);
     }
-    else if (isNumberStringToken(curtok.type)) {
+    else if (isNumberStringToken(tok_getType())) {
       // Property names can also be strings and numbers but these cannot be shorthanded
       // Number/string keys can still destructure just fine (`({"foo": x} = y)`)
       // - `{"foo": bar}`
@@ -10274,11 +10749,15 @@ function Parser(code, options = {}) {
       // - `{15(){}}`
       //     ^
       // - `({15: bar}) => x`
-      let litToken = curtok;
-      let litTokenCanon = tok_getCanon();
-      ASSERT_skipToColonParenOpen(litToken._str, lexerFlags);
+      let $tt_litToken = __oldtok;
+      let $t_litToken_line = tok_getLine();
+      let $t_litToken_column = tok_getColumn();
+      let $t_litToken_start = tok_getStart();
 
-      if (curtok.type === $PUNC_COLON) {
+      let litCanon = tok_getCanon();
+      ASSERT_skipToColonParenOpen($tt_litToken._str, lexerFlags);
+
+      if (tok_getType() === $PUNC_COLON) {
         // Any key-colon combo is destructible, the "value" determines assign/binding/both destructibility:
         // - `{key: ident}`
         //        ^
@@ -10293,19 +10772,19 @@ function Parser(code, options = {}) {
         // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
         // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
         if (options_webCompat === WEB_COMPAT_ON) {
-          if (tok_sliceInput(litToken.start + 1, litToken.stop - 1) === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
+          if (tok_sliceInput($tt_litToken.start + 1, $tt_litToken.stop - 1) === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
         }
 
-        destructible |= parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, litToken, litTokenCanon, bindingType, assignableForPiggies, destructible, scoop, exportedNames, exportedBindings, astProp);
-        ASSERT(curtok.type !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
+        destructible |= parseObjectPropertyValueAfterColon(lexerFlags, $tt_startOfKeyToken, $tt_litToken, litCanon, bindingType, assignableForPiggies, destructible, scoop, exportedNames, exportedBindings, astProp);
+        ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
       }
-      else if (curtok.type === $PUNC_PAREN_OPEN) {
+      else if (tok_getType() === $PUNC_PAREN_OPEN) {
         // Method shorthand
         // - `{5(){}}`
         // - `{'foo'(){}}`
-        AST_setLiteral(astProp, litToken, litTokenCanon);
+        AST_setLiteral(astProp, $tt_litToken, litCanon);
 
-        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, litToken, undefined, astProp);
+        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, $tt_litToken, undefined, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
         destructible |= CANT_DESTRUCT;
@@ -10314,9 +10793,9 @@ function Parser(code, options = {}) {
         THROW('Object literal keys that are strings or numbers must be a method or have a colon: ' + curtok);
       }
 
-      ASSERT(curtok.type !== $PUNC_EQ, 'assignments should be parsed as part of the expression');
+      ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the expression');
     }
-    else if (curtok.type === $PUNC_DOT_DOT_DOT) {
+    else if (tok_getType() === $PUNC_DOT_DOT_DOT) {
       if (targetEsVersion < VERSION_OBJECTSPREAD && targetEsVersion !== VERSION_WHATEVER) {
         THROW('Object spread/rest requires the requested version to be ES9+');
       }
@@ -10341,10 +10820,10 @@ function Parser(code, options = {}) {
       let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_CURLY_CLOSE, bindingType, UNDEF_ASYNC, exportedNames, exportedBindings, astProp);
       ASSERT(typeof subDestruct === 'number', 'should be number');
       destructible |= subDestruct;
-      ASSERT(curtok.type === $EOF || (curtok.type !== $PUNC_COMMA || hasAllFlags(subDestruct, CANT_DESTRUCT)), 'if comma then cannot destruct, should be dealt with in function');
-      ASSERT(curtok.type === $EOF || (curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE), 'abstraction should parse whole rest/spread goal; ' + curtok);
+      ASSERT(tok_getType() === $EOF || (tok_getType() !== $PUNC_COMMA || hasAllFlags(subDestruct, CANT_DESTRUCT)), 'if comma then cannot destruct, should be dealt with in function');
+      ASSERT(tok_getType() === $EOF || (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE), 'abstraction should parse whole rest/spread goal; ');
     }
-    else if (curtok.type === $PUNC_BRACKET_OPEN) {
+    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
       // computed property (is valid in destructuring assignment!)
       // - `({[foo]: x} = y)`
       // - `({[foo]() {}} = y)`            fail
@@ -10352,19 +10831,23 @@ function Parser(code, options = {}) {
       // - `({[x]: y}) => z;`
       // - `function f({[x]: {y = z}}) {}`
 
-      let curlyToken = curtok;
+      let $tt_curlyToken = __oldtok;
+      let $t_curlyToken_line = tok_getLine();
+      let $t_curlyToken_column = tok_getColumn();
+      let $t_curlyToken_start = tok_getStart();
+
       // skip computed key part first because we need to figure out whether we're parsing a method
       ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
       let nowAssignable = parseExpression(lexerFlags, astProp);
       // pass yield/await flags here (note that the assignability itself is irrelevant for this expr)
       // TODO: find a testcase where the setNotAssignable state fails...
       assignableForPiggies = setNotAssignable(nowAssignable | assignableForPiggies);
-      if (curtok.type !== $PUNC_BRACKET_CLOSE) {
-        THROW('Missing closing square bracket for computed property name, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+        THROW('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       }
       ASSERT_skipToColonParenOpen($PUNC_BRACKET_CLOSE, lexerFlags);
 
-      if (curtok.type === $PUNC_COLON) {
+      if (tok_getType() === $PUNC_COLON) {
         // Computed keys do not affect destructibility
         // - `({[foo]: bar} = baz)`
         // - `({[foo]: bar()} = baz)`
@@ -10382,7 +10865,7 @@ function Parser(code, options = {}) {
         if (babelCompat) {
           AST_wrapClosedCustom(astProp, {
             type: NODE_NAME_PROPERTY,
-            loc: AST_getBaseLoc(startOfKeyToken),
+            loc: AST_getBaseLoc($tt_startOfKeyToken),
             key: undefined,
             method: false,
             computed: true,
@@ -10392,7 +10875,7 @@ function Parser(code, options = {}) {
         } else {
           AST_wrapClosedCustom(astProp, {
             type: NODE_NAME_PROPERTY,
-            loc: AST_getBaseLoc(startOfKeyToken),
+            loc: AST_getBaseLoc($tt_startOfKeyToken),
             key: undefined,
             kind: 'init',
             method: false,
@@ -10406,7 +10889,7 @@ function Parser(code, options = {}) {
         destructible = _parseObjectPropertyValueAfterColon(lexerFlags, undefined, bindingType, IS_ASSIGNABLE, destructible, scoop, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
         AST_close(NODE_NAME_PROPERTY);
       }
-      else if (curtok.type === $PUNC_PAREN_OPEN) {
+      else if (tok_getType() === $PUNC_PAREN_OPEN) {
         // [x]: `async function f(){    async function f(){   (a= {[await foo](){}, "x"(){}} ) => a    }    }`
         // [v]: `({[x](){}});`
         // [x]: `({[x](){}} = z);`
@@ -10415,7 +10898,7 @@ function Parser(code, options = {}) {
         // [v]: `wrap({set [foo](c){}, [bar](){}});`
         // [v]: `wrap({[foo](){}, set [bar](e){}});`
         // [x]: `({[foo]() {}} = y)`
-        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, undefined, curlyToken, astProp);
+        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, UNDEF_STAR, UNDEF_GET, UNDEF_SET, undefined, $tt_curlyToken, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
         destructible |= CANT_DESTRUCT;
@@ -10425,7 +10908,7 @@ function Parser(code, options = {}) {
         THROW('A computed property name must be followed by a colon or paren');
       }
     }
-    else if (curtok.type === $PUNC_STAR) {
+    else if (tok_getType() === $PUNC_STAR) {
       // Generator shorthand method (invalid for bindings), the next token must be the id
 
       // - `{*ident(){}} = x`
@@ -10436,50 +10919,66 @@ function Parser(code, options = {}) {
 
       destructible |= CANT_DESTRUCT;
 
-      let starToken = curtok;
+      let $tt_starToken = __oldtok;
+      let $t_starToken_line = tok_getLine();
+      let $t_starToken_column = tok_getColumn();
+      let $t_starToken_start = tok_getStart();
+
       ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
 
-      if (isIdentToken(curtok.type)) {
+      if (isIdentToken(tok_getType())) {
         // - `({*ident(){}})`
-        let identToken = curtok;
-        let identTokenCanon = tok_getCanon();
+        let $tt_identToken = __oldtok;
+        let $t_identToken_line = tok_getLine();
+        let $t_identToken_column = tok_getColumn();
+        let $t_identToken_start = tok_getStart();
+
+        let identCanon = tok_getCanon();
         ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
 
         // - `({*ident(){}})`
         // - `({*get(){}})`       // ok (not a getter!)
         // - `({*set(){}})`       // ok (not a setter!)
         // - `({*async(){}})`     // NOT an async generator! it's a generator
-        AST_setIdent(astProp, identToken, identTokenCanon);
-        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, identToken, undefined, astProp);
+        AST_setIdent(astProp, $tt_identToken, identCanon);
+        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, $tt_starToken, UNDEF_GET, UNDEF_SET, $tt_identToken, undefined, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
       }
-      else if (isNumberStringToken(curtok.type)) {
+      else if (isNumberStringToken(tok_getType())) {
         // - `({*"str"(){}})`
         // - `({*15(){}})`
-        let litToken = curtok;
-        let litTokenCanon = tok_getCanon();
+        let $tt_litToken = __oldtok;
+        let $t_litToken_line = tok_getLine();
+        let $t_litToken_column = tok_getColumn();
+        let $t_litToken_start = tok_getStart();
 
-        ASSERT_skipToParenOpenOrDie(litToken._str, lexerFlags);
-        AST_setLiteral(astProp, litToken, litTokenCanon);
+        let litCanon = tok_getCanon();
 
-        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, litToken, undefined, astProp);
+        ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+        AST_setLiteral(astProp, $tt_litToken, litCanon);
+
+        let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, $tt_starToken, UNDEF_GET, UNDEF_SET, $tt_litToken, undefined, astProp);
         ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
         ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
       }
-      else if (curtok.type === $PUNC_BRACKET_OPEN) {
+      else if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // - `{*[expr](){}} = x`
 
-        let bracketOpenToken = curtok;
+        let $tt_bracketOpenToken = __oldtok;
+        let $t_bracketOpenToken_line = tok_getLine();
+        let $t_bracketOpenToken_column = tok_getColumn();
+        let $t_bracketOpenToken_start = tok_getStart();
+
         // skip dynamic part first because we need to assert that we're parsing a method
         ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
         let assignablePiggies1 = parseExpression(lexerFlags, astProp);
-        if (curtok.type !== $PUNC_BRACKET_CLOSE) {
-          THROW('Missing closing square bracket for computed property member name, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+        if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+          THROW('Missing closing square bracket for computed property member name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
         }
         ASSERT_skipToColonParenOpen($PUNC_BRACKET_CLOSE, lexerFlags);
 
-        let assignablePiggies2 = parseObjectMethod(lexerFlags, UNDEF_ASYNC, starToken, UNDEF_GET, UNDEF_SET, undefined, bracketOpenToken, astProp);
+        let assignablePiggies2 = parseObjectMethod(lexerFlags, UNDEF_ASYNC, $tt_starToken, UNDEF_GET, UNDEF_SET, undefined, $tt_bracketOpenToken, astProp);
 
         assignableForPiggies = mergeAssignable(assignablePiggies1, assignableForPiggies);
         assignableForPiggies = mergeAssignable(assignablePiggies2, assignableForPiggies);
@@ -10487,11 +10986,11 @@ function Parser(code, options = {}) {
       else {
         THROW('Invalid objlit key character after generator star');
       }
-      ASSERT(curtok.type !== $PUNC_EQ, 'this struct can not have an init');
+      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct can not have an init');
     }
     else {
       // ({<?>
-      THROW('Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+      THROW('Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
     }
 
     // pick up the flags from assignable and put them in destructible
@@ -10501,13 +11000,13 @@ function Parser(code, options = {}) {
     // - `s = {"foo": await = x} = x`
     return copyPiggies(destructible, assignableForPiggies);
   }
-  function parsePatternAssign(lexerFlags, patternStartToken, destructible, astProp) {
+  function parsePatternAssign(lexerFlags, $tt_patternStartToken, destructible, astProp) {
     ASSERT(parsePatternAssign.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astProp string', astProp);
     // TODO: this is used for arrays only
     verifyDestructible(destructible);
 
-    if (curtok.type === $PUNC_EQ) {
+    if (tok_getType() === $PUNC_EQ) {
       // Note: this might be something like `([x]=await y)=>z` which is illegal so we must propagate await/yield flags
       // - `[x]=y`
       // - `[x=y]=z`
@@ -10555,7 +11054,7 @@ function Parser(code, options = {}) {
       AST_destruct(astProp);
       AST_wrapClosedCustom(astProp, {
         type: 'AssignmentExpression',
-        loc: AST_getBaseLoc(patternStartToken),
+        loc: AST_getBaseLoc($tt_patternStartToken),
         left: undefined,
         operator: '=',
         right: undefined,
@@ -10568,14 +11067,14 @@ function Parser(code, options = {}) {
       // - `function *f(){ ({x} = yield) => {} }`
       destructible |= parseExpression(lexerFlags, 'right');
       AST_close('AssignmentExpression');
-    } else if (isCompoundAssignment(curtok.type)) {
+    } else if (isCompoundAssignment(tok_getType())) {
       // - `[x] += y`
       // - `{x} += y`
       THROW('Cannot compound-assign to an array literal');
     }
     return destructible;
   }
-  function parseObjectPropertyValueAfterColon(lexerFlags, startOfKeyToken, keyToken, keyTokenCanon, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp) {
+  function parseObjectPropertyValueAfterColon(lexerFlags, $tt_startOfKeyToken, $tt_keyToken, keyCanon, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp) {
     ASSERT(parseObjectPropertyValueAfterColon.length === arguments.length, 'arg count');
     // property value or label, some are destructible:
     // - ({ident: ident,}
@@ -10590,14 +11089,14 @@ function Parser(code, options = {}) {
     // anything else as value is non-destructible
     // - `(x={y: await z}) => t`                    (propagate await/yield to invalidate this case)
     // - `({x: b = await c}) => d`                  (propagate await/yield to invalidate this case)
-    ASSERT(startOfKeyToken && startOfKeyToken.type, 'duck type token check');
-    ASSERT(startOfKeyToken.type === $PUNC_BRACKET_OPEN || isIdentToken(startOfKeyToken.type) || isNumberStringToken(startOfKeyToken.type));
-    ASSERT(curtok.type === $PUNC_COLON, 'should not skip colon yet because that breaks end column');
+    ASSERT($tt_startOfKeyToken && $tt_startOfKeyToken.type, 'duck type token check');
+    ASSERT($tt_startOfKeyToken.type === $PUNC_BRACKET_OPEN || isIdentToken($tt_startOfKeyToken.type) || isNumberStringToken($tt_startOfKeyToken.type));
+    ASSERT(tok_getType() === $PUNC_COLON, 'should not skip colon yet because that breaks end column');
 
     if (babelCompat) {
       AST_open(astProp, {
         type: NODE_NAME_PROPERTY,
-        loc: AST_getBaseLoc(startOfKeyToken),
+        loc: AST_getBaseLoc($tt_startOfKeyToken),
         key: undefined,
         method: false, // only the {x(){}} shorthand gets true here, this is {x}
         computed: false,
@@ -10607,7 +11106,7 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: NODE_NAME_PROPERTY,
-        loc: AST_getBaseLoc(startOfKeyToken),
+        loc: AST_getBaseLoc($tt_startOfKeyToken),
         key: undefined,
         kind: 'init', // only getters/setters get special value here
         method: false, // only the {x(){}} shorthand gets true here, this is {x}
@@ -10616,23 +11115,27 @@ function Parser(code, options = {}) {
         shorthand: false,
       });
     }
-    if (isIdentToken(keyToken.type)) {
-      AST_setIdent('key', keyToken, keyTokenCanon);
+    if (isIdentToken($tt_keyToken.type)) {
+      AST_setIdent('key', $tt_keyToken, keyCanon);
     } else {
-      AST_setLiteral('key', keyToken, keyTokenCanon);
+      AST_setLiteral('key', $tt_keyToken, keyCanon);
     }
     ASSERT_skipToExpressionStart(':', lexerFlags);
 
-    destructible = _parseObjectPropertyValueAfterColon(lexerFlags, keyToken, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp);
+    destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $tt_keyToken, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp);
 
     AST_close(NODE_NAME_PROPERTY);
 
     return destructible;
   }
-  function _parseObjectPropertyValueAfterColon(lexerFlags, keyToken, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop, exportedNames, exportedBindings, astProp) {
+  function _parseObjectPropertyValueAfterColon(lexerFlags, $tt_keyToken, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop, exportedNames, exportedBindings, astProp) {
     ASSERT(_parseObjectPropertyValueAfterColon.length === arguments.length, 'arg count');
-    let valueFirstToken = curtok;
-    if (isIdentToken(curtok.type)) {
+    let $tt_valueFirstToken = __oldtok;
+    let $t_valueFirstToken_line = tok_getLine();
+    let $t_valueFirstToken_column = tok_getColumn();
+    let $t_valueFirstToken_start = tok_getStart();
+
+    if (isIdentToken(tok_getType())) {
       // - `{ident: ident}`
       //            ^
       // - `{12: ident ...`
@@ -10649,12 +11152,16 @@ function Parser(code, options = {}) {
       // - `{key: yield / bar}
       // - `{key: await foo}
 
-      // use the rhs of the colon as identToken now
-      let identToken = curtok;
-      let identTokenCanon = tok_getCanon();
+      // use the rhs of the colon as $tt_identToken now
+      let $tt_identToken = __oldtok;
+      let $t_identToken_line = tok_getLine();
+      let $t_identToken_column = tok_getColumn();
+      let $t_identToken_start = tok_getStart();
+
+      let identCanon = tok_getCanon();
 
       // `[...{a: function=x} = c]`
-      // let identAssignableOrErrMsg = nonFatalBindingIdentCheck(identToken, bindingType, lexerFlags);
+      // let identAssignableOrErrMsg = nonFatalBindingIdentCheck($tt_identToken, bindingType, lexerFlags);
       // if (typeof identAssignableOrErrMsg === 'string') TODO
 
       // - `{key: bar}`
@@ -10670,15 +11177,15 @@ function Parser(code, options = {}) {
       // - `{key: bar + x}`
       // - `{key: bar.foo = x}`
       // - `{key: bar.foo + x}`
-      let wasAssign = curtok.type === $PUNC_EQ;
+      let wasAssign = tok_getType() === $PUNC_EQ;
       // - `{key: bar}`
       // - `{key: bar, koo: baa}`
       // - `{[key]: bar}`
-      let commaOrEnd = curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE;
-      let valueAssignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
+      let commaOrEnd = tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE;
+      let valueAssignable = parseValueAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
       assignableOnlyForYieldAwaitFlags |= valueAssignable;
 
-      if (curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE) {
+      if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE) {
         // - `({a: b} = d)`
         //          ^
         // - `({a: b = x} = d)`
@@ -10697,7 +11204,7 @@ function Parser(code, options = {}) {
             // - `({ *g1() {   return {x: yield}  }})`
             // - `({x:function(){"use strict";}})`
             destructible |= CANT_DESTRUCT;
-          } else if (keyToken && isIdentToken(keyToken.type)) {
+          } else if ($tt_keyToken && isIdentToken($tt_keyToken.type)) {
             // "valid exports"
             // - `[a, {b:d}, c] = obj`
             // If this isn't an export of some kind then the exportedNames and bindings are null so don't worry :)
@@ -10706,10 +11213,10 @@ function Parser(code, options = {}) {
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
             // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
+            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identCanon);
             // If this is not an export declaration, the calls below will be noops
-            addNameToExports(exportedNames, identTokenCanon);
-            addBindingToExports(exportedBindings, identTokenCanon);
+            addNameToExports(exportedNames, identCanon);
+            addBindingToExports(exportedBindings, identCanon);
           } else {
             // non-ident prop with a single ident as value, assignable, destructible. but cant be part of an export decl
             // - `({"a": b})`
@@ -10722,11 +11229,11 @@ function Parser(code, options = {}) {
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
             // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
+            SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identCanon);
             // If this is not an export declaration, the calls below will be noops
             // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-            addNameToExports(exportedNames, identTokenCanon);
-            addBindingToExports(exportedBindings, identTokenCanon);
+            addNameToExports(exportedNames, identCanon);
+            addBindingToExports(exportedBindings, identCanon);
           }
         }
         else {
@@ -10750,7 +11257,7 @@ function Parser(code, options = {}) {
           }
         }
       }
-      else if (curtok.type === $PUNC_EQ) {
+      else if (tok_getType() === $PUNC_EQ) {
         // - `({a: b = x} = d)`
         //           ^
         if (notAssignable(valueAssignable)) {
@@ -10775,15 +11282,15 @@ function Parser(code, options = {}) {
           // If this isn't a binding, this is a noop
           // If this is inside a group, this is a noop if it turns out not to be an arrow
           // TODO: add test case for catch shadow
-          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
+          SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identCanon);
           // If this is not an export declaration, the calls below will be noops
           // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-          addNameToExports(exportedNames, identTokenCanon);
-          addBindingToExports(exportedBindings, identTokenCanon);
+          addNameToExports(exportedNames, identCanon);
+          addBindingToExports(exportedBindings, identCanon);
         }
 
         // The assignment itself cannot affect destructibility so just parse the rest
-        let rhsAssignable = parseExpressionFromOp(lexerFlags, valueFirstToken, valueAssignable, 'value');
+        let rhsAssignable = parseExpressionFromOp(lexerFlags, $tt_valueFirstToken, valueAssignable, 'value');
         assignableOnlyForYieldAwaitFlags |= rhsAssignable;
       }
       else {
@@ -10796,11 +11303,11 @@ function Parser(code, options = {}) {
         // - `({x: y; a: b})`
         //          ^
         destructible |= CANT_DESTRUCT;
-        let rhsAssignable = parseExpressionFromOp(lexerFlags, valueFirstToken, valueAssignable, 'value');
+        let rhsAssignable = parseExpressionFromOp(lexerFlags, $tt_valueFirstToken, valueAssignable, 'value');
         assignableOnlyForYieldAwaitFlags |= rhsAssignable;
       }
     }
-    else if (curtok.type === $PUNC_BRACKET_OPEN) {
+    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
       // - `({ident: []}`
       //             ^
       // - `({ident: <array destruct>`
@@ -10812,11 +11319,15 @@ function Parser(code, options = {}) {
       // - `({key: [foo].length = x} = x)`           -- ok
       // - `({key: [x].foo})`
       // - `({key: [x].foo})`
-      let arrStartToken = curtok;
+      let $tt_arrStartToken = __oldtok;
+      let $t_arrStartToken_line = tok_getLine();
+      let $t_arrStartToken_column = tok_getColumn();
+      let $t_arrStartToken_start = tok_getStart();
+
       let nowDestruct = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, arrStartToken, bindingType, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
+      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_arrStartToken, bindingType, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
     }
-    else if (curtok.type === $PUNC_CURLY_OPEN) {
+    else if (tok_getType() === $PUNC_CURLY_OPEN) {
       // - `({ident: {})`
       //             ^
       // - `({ident: <object destruct>`
@@ -10829,9 +11340,13 @@ function Parser(code, options = {}) {
       // - `({key: {}.length = x} = x)`       -- ok
       // - `({key: {x}.foo})`
       // - `({key: {x}.foo})`
-      let objStartToken = curtok;
+      let $tt_objStartToken = __oldtok;
+      let $t_objStartToken_line = tok_getLine();
+      let $t_objStartToken_column = tok_getColumn();
+      let $t_objStartToken_start = tok_getStart();
+
       let nowDestruct = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, objStartToken, bindingType, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
+      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_objStartToken, bindingType, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
     }
     else {
       // - `{x: 15}`
@@ -10845,7 +11360,11 @@ function Parser(code, options = {}) {
       // - `{x: 15.foo}=x`
       // - `{x: 15.foo()}=x`
 
-      let valueFirstToken = curtok;
+      let $tt_valueFirstToken = __oldtok;
+      let $t_valueFirstToken_line = tok_getLine();
+      let $t_valueFirstToken_column = tok_getColumn();
+      let $t_valueFirstToken_start = tok_getStart();
+
       let nowAssignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, 'value');
 
       let nowDestruct = isAssignable(nowAssignable) ? MIGHT_DESTRUCT : CANT_DESTRUCT; // fixes `[(a)] = x`
@@ -10855,10 +11374,10 @@ function Parser(code, options = {}) {
       } else {
         destructible |= CANT_DESTRUCT;
       }
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, valueFirstToken, bindingType, nowAssignable, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
+      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_valueFirstToken, bindingType, nowAssignable, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
     }
 
-    ASSERT(curtok.type !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
+    ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
 
     // There are tests that will catch these
     // - `async function a(){     (foo = [{m: 5 + t(await bar)}]) => {}     }`
@@ -10867,30 +11386,34 @@ function Parser(code, options = {}) {
     // - `({xxxx:await}) => null`
     return copyPiggies(destructible, assignableOnlyForYieldAwaitFlags);
   }
-  function parseObjectLikePartFromIdent(lexerFlags, startOfPropToken, scoop, bindingType, exportedNames, exportedBindings, astProp) {
+  function parseObjectLikePartFromIdent(lexerFlags, $tt_startOfPropToken, scoop, bindingType, exportedNames, exportedBindings, astProp) {
     ASSERT(parseObjectLikePartFromIdent.length === arguments.length, 'arg count');
-    ASSERT(isIdentToken(curtok.type), 'should be at ident');
+    ASSERT(isIdentToken(tok_getType()), 'should be at ident');
     ASSERT(typeof astProp === 'string', 'astprop string');
 
-    let propLeadingIdentToken = curtok;
-    let propLeadingIdentTokenCanon = tok_getCanon();
+    let $tt_propLeadingIdentToken = __oldtok;
+    let $t_propLeadingIdentToken_line = tok_getLine();
+    let $t_propLeadingIdentToken_column = tok_getColumn();
+    let $t_propLeadingIdentToken_start = tok_getStart();
+
+    let propLeadingIdentCanon = tok_getCanon();
     ASSERT_skipAny($G_IDENT, lexerFlags);
 
     if (allowAsyncFunctions) {
       // Note: `{async\n(){}}` is legal in sloppy so we do have to check the paren
-      if (curtok.type !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && propLeadingIdentToken.type === $ID_async) {
+      if (tok_getType() !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && $tt_propLeadingIdentToken.type === $ID_async) {
         // - `{async \n key(){}}`
         //              ^
         // Always an error due to async being a restricted production
-        // Note that `{async(){}}` is legal so we must check the curtok.c
+        // Note that `{async(){}}` is legal so we must check the current token
         THROW('Async methods are a restricted production and cannot have a newline following it');
       }
     }
 
-    let asyncToken = UNDEF_ASYNC;
-    let starToken = UNDEF_STAR;
-    let getToken = UNDEF_GET;
-    let setToken = UNDEF_SET;
+    let $tt_asyncToken = UNDEF_ASYNC;
+    let $tt_starToken = UNDEF_STAR;
+    let $tt_getToken = UNDEF_GET;
+    let $tt_setToken = UNDEF_SET;
 
     // note: if this part started with `static` then identToken will always be the NEXT token and isstatic=true
     // - `{ident,`
@@ -10927,7 +11450,7 @@ function Parser(code, options = {}) {
     let destructible = MIGHT_DESTRUCT;
     let assignable = ASSIGNABLE_UNDETERMINED; // Propagate await/yield state flags to caller
 
-    if (curtok.type === $PUNC_COMMA || curtok.type === $PUNC_CURLY_CLOSE || curtok.type === $PUNC_EQ) {
+    if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE || tok_getType() === $PUNC_EQ) {
       // property shorthand; `{ident}=x` is valid, x={y} is also valid
       // - `{ident}`
       // - `{ident = expr}`
@@ -10941,7 +11464,7 @@ function Parser(code, options = {}) {
       // https://tc39.github.io/ecma262/#prod-IdentifierReference
       // https://tc39.github.io/ecma262/#prod-Identifier
       // Identifier : IdentifierName but not ReservedWord
-      if (propLeadingIdentToken.type === $ID_eval || propLeadingIdentToken.type === $ID_arguments) {
+      if ($tt_propLeadingIdentToken.type === $ID_eval || $tt_propLeadingIdentToken.type === $ID_arguments) {
         // ({eval});         // ok
         // ({eval} = x);     // bad in strict mode
         // {{eval}) => x;    // bad in strict mode
@@ -10952,10 +11475,10 @@ function Parser(code, options = {}) {
         // must throw for reserved words but binding check also checks for `eval`
         // and `arguments` which are not reserved and which would be allowed here
         // Since this is an assignment the `yield` and `await` checks are implicitly done when doing binding name checks
-        fatalBindingIdentCheck(propLeadingIdentToken, propLeadingIdentTokenCanon, bindingType, lexerFlags);
+        fatalBindingIdentCheck($tt_propLeadingIdentToken, propLeadingIdentCanon, bindingType, lexerFlags);
       }
 
-      if (propLeadingIdentToken.type === $ID_await) {
+      if ($tt_propLeadingIdentToken.type === $ID_await) {
         // TODO: yield as well
         // Must be a var, but must also be valid as a var (that's checked above), and
         // must also not be an async arrow parameter name (that's why we return the piggy)
@@ -10969,44 +11492,44 @@ function Parser(code, options = {}) {
       // If this isn't a binding, this is a noop
       // If this is inside a group, this is a noop if it turns out not to be an arrow
       // TODO: add test case for catch shadow
-      SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, propLeadingIdentTokenCanon);
+      SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, propLeadingIdentCanon);
       // If this is not an export declaration, the calls below will be noops
-      addNameToExports(exportedNames, propLeadingIdentTokenCanon);
-      addBindingToExports(exportedBindings, propLeadingIdentTokenCanon);
+      addNameToExports(exportedNames, propLeadingIdentCanon);
+      addBindingToExports(exportedBindings, propLeadingIdentCanon);
 
       if (babelCompat) {
         AST_open(astProp, {
           type: NODE_NAME_PROPERTY,
-          loc: AST_getBaseLoc(startOfPropToken),
-          key: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
+          loc: AST_getBaseLoc($tt_startOfPropToken),
+          key: AST_getIdentNode($tt_propLeadingIdentToken, propLeadingIdentCanon),
           method: false, // only the {x(){}} shorthand gets true here, this is {x}
           computed: false,
-          value: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
+          value: AST_getIdentNode($tt_propLeadingIdentToken, propLeadingIdentCanon),
           shorthand: true,
           extra: {shorthand: true},
         });
       } else {
         AST_open(astProp, {
           type: NODE_NAME_PROPERTY,
-          loc: AST_getBaseLoc(startOfPropToken),
-          key: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
+          loc: AST_getBaseLoc($tt_startOfPropToken),
+          key: AST_getIdentNode($tt_propLeadingIdentToken, propLeadingIdentCanon),
           kind: 'init', // only getters/setters get special value here
           method: false, // only the {x(){}} shorthand gets true here, this is {x}
           computed: false,
-          value: AST_getIdentNode(propLeadingIdentToken, propLeadingIdentTokenCanon),
+          value: AST_getIdentNode($tt_propLeadingIdentToken, propLeadingIdentCanon),
           shorthand: true,
         });
       }
-      if (curtok.type === $PUNC_EQ) {
+      if (tok_getType() === $PUNC_EQ) {
         // - `({foo = 10})`
         // the shorthand only forces MUST_DESTRUCT when an initializer follows it immediately
         // (consider `({foo = 10})` vs `({foo: bar = 10})`)
         destructible |= MUST_DESTRUCT; // shorthand + _init_ is only allowed in Pattern
 
-        ASSERT(propLeadingIdentToken === startOfPropToken, 'can not have modifiers');
+        ASSERT($tt_propLeadingIdentToken === $tt_startOfPropToken, 'can not have modifiers');
         AST_wrapClosedCustom('value', {
           type: 'AssignmentExpression',
-          loc: AST_getBaseLoc(propLeadingIdentToken),
+          loc: AST_getBaseLoc($tt_propLeadingIdentToken),
           left: undefined,
           operator: '=',
           right: undefined,
@@ -11018,9 +11541,9 @@ function Parser(code, options = {}) {
       }
       AST_close(NODE_NAME_PROPERTY);
 
-      ASSERT(curtok.type !== $PUNC_EQ, 'further assignments should be parsed as part of the rhs expression');
+      ASSERT(tok_getType() !== $PUNC_EQ, 'further assignments should be parsed as part of the rhs expression');
     }
-    else if (curtok.type === $PUNC_COLON) {
+    else if (tok_getType() === $PUNC_COLON) {
       // property value or label, some are destructible:
       // - ({ident: ident,}
       // - ({ident: (ident)}
@@ -11040,54 +11563,58 @@ function Parser(code, options = {}) {
       // - ({ident: <object destruct> = expr,}
       // anything else as value is non-destructible
       if (options_webCompat === WEB_COMPAT_ON) {
-        if (propLeadingIdentTokenCanon === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
+        if (propLeadingIdentCanon === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
       }
 
-      destructible |= parseObjectPropertyValueAfterColon(lexerFlags, propLeadingIdentToken, propLeadingIdentToken, propLeadingIdentTokenCanon, bindingType, assignable, destructible, scoop,exportedNames, exportedBindings, astProp);
-      ASSERT(curtok.type !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
+      destructible |= parseObjectPropertyValueAfterColon(lexerFlags, $tt_propLeadingIdentToken, $tt_propLeadingIdentToken, propLeadingIdentCanon, bindingType, assignable, destructible, scoop,exportedNames, exportedBindings, astProp);
+      ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
     }
-    else if (curtok.type === $PUNC_PAREN_OPEN) {
+    else if (tok_getType() === $PUNC_PAREN_OPEN) {
       // Method shorthand, no modifier
       // - ({ident(){}})
 
       destructible |= CANT_DESTRUCT;
 
-      AST_setIdent(astProp, propLeadingIdentToken, propLeadingIdentTokenCanon);
+      AST_setIdent(astProp, $tt_propLeadingIdentToken, propLeadingIdentCanon);
 
-      parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, propLeadingIdentToken, undefined, astProp);
+      parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_propLeadingIdentToken, undefined, astProp);
 
-      ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
+      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
     }
-    else if (isIdentToken(curtok.type)) {
+    else if (isIdentToken(tok_getType())) {
       // getter/setter/async shorthand method
       // - ({async ident(){}})
       // - ({get ident(){}})
       // - ({set ident(ident){}})
       destructible |= CANT_DESTRUCT;
 
-      switch (propLeadingIdentToken.type) {
+      switch ($tt_propLeadingIdentToken.type) {
         case $ID_get:
-          getToken = propLeadingIdentToken;
+          $tt_getToken = $tt_propLeadingIdentToken;
           break;
         case $ID_set:
-          setToken = propLeadingIdentToken;
+          $tt_setToken = $tt_propLeadingIdentToken;
           break;
         case $ID_async:
-          asyncToken = propLeadingIdentToken;
+          $tt_asyncToken = $tt_propLeadingIdentToken;
           break;
         default:
-          THROW('Expected to parse the start of a property but found an unknown modifier', propLeadingIdentToken);
+          THROW('Expected to parse the start of a property but found an unknown modifier', $tt_propLeadingIdentToken);
       }
 
-      let identToken2 = curtok;
-      let identToken2Canon = tok_getCanon();
-      ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-      AST_setIdent(astProp, identToken2, identToken2Canon);
-      parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, identToken2, undefined, astProp);
+      let $tt_identToken2 = __oldtok;
+      let $t_identToken2_line = tok_getLine();
+      let $t_identToken2_column = tok_getColumn();
+      let $t_identToken2_start = tok_getStart();
 
-      ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
+      let ident2Canon = tok_getCanon();
+      ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
+      AST_setIdent(astProp, $tt_identToken2, ident2Canon);
+      parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_identToken2, undefined, astProp);
+
+      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
     }
-    else if (curtok.type === $PUNC_STAR) {
+    else if (tok_getType() === $PUNC_STAR) {
       // async with generator
       // note that only async can actually be a generator, getters/setters cannot
       // - `({async *ident(){}})`
@@ -11097,52 +11624,64 @@ function Parser(code, options = {}) {
 
       destructible |= CANT_DESTRUCT;
 
-      asyncToken = propLeadingIdentToken;
-      if (asyncToken.type !== $ID_async) { // TODO: should it read from canon?
+      $tt_asyncToken = $tt_propLeadingIdentToken;
+      if ($tt_asyncToken.type !== $ID_async) { // TODO: should it read from canon?
         // - `{get *foo(){}}`
-        THROW('Expected to parse the start of a generator method but found an ident that was not `async`', propLeadingIdentToken);
+        THROW('Expected to parse the start of a generator method but found an ident that was not `async`', $tt_propLeadingIdentToken);
       }
 
       if (!allowAsyncFunctions) THROW('Async functions are not supported by the current targeted language version');
       if (!allowAsyncGenerators) THROW('Async generators are not supported by the current targeted language version');
 
       // Skip the star
-      starToken = curtok;
+      $tt_starToken = __oldtok;
       ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
 
-      if (isIdentToken(curtok.type)) {
+      if (isIdentToken(tok_getType())) {
         // `{   async *foo(){}   }`
         //             ^^^
         // `{   async *prototype(){}   }`
-        let identToken2 = curtok;
-        let identToken2Canon = tok_getCanon();
+        let $tt_identToken2 = __oldtok;
+        let $t_identToken2_line = tok_getLine();
+        let $t_identToken2_column = tok_getColumn();
+        let $t_identToken2_start = tok_getStart();
+
+        let ident2Canon = tok_getCanon();
         ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-        AST_setIdent(astProp, identToken2, identToken2Canon);
-        parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, identToken2, undefined, astProp);
-      } else if (isNumberStringToken(curtok.type)) {
+        AST_setIdent(astProp, $tt_identToken2, ident2Canon);
+        parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_identToken2, undefined, astProp);
+      } else if (isNumberStringToken(tok_getType())) {
         // `{   async *300(){}   }`
         // `{   async *"foo"(){}   }`
-        let litToken = curtok;
-        let litTokenCanon = tok_getCanon();
-        ASSERT_skipToParenOpenOrDie(litToken._str, lexerFlags);
-        AST_setLiteral(astProp, litToken, litTokenCanon);
-        parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, litToken, undefined, astProp);
-      } else if (curtok.type === $PUNC_BRACKET_OPEN) {
+        let $tt_litToken = __oldtok;
+        let $t_litToken_line = tok_getLine();
+        let $t_litToken_column = tok_getColumn();
+        let $t_litToken_start = tok_getStart();
+
+        let litCanon = tok_getCanon();
+        ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+        AST_setLiteral(astProp, $tt_litToken, litCanon);
+        parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, undefined, astProp);
+      } else if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // `{   async *[foo](){}   }`
-        let bracketOpenToken = curtok;
+        let $tt_bracketOpenToken = __oldtok;
+        let $t_bracketOpenToken_line = tok_getLine();
+        let $t_bracketOpenToken_column = tok_getColumn();
+        let $t_bracketOpenToken_start = tok_getStart();
+
         ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
         let assignablePiggies = parseExpression(lexerFlags, astProp);
         assignable = mergeAssignable(assignablePiggies, assignable);
-        if (curtok.type !== $PUNC_BRACKET_CLOSE) THROW('Missing right square bracket for computed property, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+        if (tok_getType() !== $PUNC_BRACKET_CLOSE) THROW('Missing right square bracket for computed property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
         ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
-        parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, undefined, bracketOpenToken, astProp);
+        parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, undefined, $tt_bracketOpenToken, astProp);
       } else {
         THROW('Expected to parse the key of a generator method but found something unexpected', curtok);
       }
 
-      ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
+      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
     }
-    else if (isNumberStringToken(curtok.type)) {
+    else if (isNumberStringToken(tok_getType())) {
       // property names can also be strings and numbers but these cannot be shorthanded
       // number/string keys can still destructure just fine (`({"foo": x} = y)`)
       // - `({async "a b c"(){}});`
@@ -11154,29 +11693,33 @@ function Parser(code, options = {}) {
 
       destructible |= CANT_DESTRUCT;
 
-      switch (propLeadingIdentToken.type) {
+      switch ($tt_propLeadingIdentToken.type) {
         case $ID_get:
-          getToken = propLeadingIdentToken;
+          $tt_getToken = $tt_propLeadingIdentToken;
           break;
         case $ID_set:
-          setToken = propLeadingIdentToken;
+          $tt_setToken = $tt_propLeadingIdentToken;
           break;
         case $ID_async:
-          asyncToken = propLeadingIdentToken;
+          $tt_asyncToken = $tt_propLeadingIdentToken;
           break;
         default:
-          THROW('Expected to parse the start of a property but found an unknown modifier', propLeadingIdentToken);
+          THROW('Expected to parse the start of a property but found an unknown modifier', $tt_propLeadingIdentToken);
       }
 
-      let litToken = curtok;
-      let litTokenCanon = tok_getCanon();
-      ASSERT_skipToParenOpenOrDie(litToken._str, lexerFlags);
-      AST_setLiteral(astProp, litToken, litTokenCanon);
+      let $tt_litToken = __oldtok;
+      let $t_litToken_line = tok_getLine();
+      let $t_litToken_column = tok_getColumn();
+      let $t_litToken_start = tok_getStart();
 
-      parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, litToken, undefined, astProp);
-      ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
+      let litCanon = tok_getCanon();
+      ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+      AST_setLiteral(astProp, $tt_litToken, litCanon);
+
+      parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, undefined, astProp);
+      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
     }
-    else if (curtok.type === $PUNC_BRACKET_OPEN) {
+    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
       // (this is the part after the first ident of the part (or two if there is a "static" prefix)
       // - ({static [expr](){}
       //            ^
@@ -11190,31 +11733,35 @@ function Parser(code, options = {}) {
 
       destructible |= CANT_DESTRUCT;
 
-      switch (propLeadingIdentToken.type) {
+      switch ($tt_propLeadingIdentToken.type) {
         case $ID_get:
-          getToken = propLeadingIdentToken;
+          $tt_getToken = $tt_propLeadingIdentToken;
           break;
         case $ID_set:
-          setToken = propLeadingIdentToken;
+          $tt_setToken = $tt_propLeadingIdentToken;
           break;
         case $ID_async:
-          asyncToken = propLeadingIdentToken;
+          $tt_asyncToken = $tt_propLeadingIdentToken;
           break;
         default:
-          THROW('Expected to parse the start of a property but found an unknown modifier', propLeadingIdentToken);
+          THROW('Expected to parse the start of a property but found an unknown modifier', $tt_propLeadingIdentToken);
       }
 
       // skip dynamic part first because we need to assert that we're parsing a method
-      let bracketOpenToken = curtok;
+      let $tt_bracketOpenToken = __oldtok;
+      let $t_bracketOpenToken_line = tok_getLine();
+      let $t_bracketOpenToken_column = tok_getColumn();
+      let $t_bracketOpenToken_start = tok_getStart();
+
       ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
       let assignablePiggies = parseExpression(lexerFlags, astProp);
       assignable = mergeAssignable(assignablePiggies, assignable);
-      if (curtok.type !== $PUNC_BRACKET_CLOSE) {
-        THROW('Missing closing square bracket for computed property name, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+      if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+        THROW('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
       }
       ASSERT_skipToColonParenOpen($PUNC_BRACKET_CLOSE, lexerFlags);
 
-      parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, undefined, bracketOpenToken, astProp);
+      parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, undefined, $tt_bracketOpenToken, astProp);
     }
     else {
       // this is most likely an error
@@ -11229,67 +11776,71 @@ function Parser(code, options = {}) {
     // - `async r => result = [...{ x = await x }] = y;`
     return copyPiggies(destructible, assignable);
   }
-  function parseObjectMethod(lexerFlags, asyncToken, starToken, getToken, setToken, keyToken, bracketOpenToken, astProp) {
+  function parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, $tt_bracketOpenToken, astProp) {
     ASSERT(parseObjectMethod.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
-    ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition', curtok);
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
 
     // - `{*[expr](){}} = x`
     //            ^
 
-    let methodStartToken =
-      asyncToken !== UNDEF_ASYNC ?
-        asyncToken :
-        starToken !== UNDEF_STAR ?
-          starToken :
-          getToken !== UNDEF_GET ?
-            getToken :
-            setToken !== UNDEF_SET ?
-              setToken :
-              bracketOpenToken === undefined ?
-                keyToken :
-                bracketOpenToken;
+    let $tt_methodStartToken =
+      $tt_asyncToken !== UNDEF_ASYNC ?
+        $tt_asyncToken :
+        $tt_starToken !== UNDEF_STAR ?
+          $tt_starToken :
+          $tt_getToken !== UNDEF_GET ?
+            $tt_getToken :
+            $tt_setToken !== UNDEF_SET ?
+              $tt_setToken :
+              $tt_bracketOpenToken === undefined ?
+                $tt_keyToken :
+                $tt_bracketOpenToken;
 
-    let parenToken = curtok;
+    let $tt_parenToken = __oldtok;
+    let $t_parenToken_line = tok_getLine();
+    let $t_parenToken_column = tok_getColumn();
+    let $t_parenToken_start = tok_getStart();
 
-    ASSERT(methodStartToken, 'the start of this method should be either the async, star, get, set, key, or bracket token. at least one should have been passed on');
+
+    ASSERT($tt_methodStartToken, 'the start of this method should be either the async, star, get, set, key, or bracket token. at least one should have been passed on');
 
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc(methodStartToken),
+        loc: AST_getBaseLoc($tt_methodStartToken),
         key: undefined,
         // Method: getters and setters are not methods but properties
-        method: getToken === UNDEF_GET && setToken === UNDEF_SET,
+        method: $tt_getToken === UNDEF_GET && $tt_setToken === UNDEF_SET,
         generator: undefined,
         async: undefined,
         id: undefined,
         params: [],
         // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
-        kind: getToken !== UNDEF_GET ? 'get' : setToken !== UNDEF_SET ? 'set' : 'method',
-        computed: keyToken === undefined,
+        kind: $tt_getToken !== UNDEF_GET ? 'get' : $tt_setToken !== UNDEF_SET ? 'set' : 'method',
+        computed: $tt_keyToken === undefined,
         body: undefined,
       }, 'key');
     } else {
       // Acorn uses the parenthesis open as start of method while tenko/babel uses the start of the first modifier and otherwise the id
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc(methodStartToken),
+        loc: AST_getBaseLoc($tt_methodStartToken),
         key: undefined,
         // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
-        kind: getToken !== UNDEF_GET ? 'get' : setToken !== UNDEF_SET ? 'set' : 'init',
+        kind: $tt_getToken !== UNDEF_GET ? 'get' : $tt_setToken !== UNDEF_SET ? 'set' : 'init',
         // Method: getters and setters are not methods but properties
-        method: getToken === UNDEF_GET && setToken === UNDEF_SET,
-        computed: keyToken === undefined,
+        method: $tt_getToken === UNDEF_GET && $tt_setToken === UNDEF_SET,
+        computed: $tt_keyToken === undefined,
         value: undefined,
         shorthand: false, // not for babel
       }, 'key');
     }
 
-    verifyGeneralMethodState(asyncToken, starToken, getToken, setToken, keyToken, false);
+    verifyGeneralMethodState($tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, false);
 
     // - `foo = { get x(){  "use strict"; (break = "sentinal 79845134");   }}`
     // - `let o = {async await(){}}`
@@ -11303,16 +11854,16 @@ function Parser(code, options = {}) {
       IDENT_OPTIONAL,
       NOT_CONSTRUCTOR,
       IS_METHOD,
-      asyncToken,
-      starToken,
-      getToken,
-      setToken,
-      acornCompat ? parenToken : methodStartToken,
+      $tt_asyncToken,
+      $tt_starToken,
+      $tt_getToken,
+      $tt_setToken,
+      acornCompat ? $tt_parenToken : $tt_methodStartToken,
       FDS_ILLEGAL,
       'value',
     );
     AST_close(NODE_NAME_METHOD_OBJECT);
-    ASSERT(curtok.type !== $PUNC_EQ, 'this struct does not allow init/defaults');
+    ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
   }
 
   function parseClassDeclaration(lexerFlags, scoop, optionalIdent, isLabelled, fdState, astProp) {
@@ -11336,11 +11887,15 @@ function Parser(code, options = {}) {
     // _all_ bits of a class decl/expr are strict
     lexerFlags = sansFlag(lexerFlags | LF_STRICT_MODE, LF_IN_FOR_LHS | LF_IN_TEMPLATE | LF_NO_ASI);
 
-    let classToken = curtok;
+    let $tt_classToken = __oldtok;
+    let $t_classToken_line = tok_getLine();
+    let $t_classToken_column = tok_getColumn();
+    let $t_classToken_start = tok_getStart();
+
     ASSERT_skipToIdentCurlyOpen($ID_class, lexerFlags);
     AST_open(astProp, {
       type: 'ClassDeclaration',
-      loc: AST_getBaseLoc(classToken),
+      loc: AST_getBaseLoc($tt_classToken),
       id: undefined,
       superClass: undefined,
       body: undefined,
@@ -11355,7 +11910,7 @@ function Parser(code, options = {}) {
 
     return nameCanon; // used if export
   }
-  function parseClassExpression(lexerFlags, classToken, astProp) {
+  function parseClassExpression(lexerFlags, $tt_classToken, astProp) {
     ASSERT(arguments.length === parseClassExpression.length, 'expecting all args');
     // x = class x {}
     //           ^
@@ -11372,7 +11927,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ClassExpression',
-      loc: AST_getBaseLoc(classToken),
+      loc: AST_getBaseLoc($tt_classToken),
       id: undefined,
       superClass: undefined,
       body: undefined,
@@ -11395,9 +11950,13 @@ function Parser(code, options = {}) {
 
     // note: default exports has optional ident but should still not skip `extends` here
     // but it is not a valid class name anyways (which is superseded by a generic keyword check)
-    if (isIdentToken(curtok.type) && curtok.type !== $ID_extends) {
-      let classNameToken = curtok;
-      let classNameTokenCanon = tok_getCanon();
+    if (isIdentToken(tok_getType()) && tok_getType() !== $ID_extends) {
+      let $tt_classNameToken = __oldtok;
+      let $t_classNameToken_line = tok_getLine();
+      let $t_classNameToken_column = tok_getColumn();
+      let $t_classNameToken_start = tok_getStart();
+
+      let classNameCanon = tok_getCanon();
       // The class name is to be considered a `const` inside the class, but a `let` outside of the class
       // https://tc39.github.io/ecma262/#sec-runtime-semantics-classdefinitionevaluation
       // > If hasNameProperty is false, perform SetFunctionName(value, className).
@@ -11409,13 +11968,17 @@ function Parser(code, options = {}) {
       //   Record. The String value N is the text of the bound name. V is the value for the binding and is a value of
       //   any ECMAScript language type.
       // eg: it is a `let` binding in outer scope and a `const` binding in inner scope...
-      fatalBindingIdentCheck(classNameToken, classNameTokenCanon, BINDING_TYPE_CLASS, lexerFlags);
-      bindingNameCanon = classNameTokenCanon;
+      fatalBindingIdentCheck($tt_classNameToken, classNameCanon, BINDING_TYPE_CLASS, lexerFlags);
+      bindingNameCanon = classNameCanon;
       SCOPE_addLexBinding(scoop, bindingNameCanon, BINDING_TYPE_CLASS, FDS_ILLEGAL);
-      let idToken = curtok;
-      let idTokenCanon = tok_getCanon();
+      let $tt_idToken = __oldtok;
+      let $t_idToken_line = tok_getLine();
+      let $t_idToken_column = tok_getColumn();
+      let $t_idToken_start = tok_getStart();
+
+      let idCanon = tok_getCanon();
       ASSERT_skipToIdentCurlyOpen($G_IDENT, lexerFlags); // TODO: this could explicitly check for `extends` but I think this is fine
-      AST_setIdent('id', idToken, idTokenCanon);
+      AST_setIdent('id', $tt_idToken, idCanon);
     }
     else if (optionalIdent === IDENT_REQUIRED) {
       //  '`export class extends x {}` is the only valid class decl without name');
@@ -11445,7 +12008,7 @@ function Parser(code, options = {}) {
     // The constructor flag is kept for outer because it still applies to computed key expressions
     let innerLexerFlags = sansFlag(outerLexerFlags, LF_IN_CONSTRUCTOR);
 
-    if (isIdentToken(curtok.type) && curtok.type === $ID_extends) {
+    if (isIdentToken(tok_getType()) && tok_getType() === $ID_extends) {
       // parseExtends, parseClassExtends, parseHeritage, parseClassHeritage
       // The spec calls this the "ClassHeritage" production. It is a leftHandSide expression (!), which is a call or new
       // expression, so certain things are can't happen (like await).
@@ -11468,7 +12031,7 @@ function Parser(code, options = {}) {
       innerLexerFlags = sansFlag(innerLexerFlags, LF_SUPER_CALL);
     }
 
-    if (curtok.type !== $PUNC_CURLY_OPEN) THROW('Expected the opening curly `{` of a class body, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_CURLY_OPEN) THROW('Expected the opening curly `{` of a class body, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
 
     // _now_ enable super props, super call is already set up correctly
     // Note that computed props will not get this state from the current class (but potentially from an outer class)
@@ -11486,12 +12049,16 @@ function Parser(code, options = {}) {
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
     ASSERT(typeof originalOuterLexerFlags === 'number', 'originalOuterLexerFlags number');
     ASSERT_BINDING_TYPE(bindingType);
-    ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'must have asserted to be at the opening curly of the class body');
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'must have asserted to be at the opening curly of the class body');
 
-    let curlyToken = curtok;
+    let $tt_curlyToken = __oldtok;
+    let $t_curlyToken_line = tok_getLine();
+    let $t_curlyToken_column = tok_getColumn();
+    let $t_curlyToken_start = tok_getStart();
+
     AST_open(astProp, {
       type: 'ClassBody',
-      loc: AST_getBaseLoc(curlyToken),
+      loc: AST_getBaseLoc($tt_curlyToken),
       body: [],
     });
     let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, scoop, bindingType, isExpression, UNDEF_EXPORTS, UNDEF_EXPORTS, 'body');
@@ -11504,7 +12071,7 @@ function Parser(code, options = {}) {
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
     ASSERT(typeof originalOuterLexerFlags === 'number', 'originalOuterLexerFlags number');
-    ASSERT(curtok.type === $PUNC_CURLY_OPEN, 'must have asserted to be at the opening curly of the class body');
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'must have asserted to be at the opening curly of the class body');
     // parse one method of a class body
 
     let destructibleForPiggies = CANT_DESTRUCT; // relevant for computed key exprs
@@ -11514,7 +12081,7 @@ function Parser(code, options = {}) {
     // - `(class = x)`
     //           ^
     ASSERT_skipAny($PUNC_CURLY_OPEN, lexerFlags);
-    while (curtok.type === $PUNC_SEMI) {
+    while (tok_getType() === $PUNC_SEMI) {
       ASSERT_skipAny(';', lexerFlags);
     }
 
@@ -11523,7 +12090,7 @@ function Parser(code, options = {}) {
     // Other keys can occur more than once without error
 
     let hasConstructor = false; // must throw if more than one plain constructor was found
-    while (curtok.type !== $PUNC_CURLY_CLOSE) {
+    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
       // note: generator and async state is not reset because computed method names still use the outer class state
       let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
       if (hasAnyFlag(destructNow, PIGGY_BACK_WAS_CONSTRUCTOR)) {
@@ -11533,7 +12100,7 @@ function Parser(code, options = {}) {
       }
       destructibleForPiggies |= destructNow;
 
-      while (curtok.type === $PUNC_SEMI) {
+      while (tok_getType() === $PUNC_SEMI) {
         ASSERT_skipAny(';', lexerFlags);
       }
     }
@@ -11543,12 +12110,12 @@ function Parser(code, options = {}) {
     if (isExpression === IS_EXPRESSION) {
       // - `(class x {} / foo)`
       // - `${class x{}}`
-      ASSERT(curtok.type === $PUNC_CURLY_CLOSE, 'at the time of writing, the loop above had no abnormal way of exiting so the curtok has to be a curly close here when it reached this point');
+      ASSERT(tok_getType() === $PUNC_CURLY_CLOSE, 'at the time of writing, the loop above had no abnormal way of exiting so the currtok has to be a curly close here when it reached this point');
       ASSERT_skipDiv($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
     } else {
       // - `class x {} /foo/`
       // - `class x {} 06`
-      if (curtok.type === $EOF) THROW('Unexpected EOF while parsing a class body');
+      if (tok_getType() === $EOF) THROW('Unexpected EOF while parsing a class body');
       ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
     }
 
@@ -11595,14 +12162,14 @@ function Parser(code, options = {}) {
     // - `class x {static static(){}}`      (method names are not susceptible to keyword restrictions)
     // - `class x {static get constructor(){}}`    (ok because static members are not real constructors)
 
-    let staticToken = UNDEF_STATIC;
-    let staticTokenCanon = '';
-    let getToken = UNDEF_GET;
-    let setToken = UNDEF_SET;
-    let asyncToken = UNDEF_ASYNC;
-    let starToken = UNDEF_STAR;
+    let $tt_staticToken = UNDEF_STATIC;
+    let staticCanon = '';
+    let $tt_getToken = UNDEF_GET;
+    let $tt_setToken = UNDEF_SET;
+    let $tt_asyncToken = UNDEF_ASYNC;
+    let $tt_starToken = UNDEF_STAR;
 
-    if (isIdentToken(curtok.type) && curtok.type === $ID_static) {
+    if (isIdentToken(tok_getType()) && tok_getType() === $ID_static) {
       // In the following cases, "key" can be substituted with any of the four keys (ident, string, number, computed)
       // - `class x {static get key(){}}`
       //             ^
@@ -11616,71 +12183,71 @@ function Parser(code, options = {}) {
       //             ^
       // - `class x {static get constructor(){}}`
 
-      staticToken = curtok;
-      staticTokenCanon = tok_getCanon();
+      $tt_staticToken = __oldtok;
+      staticCanon = tok_getCanon();
       // = `class x { static / foo(){} }`
       ASSERT_skipAny($ID_static, lexerFlags);
 
-      if (curtok.type === $PUNC_PAREN_OPEN) {
+      if (tok_getType() === $PUNC_PAREN_OPEN) {
         // The `static` ident here is the name of a method, not a modifier
         // - `class x {static(){}}`
         //                   ^
-        destructible |= _parseClassMethodIdentKey(lexerFlags, UNDEF_STATIC, asyncToken, starToken, getToken, setToken, staticToken, staticTokenCanon, astProp);
+        destructible |= _parseClassMethodIdentKey(lexerFlags, UNDEF_STATIC, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_staticToken, staticCanon, astProp);
         return destructible;
       }
     }
 
-    if (isIdentToken(curtok.type)) {
-      ASSERT(curtok.type !== $ID_static || staticToken.type === $ID_static);
-      destructible = parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, staticToken, exportedNames, exportedBindings, astProp);
+    if (isIdentToken(tok_getType())) {
+      ASSERT(tok_getType() !== $ID_static || $tt_staticToken.type === $ID_static);
+      destructible = parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, $tt_staticToken, exportedNames, exportedBindings, astProp);
     }
-    else if (isNumberStringToken(curtok.type)) {
+    else if (isNumberStringToken(tok_getType())) {
       // property names can also be strings and numbers but these cannot be shorthanded
       // number/string keys can still destructure just fine (`({"foo": x} = y)`)
       // - `class x {"abc"(){}};`
       // - `class x {15(){}};`
 
-      destructible |= parseClassMethodLiteralKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
+      destructible |= parseClassMethodLiteralKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
     }
-    else if (curtok.type === $PUNC_BRACKET_OPEN) {
+    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
       // Computed method key
       // - `class x {[foo](){}}`
-      destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
+      destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
     }
-    else if (curtok.type === $PUNC_STAR) {
+    else if (tok_getType() === $PUNC_STAR) {
       // - `class x {*ident(){}}`
       //             ^
       // - `class x {*"str"(){}}`
       // - `class x {*15(){}}`
       // - `class x {*[expr](){}}`
 
-      starToken = curtok;
+      $tt_starToken = __oldtok;
       ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
 
-      if (isIdentToken(curtok.type)) {
+      if (isIdentToken(tok_getType())) {
         // - `class x {*ident(){}}`
         //              ^
         // - `class x {*ident(){}}`
         // - `class x {*get(){}}`       // ok (not a getter!)
         // - `class x {*set(){}}`       // ok (not a setter!)
         // - `class x {*async(){}}`     // NOT an async generator! it's a generatr
-        destructible |= parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
+        destructible |= parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
       }
-      else if (isNumberStringToken(curtok.type)) {
+      else if (isNumberStringToken(tok_getType())) {
         // - `({*"str"(){}})`
         // - `({*15(){}})`
-        destructible |= parseClassMethodLiteralKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
+        destructible |= parseClassMethodLiteralKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
       }
-      else if (curtok.type === $PUNC_BRACKET_OPEN) {
+      else if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // - `{*[expr](){}} = x`
-        destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
+        destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
       }
       else {
         THROW('Invalid objlit key character after generator star');
       }
-      ASSERT(curtok.type !== $PUNC_EQ, 'this struct can not have an init');
+      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct can not have an init');
     }
-    else if (curtok.type === $PUNC_SEMI) {
+    else if (tok_getType() === $PUNC_SEMI) {
       // - `class x {;}`
       // these semi's dont contribute anything to the AST (lossy)
       ASSERT_skipAny(';', lexerFlags);
@@ -11697,21 +12264,25 @@ function Parser(code, options = {}) {
     // - `s = {"foo": await = x} = x`
     return copyPiggies(destructible, assignable);
   }
-  function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, staticToken, exportedNames, exportedBindings, astProp) {
+  function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, $tt_staticToken, exportedNames, exportedBindings, astProp) {
     ASSERT(parseClassMethodFromIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
-    ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
 
-    let identToken = curtok;
-    let identTokenCanon = tok_getCanon();
+    let $tt_identToken = __oldtok;
+    let $t_identToken_line = tok_getLine();
+    let $t_identToken_column = tok_getColumn();
+    let $t_identToken_start = tok_getStart();
+
+    let identCanon = tok_getCanon();
     ASSERT_skipAny($G_IDENT, lexerFlags);
 
     if (allowAsyncFunctions) {
-      if (curtok.type !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && identToken.type === $ID_async) {
+      if (tok_getType() !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && $tt_identToken.type === $ID_async) {
         // - `{async \n key(){}}`
         //              ^
         // Always an error due to async being a restricted production
-        // Note that `{async(){}}` is legal so we must check the curtok.c
+        // Note that `{async(){}}` is legal so we must check the current token
         THROW('Async methods are a restricted production and cannot have a newline following it');
       }
     }
@@ -11738,30 +12309,30 @@ function Parser(code, options = {}) {
 
     // The syntactic order of modifiers is
     // { [[async [*]]|get|set] key(){} }
-    let getToken = UNDEF_GET;
-    let setToken = UNDEF_SET;
-    let asyncToken = UNDEF_ASYNC;
-    let starToken = UNDEF_STAR;
+    let $tt_getToken = UNDEF_GET;
+    let $tt_setToken = UNDEF_SET;
+    let $tt_asyncToken = UNDEF_ASYNC;
+    let $tt_starToken = UNDEF_STAR;
 
-    if (curtok.type === $PUNC_PAREN_OPEN) {
+    if (tok_getType() === $PUNC_PAREN_OPEN) {
       // Simple method shorthand
       // - `class x {ident(){}}`
       //                  ^
-      destructible |= _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, identToken, identTokenCanon, astProp);
+      destructible |= _parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_identToken, identCanon, astProp);
     }
     else {
-      switch (identToken.type) {
+      switch ($tt_identToken.type) {
         case $ID_get:
           // The next token may now only be the key
           // - `class x {get key(){}}`
           //                 ^
-          getToken = identToken;
+          $tt_getToken = $tt_identToken;
           break;
         case $ID_set:
           // The next token may now only be the key
           // - `class x {get key(){}}`
           //                 ^
-          setToken = identToken;
+          $tt_setToken = $tt_identToken;
           break;
         case $ID_async:
           // - `class x {async key(){}})
@@ -11770,18 +12341,18 @@ function Parser(code, options = {}) {
           //                   ^
 
           // the next token may now only be the key
-          asyncToken = identToken;
+          $tt_asyncToken = $tt_identToken;
           // Might be followed by star
-          if (curtok.type === $PUNC_STAR) {
+          if (tok_getType() === $PUNC_STAR) {
             // - `class x {async *key(){}})
             //                   ^
-            starToken = curtok;
+            $tt_starToken = __oldtok;
             ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
           }
           break;
         default:
           // There aren't any other ident modifiers so this must be an error
-          THROW('Either the current modifier is unknown or the input that followed was unexpected', identToken, curtok);
+          THROW('Either the current modifier is unknown or the input that followed was unexpected', $tt_identToken, curtok);
       }
 
       // The curtok must be key and is unknown. There are four types of key; ident, number, string, and computed
@@ -11801,12 +12372,12 @@ function Parser(code, options = {}) {
       // - `class x {async key(){}}`
       // - `class x {static async key(){}}`
 
-      if (curtok.type === $PUNC_BRACKET_OPEN) {
-        destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
-      } else if (isNumberStringToken(curtok.type)) {
-        destructible |= parseClassMethodLiteralKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
-      } else if (isIdentToken(curtok.type)) {
-        destructible |= parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp);
+      if (tok_getType() === $PUNC_BRACKET_OPEN) {
+        destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
+      } else if (isNumberStringToken(tok_getType())) {
+        destructible |= parseClassMethodLiteralKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
+      } else if (isIdentToken(tok_getType())) {
+        destructible |= parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp);
       } else {
         // Stuff like incompatible modifiers, obj lit syntax, invalid tokens, etc
         THROW('Expected to parse the modified key of a class method but could not parse one');
@@ -11820,51 +12391,59 @@ function Parser(code, options = {}) {
     // - `async r => result = [...{ x = await x }] = y;`
     return copyPiggies(destructible, assignable);
   }
-  function parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp) {
+  function parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp) {
     ASSERT(parseClassMethodIdentKey.length === arguments.length, 'arg count');
-    ASSERT(isIdentToken(curtok.type), 'curtok.type is ident', curtok);
-    ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT(isIdentToken(tok_getType()), 'current is ident');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
 
-    let keyToken = curtok; // Note: constructor is tested elsewhere
-    let keyTokenCanon = tok_getCanon(); // Note: constructor is tested elsewhere
+    let $tt_keyToken = __oldtok;
+    let $t_keyToken_line = tok_getLine();
+    let $t_keyToken_column = tok_getColumn();
+    let $t_keyToken_start = tok_getStart();
+ // Note: constructor is tested elsewhere
+    let keyCanon = tok_getCanon(); // Note: constructor is tested elsewhere
     ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-    return _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, astProp);
+    return _parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, keyCanon, astProp);
   }
-  function _parseClassMethodIdentKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, astProp) {
+  function _parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, keyCanon, astProp) {
     ASSERT(_parseClassMethodIdentKey.length === arguments.length, 'arg count');
-    ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
-    ASSERT(keyToken !== undefined, 'key is token');
-    ASSERT(isIdentToken(keyToken.type), 'key is ident');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_keyToken !== undefined, 'key is token');
+    ASSERT(isIdentToken($tt_keyToken.type), 'key is ident');
 
-    AST_setIdent(astProp, keyToken, keyTokenCanon);
+    AST_setIdent(astProp, $tt_keyToken, keyCanon);
 
     // - `class A {async get foo(){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, undefined, astProp);
+    let destructPiggies = parseClassMethodAfterKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, keyCanon, undefined, astProp);
     ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     // - `(class A extends B { constructor() { super() } })`
     return destructPiggies; // Can have constructor piggy
   }
-  function parseClassMethodLiteralKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp) {
+  function parseClassMethodLiteralKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp) {
     ASSERT(parseClassMethodLiteralKey.length === arguments.length, 'arg count');
-    ASSERT(isNumberStringToken(curtok.type));
-    ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT(isNumberStringToken(tok_getType()));
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
 
-    let litToken = curtok;
-    let litTokenCanon = tok_getCanon();
-    ASSERT_skipToParenOpenOrDie(litToken._str, lexerFlags);
-    AST_setLiteral(astProp, litToken, litTokenCanon);
+    let $tt_litToken = __oldtok;
+    let $t_litToken_line = tok_getLine();
+    let $t_litToken_column = tok_getColumn();
+    let $t_litToken_start = tok_getStart();
+
+    let litCanon = tok_getCanon();
+    ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+    AST_setLiteral(astProp, $tt_litToken, litCanon);
 
     // [v]: `class A {"x"(){}}`
     // [v]: `class A {1(){}}`
@@ -11876,21 +12455,25 @@ function Parser(code, options = {}) {
     // [v]: `class A {static get 6(){}}`
     // [v]: `class A {set 9(x){}}`
     // [v]: `class A {static set 10(x){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, litToken, litTokenCanon, undefined, astProp);
+    let destructPiggies = parseClassMethodAfterKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, litCanon, undefined, astProp);
     ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     // - `class A {"constructor"(){}}`
     return destructPiggies; // Can have constructor piggy
   }
-  function parseClassMethodComputedKey(lexerFlags, outerLexerFlags, staticToken, asyncToken, starToken, getToken, setToken, astProp) {
+  function parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp) {
     // skip computed key part first because we need to figure out whether we're parsing a method
     ASSERT(parseClassMethodComputedKey.length === arguments.length, 'arg count');
-    ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
 
-    let bracketOpenToken = curtok;
+    let $tt_bracketOpenToken = __oldtok;
+    let $t_bracketOpenToken_line = tok_getLine();
+    let $t_bracketOpenToken_column = tok_getColumn();
+    let $t_bracketOpenToken_start = tok_getStart();
+
     ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
 
     // Note: the expression of computed keys of class methods are parsed with the context before the class
@@ -11900,13 +12483,13 @@ function Parser(code, options = {}) {
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
     // - `function *f(){  class x{[yield foo](a){}}  }`
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
-    if (curtok.type !== $PUNC_BRACKET_CLOSE) THROW('Missing right square bracket for computed member, found `' + tok_sliceInput(curtok.start, curtok.stop) + '` instead');
+    if (tok_getType() !== $PUNC_BRACKET_CLOSE) THROW('Missing right square bracket for computed member, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead');
     ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
 
     // - `{[foo](){}}`
     // - `class {[foo](){}}`
     // - `class x {[x]z){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, undefined, '', bracketOpenToken, astProp);
+    let destructPiggies = parseClassMethodAfterKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, undefined, '', $tt_bracketOpenToken, astProp);
     ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
     ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
 
@@ -11914,46 +12497,50 @@ function Parser(code, options = {}) {
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
     return copyPiggies(CANT_DESTRUCT, nowAssignable);
   }
-  function parseClassMethodAfterKey(lexerFlags, staticToken, asyncToken, starToken, getToken, setToken, keyToken, keyTokenCanon, bracketOpenToken, astProp) {
+  function parseClassMethodAfterKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, keyCanon, $tt_bracketOpenToken, astProp) {
     ASSERT(parseClassMethodAfterKey.length === arguments.length, 'want args');
-    ASSERT(staticToken === UNDEF_STATIC || staticToken.type === $ID_static, 'static token');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
-    ASSERT(keyToken === undefined || keyToken.type !== undefined, 'keyToken is a token', keyToken);
-    ASSERT(!bracketOpenToken || bracketOpenToken.type === $PUNC_BRACKET_OPEN, 'bracketOpenToken should be [', bracketOpenToken);
-    ASSERT(keyToken === undefined || (isIdentToken(keyToken.type) || isNumberStringToken(keyToken.type)), 'keyToken is a number, string or ident', ''+keyToken);
-    ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_keyToken === undefined || $tt_keyToken.type !== undefined, 'keyToken is a token', $tt_keyToken);
+    ASSERT(!$tt_bracketOpenToken || $tt_bracketOpenToken.type === $PUNC_BRACKET_OPEN, 'bracketOpenToken should be [', $tt_bracketOpenToken);
+    ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.type) || isNumberStringToken($tt_keyToken.type)), 'keyToken is a number, string or ident', ''+$tt_keyToken);
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
 
-    verifyGeneralMethodState(asyncToken, starToken, getToken, setToken, keyToken, true);
+    verifyGeneralMethodState($tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, true);
 
-    let parenToken = curtok;
+    let $tt_parenToken = __oldtok;
+    let $t_parenToken_line = tok_getLine();
+    let $t_parenToken_column = tok_getColumn();
+    let $t_parenToken_start = tok_getStart();
+
 
     // [x]: `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
 
-    let methodStartToken =
-      staticToken !== UNDEF_STATIC ?
-        staticToken :
-        asyncToken !== UNDEF_ASYNC ?
-          asyncToken :
-          starToken !== UNDEF_STAR ?
-            starToken :
-            getToken !== UNDEF_GET ?
-              getToken :
-              setToken !== UNDEF_SET ?
-                setToken :
-                bracketOpenToken !== undefined ?
-                  bracketOpenToken :
-                  keyToken;
+    let $tt_methodStartToken =
+      $tt_staticToken !== UNDEF_STATIC ?
+        $tt_staticToken :
+        $tt_asyncToken !== UNDEF_ASYNC ?
+          $tt_asyncToken :
+          $tt_starToken !== UNDEF_STAR ?
+            $tt_starToken :
+            $tt_getToken !== UNDEF_GET ?
+              $tt_getToken :
+              $tt_setToken !== UNDEF_SET ?
+                $tt_setToken :
+                $tt_bracketOpenToken !== undefined ?
+                  $tt_bracketOpenToken :
+                  $tt_keyToken;
 
-    if (keyToken !== undefined && staticToken !== UNDEF_STATIC) {
-      if (isIdentToken(keyToken.type) && keyTokenCanon === 'prototype') {
+    if ($tt_keyToken !== undefined && $tt_staticToken !== UNDEF_STATIC) {
+      if (isIdentToken($tt_keyToken.type) && keyCanon === 'prototype') {
         THROW('Static class methods can not be called `prototype`');
       }
       else if (
-        isStringToken(keyToken.type) &&
-        keyTokenCanon === 'prototype'
+        isStringToken($tt_keyToken.type) &&
+        keyCanon === 'prototype'
       ) {
         THROW('Static class methods can not be called `prototype`');
       }
@@ -11964,21 +12551,21 @@ function Parser(code, options = {}) {
     let isClassConstructor = NOT_CONSTRUCTOR;
     let kind = 'method';
     if (
-      keyToken !== undefined &&          // Not computed
-      staticToken === UNDEF_STATIC &&    // Not static
+      $tt_keyToken !== undefined &&          // Not computed
+      $tt_staticToken === UNDEF_STATIC &&    // Not static
       (
         // https://tc39.github.io/ecma262/#sec-identifier-names-static-semantics-stringvalue
         // Note: the "constructor" check is determined by the "StringValue" of ident, which is the canonical value
         (
-          isIdentToken(keyToken.type) ||
+          isIdentToken($tt_keyToken.type) ||
         // > LiteralPropertyName: StringLiteral
         // >   Return the String value whose code units are the SV of the StringLiteral.
         // In other words; `class x{"constructor"(){}}` is also a proper constructor
         // https://tc39.github.io/ecma262/#sec-string-literals-static-semantics-stringvalue
         // And for strings it is the unquoted canonical value of the string (so "constructor" and 'constructor' + escapes)
-          isStringToken(keyToken.type)
+          isStringToken($tt_keyToken.type)
         ) &&
-        keyTokenCanon === 'constructor' // .canon will have any escapes properly unescaped
+        keyCanon === 'constructor' // .canon will have any escapes properly unescaped
       )
     ) {
       // This is a proper class constructor
@@ -11986,19 +12573,19 @@ function Parser(code, options = {}) {
       kind = 'constructor';
 
       // Constructors can't have get/set/*/async but can be static
-      if (asyncToken !== UNDEF_ASYNC) THROW('Class constructors can not be async');
-      if (starToken !== UNDEF_STAR) THROW('Class constructors can not be generators');
-      if (getToken !== UNDEF_GET) THROW('Class constructors can not be getters');
-      if (setToken !== UNDEF_SET) THROW('Class constructors can not be setters');
+      if ($tt_asyncToken !== UNDEF_ASYNC) THROW('Class constructors can not be async');
+      if ($tt_starToken !== UNDEF_STAR) THROW('Class constructors can not be generators');
+      if ($tt_getToken !== UNDEF_GET) THROW('Class constructors can not be getters');
+      if ($tt_setToken !== UNDEF_SET) THROW('Class constructors can not be setters');
 
       // This is a constructor method. We need to signal the caller that we parsed one to dedupe them
       // In order to signal the caller we piggy back on the destructible mechanism which is already a bit-field
       destructible |= PIGGY_BACK_WAS_CONSTRUCTOR;
     } else {
-      if (getToken !== UNDEF_GET) {
+      if ($tt_getToken !== UNDEF_GET) {
         // - `class A {get foo(){}}`
         kind = 'get';
-      } else if (setToken !== UNDEF_SET) {
+      } else if ($tt_setToken !== UNDEF_SET) {
         // - `class A {set foo(x){}}`
         kind = 'set';
       } else {
@@ -12009,10 +12596,10 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_CLASS,
-        loc: AST_getBaseLoc(methodStartToken),
+        loc: AST_getBaseLoc($tt_methodStartToken),
         key: undefined,
-        static: staticToken !== UNDEF_STATIC,
-        computed: keyToken === undefined,
+        static: $tt_staticToken !== UNDEF_STATIC,
+        computed: $tt_keyToken === undefined,
         async: undefined,
         generator: undefined,
         id: undefined,
@@ -12022,17 +12609,17 @@ function Parser(code, options = {}) {
     } else {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_CLASS,
-        loc: AST_getBaseLoc(methodStartToken),
+        loc: AST_getBaseLoc($tt_methodStartToken),
         key: undefined,
-        static: staticToken !== UNDEF_STATIC,
-        computed: keyToken === undefined,
+        static: $tt_staticToken !== UNDEF_STATIC,
+        computed: $tt_keyToken === undefined,
         kind: kind,
         value: undefined,
       }, 'key');
     }
 
     // [v]: `class A {a(){}}`
-    ASSERT(curtok.type === $PUNC_PAREN_OPEN, 'these (non-assert) checks have already been applied at this point');
+    ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'these (non-assert) checks have already been applied at this point');
     parseFunctionAfterKeyword(
       lexerFlags,
       DO_NOT_BIND,
@@ -12041,11 +12628,11 @@ function Parser(code, options = {}) {
       IDENT_OPTIONAL,
       isClassConstructor,
       IS_METHOD,
-      asyncToken,
-      starToken,
-      getToken,
-      setToken,
-      acornCompat ? parenToken : methodStartToken,
+      $tt_asyncToken,
+      $tt_starToken,
+      $tt_getToken,
+      $tt_setToken,
+      acornCompat ? $tt_parenToken : $tt_methodStartToken,
       FDS_ILLEGAL,
       'value'
     );
@@ -12055,15 +12642,15 @@ function Parser(code, options = {}) {
     return destructible;
   }
 
-  function verifyGeneralMethodState(asyncToken, starToken, getToken, setToken, keyToken, isClass) {
+  function verifyGeneralMethodState($tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, isClass) {
     ASSERT(verifyGeneralMethodState.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
     ASSERT(typeof isClass === 'boolean', 'isclass bool', isClass);
 
-    if (curtok.type !== $PUNC_PAREN_OPEN) {
+    if (tok_getType() !== $PUNC_PAREN_OPEN) {
       // - `{[foo] * 5}`
       //           ^
       // - `class x {async f * 5}`
@@ -12072,22 +12659,22 @@ function Parser(code, options = {}) {
       //                ^
 
       // This is an error branch. Try to give a more sensible error for `async get foo(){}` :
-      switch (keyToken && keyToken.type) {
+      switch ($tt_keyToken && $tt_keyToken.type) {
         case $ID_get:
-          getToken = keyToken;
+          $tt_getToken = $tt_keyToken;
           break;
         case $ID_set:
-          setToken = keyToken;
+          $tt_setToken = $tt_keyToken;
           break;
         case $ID_async:
-          asyncToken = keyToken;
+          $tt_asyncToken = $tt_keyToken;
           break;
         case '*':
-          starToken = keyToken;
+          $tt_starToken = $tt_keyToken;
           break;
       }
 
-      if ((asyncToken !== UNDEF_ASYNC || starToken !== UNDEF_STAR) && (getToken !== UNDEF_GET || setToken !== UNDEF_SET)) {
+      if (($tt_asyncToken !== UNDEF_ASYNC || $tt_starToken !== UNDEF_STAR) && ($tt_getToken !== UNDEF_GET || $tt_setToken !== UNDEF_SET)) {
         THROW('A getter or setter can not be async or a generator as well');
       }
 
@@ -12098,23 +12685,23 @@ function Parser(code, options = {}) {
       }
     }
 
-    ASSERT(!((asyncToken !== UNDEF_ASYNC || starToken !== UNDEF_STAR) && (getToken !== UNDEF_GET || setToken !== UNDEF_SET)), 'code paths should not allow this state');
+    ASSERT(!(($tt_asyncToken !== UNDEF_ASYNC || $tt_starToken !== UNDEF_STAR) && ($tt_getToken !== UNDEF_GET || $tt_setToken !== UNDEF_SET)), 'code paths should not allow this state');
 
-    if (asyncToken !== UNDEF_ASYNC) {
+    if ($tt_asyncToken !== UNDEF_ASYNC) {
       if (!allowAsyncFunctions) {
         THROW('Async functions are not supported in the currently targeted language version');
       }
-      else if (starToken !== UNDEF_STAR && !allowAsyncGenerators) {
+      else if ($tt_starToken !== UNDEF_STAR && !allowAsyncGenerators) {
         THROW('Async generators are not supported in the currently targeted language version');
       }
     }
 
-    if ((asyncToken !== UNDEF_ASYNC || starToken !== UNDEF_STAR) && (getToken !== UNDEF_GET || setToken !== UNDEF_SET)) {
+    if (($tt_asyncToken !== UNDEF_ASYNC || $tt_starToken !== UNDEF_STAR) && ($tt_getToken !== UNDEF_GET || $tt_setToken !== UNDEF_SET)) {
       // - `{async set foo(x){}}`
       // - `{get *foo(){}}`
       THROW('A getter or setter can not be async or a generator');
     }
-    if (getToken !== UNDEF_GET && setToken !== UNDEF_SET) {
+    if ($tt_getToken !== UNDEF_GET && $tt_setToken !== UNDEF_SET) {
       // (This would throw an error for the param arity check, anyways)
       // - `{get set foo(x){}}`
       THROW('A getter can not also be a setter');
@@ -12141,7 +12728,7 @@ function Parser(code, options = {}) {
       THROW('This binding can not be used in function parameters because it is not destructible');
     }
   }
-  function parseOptionalDestructibleRestOfExpression(lexerFlags, valueStartToken, bindingType, assignable, destructible, closingPuncType, astProp) {
+  function parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_valueStartToken, bindingType, assignable, destructible, closingPuncType, astProp) {
     ASSERT(parseOptionalDestructibleRestOfExpression.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astProp str', astProp);
     ASSERT(typeof assignable === 'number', 'assignable num', assignable);
@@ -12149,7 +12736,7 @@ function Parser(code, options = {}) {
     ASSERT([$PUNC_PAREN_CLOSE, $PUNC_CURLY_CLOSE, $PUNC_BRACKET_CLOSE].includes(closingPuncType), 'closingPuncType enum', closingPuncType);
     ASSERT_BINDING_TYPE(bindingType);
 
-    if (curtok.type === $PUNC_COMMA || curtok.type === closingPuncType) {
+    if (tok_getType() === $PUNC_COMMA || tok_getType() === closingPuncType) {
       // this means that the value itself had no tail and is destructible as long as it is assignable
       if (notAssignable(assignable)) destructible |= CANT_DESTRUCT;
     } else if (hasAllFlags(destructible, MUST_DESTRUCT)) {
@@ -12158,7 +12745,7 @@ function Parser(code, options = {}) {
       // [x]: `({a: {a=b}.x}) => x`
       THROW('Found something that had to be a Pattern but had to parse more, which is an error');
     } else {
-      assignable = parseValueTail(lexerFlags, valueStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+      assignable = parseValueTail(lexerFlags, $tt_valueStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
       // (If there is no tail the input assignable is returned...)
       if (isAssignable(assignable)) {
         // The destructibility of the whole expression solely depends on the tail
@@ -12170,10 +12757,10 @@ function Parser(code, options = {}) {
         destructible |= CANT_DESTRUCT;
       }
 
-      let firstOpNotAssign = curtok.type !== $PUNC_EQ;
-      if (curtok.type !== $PUNC_COMMA && curtok.type !== closingPuncType) {
+      let firstOpNotAssign = tok_getType() !== $PUNC_EQ;
+      if (tok_getType() !== $PUNC_COMMA && tok_getType() !== closingPuncType) {
         // From here on out `assignable` is only used to track yield/await state for fringe cases
-        assignable |= parseExpressionFromOp(lexerFlags, valueStartToken, assignable, astProp);
+        assignable |= parseExpressionFromOp(lexerFlags, $tt_valueStartToken, assignable, astProp);
         if (firstOpNotAssign) {
           // If there was an op it won't be a (regular) assignment and it can't be destructible in any of those cases
           // - `x, [foo + y, bar] = doo;`
@@ -12212,30 +12799,34 @@ function Parser(code, options = {}) {
     // - `{ (x = [yield y]) }`
     return copyPiggies(destructible, assignable);
   }
-  function parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, asyncToken, exportedNames, exportedBindings, astProp) {
+  function parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tt_asyncToken, exportedNames, exportedBindings, astProp) {
     // parseArrowableRest
     ASSERT(parseArrowableSpreadOrRest.length === arguments.length, 'want all args');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
 
-    let spreadToken = curtok;
+    let $tt_spreadToken = __oldtok;
+    let $t_spreadToken_line = tok_getLine();
+    let $t_spreadToken_column = tok_getColumn();
+    let $t_spreadToken_start = tok_getStart();
+
     ASSERT_skipToExpressionStart('...', lexerFlags);
 
-    if (curtok.type === $PUNC_DOT_DOT_DOT) THROW('Can not rest twice');
+    if (tok_getType() === $PUNC_DOT_DOT_DOT) THROW('Can not rest twice');
     AST_open(astProp, {
       type: 'SpreadElement',
-      loc: AST_getBaseLoc(spreadToken),
+      loc: AST_getBaseLoc($tt_spreadToken),
       argument: undefined,
     });
-    let destructible = _parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, asyncToken, exportedNames, exportedBindings, 'argument');
+    let destructible = _parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tt_asyncToken, exportedNames, exportedBindings, 'argument');
     AST_close('SpreadElement');
 
-    if (curtok.type !== closingPuncType && curtok.type !== $PUNC_COMMA) THROW('Encountered invalid input after spread/rest argument');
+    if (tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) THROW('Encountered invalid input after spread/rest argument');
 
     return destructible;
   }
-  function _parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, asyncToken, exportedNames, exportedBindings, astProp) {
+  function _parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tt_asyncToken, exportedNames, exportedBindings, astProp) {
     ASSERT(_parseArrowableSpreadOrRest.length === arguments.length, 'arg count');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
     ASSERT_BINDING_TYPE(bindingType);
 
     // returns CANT_DESTRUCT if the arg is not only an ident
@@ -12273,11 +12864,15 @@ function Parser(code, options = {}) {
     // https://tc39.github.io/ecma262/#prod-BindingPattern
     // this is either [] array or {} object wrapped with no further outer assignments (or anything)
 
-    let argStartToken = curtok;
+    let $tt_argStartToken = __oldtok;
+    let $t_argStartToken_line = tok_getLine();
+    let $t_argStartToken_column = tok_getColumn();
+    let $t_argStartToken_start = tok_getStart();
+
 
     let destructible = MIGHT_DESTRUCT;
     let assignable = initAssignable(); // required for parsing the tail of the arg
-    if (isIdentToken(curtok.type)) {
+    if (isIdentToken(tok_getType())) {
       // - `[...x];`
       // - `[...x/y];`
       // - `[...x, y];`       // cant destruct (array rest must be last)
@@ -12322,13 +12917,17 @@ function Parser(code, options = {}) {
 
       // don't update destructible here. assignment is handled at the end of this function (!)
 
-      let identToken = curtok;
-      let identTokenCanon = tok_getCanon();
+      let $tt_identToken = __oldtok;
+      let $t_identToken_line = tok_getLine();
+      let $t_identToken_column = tok_getColumn();
+      let $t_identToken_start = tok_getStart();
+
+      let identCanon = tok_getCanon();
       skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // will properly deal with div/rex cases
-      let assignBefore = curtok.type === $PUNC_EQ;
-      let willBeSimple = curtok.type === closingPuncType || curtok.type === $PUNC_COMMA || assignBefore;
+      let assignBefore = tok_getType() === $PUNC_EQ;
+      let willBeSimple = tok_getType() === closingPuncType || tok_getType() === $PUNC_COMMA || assignBefore;
       if (willBeSimple) {
-        let assignableOrErrorMsg = nonFatalBindingIdentCheck(identToken, identTokenCanon, bindingType, lexerFlags);
+        let assignableOrErrorMsg = nonFatalBindingIdentCheck($tt_identToken, identCanon, bindingType, lexerFlags);
         ASSERT(typeof assignableOrErrorMsg === 'string', 'func should always return string');
         if (assignableOrErrorMsg.length !== 0) {
           // - `[...await] = obj`
@@ -12345,10 +12944,10 @@ function Parser(code, options = {}) {
         // Can't _just_ throw here because the arrow may not be an arrow
         // THROW('The rest argument of an arrow or function must always be a simple ident without suffix');
       }
-      assignable = parseValueAfterIdent(lexerFlags, identToken, identTokenCanon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
-      ASSERT(!assignBefore || curtok.type === $PUNC_EQ, 'parseValueAfterIdent should not consume the assignment');
-      let assignAfter = curtok.type === $PUNC_EQ;
-      if (curtok.type !== $PUNC_COMMA && curtok.type !== closingPuncType) {
+      assignable = parseValueAfterIdent(lexerFlags, $tt_identToken, identCanon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
+      ASSERT(!assignBefore || tok_getType() === $PUNC_EQ, 'parseValueAfterIdent should not consume the assignment');
+      let assignAfter = tok_getType() === $PUNC_EQ;
+      if (tok_getType() !== $PUNC_COMMA && tok_getType() !== closingPuncType) {
         if (assignAfter) {
           // - `async (a, ...b=fail) => a;`
           // - `[x, y, ...z = arr]`
@@ -12360,7 +12959,7 @@ function Parser(code, options = {}) {
         // this will parse the assignment too
         // note: rest cannot have an initializer so any suffix invalidates destructuring
         destructible |= CANT_DESTRUCT;
-        assignable = parseExpressionFromOp(lexerFlags, argStartToken, assignable, astProp);
+        assignable = parseExpressionFromOp(lexerFlags, $tt_argStartToken, assignable, astProp);
       }
       if (notAssignable(assignable)) {
         // `[...a+b]`
@@ -12377,11 +12976,11 @@ function Parser(code, options = {}) {
         // If this isn't a binding, this is a noop
         // If this is inside a group, this is a noop if it turns out not to be an arrow
         // TODO: add test case for catch shadow
-        SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identTokenCanon);
+        SCOPE_actuallyAddBinding(lexerFlags, scoop, bindingType, identCanon);
         // If this is not an export declaration, the calls below will be noops
         // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-        addNameToExports(exportedNames, identTokenCanon);
-        addBindingToExports(exportedBindings, identTokenCanon);
+        addNameToExports(exportedNames, identCanon);
+        addBindingToExports(exportedBindings, identCanon);
       } else {
         // `[...a.b]=c`
         // `let [...a.b]=c`
@@ -12394,7 +12993,7 @@ function Parser(code, options = {}) {
         destructible |= DESTRUCT_ASSIGN_ONLY;
       }
     }
-    else if (curtok.type === $PUNC_BRACKET_OPEN) {
+    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
       // - `(...[x]) => x`
       // - `[...[x]]`
       // - `[...[x]] = y`
@@ -12413,17 +13012,17 @@ function Parser(code, options = {}) {
       // - `({...[][x]} = x);`
       // - `([...[][x]] = x);`
       let nowDestruct = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
-      ASSERT(curtok.type !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
-      if (curtok.type !== $PUNC_EQ && curtok.type !== closingPuncType && curtok.type !== $PUNC_COMMA) {
+      ASSERT(tok_getType() !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
+      if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         // - `({...[].x} = x);`
-        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, argStartToken, bindingType, assignable, nowDestruct, closingPuncType, astProp);
+        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_argStartToken, bindingType, assignable, nowDestruct, closingPuncType, astProp);
       } else {
         // The rest arg of an _object_ pattern can only be a simple assignment target. The rest of an array pattern
         // has more freedom. If there is no tail for obj rest then this not destructible.
         // - `({ ...[x] }) => {}`
         // - `{...[] = c}`
         // - `[...[] = c]`
-        if (closingPuncType === $PUNC_CURLY_CLOSE && curtok.type !== $PUNC_EQ) {
+        if (closingPuncType === $PUNC_CURLY_CLOSE && tok_getType() !== $PUNC_EQ) {
           destructible |= nowDestruct | CANT_DESTRUCT;
         } else {
           destructible |= nowDestruct;
@@ -12444,7 +13043,7 @@ function Parser(code, options = {}) {
         //THROW('The rest argument of an object binding pattern must always be a simple ident and not an array pattern');
       }
     }
-    else if (curtok.type === $PUNC_CURLY_OPEN) {
+    else if (tok_getType() === $PUNC_CURLY_OPEN) {
       // - `(...{x}) => x`
       //        ^
       // - `[...{x}]`
@@ -12462,13 +13061,17 @@ function Parser(code, options = {}) {
       // - `([...{}.x] = x);`
       // - `({...{}[x]} = x);`
       // - `([...{}[x]] = x);`
-      let curlyToken = curtok;
+      let $tt_curlyToken = __oldtok;
+      let $t_curlyToken_line = tok_getLine();
+      let $t_curlyToken_column = tok_getColumn();
+      let $t_curlyToken_start = tok_getStart();
+
       let nowDestruct = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
-      ASSERT(curtok.type !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
-      if (curtok.type !== $PUNC_EQ && curtok.type !== closingPuncType && curtok.type !== $PUNC_COMMA) {
+      ASSERT(tok_getType() !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
+      if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         // - `({ ...{}.x } = x);`
         //          ^
-        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, curlyToken, bindingType, assignable, nowDestruct, closingPuncType, astProp);
+        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tt_curlyToken, bindingType, assignable, nowDestruct, closingPuncType, astProp);
       } else {
         // The rest arg of an _object_ pattern can only be a simple assignment target. The rest of an array pattern
         // has more freedom. If there is no tail for obj rest then this not destructible.
@@ -12478,7 +13081,7 @@ function Parser(code, options = {}) {
         // - `{...{}}`
         // - `[...{}]`                 // TODO: parse or runtime error? or potentially valid? What if the object is an iterable?
         destructible |= nowDestruct;
-        if (closingPuncType === $PUNC_CURLY_CLOSE && curtok.type !== $PUNC_EQ) {
+        if (closingPuncType === $PUNC_CURLY_CLOSE && tok_getType() !== $PUNC_EQ) {
           destructible |= CANT_DESTRUCT;
         }
       }
@@ -12496,7 +13099,7 @@ function Parser(code, options = {}) {
         // THROW('The rest argument of an object binding pattern must always be a simple ident and not an object pattern');
       }
     }
-    else if (curtok.type === closingPuncType) {
+    else if (tok_getType() === closingPuncType) {
       // `[...]`
       // `(...)`
       THROW('The rest/spread operator is missing an argument');
@@ -12543,14 +13146,18 @@ function Parser(code, options = {}) {
       // Note: already asserted that the head is not an ident, array, or object, so it's not assignable on its own.
       // However, if the value is assignable as a whole (like `"foo".bar`) then we can still assign-destruct it.
 
-      let exprStartToken = curtok;
+      let $tt_exprStartToken = __oldtok;
+      let $t_exprStartToken_line = tok_getLine();
+      let $t_exprStartToken_column = tok_getColumn();
+      let $t_exprStartToken_start = tok_getStart();
+
       let nowAssignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
       if (notAssignable(nowAssignable)) {
         destructible = CANT_DESTRUCT;
       }
       assignable = mergeAssignable(nowAssignable, assignable);
 
-      if (curtok.type === $PUNC_EQ && curtok.type !== closingPuncType && curtok.type !== $PUNC_COMMA) {
+      if (tok_getType() === $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         if (notAssignable(assignable)) {
           // - `[..."x"=b]`
           THROW('This `...` arg is invalid; rest only accepts idents, arrays, and objects and as spread the assignment is illegal because the lhs is not assignable');
@@ -12559,7 +13166,7 @@ function Parser(code, options = {}) {
 
         // - `[..."x".foo = b]`
         // - `[..."x".foo = b] = x`    (fail)
-        assignable = parseExpressionFromOp(lexerFlags, exprStartToken, assignable, astProp);
+        assignable = parseExpressionFromOp(lexerFlags, $tt_exprStartToken, assignable, astProp);
         destructible |= CANT_DESTRUCT; // assignments are not assignment destructible
       }
       else {
@@ -12573,20 +13180,20 @@ function Parser(code, options = {}) {
         // - `[...(x,y)]`
         // - `[.../x/+y]`
 
-        if (curtok.type === $PUNC_COMMA) {
+        if (tok_getType() === $PUNC_COMMA) {
           // Note: rest in array must be the last element and trailing comma is NOT allowed after array-rest
           // [v]: `[...a, b]`
           // [v]: `[...(x), y]`
           destructible |= CANT_DESTRUCT;
         }
-        else if (curtok.type !== closingPuncType) {
+        else if (tok_getType() !== closingPuncType) {
           // - `[.../x//y]`
           // - `[.../x/g/y]`
           // - `[..."foo".bar]`
           // - `[...(x)]`
           // - `[...(x,y)]`
           // - `[.../x/+y]`
-          assignable = parseExpressionFromOp(lexerFlags, exprStartToken, assignable, astProp);
+          assignable = parseExpressionFromOp(lexerFlags, $tt_exprStartToken, assignable, astProp);
         }
         else {
           // rest arg was a value without op
@@ -12614,21 +13221,21 @@ function Parser(code, options = {}) {
       return copyPiggies(destructible, assignable);
     }
 
-    if (curtok.type !== closingPuncType) {
+    if (tok_getType() !== closingPuncType) {
       if (bindingType === BINDING_TYPE_ARG) {
-        if (asyncToken !== UNDEF_ASYNC) {
+        if ($tt_asyncToken !== UNDEF_ASYNC) {
           destructible |= CANT_DESTRUCT;
         } else {
           // [v]: `f = ([...[ x ] = []]);`
           // [x]: `f = ([...[ x ] = []]) => x;`
           destructible |= DESTRUCT_ASSIGN_ONLY;
           // $log('rest crashed, closingPuncType='+String.fromCharCode(closingPuncType)+', token: ' + curtok);
-          // if (curtok.type === $PUNC_EQ) THROW('The rest argument can not have an initializer');
-          // else if (curtok.type === $PUNC_COMMA) THROW('The rest argument was not destructible as it must be last and can not have a trailing comma');
+          // if (tok_getType() === $PUNC_EQ) THROW('The rest argument can not have an initializer');
+          // else if (tok_getType() === $PUNC_COMMA) THROW('The rest argument was not destructible as it must be last and can not have a trailing comma');
           // else THROW('The rest argument must the be last parameter');
         }
       }
-      if (curtok.type === $PUNC_EQ) {
+      if (tok_getType() === $PUNC_EQ) {
         verifyDestructible(destructible | MUST_DESTRUCT); // this is to assert the above _can_ be destructed
         // - `[...a = b] = c`
         // - `{a = b} = c`
@@ -12646,7 +13253,7 @@ function Parser(code, options = {}) {
         AST_destruct(astProp);
         AST_wrapClosedCustom(astProp, {
           type: 'AssignmentExpression',
-          loc: AST_getBaseLoc(argStartToken),
+          loc: AST_getBaseLoc($tt_argStartToken),
           left: undefined,
           operator: '=',
           right: undefined,
@@ -12659,8 +13266,8 @@ function Parser(code, options = {}) {
         // TODO: should we assert that here and (can we) throw a nicer contextual error?
       } else {
         // TODO: is there a case where destructible = MUST?
-        assignable = parseValueTail(lexerFlags, argStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
-        assignable = parseExpressionFromOp(lexerFlags, argStartToken, assignable, astProp);
+        assignable = parseValueTail(lexerFlags, $tt_argStartToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+        assignable = parseExpressionFromOp(lexerFlags, $tt_argStartToken, assignable, astProp);
       }
       // - `[...{a = b} = c];`
       // - `[...{a: b.b} = c]`
@@ -12674,27 +13281,31 @@ function Parser(code, options = {}) {
     // destructible because the `...` is at the end of the structure and its arg is an ident/array/object and has no tail
     return copyPiggies(destructible, assignable);
   }
-  function parseObjectLikeMethodAfterKey(lexerFlags, asyncToken, starToken, getToken, setToken, keyToken, bracketOpenToken, astProp) {
+  function parseObjectLikeMethodAfterKey(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, $tt_bracketOpenToken, astProp) {
     ASSERT(arguments.length === parseObjectLikeMethodAfterKey.length, 'want args');
-    ASSERT(asyncToken === UNDEF_ASYNC || asyncToken.type === $ID_async, 'async token');
-    ASSERT(starToken === UNDEF_STAR || starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT(getToken === UNDEF_GET || getToken.type === $ID_get, 'get token');
-    ASSERT(setToken === UNDEF_SET || setToken.type === $ID_set, 'set token');
-    ASSERT(keyToken === undefined || keyToken._str !== undefined, 'keyToken is a token');
-    ASSERT(keyToken === undefined || (isIdentToken(keyToken.type) || isNumberStringToken(keyToken.type)), 'keyToken is a number, string or ident', ''+keyToken);
-    ASSERT_VALID(curtok.type === $PUNC_PAREN_OPEN);
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_keyToken === undefined || $tt_keyToken._str !== undefined, 'keyToken is a token');
+    ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.type) || isNumberStringToken($tt_keyToken.type)), 'keyToken is a number, string or ident', ''+$tt_keyToken);
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN);
 
-    let parenToken = curtok;
+    let $tt_parenToken = __oldtok;
+    let $t_parenToken_line = tok_getLine();
+    let $t_parenToken_column = tok_getColumn();
+    let $t_parenToken_start = tok_getStart();
+
 
     let destructible = CANT_DESTRUCT; // this is mostly for piggy flags like detecting duplicate constructors
 
     // The object method can start with `async`, `*`, `get`, `set`, `[`, or the key (ident/string/number). In that order
-    let methodStartToken = keyToken; // If nothing else, this
+    let $tt_methodStartToken = $tt_keyToken; // If nothing else, this
     let kind = 'init'; // only getters and setters have special values for object methods
     let method = true; // only false for actual getters and setters (since you won't call those members)
 
     // TODO: this if-else chain is very basic/dumb but still I'm worried it will DEOPT... :( To confirm.
-    if (asyncToken !== UNDEF_ASYNC) {
+    if ($tt_asyncToken !== UNDEF_ASYNC) {
       // - `let o = {async foo(){}}`
       //                      ^
       // - `let o = {async await(){}}`
@@ -12702,73 +13313,73 @@ function Parser(code, options = {}) {
         THROW('Async functions are not supported in the currently targeted language version');
       }
 
-      if (getToken !== UNDEF_GET || setToken !== UNDEF_SET) {
+      if ($tt_getToken !== UNDEF_GET || $tt_setToken !== UNDEF_SET) {
         // - `{async get foo(){}}`
         // - `{async set foo(x){}}`
         THROW('A getter or setter can not be async');
       }
 
-      if (starToken !== UNDEF_STAR) {
+      if ($tt_starToken !== UNDEF_STAR) {
         if (!allowAsyncGenerators) {
           THROW('Async generators are not supported in the currently targeted language version');
         }
       }
 
-      methodStartToken = asyncToken;
+      $tt_methodStartToken = $tt_asyncToken;
       if (babelCompat) kind = 'method';
     }
-    else if (starToken !== UNDEF_STAR) {
-      if (getToken !== UNDEF_GET || setToken !== UNDEF_SET) {
+    else if ($tt_starToken !== UNDEF_STAR) {
+      if ($tt_getToken !== UNDEF_GET || $tt_setToken !== UNDEF_SET) {
         // - `{get *foo(){}}`
         // - `{set *foo(x){}}`
         THROW('A getter or setter can not be async');
       }
 
-      methodStartToken = starToken;
+      $tt_methodStartToken = $tt_starToken;
       if (babelCompat) kind = 'method';
     }
-    else if (getToken !== UNDEF_GET) {
+    else if ($tt_getToken !== UNDEF_GET) {
       // - `{get foo(){}}`
       //            ^
 
-      if (setToken !== UNDEF_SET) {
+      if ($tt_setToken !== UNDEF_SET) {
         // (This would throw an error for the param arity check, anyways)
         // - `{get set foo(x){}}`
         THROW('A getter can not also be a setter');
       }
 
-      methodStartToken = getToken;
+      $tt_methodStartToken = $tt_getToken;
       kind = 'get';
       method = false;
     }
-    else if (setToken !== UNDEF_SET) {
+    else if ($tt_setToken !== UNDEF_SET) {
       // - `{set foo(x){}}`
       //            ^
       // - `{set [foo](x){}}`
       //              ^
-      methodStartToken = setToken;
+      $tt_methodStartToken = $tt_setToken;
       kind = 'set';
       method = false;
     }
-    else if (bracketOpenToken !== undefined) {
+    else if ($tt_bracketOpenToken !== undefined) {
       // [v]: `x = { [foo](){ }}`
       //                  ^
-      methodStartToken = bracketOpenToken;
+      $tt_methodStartToken = $tt_bracketOpenToken;
       if (babelCompat) kind = 'method';
     } else {
       // [v]: `x = { foo(){ }}`
       //                ^
-      ASSERT(methodStartToken === keyToken);
+      ASSERT($tt_methodStartToken === $tt_keyToken);
       ASSERT(kind === 'init');
       if (babelCompat) kind = 'method';
     }
 
-    ASSERT(methodStartToken, 'the start of this method should be either the async, star, get, set, key, or bracket token. at least one should have been passed on');
+    ASSERT($tt_methodStartToken, 'the start of this method should be either the async, star, get, set, key, or bracket token. at least one should have been passed on');
 
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc(methodStartToken),
+        loc: AST_getBaseLoc($tt_methodStartToken),
         key: undefined,
         method: method,
         generator: undefined,
@@ -12776,41 +13387,41 @@ function Parser(code, options = {}) {
         id: undefined,
         params: [],
         kind: kind,
-        computed: keyToken === undefined,
+        computed: $tt_keyToken === undefined,
         body: undefined,
       }, 'key');
     } else {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc(methodStartToken),
+        loc: AST_getBaseLoc($tt_methodStartToken),
         key: undefined,
         kind: kind,
         method: method,
-        computed: keyToken === undefined,
+        computed: $tt_keyToken === undefined,
         value: undefined,
         shorthand: false,
       }, 'key');
     }
 
-    if (curtok.type !== $PUNC_PAREN_OPEN) {
+    if (tok_getType() !== $PUNC_PAREN_OPEN) {
       // TODO: move this to outside of this branch?
       // [x]: `{get 123: x}`
       // [x]: `{async foo: x}`
-      THROW('Expected to parse a paren of the method now but found `' + tok_sliceInput(curtok.start, curtok.stop) + '`');
+      THROW('Expected to parse a paren of the method now but found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`');
 
       // // This is an error path because generators must be methods
       // if (allowAsyncFunctions) {
-      //   if (curtok.type === $ID_async) {
+      //   if (tok_getType() === $ID_async) {
       //     // - `({*async x(){}})`     // NOT an async generator! just an error
       //     THROW('Found `* async x(){}` but this should be `async * x(){}`'); // provided it's supported at all...
       //   }
       // }
-      // if (curtok.type === $ID_get || curtok.type === $ID_set) {
+      // if (tok_getType() === $ID_get || tok_getType() === $ID_set) {
       //   // - `({*get x(){}})`
       //   // - `({*set x(){}})`
       //   THROW('Getters and setters can not be generators'); // (and you would put the get/set before the *, anyways)
       // }
-      // if (curtok.type === $PUNC_COLON) {
+      // if (tok_getType() === $PUNC_COLON) {
       //   // - `({*ident: x})`
       //   THROW('Generators must be method shorthands');
       // }
@@ -12827,11 +13438,11 @@ function Parser(code, options = {}) {
       IDENT_OPTIONAL,
       NOT_CONSTRUCTOR,
       IS_METHOD,
-      asyncToken,
-      starToken,
-      getToken,
-      setToken,
-      acornCompat ? parenToken : methodStartToken,
+      $tt_asyncToken,
+      $tt_starToken,
+      $tt_getToken,
+      $tt_setToken,
+      acornCompat ? $tt_parenToken : $tt_methodStartToken,
       FDS_ILLEGAL,
       'value'
     );
@@ -12845,7 +13456,7 @@ function Parser(code, options = {}) {
   initLexer(initialLexerFlags);
   parseTopLevels(initialLexerFlags);
 
-  if (curtok.type !== $EOF) THROW('Unexpected further input');
+  if (tok_getType() !== $EOF) THROW('Unexpected further input');
 
   if (failForRegexAssertIfPass !== '') {
     // We assume that when we call skipAny that we don't expect the next token to be legally start with a forward slash
@@ -12854,12 +13465,12 @@ function Parser(code, options = {}) {
   }
   if (assertExpectedFail !== '') {
     // An invariant was broken that should hold in valid input, yet no syntax error was reported by the parser.
-    THROW_TOKEN('Assertion fail (when valid): ' + assertExpectedFail, assertExpectedToken);
+    THROW_TOKEN('Assertion fail (when valid): ' + assertExpectedFail, $tt_assertExpectedToken.start, $tt_assertExpectedToken.stop);
   }
 
   // <SCRUB AST>
-  _tree.loc.end.line = curtok.line;
-  _tree.loc.end.column = curtok.column;
+  _tree.loc.end.line = tok_getLine();
+  _tree.loc.end.column = tok_getColumn();
   // </SCRUB AST>
 
   return {

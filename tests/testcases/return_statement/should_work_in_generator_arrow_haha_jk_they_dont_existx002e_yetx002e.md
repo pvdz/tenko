@@ -30,7 +30,7 @@ throws: Parser error!
   Expected to parse a value
 
 *() => {return}
-^------- error
+ ^------- error
 `````
 
 ### Strict mode

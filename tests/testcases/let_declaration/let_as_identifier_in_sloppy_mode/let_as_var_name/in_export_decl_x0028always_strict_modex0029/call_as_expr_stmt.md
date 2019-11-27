@@ -56,7 +56,7 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Expected identifier, or array/object destructuring, next token is: {# PUNC_PAREN_OPEN : nl=N pos=10:11 loc=10:1 `(`#}
+  Expected identifier, or array/object destructuring
 
 export let();
           ^------- error
