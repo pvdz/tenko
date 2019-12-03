@@ -42,8 +42,6 @@ let assertWhitelist = new Set([
   'ASSERT_LABELSET',
   'ASSERT_ASSIGN_EXPR',
   'ASSERT_BINDING_ORIGIN',
-  'ASSERT_pushCanonPoison',
-  'ASSERT_popCanonPoison',
 ]);
 let assertSkipWhitelist = new Set([
   'ASSERT_skipRex',

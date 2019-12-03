@@ -410,19 +410,6 @@ function getIdRestRegexSuperSlow() {
   }
 }
 
-// <SCRUB ASSERTS TO COMMENT>
-let disableCanonPoison = [false]; // reversed stack; always check disableCanonPoison[0] for the current state
-function ASSERT_pushCanonPoison(disabled) {
-  disableCanonPoison.unshift(disabled);
-  // console.log('pushed', disabled, disableCanonPoison)
-}
-function ASSERT_popCanonPoison() {
-  disableCanonPoison.shift();
-  // console.log('popped', disableCanonPoison)
-}
-ASSERT(!void (typeof window !== 'undefined' && ASSERT_pushCanonPoison(window.disableCanonPoison)), '(suppress this warning in web env and known cases)');
-// </SCRUB ASSERTS TO COMMENT>
-
 function Lexer(
   input,
   options
@@ -449,7 +436,6 @@ function Lexer(
   ASSERT(targetEsVersion !== undefined, 'undefined should become default', targetEsVersion);
   ASSERT(typeof targetEsVersion === 'number', 'targetEsVersion should be a number', typeof targetEsVersion);
   ASSERT((targetEsVersion >= 6 && targetEsVersion <= 11) || targetEsVersion === Infinity, 'only support v6~11 right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
-  ASSERT(!(disableCanonPoison.length = 0), 'clear the poison stack');
 
   const supportRegexPropertyEscapes = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;
@@ -5117,7 +5103,7 @@ function Lexer(
     currPointer: function(){ return pointer; },
 
     getNlwas: function(){ return nlwas; },
-    getCanon: function(){ return lastCanonizedInput; }, // This is only relevant for idents and strings, but might be captured for other reasons. TODO: Should use a proxy in devmode which verifies that actual reads on this value are for ident/string tokens only...
+    getCanoN: function(){ return lastCanonizedInput; }, // This is only relevant for idents and strings, but might be captured for other reasons. TODO: Should use a proxy in devmode which verifies that actual reads on this value are for ident/string tokens only...
     getType: function(){ return lastType; },
     getStart: function(){ return lastStart; },
     getStop: function(){ return lastStop; },
@@ -5187,9 +5173,4 @@ export {
 
   WEB_COMPAT_OFF,
   WEB_COMPAT_ON,
-
-  // <SCRUB ASSERTS TO COMMENT>
-  ASSERT_pushCanonPoison,
-  ASSERT_popCanonPoison,
-  // </SCRUB ASSERTS TO COMMENT>
 };
