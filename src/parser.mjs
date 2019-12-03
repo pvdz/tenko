@@ -709,22 +709,6 @@ function Parser(code, options = {}) {
 
     return AST_getOpenLoc(1, 0, 0);
   }
-  function AST_getBaseLoc($tt_firstToken) {
-    ASSERT(AST_getBaseLoc.length === arguments.length, 'arg count');
-
-    // Create a loc that is unclosed, to be closed by AST_close*
-
-    return AST_getOpenLoc($tt_firstToken.line, $tt_firstToken.column, $tt_firstToken.start);
-  }
-  function AST_getBaseLocTemplate($tt_firstToken) {
-    ASSERT(AST_getBaseLocTemplate.length === arguments.length, 'arg count');
-
-    // Create a loc that is unclosed, to be closed by AST_close*
-    // This loc is for template elements where the backticks, `${`, and `}` characters are ignored in
-    // the location ranges... so +1 it
-
-    return AST_getOpenLoc($tt_firstToken.line, $tt_firstToken.column + 1, $tt_firstToken.start);
-  }
   function AST_getClosedLoc($tp_firstToken_line, $tp_firstToken_column, $tp_firstToken_start) {
     ASSERT(AST_getClosedLoc.length === arguments.length, 'arg count');
 
@@ -3271,7 +3255,7 @@ function Parser(code, options = {}) {
     } else if (acornCompat) {
       AST_open(astProp, {
         type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
-        loc: AST_getBaseLoc($tt_firstToken),
+        loc: AST_getOpenLoc($tt_firstToken.line, $tt_firstToken.column, $tt_firstToken.start),
         // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
         generator: $tt_starToken !== UNDEF_STAR,
         async: $tt_asyncToken !== UNDEF_ASYNC,
@@ -3283,7 +3267,7 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
-        loc: AST_getBaseLoc($tt_firstToken),
+        loc: AST_getOpenLoc($tt_firstToken.line, $tt_firstToken.column, $tt_firstToken.start),
         // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
         generator: $tt_starToken !== UNDEF_STAR,
         async: $tt_asyncToken !== UNDEF_ASYNC,
@@ -3584,7 +3568,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlagsNoTemplate); // [v]: `(x)=>{/x/}`  TODO: next must be statement start or `}`
     AST_open('body', {
       type: 'BlockStatement',
-      loc: AST_getBaseLoc($tt_curlyToken),
+      loc: AST_getOpenLoc($tt_curlyToken.line, $tt_curlyToken.column, $tt_curlyToken.start),
       body: [],
     });
     if (options_exposeScopes) AST_set('$scope', scoop);
@@ -3747,7 +3731,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc($tt_numberToken),
+      loc: AST_getOpenLoc($tt_numberToken.line, $tt_numberToken.column, $tt_numberToken.start),
       expression: AST_getNumberNode($tt_numberToken),
     });
     parseExpressionAfterLiteral(lexerFlags, $tt_numberToken, 'expression');
@@ -3774,7 +3758,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc($tt_stringToken),
+      loc: AST_getOpenLoc($tt_stringToken.line, $tt_stringToken.column, $tt_stringToken.start),
       expression: AST_getStringNode($tt_stringToken, $tp_stringToken_canon, false),
     });
     parseExpressionAfterLiteral(lexerFlags, $tt_stringToken, 'expression');
@@ -3800,7 +3784,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc($tt_regexToken),
+      loc: AST_getOpenLoc($tt_regexToken.line, $tt_regexToken.column, $tt_regexToken.start),
       expression: AST_getRegexNode($tt_regexToken),
     });
     parseExpressionAfterLiteral(lexerFlags, $tt_regexToken, 'expression');
@@ -3822,7 +3806,7 @@ function Parser(code, options = {}) {
     }
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc($tt_tickToken),
+      loc: AST_getOpenLoc($tt_tickToken.line, $tt_tickToken.column, $tt_tickToken.start),
       expression: undefined,
     });
     parseTickExpression(lexerFlags, $tt_tickToken, 'expression');
@@ -4037,7 +4021,7 @@ function Parser(code, options = {}) {
       if (fromStmtOrExpr === IS_STATEMENT) {
         AST_open(astProp, {
           type: 'ExpressionStatement',
-          loc: AST_getBaseLoc($tt_asyncToken),
+          loc: AST_getOpenLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
           expression: undefined,
         });
         astProp = 'expression'
@@ -4151,7 +4135,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'AwaitExpression',
-      loc: AST_getBaseLoc($tt_awaitToken),
+      loc: AST_getOpenLoc($tt_awaitToken.line, $tt_awaitToken.column, $tt_awaitToken.start),
       argument: undefined,
     });
 
@@ -4223,14 +4207,14 @@ function Parser(code, options = {}) {
       // (All BlockStatements receive the `directives` property in the Babel AST... even when it can't have any directives.)
       AST_open(astProp, {
         type: 'BlockStatement',
-        loc: AST_getBaseLoc($tt_curlyToken),
+        loc: AST_getOpenLoc($tt_curlyToken.line, $tt_curlyToken.column, $tt_curlyToken.start),
         directives: [],
         body: [],
       });skipToStatementStart
     } else {
       AST_open(astProp, {
         type: 'BlockStatement',
-        loc: AST_getBaseLoc($tt_curlyToken),
+        loc: AST_getOpenLoc($tt_curlyToken.line, $tt_curlyToken.column, $tt_curlyToken.start),
         body: [],
       });
     }
@@ -4507,7 +4491,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToStatementStart($ID_do, lexerFlags); // Note: most likely is a block...
     AST_open(astProp, {
       type: 'DoWhileStatement',
-      loc: AST_getBaseLoc($tt_doToken),
+      loc: AST_getOpenLoc($tt_doToken.line, $tt_doToken.column, $tt_doToken.start),
       body: undefined,
       test: undefined,
     });
@@ -4586,7 +4570,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExportDefaultDeclaration',
-      loc: AST_getBaseLoc($tt_exportToken),
+      loc: AST_getOpenLoc($tt_exportToken.line, $tt_exportToken.column, $tt_exportToken.start),
       declaration: undefined,
     });
 
@@ -4735,7 +4719,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExportNamedDeclaration',
-      loc: AST_getBaseLoc($tt_exportToken),
+      loc: AST_getOpenLoc($tt_exportToken.line, $tt_exportToken.column, $tt_exportToken.start),
       specifiers: [],
       declaration: undefined,
       source: undefined,
@@ -5266,7 +5250,7 @@ function Parser(code, options = {}) {
 
         AST_wrapClosedCustom(astProp, {
           type: 'ForStatement',
-          loc: AST_getBaseLoc($tt_forToken),
+          loc: AST_getOpenLoc($tt_forToken.line, $tt_forToken.column, $tt_forToken.start),
           init: undefined,
           test: undefined,
           update: undefined,
@@ -5303,7 +5287,7 @@ function Parser(code, options = {}) {
 
           AST_wrapClosedCustom(astProp, {
             type: 'ForStatement',
-            loc: AST_getBaseLoc($tt_forToken),
+            loc: AST_getOpenLoc($tt_forToken.line, $tt_forToken.column, $tt_forToken.start),
             init: undefined,
             test: undefined,
             update: undefined,
@@ -5347,7 +5331,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ForStatement',
-      loc: AST_getBaseLoc($tt_forToken),
+      loc: AST_getOpenLoc($tt_forToken.line, $tt_forToken.column, $tt_forToken.start),
       init: null, // yes, null, not undefined
       test: undefined,
       update: undefined,
@@ -5547,7 +5531,7 @@ function Parser(code, options = {}) {
 
     AST_wrapClosedCustom(astProp, {
       type: 'ForStatement',
-      loc: AST_getBaseLoc($tt_forToken),
+      loc: AST_getOpenLoc($tt_forToken.line, $tt_forToken.column, $tt_forToken.start),
       init: undefined,
       test: undefined,
       update: undefined,
@@ -5575,7 +5559,7 @@ function Parser(code, options = {}) {
 
     AST_wrapClosedCustom(astProp, {
       type: 'ForOfStatement',
-      loc: AST_getBaseLoc($tt_forToken),
+      loc: AST_getOpenLoc($tt_forToken.line, $tt_forToken.column, $tt_forToken.start),
       left: undefined,
       right: undefined,
       await: awaitable, // as per https://github.com/estree/estree/pull/138
@@ -5595,7 +5579,7 @@ function Parser(code, options = {}) {
     }
     AST_wrapClosedCustom(astProp, {
       type: 'ForInStatement',
-      loc: AST_getBaseLoc($tt_forToken),
+      loc: AST_getOpenLoc($tt_forToken.line, $tt_forToken.column, $tt_forToken.start),
       left: undefined,
       right: undefined,
       body: undefined,
@@ -5836,7 +5820,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToParenOpenOrDie($ID_if, lexerFlags);
     AST_open(astProp, {
       type: 'IfStatement',
-      loc: AST_getBaseLoc($tt_ifToken),
+      loc: AST_getOpenLoc($tt_ifToken.line, $tt_ifToken.column, $tt_ifToken.start),
       test: undefined,
       consequent: undefined,
       alternate: undefined,
@@ -5900,7 +5884,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ImportDeclaration',
-      loc: AST_getBaseLoc($tt_importToken),
+      loc: AST_getOpenLoc($tt_importToken.line, $tt_importToken.column, $tt_importToken.start),
       specifiers: [],
       source: undefined,
     });
@@ -6246,7 +6230,7 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getBaseLoc($tt_identToken),
+        loc: AST_getOpenLoc($tt_identToken.line, $tt_identToken.column, $tt_identToken.start),
         expression: undefined,
       });
       let assignable = parseIdentOrParenlessArrow(lexerFlags, $tt_identToken, $tp_identToken_canon, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
@@ -6278,7 +6262,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToStatementStart($ID_return, lexerFlags); // Either an expression on the same line or a statement on the next (which includes exprs)
     AST_open(astProp, {
       type: 'ReturnStatement',
-      loc: AST_getBaseLoc($tt_returnToken),
+      loc: AST_getOpenLoc($tt_returnToken.line, $tt_returnToken.column, $tt_returnToken.start),
       argument: undefined,
     });
 
@@ -6315,7 +6299,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToParenOpenOrDie($ID_switch, lexerFlags);
     AST_open(astProp, {
       type: 'SwitchStatement',
-      loc: AST_getBaseLoc($tt_switchToken),
+      loc: AST_getOpenLoc($tt_switchToken.line, $tt_switchToken.column, $tt_switchToken.start),
       discriminant: undefined,
       cases: [],
     });
@@ -6355,7 +6339,7 @@ function Parser(code, options = {}) {
         ASSERT_skipToExpressionStart($ID_case, lexerFlags);
         AST_open(astProp, {
           type: 'SwitchCase',
-          loc: AST_getBaseLoc($tt_caseToken),
+          loc: AST_getOpenLoc($tt_caseToken.line, $tt_caseToken.column, $tt_caseToken.start),
           test: undefined,
           consequent: [],
         });
@@ -6378,7 +6362,7 @@ function Parser(code, options = {}) {
         ASSERT_skipToColonOrDie($ID_default, lexerFlags);
         AST_open(astProp, {
           type: 'SwitchCase',
-          loc: AST_getBaseLoc($tt_defaultToken),
+          loc: AST_getOpenLoc($tt_defaultToken.line, $tt_defaultToken.column, $tt_defaultToken.start),
           test: null, // yes, null
           consequent: [],
         });
@@ -6404,7 +6388,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToExpressionStart($ID_throw, lexerFlags); // The arg is mandatory so next token cannot start a statement
     AST_open(astProp, {
       type: 'ThrowStatement',
-      loc: AST_getBaseLoc($tt_throwToken),
+      loc: AST_getOpenLoc($tt_throwToken.line, $tt_throwToken.column, $tt_throwToken.start),
       argument: undefined,
     });
     if (tok_getNlwas() === true) {
@@ -6430,7 +6414,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToCurlyOpenOrDie($ID_try, lexerFlags);
     AST_open(astProp, {
       type: 'TryStatement',
-      loc: AST_getBaseLoc($tt_tryToken),
+      loc: AST_getOpenLoc($tt_tryToken.line, $tt_tryToken.column, $tt_tryToken.start),
       block: undefined,
       handler: undefined,
       finalizer: undefined,
@@ -6455,7 +6439,7 @@ function Parser(code, options = {}) {
       ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN || tok_getType() === $PUNC_CURLY_OPEN, 'limited options, expecting { (, explicitly checked later');
       AST_open('handler', {
         type: 'CatchClause',
-        loc: AST_getBaseLoc($tt_catchToken),
+        loc: AST_getOpenLoc($tt_catchToken.line, $tt_catchToken.column, $tt_catchToken.start),
         param: undefined,
         body: undefined,
       });
@@ -6593,7 +6577,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToParenOpenOrDie($ID_while, lexerFlags);
     AST_open(astProp, {
       type: 'WhileStatement',
-      loc: AST_getBaseLoc($tt_whileToken),
+      loc: AST_getOpenLoc($tt_whileToken.line, $tt_whileToken.column, $tt_whileToken.start),
       test: undefined,
       body: undefined,
     });
@@ -6644,7 +6628,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc($tt_identToken),
+      loc: AST_getOpenLoc($tt_identToken.line, $tt_identToken.column, $tt_identToken.start),
       expression: undefined,
     });
     parseExpressionsAfterIdent(lexerFlags, $tt_identToken, $tp_identToken_canon, 'expression');
@@ -6654,7 +6638,7 @@ function Parser(code, options = {}) {
   function parseDeleteExpression(lexerFlags, $tt_deleteToken, inputAssignable, astProp) {
     AST_open(astProp, {
       type: 'UnaryExpression',
-      loc: AST_getBaseLoc($tt_deleteToken),
+      loc: AST_getOpenLoc($tt_deleteToken.line, $tt_deleteToken.column, $tt_deleteToken.start),
       operator: 'delete',
       prefix: true,
       argument: undefined,
@@ -6953,7 +6937,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'LabeledStatement',
-      loc: AST_getBaseLoc($tt_identToken),
+      loc: AST_getOpenLoc($tt_identToken.line, $tt_identToken.column, $tt_identToken.start),
       label: AST_getIdentNode($tt_identToken, $tp_identToken_canon),
       body: undefined,
     });
@@ -7020,7 +7004,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToParenOpenOrDie($ID_with, lexerFlags);
     AST_open(astProp, {
       type: 'WithStatement',
-      loc: AST_getBaseLoc($tt_withToken),
+      loc: AST_getOpenLoc($tt_withToken.line, $tt_withToken.column, $tt_withToken.start),
       object: undefined,
       body: undefined,
     });
@@ -7048,7 +7032,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'VariableDeclaration',
-      loc: AST_getBaseLoc($tt_bindingToken),
+      loc: AST_getOpenLoc($tt_bindingToken.line, $tt_bindingToken.column, $tt_bindingToken.start),
       kind: keyword,
       declarations: [],
     });
@@ -7275,7 +7259,7 @@ function Parser(code, options = {}) {
         // - `try {} catch ([a] = b) {}`
         AST_wrapClosedCustom(astProp, {
           type: 'AssignmentPattern',
-          loc: AST_getBaseLoc($tt_bindingStartToken),
+          loc: AST_getOpenLoc($tt_bindingStartToken.line, $tt_bindingStartToken.column, $tt_bindingStartToken.start),
           left: undefined,
           right: undefined,
         }, 'left');
@@ -7286,7 +7270,7 @@ function Parser(code, options = {}) {
         ASSERT(defaultsOption === ASSIGNMENT_IS_INIT, 'two options');
         AST_wrapClosedCustom('declarations', {
           type: 'VariableDeclarator',
-          loc: AST_getBaseLoc($tt_bindingStartToken),
+          loc: AST_getOpenLoc($tt_bindingStartToken.line, $tt_bindingStartToken.column, $tt_bindingStartToken.start),
           id: undefined,
           init: undefined,
         }, 'id');
@@ -7616,7 +7600,7 @@ function Parser(code, options = {}) {
     if (stmtOrExpr === IS_STATEMENT) {
       AST_open(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getBaseLoc($tt_asyncToken),
+        loc: AST_getOpenLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
         expression: undefined,
       });
       astProp = 'expression'
@@ -7666,7 +7650,7 @@ function Parser(code, options = {}) {
     if (fromStmtOrExpr === IS_STATEMENT) {
       AST_open(astProp, {
         type: 'ExpressionStatement',
-        loc: AST_getBaseLoc($tt_asyncToken),
+        loc: AST_getOpenLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
         expression: undefined,
       });
       astProp = 'expression'
@@ -7785,7 +7769,7 @@ function Parser(code, options = {}) {
     // Note: assignment to object/array is caught elsewhere
     AST_wrapClosedCustom(astProp, {
       type: 'AssignmentExpression',
-      loc: AST_getBaseLoc($tt_firstAssignmentToken),
+      loc: AST_getOpenLoc($tt_firstAssignmentToken.line, $tt_firstAssignmentToken.column, $tt_firstAssignmentToken.start),
       left: undefined,
       operator: tok_sliceInput(tok_getStart(), tok_getStop()),
       right: undefined,
@@ -7857,7 +7841,7 @@ function Parser(code, options = {}) {
     let AST_nodeName = (opType === $PUNC_AND_AND || opType === $PUNC_OR_OR) ? 'LogicalExpression' : 'BinaryExpression';
     AST_wrapClosedCustom(astProp, {
       type: AST_nodeName,
-      loc: AST_getBaseLoc($tt_exprStartToken),
+      loc: AST_getOpenLoc($tt_exprStartToken.line, $tt_exprStartToken.column, $tt_exprStartToken.start),
       left: undefined,
       operator: tok_sliceInput($tt_opToken.start, $tt_opToken.stop),
       right: undefined,
@@ -7896,7 +7880,7 @@ function Parser(code, options = {}) {
     // - `a ? b : yield c`
     AST_wrapClosedCustom(astProp, {
       type: 'ConditionalExpression',
-      loc: AST_getBaseLoc($tt_firstExprToken),
+      loc: AST_getOpenLoc($tt_firstExprToken.line, $tt_firstExprToken.column, $tt_firstExprToken.start),
       test: undefined,
       consequent: undefined,
       alternate: undefined,
@@ -7949,7 +7933,7 @@ function Parser(code, options = {}) {
     ASSERT(tok_getType() === $PUNC_COMMA, 'confirm at callsite');
     AST_wrapClosedIntoArrayCustom(astProp, {
       type: 'SequenceExpression',
-      loc: AST_getBaseLoc($tt_startOfFirstExprToken),
+      loc: AST_getOpenLoc($tt_startOfFirstExprToken.line, $tt_startOfFirstExprToken.column, $tt_startOfFirstExprToken.start),
       expressions: undefined,
     }, 'expressions');
     assignableForPiggies = __parseExpressions(lexerFlags, assignableForPiggies, 'expressions');
@@ -8611,7 +8595,7 @@ function Parser(code, options = {}) {
   function parseNewExpression(lexerFlags, $tt_newToken, astProp) {
     AST_open(astProp, {
       type: 'NewExpression',
-      loc: AST_getBaseLoc($tt_newToken),
+      loc: AST_getOpenLoc($tt_newToken.line, $tt_newToken.column, $tt_newToken.start),
       arguments: [],
       callee: undefined,
     });
@@ -8702,7 +8686,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'UnaryExpression',
-      loc: AST_getBaseLoc($tt_unaryToken),
+      loc: AST_getOpenLoc($tt_unaryToken.line, $tt_unaryToken.column, $tt_unaryToken.start),
       operator: opName,
       prefix: true,
       argument: undefined,
@@ -8748,7 +8732,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToExpressionStart($G_PUNCTUATOR, lexerFlags); // next can be regex (++/x/.y), though it's very unlikely
     AST_open(astProp, {
       type: 'UpdateExpression',
-      loc: AST_getBaseLoc($tt_puncToken),
+      loc: AST_getOpenLoc($tt_puncToken.line, $tt_puncToken.column, $tt_puncToken.start),
       argument: undefined,
       operator: opName,
       prefix: true,
@@ -8805,7 +8789,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'YieldExpression',
-      loc: AST_getBaseLoc($tt_yieldToken),
+      loc: AST_getOpenLoc($tt_yieldToken.line, $tt_yieldToken.column, $tt_yieldToken.start),
       delegate: undefined, // TODO: init to false
       argument: undefined,
     });
@@ -8968,7 +8952,7 @@ function Parser(code, options = {}) {
       // Babel does not support `expression`: https://github.com/babel/babel/issues/6772#issuecomment-342935685
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc($tt_arrowStartToken),
+        loc: AST_getOpenLoc($tt_arrowStartToken.line, $tt_arrowStartToken.column, $tt_arrowStartToken.start),
         params: [AST_getIdentNode($tt_identToken, $tp_identToken_canon)],
         id: null,
         generator: false,
@@ -8978,7 +8962,7 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc($tt_arrowStartToken),
+        loc: AST_getOpenLoc($tt_arrowStartToken.line, $tt_arrowStartToken.column, $tt_arrowStartToken.start),
         params: [AST_getIdentNode($tt_identToken, $tp_identToken_canon)],
         id: null,
         generator: false,
@@ -9015,7 +8999,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'TemplateLiteral',
-      loc: AST_getBaseLoc($tt_tickToken),
+      loc: AST_getOpenLoc($tt_tickToken.line, $tt_tickToken.column, $tt_tickToken.start),
       expressions: [],
       quasis: [],
     });
@@ -9095,7 +9079,10 @@ function Parser(code, options = {}) {
 
     AST_open('quasis', {
       type: 'TemplateElement',
-      loc: AST_getBaseLocTemplate($tt_tickToken),
+      // Create a loc that is unclosed, to be closed by AST_close*
+      // This loc is for template elements where the backticks, `${`, and `}` characters are ignored in
+      // the location ranges... so +1 it
+      loc: AST_getOpenLoc($tt_tickToken.line, $tt_tickToken.column + 1, $tt_tickToken.start),
       tail: wasTail === IS_QUASI_TAIL,
       value: {
         // raw: ($tt_tickToken === $TICK_HEAD || $tt_tickToken === $TICK_BAD_HEAD ? '`' : '}') + quasiValue + ($tt_tickToken === $TICK_BODY || $tt_tickToken === $TICK_BAD_BODY ? '${' : '`'),
@@ -9166,7 +9153,7 @@ function Parser(code, options = {}) {
     // parseDynamicProperty
     AST_wrapClosedCustom(astProp, {
       type: 'MemberExpression',
-      loc: AST_getBaseLoc($tt_valueFirstToken),
+      loc: AST_getOpenLoc($tt_valueFirstToken.line, $tt_valueFirstToken.column, $tt_valueFirstToken.start),
       object: undefined,
       property: undefined,
       computed: true,
@@ -9199,7 +9186,7 @@ function Parser(code, options = {}) {
       ASSERT(typeof astProp === 'string', 'should be string');
       AST_wrapClosedCustom(astProp, {
         type: 'CallExpression',
-        loc: AST_getBaseLoc($tt_valueFirstToken),
+        loc: AST_getOpenLoc($tt_valueFirstToken.line, $tt_valueFirstToken.column, $tt_valueFirstToken.start),
         callee: undefined,
         arguments: [],
       }, 'callee');
@@ -9218,7 +9205,7 @@ function Parser(code, options = {}) {
     // Tagged template is like a call but slightly special (and a very particular AST)
     AST_wrapClosedCustom(astProp, {
       type: 'TaggedTemplateExpression',
-      loc: AST_getBaseLoc($tt_valueFirstToken),
+      loc: AST_getOpenLoc($tt_valueFirstToken.line, $tt_valueFirstToken.column, $tt_valueFirstToken.start),
       tag: undefined,
       quasi: undefined,
     }, 'tag');
@@ -9347,7 +9334,7 @@ function Parser(code, options = {}) {
           ASSERT_skipToExpressionStart('...', lexerFlags);
           AST_open(astProp, {
             type: 'SpreadElement',
-            loc: AST_getBaseLoc($tt_spreadToken),
+            loc: AST_getOpenLoc($tt_spreadToken.line, $tt_spreadToken.column, $tt_spreadToken.start),
             argument: undefined,
           });
           let nowAssignable = parseExpression(lexerFlags, 'argument');
@@ -9387,7 +9374,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ExpressionStatement',
-      loc: AST_getBaseLoc($tt_importToken),
+      loc: AST_getOpenLoc($tt_importToken.line, $tt_importToken.column, $tt_importToken.start),
       expression: undefined,
     });
     parseDynamicImport(lexerFlags, $tt_importToken, 'expression');
@@ -9683,7 +9670,7 @@ function Parser(code, options = {}) {
       if (babelCompat) {
         AST_open(astProp, {
           type: 'ArrowFunctionExpression',
-          loc: AST_getBaseLoc($tt_parenToken),
+          loc: AST_getOpenLoc($tt_parenToken.line, $tt_parenToken.column, $tt_parenToken.start),
           params: [],
           id: null,
           generator: false,
@@ -9693,7 +9680,7 @@ function Parser(code, options = {}) {
       } else {
         AST_open(astProp, {
           type: 'ArrowFunctionExpression',
-          loc: AST_getBaseLoc($tt_parenToken),
+          loc: AST_getOpenLoc($tt_parenToken.line, $tt_parenToken.column, $tt_parenToken.start),
           params: [],
           id: null,
           generator: false,
@@ -9913,7 +9900,7 @@ function Parser(code, options = {}) {
             toplevelComma = true;
             AST_wrapClosedIntoArrayCustom(rootAstProp, {
               type: 'SequenceExpression',
-              loc: AST_getBaseLoc($tt_firstTokenAfterParen),
+              loc: AST_getOpenLoc($tt_firstTokenAfterParen.line, $tt_firstTokenAfterParen.column, $tt_firstTokenAfterParen.start),
               expressions: undefined,
             }, 'expressions');
             astProp = 'expressions';
@@ -10014,7 +10001,7 @@ function Parser(code, options = {}) {
         // only do this once
         AST_wrapClosedIntoArrayCustom(rootAstProp, {
           type: 'SequenceExpression',
-          loc: AST_getBaseLoc($tt_firstTokenAfterParen),
+          loc: AST_getOpenLoc($tt_firstTokenAfterParen.line, $tt_firstTokenAfterParen.column, $tt_firstTokenAfterParen.start),
           expressions: undefined,
         }, 'expressions');
         astProp = 'expressions';
@@ -10554,7 +10541,7 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc($tt_asyncToken),
+        loc: AST_getOpenLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
         params: [],
         id: null,
         generator: false,
@@ -10564,7 +10551,7 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
-        loc: AST_getBaseLoc($tt_asyncToken),
+        loc: AST_getOpenLoc($tt_asyncToken.line, $tt_asyncToken.column, $tt_asyncToken.start),
         params: [],
         id: null,
         generator: false,
@@ -10686,7 +10673,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToExpressionStartSquareCloseComma($PUNC_BRACKET_OPEN, lexerFlags);
     AST_open(_astProp, {
       type: 'ArrayExpression',
-      loc: AST_getBaseLoc($tt_arrayOpenToken),
+      loc: AST_getOpenLoc($tt_arrayOpenToken.line, $tt_arrayOpenToken.column, $tt_arrayOpenToken.start),
       elements: [],
     });
 
@@ -10769,7 +10756,7 @@ function Parser(code, options = {}) {
           // We should have just added an Identifier to the AST, so wrap that as left now
           AST_wrapClosedCustom(astProp, {
             type: 'AssignmentExpression',
-            loc: AST_getBaseLoc($tt_identToken),
+            loc: AST_getOpenLoc($tt_identToken.line, $tt_identToken.column, $tt_identToken.start),
             left: undefined,
             operator: '=',
             right: undefined,
@@ -10967,7 +10954,7 @@ function Parser(code, options = {}) {
             //                 ^
             AST_wrapClosedCustom(astProp, {
               type: 'AssignmentExpression',
-              loc: AST_getBaseLoc($tt_elementStartToken),
+              loc: AST_getOpenLoc($tt_elementStartToken.line, $tt_elementStartToken.column, $tt_elementStartToken.start),
               left: undefined,
               operator: '=',
               right: undefined,
@@ -11096,7 +11083,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ObjectExpression',
-      loc: AST_getBaseLoc($tt_curlyToken),
+      loc: AST_getOpenLoc($tt_curlyToken.line, $tt_curlyToken.column, $tt_curlyToken.start),
       properties: [],
     });
     let destructible = parseObjectLikePatternSansAssign(lexerFlags | LF_NO_ASI, scoop, bindingType, exportedNames, exportedBindings, 'properties');
@@ -11360,7 +11347,7 @@ function Parser(code, options = {}) {
         if (babelCompat) {
           AST_wrapClosedCustom(astProp, {
             type: NODE_NAME_PROPERTY,
-            loc: AST_getBaseLoc($tt_startOfKeyToken),
+            loc: AST_getOpenLoc($tt_startOfKeyToken.line, $tt_startOfKeyToken.column, $tt_startOfKeyToken.start),
             key: undefined,
             method: false,
             computed: true,
@@ -11370,7 +11357,7 @@ function Parser(code, options = {}) {
         } else {
           AST_wrapClosedCustom(astProp, {
             type: NODE_NAME_PROPERTY,
-            loc: AST_getBaseLoc($tt_startOfKeyToken),
+            loc: AST_getOpenLoc($tt_startOfKeyToken.line, $tt_startOfKeyToken.column, $tt_startOfKeyToken.start),
             key: undefined,
             kind: 'init',
             method: false,
@@ -11563,7 +11550,7 @@ function Parser(code, options = {}) {
       AST_destruct(astProp);
       AST_wrapClosedCustom(astProp, {
         type: 'AssignmentExpression',
-        loc: AST_getBaseLoc($tt_patternStartToken),
+        loc: AST_getOpenLoc($tt_patternStartToken.line, $tt_patternStartToken.column, $tt_patternStartToken.start),
         left: undefined,
         operator: '=',
         right: undefined,
@@ -11605,7 +11592,7 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_open(astProp, {
         type: NODE_NAME_PROPERTY,
-        loc: AST_getBaseLoc($tt_startOfKeyToken),
+        loc: AST_getOpenLoc($tt_startOfKeyToken.line, $tt_startOfKeyToken.column, $tt_startOfKeyToken.start),
         key: undefined,
         method: false, // only the {x(){}} shorthand gets true here, this is {x}
         computed: false,
@@ -11615,7 +11602,7 @@ function Parser(code, options = {}) {
     } else {
       AST_open(astProp, {
         type: NODE_NAME_PROPERTY,
-        loc: AST_getBaseLoc($tt_startOfKeyToken),
+        loc: AST_getOpenLoc($tt_startOfKeyToken.line, $tt_startOfKeyToken.column, $tt_startOfKeyToken.start),
         key: undefined,
         kind: 'init', // only getters/setters get special value here
         method: false, // only the {x(){}} shorthand gets true here, this is {x}
@@ -12020,7 +12007,7 @@ function Parser(code, options = {}) {
       if (babelCompat) {
         AST_open(astProp, {
           type: NODE_NAME_PROPERTY,
-          loc: AST_getBaseLoc($tt_startOfPropToken),
+          loc: AST_getOpenLoc($tt_startOfPropToken.line, $tt_startOfPropToken.column, $tt_startOfPropToken.start),
           key: AST_getIdentNode($tt_propLeadingIdentToken, $tp_propLeadingIdentToken_canon),
           method: false, // only the {x(){}} shorthand gets true here, this is {x}
           computed: false,
@@ -12031,7 +12018,7 @@ function Parser(code, options = {}) {
       } else {
         AST_open(astProp, {
           type: NODE_NAME_PROPERTY,
-          loc: AST_getBaseLoc($tt_startOfPropToken),
+          loc: AST_getOpenLoc($tt_startOfPropToken.line, $tt_startOfPropToken.column, $tt_startOfPropToken.start),
           key: AST_getIdentNode($tt_propLeadingIdentToken, $tp_propLeadingIdentToken_canon),
           kind: 'init', // only getters/setters get special value here
           method: false, // only the {x(){}} shorthand gets true here, this is {x}
@@ -12049,7 +12036,7 @@ function Parser(code, options = {}) {
         ASSERT($tt_propLeadingIdentToken === $tt_startOfPropToken, 'can not have modifiers');
         AST_wrapClosedCustom('value', {
           type: 'AssignmentExpression',
-          loc: AST_getBaseLoc($tt_propLeadingIdentToken),
+          loc: AST_getOpenLoc($tt_propLeadingIdentToken.line, $tt_propLeadingIdentToken.column, $tt_propLeadingIdentToken.start),
           left: undefined,
           operator: '=',
           right: undefined,
@@ -12373,7 +12360,7 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc($tt_methodStartToken),
+        loc: AST_getOpenLoc($tt_methodStartToken.line, $tt_methodStartToken.column, $tt_methodStartToken.start),
         key: undefined,
         // Method: getters and setters are not methods but properties
         method: $tt_getToken === UNDEF_GET && $tt_setToken === UNDEF_SET,
@@ -12390,7 +12377,7 @@ function Parser(code, options = {}) {
       // Acorn uses the parenthesis open as start of method while tenko/babel uses the start of the first modifier and otherwise the id
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc($tt_methodStartToken),
+        loc: AST_getOpenLoc($tt_methodStartToken.line, $tt_methodStartToken.column, $tt_methodStartToken.start),
         key: undefined,
         // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
         kind: $tt_getToken !== UNDEF_GET ? 'get' : $tt_setToken !== UNDEF_SET ? 'set' : 'init',
@@ -12459,7 +12446,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToIdentCurlyOpen($ID_class, lexerFlags);
     AST_open(astProp, {
       type: 'ClassDeclaration',
-      loc: AST_getBaseLoc($tt_classToken),
+      loc: AST_getOpenLoc($tt_classToken.line, $tt_classToken.column, $tt_classToken.start),
       id: undefined,
       superClass: undefined,
       body: undefined,
@@ -12491,7 +12478,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ClassExpression',
-      loc: AST_getBaseLoc($tt_classToken),
+      loc: AST_getOpenLoc($tt_classToken.line, $tt_classToken.column, $tt_classToken.start),
       id: undefined,
       superClass: undefined,
       body: undefined,
@@ -12631,7 +12618,7 @@ function Parser(code, options = {}) {
 
     AST_open(astProp, {
       type: 'ClassBody',
-      loc: AST_getBaseLoc($tt_curlyToken),
+      loc: AST_getOpenLoc($tt_curlyToken.line, $tt_curlyToken.column, $tt_curlyToken.start),
       body: [],
     });
     let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, scoop, bindingType, isExpression, UNDEF_EXPORTS, UNDEF_EXPORTS, 'body');
@@ -13198,7 +13185,7 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_CLASS,
-        loc: AST_getBaseLoc($tt_methodStartToken),
+        loc: AST_getOpenLoc($tt_methodStartToken.line, $tt_methodStartToken.column, $tt_methodStartToken.start),
         key: undefined,
         static: $tt_staticToken !== UNDEF_STATIC,
         computed: $tt_keyToken === undefined,
@@ -13211,7 +13198,7 @@ function Parser(code, options = {}) {
     } else {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_CLASS,
-        loc: AST_getBaseLoc($tt_methodStartToken),
+        loc: AST_getOpenLoc($tt_methodStartToken.line, $tt_methodStartToken.column, $tt_methodStartToken.start),
         key: undefined,
         static: $tt_staticToken !== UNDEF_STATIC,
         computed: $tt_keyToken === undefined,
@@ -13425,7 +13412,7 @@ function Parser(code, options = {}) {
     }
     AST_open(astProp, {
       type: 'SpreadElement',
-      loc: AST_getBaseLoc($tt_spreadToken),
+      loc: AST_getOpenLoc($tt_spreadToken.line, $tt_spreadToken.column, $tt_spreadToken.start),
       argument: undefined,
     });
     let destructible = _parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tt_asyncToken, $tt_spreadToken, exportedNames, exportedBindings, 'argument');
@@ -13873,7 +13860,7 @@ function Parser(code, options = {}) {
         AST_destruct(astProp);
         AST_wrapClosedCustom(astProp, {
           type: 'AssignmentExpression',
-          loc: AST_getBaseLoc($tt_argStartToken),
+          loc: AST_getOpenLoc($tt_argStartToken.line, $tt_argStartToken.column, $tt_argStartToken.start),
           left: undefined,
           operator: '=',
           right: undefined,
@@ -14005,7 +13992,7 @@ function Parser(code, options = {}) {
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc($tt_methodStartToken),
+        loc: AST_getOpenLoc($tt_methodStartToken.line, $tt_methodStartToken.column, $tt_methodStartToken.start),
         key: undefined,
         method: method,
         generator: undefined,
@@ -14019,7 +14006,7 @@ function Parser(code, options = {}) {
     } else {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
-        loc: AST_getBaseLoc($tt_methodStartToken),
+        loc: AST_getOpenLoc($tt_methodStartToken.line, $tt_methodStartToken.column, $tt_methodStartToken.start),
         key: undefined,
         kind: kind,
         method: method,
