@@ -30,7 +30,7 @@ throws: Parser error!
   The label (`async`) for this `break` was not defined in the current label set, which is illegal
 
 break async
-      ^------- error
+      ^^^^^------- error
 
  () => x
 `````

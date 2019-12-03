@@ -36,7 +36,7 @@ throws: Parser error!
 async function f() {
   let
   await 0
-  ^------- error
+  ^^^^^------- error
 
 }
 `````
@@ -58,7 +58,7 @@ throws: Parser error!
 async function f() {
   let
   await 0
-  ^------- error
+  ^^^^^------- error
 
 }
 `````

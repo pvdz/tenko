@@ -48,7 +48,7 @@ throws: Parser error!
   Missing function param definition closing parenthesis, found `foo` instead
 
 o = {*f(x=await foo) {}}
-                ^------- error
+                ^^^------- error
 `````
 
 ### Strict mode

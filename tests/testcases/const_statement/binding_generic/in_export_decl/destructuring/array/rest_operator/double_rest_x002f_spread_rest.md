@@ -47,7 +47,7 @@ throws: Parser error!
   Can not rest twice
 
 export const [... ...foo] = obj;
-                  ^------- error
+              ^^^^^^^------- error
 `````
 
 

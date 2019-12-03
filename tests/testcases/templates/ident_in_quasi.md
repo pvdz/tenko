@@ -31,7 +31,7 @@ throws: Parser error!
   The first token after the template expression should be a continuation of the template (at EOF)
 
 `${n
-   ^------- error
+    ^------- error at EOF
 `````
 
 ### Strict mode

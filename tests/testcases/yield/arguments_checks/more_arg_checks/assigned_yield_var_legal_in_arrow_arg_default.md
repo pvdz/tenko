@@ -96,7 +96,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 async (x = z = yield) => {}
-                    ^------- error
+               ^^^^^------- error
 `````
 
 

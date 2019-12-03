@@ -34,7 +34,7 @@ throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
 p\x61ckage => { "use strict"; }
-^------- error
+^^^------- error
 `````
 
 ### Strict mode

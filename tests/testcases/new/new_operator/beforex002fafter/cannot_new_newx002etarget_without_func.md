@@ -29,7 +29,7 @@ throws: Parser error!
   Must be inside/nested a regular function to use `new.target`
 
 new new .target
-        ^------- error
+    ^^^^^------- error
 `````
 
 ### Strict mode

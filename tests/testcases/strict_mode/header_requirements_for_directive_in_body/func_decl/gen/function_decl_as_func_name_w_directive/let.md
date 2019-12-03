@@ -33,9 +33,10 @@ throws: Parser error!
   Can not use reserved keyword `let` in strict mode as id for function that has a use strict directive
 
 function let(b){
+         ^^^------- error
+
   "use strict";
 }
-^------- error
 `````
 
 ### Strict mode
@@ -44,10 +45,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (let) as a variable name because: Can not use `let` as variable name in strict mode
+  Cannot use this name (`let`) as a variable name because: Can not use `let` as variable name in strict mode
 
 function let(b){
-         ^------- error
+         ^^^------- error
 
   "use strict";
 }

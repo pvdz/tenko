@@ -35,7 +35,7 @@ throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
 function foo(p\x61ckage) { }
-             ^------- error
+             ^^^------- error
 `````
 
 ### Strict mode

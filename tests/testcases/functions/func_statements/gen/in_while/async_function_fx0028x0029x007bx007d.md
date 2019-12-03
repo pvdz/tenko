@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot parse a function declaration here, only expecting statements here
 
 while (x) async function f(){}
-                         ^------- error
+                ^^^^^^^^------- error
 `````
 
 ### Strict mode

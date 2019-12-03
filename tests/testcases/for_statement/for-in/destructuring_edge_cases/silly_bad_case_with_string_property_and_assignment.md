@@ -33,7 +33,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
 for ("foo".bar = x in obj);
-                   ^------- error
+                   ^^------- error
 `````
 
 ### Strict mode

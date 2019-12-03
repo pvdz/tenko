@@ -29,7 +29,7 @@ throws: Parser error!
   For-in and for-of can only have one binding, found 2
 
 for (let foo, bar in x);
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

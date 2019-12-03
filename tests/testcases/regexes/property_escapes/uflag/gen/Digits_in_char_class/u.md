@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The escaped lone property name `1234` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 /[\p{1234}]/u;
-^------- error
+^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: The escaped lone property name `1234` is not valid (does not appear in "table 55" nor "table 56"); Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\p{1234}]/u;
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 

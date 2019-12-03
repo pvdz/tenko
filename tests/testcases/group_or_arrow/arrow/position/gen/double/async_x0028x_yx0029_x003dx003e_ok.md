@@ -31,7 +31,7 @@ throws: Parser error!
   Unable to ASI
 
 async (x, y) => ok async (x, y) => ok
-                   ^------- error
+                   ^^^^^------- error
 `````
 
 ### Strict mode

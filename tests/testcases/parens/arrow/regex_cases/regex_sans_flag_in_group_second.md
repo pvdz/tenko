@@ -30,7 +30,7 @@ throws: Parser error!
   Unable to ASI
 
 (x, /x/g) => x
-          ^------- error
+          ^^------- error
 `````
 
 ### Strict mode

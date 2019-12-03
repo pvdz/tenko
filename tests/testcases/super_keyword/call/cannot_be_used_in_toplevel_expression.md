@@ -30,7 +30,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 const x = 5 + super();
-                   ^------- error
+              ^^^^^^------- error
 `````
 
 ### Strict mode

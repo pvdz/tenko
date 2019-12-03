@@ -34,7 +34,7 @@ throws: Parser error!
 
 async function p(){
   class C extends async a => b {}
-                        ^------- error
+                  ^^^^^^^------- error
 
 }
 `````

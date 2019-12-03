@@ -36,7 +36,7 @@ throws: Parser error!
 switch (x) {
   default:
     foo: bar: third: function f(){}
-                              ^------- error
+                     ^^^^^^^^------- error
 
 }
 `````

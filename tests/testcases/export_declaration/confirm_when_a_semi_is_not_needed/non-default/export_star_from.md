@@ -47,7 +47,7 @@ throws: Parser error!
   Unable to ASI
 
 export * from "x" foo
-                  ^------- error
+                  ^^^------- error
 `````
 
 

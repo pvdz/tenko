@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot delete inside `new` (at EOF)
 
 new delete
-    ^------- error
+    ^^^^^^------- error
 `````
 
 ### Strict mode

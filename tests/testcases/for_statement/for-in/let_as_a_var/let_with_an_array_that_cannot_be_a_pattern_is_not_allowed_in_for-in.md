@@ -31,7 +31,7 @@ throws: Parser error!
   The binding pattern is not destructible
 
 for (let[a+b] in x);
-              ^------- error
+              ^^------- error
 `````
 
 ### Strict mode

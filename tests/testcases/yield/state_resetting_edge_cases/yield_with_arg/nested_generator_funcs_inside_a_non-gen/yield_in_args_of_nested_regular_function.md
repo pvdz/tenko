@@ -30,7 +30,7 @@ throws: Parser error!
   The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
 function f(){  return function*(x=yield y) {};  }
-                                        ^------- error
+                                  ^^^^^------- error
 `````
 
 ### Strict mode

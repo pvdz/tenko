@@ -29,7 +29,7 @@ throws: Parser error!
   The left hand side of the arrow can only be destructed through assignment so arrow is illegal
 
 ({x: y.z}) => b
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode

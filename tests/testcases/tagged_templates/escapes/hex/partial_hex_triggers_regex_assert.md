@@ -35,7 +35,7 @@ throws: Lexer error!
     Regex: Early EOF after backslash in char class
 
 y`\x`; /[\
-       ^------- error
+       ^^^------- error
 `````
 
 ### Strict mode

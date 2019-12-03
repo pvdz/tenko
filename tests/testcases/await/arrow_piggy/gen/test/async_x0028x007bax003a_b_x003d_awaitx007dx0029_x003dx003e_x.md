@@ -31,7 +31,7 @@ throws: Parser error!
   The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
 async ({a: b = await}) => x
-                       ^------- error
+^^^^^------- error
 `````
 
 ### Strict mode

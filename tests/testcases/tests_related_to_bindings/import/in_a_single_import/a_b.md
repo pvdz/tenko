@@ -37,7 +37,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 import {a, b} from "c"
-       ^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

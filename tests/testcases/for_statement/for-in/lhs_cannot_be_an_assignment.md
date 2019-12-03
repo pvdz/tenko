@@ -33,7 +33,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
 for (x = y in z) ;
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode

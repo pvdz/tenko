@@ -30,7 +30,7 @@ throws: Parser error!
   Expected identifier, or array/object destructuring
 
 var ...x = y
-    ^------- error
+    ^^^------- error
 `````
 
 ### Strict mode

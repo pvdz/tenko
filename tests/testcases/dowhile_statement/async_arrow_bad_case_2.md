@@ -33,7 +33,7 @@ throws: Parser error!
 
 do async ()
  => x; while(y)
- ^------- error
+ ^^------- error
 `````
 
 ### Strict mode

@@ -35,7 +35,7 @@ throws: Parser error!
 async function f(){
   function *f(){
     for await (yield x in y of z);
-        ^------- error
+    ^^^^^^^^^------- error
 
   }
 }

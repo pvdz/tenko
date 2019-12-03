@@ -29,7 +29,7 @@ throws: Parser error!
   Can only use `super.foo` in class or object methods or in arrows nested in those methods/arrows
 
 class x extends y { foo(){ return () => function() { super.foo; } }}
-                                                          ^------- error
+                                                     ^^^^^^------- error
 `````
 
 ### Strict mode

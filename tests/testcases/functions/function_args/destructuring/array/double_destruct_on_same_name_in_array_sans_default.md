@@ -29,7 +29,7 @@ throws: Parser error!
   Function had duplicate params
 
 function f([foo], [foo]){}
-                         ^------- error
+                   ^^^------- error
 `````
 
 ### Strict mode

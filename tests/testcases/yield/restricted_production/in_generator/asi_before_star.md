@@ -37,9 +37,9 @@ throws: Parser error!
 
 function *f() {
   yield
-    * x
-    ^------- error
+  ^^^^^^^^^^------- error
 
+    * x
 }
 `````
 

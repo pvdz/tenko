@@ -113,7 +113,7 @@ throws: Parser error!
   Cannot use lhs as regular for-loop because it must destruct
 
 for ({__proto__: 1, __proto__: 2};;);
-                                 ^------- error
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 

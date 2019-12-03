@@ -32,7 +32,7 @@ throws: Lexer error!
     Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
 /\p{Hex}/
-^------- error
+^^^^^^^^^------- error
 `````
 
 ### Strict mode

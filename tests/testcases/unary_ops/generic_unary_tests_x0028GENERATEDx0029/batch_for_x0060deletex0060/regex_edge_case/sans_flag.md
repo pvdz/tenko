@@ -33,7 +33,7 @@ throws: Parser error!
 
 delete  a.b
 /foo/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode

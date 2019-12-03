@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Illegal char escape char (ord=47)
 
 /\c/u
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: Illegal char escape char (ord=47); Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\c/u
-^------- error
+^^^^^------- error
 `````
 

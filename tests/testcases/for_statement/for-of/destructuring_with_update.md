@@ -29,7 +29,7 @@ throws: Parser error!
   Can only increment or decrement an identifier or member expression
 
 for ([a.b]++ of c) d
-          ^------- error
+          ^^------- error
 `````
 
 ### Strict mode

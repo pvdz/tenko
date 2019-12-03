@@ -38,7 +38,7 @@ throws: Parser error!
 
 async function f(){
   for await ([{x=y}]=x of x) ;
-                       ^------- error
+                    ^------- error
 
 }
 `````

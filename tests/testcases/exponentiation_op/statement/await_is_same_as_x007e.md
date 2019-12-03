@@ -29,7 +29,7 @@ throws: Parser error!
   The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)
 
 async function f() { await x ** y }
-                             ^------- error
+                             ^^------- error
 `````
 
 ### Strict mode

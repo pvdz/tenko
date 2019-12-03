@@ -31,7 +31,7 @@ throws: Parser error!
   Unable to ASI
 
 new await foo
-          ^------- error
+          ^^^------- error
 `````
 
 ### Strict mode

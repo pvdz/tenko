@@ -31,7 +31,7 @@ throws: Parser error!
   Left part of for-of must be assignable
 
 for ((a++) of c);
-           ^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

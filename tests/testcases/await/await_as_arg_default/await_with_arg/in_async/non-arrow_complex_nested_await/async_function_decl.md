@@ -29,7 +29,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function g(){async function f(foo = [h, {m: t(await bar)}]){}    }
-                                                          ^------- error
+                                                    ^^^^^------- error
 `````
 
 ### Strict mode

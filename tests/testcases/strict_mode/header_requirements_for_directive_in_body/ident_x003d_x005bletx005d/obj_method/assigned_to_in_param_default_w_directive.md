@@ -44,7 +44,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 o = {foo(x=let=y){ "use strict"; }}
-              ^------- error
+           ^^^------- error
 `````
 
 

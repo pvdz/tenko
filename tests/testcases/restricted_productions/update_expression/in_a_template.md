@@ -32,7 +32,7 @@ throws: Parser error!
 
 `x${b
 ++c}y`;
-^------- error
+^^------- error
 `````
 
 ### Strict mode

@@ -32,7 +32,7 @@ throws: Parser error!
 
 (b
 ++c);
-^------- error
+^^------- error
 `````
 
 ### Strict mode

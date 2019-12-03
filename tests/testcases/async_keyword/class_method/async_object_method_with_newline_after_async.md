@@ -32,8 +32,9 @@ throws: Parser error!
   Async methods are a restricted production and cannot have a newline following it
 
 class x {async
+         ^^^^^^^^------- error
+
  foo() {}}
- ^------- error
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
 let y = typeof async x => await x
-                          ^------- error
+                          ^^^^^------- error
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function f(){   async function fh([- await x]) { "use strict"; }   }
-                                                 ^------- error
+                                           ^^^^^------- error
 `````
 
 ### Strict mode

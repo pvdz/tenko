@@ -39,7 +39,7 @@ throws: Lexer error!
 async function f() {
   await
   /x
-  ^------- error
+  ^^------- error
 
 }
 `````

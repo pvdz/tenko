@@ -55,7 +55,7 @@ throws: Parser error!
 
 function *P(){
   class D extends await x {}
-                  ^------- error
+                  ^^^^^------- error
 
 }
 `````

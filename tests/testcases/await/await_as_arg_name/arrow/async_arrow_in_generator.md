@@ -29,7 +29,7 @@ throws: Parser error!
   The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
 function *f(){  async (await) => x  }
-                              ^------- error
+                ^^^^^------- error
 `````
 
 ### Strict mode

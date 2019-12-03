@@ -35,7 +35,7 @@ throws: Lexer error!
 
 x: for(;;) continue x
 /y
-^------- error
+^^------- error
 `````
 
 ### Strict mode

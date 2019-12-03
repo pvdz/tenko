@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static eval(){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

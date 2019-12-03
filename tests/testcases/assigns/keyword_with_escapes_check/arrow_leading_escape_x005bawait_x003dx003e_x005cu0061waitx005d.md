@@ -70,10 +70,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (\u0061wait) as a variable name because: Await is illegal as var name with module goal
+  Cannot use this name (`\u0061wait`) as a variable name because: Await is illegal as var name with module goal
 
 (\u0061wait, "sentinal 15145")
-           ^------- error
+ ^^^^^^^^^^------- error
 `````
 
 

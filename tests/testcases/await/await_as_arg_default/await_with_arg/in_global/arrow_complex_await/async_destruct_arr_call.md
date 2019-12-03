@@ -29,7 +29,7 @@ throws: Parser error!
   Expecting closing paren `)` for the call, found `bar` instead
 
 async ([p] = [{m: 5 + t(await bar)}]);
-                              ^------- error
+                              ^^^------- error
 `````
 
 ### Strict mode

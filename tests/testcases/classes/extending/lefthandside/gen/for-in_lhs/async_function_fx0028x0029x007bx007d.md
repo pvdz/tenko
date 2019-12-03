@@ -31,7 +31,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 for (async function f(){} in x) ;
-                          ^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

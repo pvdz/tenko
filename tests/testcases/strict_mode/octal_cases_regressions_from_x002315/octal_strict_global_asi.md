@@ -39,7 +39,7 @@ throws: Parser error!
 
 "use strict"
 0777
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode
@@ -52,7 +52,7 @@ throws: Lexer error!
 
 "use strict"
 0777
-^------- error
+^^^^------- error
 `````
 
 

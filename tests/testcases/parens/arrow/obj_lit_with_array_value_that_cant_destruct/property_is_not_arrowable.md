@@ -30,7 +30,7 @@ throws: Parser error!
   The left hand side of the arrow can only be destructed through assignment so arrow is illegal
 
 ({a:b[0]}) => x
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode

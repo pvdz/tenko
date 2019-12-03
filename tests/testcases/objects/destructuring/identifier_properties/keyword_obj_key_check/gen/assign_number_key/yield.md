@@ -88,7 +88,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 ({500: yield} = null)
-            ^------- error
+       ^^^^^------- error
 `````
 
 

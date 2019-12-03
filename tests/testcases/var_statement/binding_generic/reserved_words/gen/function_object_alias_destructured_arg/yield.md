@@ -91,7 +91,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function fh({x: yield}) {}
-                     ^------- error
+                ^^^^^------- error
 `````
 
 

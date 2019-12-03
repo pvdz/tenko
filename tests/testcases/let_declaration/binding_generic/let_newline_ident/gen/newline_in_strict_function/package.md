@@ -38,7 +38,7 @@ function f() {
   "use strict";
   let
   package
-  ^------- error
+  ^^^^^^^------- error
 
 }
 `````

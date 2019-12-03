@@ -34,7 +34,7 @@ throws: Lexer error!
 
 typeof
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

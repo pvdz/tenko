@@ -55,7 +55,7 @@ throws: Parser error!
 
 function *f(){
   export = 1;
-  ^------- error
+  ^^^^^^------- error
 
 }
 `````

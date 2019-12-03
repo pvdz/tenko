@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Char class contained a "wide" codepoint that was not unicode ID_CONTINUE; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\ ]/u
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: Cannot escape ord=32 in a char class with uflag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\ ]/u
-^------- error
+^^^^^^^------- error
 `````
 

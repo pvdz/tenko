@@ -35,7 +35,7 @@ throws: Lexer error!
 
 for (x of 3) continue
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

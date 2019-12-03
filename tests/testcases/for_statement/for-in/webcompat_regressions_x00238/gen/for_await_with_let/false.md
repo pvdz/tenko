@@ -31,7 +31,7 @@ throws: Parser error!
   `for await` only accepts the `for-of` type
 
 async function f() { for await (let x in y) {} }
-                                      ^------- error
+                     ^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

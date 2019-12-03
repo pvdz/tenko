@@ -33,7 +33,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 import ** from 'f';
-       ^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -51,7 +51,7 @@ throws: Parser error!
   Expected a valid token after the `import` keyword, found `**` instead
 
 import ** from 'f';
-       ^------- error
+       ^^------- error
 `````
 
 

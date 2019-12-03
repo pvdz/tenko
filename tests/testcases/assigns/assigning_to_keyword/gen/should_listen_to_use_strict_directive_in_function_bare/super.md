@@ -36,7 +36,7 @@ throws: Parser error!
 function f() {
   "use strict";
   super = x
-        ^------- error
+  ^^^^^------- error
 
 }
 `````

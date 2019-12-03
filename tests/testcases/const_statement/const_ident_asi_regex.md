@@ -35,7 +35,7 @@ throws: Parser error!
 
 const q
 /d/
-^------- error
+^^^------- error
 `````
 
 ### Strict mode

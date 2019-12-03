@@ -44,7 +44,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 o = {foo(x=yield=y){ "use strict"; }}
-                ^------- error
+           ^^^^^------- error
 `````
 
 

@@ -30,7 +30,7 @@ throws: Parser error!
   The rest/spread operator is missing an argument
 
 (...);
-    ^------- error
+ ^^^^------- error
 `````
 
 ### Strict mode

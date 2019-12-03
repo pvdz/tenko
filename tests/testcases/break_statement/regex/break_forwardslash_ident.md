@@ -32,7 +32,7 @@ throws: Lexer error!
     Regex: Found EOF before regex was closed
 
 for (x of 3) break/x
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

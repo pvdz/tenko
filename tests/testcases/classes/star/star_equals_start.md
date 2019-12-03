@@ -35,7 +35,7 @@ throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
 class A {*=f(){}}
-         ^------- error
+         ^^------- error
 `````
 
 ### Strict mode

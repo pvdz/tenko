@@ -70,7 +70,7 @@ throws: Lexer error!
     Regex: Found EOF before regex was closed
 
 await / x
-      ^------- error
+      ^^^------- error
 `````
 
 

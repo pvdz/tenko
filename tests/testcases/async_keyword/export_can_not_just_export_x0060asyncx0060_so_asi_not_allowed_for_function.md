@@ -50,8 +50,9 @@ throws: Parser error!
   Async can not be followed by a newline as it results in `export async;`, which is not valid (and probably not what you wanted)
 
 export async
+^^^^^^^^^^^^------- error
+
  function(){}
- ^------- error
 `````
 
 

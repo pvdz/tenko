@@ -47,7 +47,7 @@ throws: Parser error!
   Constants must be initialized (at EOF)
 
 export const x
-             ^------- error
+              ^------- error at EOF
 `````
 
 

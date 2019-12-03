@@ -31,7 +31,7 @@ throws: Parser error!
   A unary expression is not allowed here
 
 class x extends typeof {}
-                ^------- error
+                ^^^^^^------- error
 `````
 
 ### Strict mode

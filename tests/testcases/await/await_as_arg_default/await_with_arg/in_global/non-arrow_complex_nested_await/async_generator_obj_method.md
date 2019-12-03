@@ -29,7 +29,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 let o = {async *f(foo = [{m: t(await bar)}]){}}
-                                     ^------- error
+                               ^^^^^------- error
 `````
 
 ### Strict mode

@@ -47,7 +47,7 @@ throws: Parser error!
   Unexpected token while parsing export object
 
 var foo; export {async foo(){}}
-                       ^------- error
+                       ^^^------- error
 `````
 
 

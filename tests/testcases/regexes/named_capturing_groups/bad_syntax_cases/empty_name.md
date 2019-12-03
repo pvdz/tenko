@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`>`, 62]
 
 /(?<>a)/
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode

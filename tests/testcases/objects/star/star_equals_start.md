@@ -35,7 +35,7 @@ throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `*=`
 
 ({*=f(){}})
-  ^------- error
+  ^^------- error
 `````
 
 ### Strict mode

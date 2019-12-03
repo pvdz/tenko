@@ -79,7 +79,7 @@ throws: Parser error!
 
 ("use strict");
 yield = x;
-      ^------- error
+^^^^^------- error
 `````
 
 

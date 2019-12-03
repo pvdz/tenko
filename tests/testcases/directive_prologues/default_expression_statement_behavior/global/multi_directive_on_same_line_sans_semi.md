@@ -29,7 +29,7 @@ throws: Parser error!
   Unable to ASI
 
 "foo" "bar"
-      ^------- error
+      ^^^^^------- error
 `````
 
 ### Strict mode

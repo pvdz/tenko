@@ -42,7 +42,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function f(){  return (x=yield y) => x;  }
-                               ^------- error
+                         ^^^^^------- error
 `````
 
 

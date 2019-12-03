@@ -29,7 +29,7 @@ throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
 let [a, let, b] = [1, 2, 3];
-           ^------- error
+        ^^^------- error
 `````
 
 ### Strict mode

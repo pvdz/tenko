@@ -50,8 +50,9 @@ throws: Parser error!
   Can only export async functions (not arrows), did not find a function
 
 export async
+^^^^^^^^^^^^^^^^------- error
+
  a => b
- ^------- error
 `````
 
 

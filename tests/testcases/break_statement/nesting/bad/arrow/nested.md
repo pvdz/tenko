@@ -29,7 +29,7 @@ throws: Parser error!
   Can only `break` without label inside a `switch` or loop
 
 () => {    if (x) break   }
-                          ^------- error
+                  ^^^^^------- error
 `````
 
 ### Strict mode

@@ -34,7 +34,7 @@ throws: Parser error!
 
 import(/foo/)
 /bar/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `11`
 
 class A {async set 11(x){}}
-                   ^------- error
+                   ^^------- error
 `````
 
 ### Strict mode

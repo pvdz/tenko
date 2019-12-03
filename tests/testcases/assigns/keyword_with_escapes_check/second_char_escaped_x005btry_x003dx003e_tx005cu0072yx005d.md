@@ -26,10 +26,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (t\u0072y) as a variable name because: Keywords may not have escapes in their name
+  Cannot use this name (`t\u0072y`) as a variable name because: Keywords may not have escapes in their name and this resolves to `try`
 
 (t\u0072y = "sentinal 1564646")
-          ^------- error
+ ^^^^^^^^------- error
 `````
 
 ### Strict mode

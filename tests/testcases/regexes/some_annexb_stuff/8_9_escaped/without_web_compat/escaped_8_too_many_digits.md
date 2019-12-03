@@ -35,7 +35,7 @@ throws: Lexer error!
     Regex: Parsed too many digits
 
 /\8912/
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode

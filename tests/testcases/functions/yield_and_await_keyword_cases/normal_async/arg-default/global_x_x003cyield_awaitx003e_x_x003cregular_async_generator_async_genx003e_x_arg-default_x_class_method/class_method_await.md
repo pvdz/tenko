@@ -48,7 +48,7 @@ throws: Parser error!
   Missing function param definition closing parenthesis, found `foo` instead
 
 async function as(){ class A {f(x=await foo) {}} }
-                                        ^------- error
+                                        ^^^------- error
 `````
 
 ### Strict mode

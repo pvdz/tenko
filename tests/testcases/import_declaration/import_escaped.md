@@ -47,7 +47,7 @@ throws: Parser error!
   Unexpected token while parsing export object
 
 export {a \u0061s b} from "x";
-          ^------- error
+          ^^^^^^^------- error
 `````
 
 

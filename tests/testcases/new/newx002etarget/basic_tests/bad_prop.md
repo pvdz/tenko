@@ -31,7 +31,7 @@ throws: Parser error!
   Next token should be `target` but was `foo`
 
 function f(){ new.foo }
-                  ^------- error
+                  ^^^------- error
 `````
 
 ### Strict mode

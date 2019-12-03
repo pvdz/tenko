@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Cannot escape \8 or \9 in a regex char class with u-flag
 
 /[\9]/u
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: Cannot escape \8 or \9 in a regex char class with u-flag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\9]/u
-^------- error
+^^^^^^^------- error
 `````
 

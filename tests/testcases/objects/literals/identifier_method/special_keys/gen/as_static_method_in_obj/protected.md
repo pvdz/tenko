@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static protected(){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

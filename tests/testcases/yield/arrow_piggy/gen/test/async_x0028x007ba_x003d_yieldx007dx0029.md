@@ -31,7 +31,7 @@ throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid (at EOF)
 
 async ({a = yield})
-                  ^------- error
+      ^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -43,7 +43,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 async ({a = yield})
-                 ^------- error
+            ^^^^^------- error
 `````
 
 

@@ -29,7 +29,7 @@ throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
 delete () => foo
-             ^------- error
+             ^^^------- error
 `````
 
 ### Strict mode

@@ -35,7 +35,7 @@ throws: Parser error!
 
 let
 debugger
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode

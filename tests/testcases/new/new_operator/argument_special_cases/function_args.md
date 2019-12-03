@@ -29,7 +29,7 @@ throws: Parser error!
   Expected to parse an opening curly, found `` (at EOF)
 
 new function()
-             ^------- error
+              ^------- error at EOF
 `````
 
 ### Strict mode

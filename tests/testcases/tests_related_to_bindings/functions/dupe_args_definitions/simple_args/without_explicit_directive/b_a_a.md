@@ -85,7 +85,7 @@ throws: Parser error!
   Function had duplicate params
 
 function f(b, a, a) {}
-                     ^------- error
+                 ^------- error
 `````
 
 

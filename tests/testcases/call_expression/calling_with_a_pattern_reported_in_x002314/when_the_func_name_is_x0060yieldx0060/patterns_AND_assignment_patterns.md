@@ -43,7 +43,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 yield({a=1}. {b=2}, {c=3} = {}))
-     ^------- error
+^^^^^------- error
 `````
 
 

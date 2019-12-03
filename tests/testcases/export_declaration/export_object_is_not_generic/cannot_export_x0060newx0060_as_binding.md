@@ -47,7 +47,7 @@ throws: Parser error!
   Exporting a name that was not bound in global: `new` (at EOF)
 
 export {new}
-           ^------- error
+            ^------- error at EOF
 `````
 
 

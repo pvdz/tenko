@@ -33,7 +33,7 @@ throws: Parser error!
   Cannot assign to lhs (starting with `(`) because it is not a valid assignment target
 
 (({x:y}) += x)
-         ^------- error
+         ^^------- error
 `````
 
 ### Strict mode

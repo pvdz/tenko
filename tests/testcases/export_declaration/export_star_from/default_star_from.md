@@ -51,7 +51,7 @@ throws: Parser error!
   Unknown export type `bar` (note: you can only export individual vars through `export {foo};`)
 
 export bar, * from 'bar';
-       ^------- error
+       ^^^------- error
 `````
 
 

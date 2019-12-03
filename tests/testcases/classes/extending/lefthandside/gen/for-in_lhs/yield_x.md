@@ -46,8 +46,9 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 for (yield
+     ^^^^^------- error
+
 x in x) ;
-^------- error
 `````
 
 

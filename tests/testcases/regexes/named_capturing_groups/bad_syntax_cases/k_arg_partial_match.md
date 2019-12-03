@@ -29,7 +29,7 @@ throws: Lexer error!
     Named back reference \k<ab> was not defined in this regex: {#a:true}
 
 /(?<a>a)\k<ab>/
-^------- error
+^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

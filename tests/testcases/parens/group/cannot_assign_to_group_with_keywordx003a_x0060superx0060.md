@@ -34,7 +34,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 (super)=2
-      ^------- error
+ ^^^^^------- error
 `````
 
 ### Strict mode

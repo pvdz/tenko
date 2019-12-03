@@ -57,7 +57,7 @@ throws: Parser error!
   Tried to export the name `x` twice
 
 export let [x] = y; export {x};
-                              ^------- error
+                    ^^^^^^------- error
 `````
 
 

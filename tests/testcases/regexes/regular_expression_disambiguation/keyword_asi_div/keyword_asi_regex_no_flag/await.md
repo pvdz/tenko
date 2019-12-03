@@ -34,7 +34,7 @@ throws: Parser error!
 
 await
 /x/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode

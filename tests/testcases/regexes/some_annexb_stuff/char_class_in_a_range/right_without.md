@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
 
 /[a-\d]+/
-^------- error
+^^^^^^^^^------- error
 `````
 
 ### Strict mode

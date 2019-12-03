@@ -30,7 +30,7 @@ throws: Parser error!
   Unable to ASI
 
 function *g() { yield => {}; }
-                      ^------- error
+                      ^^------- error
 `````
 
 ### Strict mode

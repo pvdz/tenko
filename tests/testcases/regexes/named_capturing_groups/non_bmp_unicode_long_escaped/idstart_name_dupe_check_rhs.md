@@ -39,7 +39,7 @@ throws: Lexer error!
     Regex: The es6 long unicode escape is only valid with u-flag; Encountered extended unicode escape (`\u{}`) or surrogate pair unicode quads (`\uxxxx\uxxxx`) which is only valid with u-flag; Named capturing group named contained an invalid unicode escaped char: [`@{xdddf}@`, 56799]
 
 /(?<\u{2F9DF}>foo)met\k<\udddf>/
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

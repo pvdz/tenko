@@ -32,7 +32,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 class c {foo(x=yield=y){ "use strict"; }}
-                    ^------- error
+               ^^^^^------- error
 `````
 
 ### Strict mode

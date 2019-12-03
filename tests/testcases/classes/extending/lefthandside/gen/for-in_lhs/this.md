@@ -31,7 +31,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 for (this in x) ;
-          ^------- error
+^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

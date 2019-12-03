@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Cannot escape \8 or \9 in a regex char class with u-flag
 
 /[\8]/
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

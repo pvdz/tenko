@@ -29,7 +29,7 @@ throws: Parser error!
   The binding pattern is not destructible
 
 for (const [...foo,] in obj);
-                     ^------- error
+                     ^^------- error
 `````
 
 ### Strict mode

@@ -34,7 +34,7 @@ throws: Parser error!
 
 let
 /x/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode
@@ -46,8 +46,9 @@ throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
 let
+^^^------- error
+
 /x/
-^------- error
 `````
 
 

@@ -56,10 +56,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (let) as a variable name because: Can not use `let` as variable name in strict mode
+  Cannot use this name (`let`) as a variable name because: Can not use `let` as variable name in strict mode
 
 export var let;
-           ^------- error
+           ^^^------- error
 `````
 
 

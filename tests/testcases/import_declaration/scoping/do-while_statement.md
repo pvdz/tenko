@@ -29,7 +29,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 do import {x} from "y"; while (x);
-          ^------- error
+   ^^^^^^------- error
 `````
 
 ### Strict mode
@@ -47,7 +47,7 @@ throws: Parser error!
   The `import` keyword is only supported at the top level
 
 do import {x} from "y"; while (x);
-          ^------- error
+   ^^^^^^------- error
 `````
 
 

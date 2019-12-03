@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Cannot escape this regular identifier character [ord=97][a]
 
 /\a/u
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: Atom escape can only escape certain syntax chars with u-flag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\a/u
-^------- error
+^^^^^------- error
 `````
 

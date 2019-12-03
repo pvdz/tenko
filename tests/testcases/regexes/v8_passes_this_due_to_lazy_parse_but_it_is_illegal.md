@@ -32,7 +32,7 @@ throws: Lexer error!
     Regex: Found unescaped closing paren `)` without a group being open
 
 function l(){((/)/))(/]/)};
-               ^------- error
+               ^^^------- error
 `````
 
 ### Strict mode

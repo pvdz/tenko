@@ -30,7 +30,7 @@ throws: Parser error!
   Arrows cannot be generators and parenless `yield` param in a generator would be parsing a yield expression and fail at the arrow
 
 function *g() { async yield => {}; }
-                            ^------- error
+                            ^^------- error
 `````
 
 ### Strict mode

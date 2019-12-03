@@ -31,7 +31,7 @@ throws: Parser error!
   Expected the opening curly `{` of a class body, found `` instead (at EOF)
 
 new class extends{}
-                  ^------- error
+                   ^------- error at EOF
 `````
 
 ### Strict mode

@@ -37,7 +37,7 @@ throws: Parser error!
 function g(){
   var f = 123;
   oops: async function f(){}
-                       ^------- error
+        ^^^^^------- error
 
 }
 `````

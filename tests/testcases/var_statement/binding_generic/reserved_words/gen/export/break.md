@@ -46,10 +46,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (break) as a variable name because: Cannot never use this reserved word as a variable name
+  Cannot use this name (`break`) as a variable name because: Cannot never use this reserved word as a variable name
 
 export var break = 10;
-           ^------- error
+           ^^^^^------- error
 `````
 
 

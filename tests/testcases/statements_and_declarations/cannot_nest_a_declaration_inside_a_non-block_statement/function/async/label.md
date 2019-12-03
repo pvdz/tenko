@@ -30,7 +30,7 @@ throws: Parser error!
   A "labelled function declaration" can not be async
 
 foo: async function f() {}
-                    ^------- error
+     ^^^^^------- error
 `````
 
 ### Strict mode

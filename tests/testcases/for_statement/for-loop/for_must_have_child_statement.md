@@ -29,7 +29,7 @@ throws: Parser error!
   Missing `for` child statement (at EOF)
 
 for (eval instanceof this; new 2e308;)
-                                     ^------- error
+                                      ^------- error at EOF
 `````
 
 ### Strict mode

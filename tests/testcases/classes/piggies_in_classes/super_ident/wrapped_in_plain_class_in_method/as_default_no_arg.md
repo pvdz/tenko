@@ -29,7 +29,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 class outer { meh(){  class x { foo(x=super){} }  }}
-                                           ^------- error
+                                      ^^^^^------- error
 `````
 
 ### Strict mode

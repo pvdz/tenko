@@ -31,7 +31,7 @@ throws: Parser error!
   Can only declare use strict if func params are "simple"
 
 async function foo(a = (eval) => { "use strict"; funeval("x"); }) {}
-                                                 ^------- error
+                                                 ^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -43,7 +43,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 async function foo(a = (eval) => { "use strict"; funeval("x"); }) {}
-                              ^------- error
+                              ^^------- error
 `````
 
 

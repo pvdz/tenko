@@ -31,7 +31,7 @@ throws: Parser error!
   Comma not allowed in left side of `for-in`/`for-of` header
 
 for (oh,no in x) ;
-           ^------- error
+       ^------- error
 `````
 
 ### Strict mode

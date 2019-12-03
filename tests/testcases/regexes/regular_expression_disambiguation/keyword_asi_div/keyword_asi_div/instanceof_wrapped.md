@@ -36,7 +36,7 @@ throws: Lexer error!
 
 x instanceof
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

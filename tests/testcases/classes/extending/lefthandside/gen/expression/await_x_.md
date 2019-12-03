@@ -52,7 +52,7 @@ throws: Parser error!
   An `await` expression is not allowed here
 
 (class B extends await
-                 ^------- error
+                 ^^^^^------- error
 
 x; {})
 `````

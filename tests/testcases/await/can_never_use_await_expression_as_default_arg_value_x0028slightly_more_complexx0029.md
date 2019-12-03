@@ -31,7 +31,7 @@ throws: Parser error!
   Missing closing paren `)` for group, found `bar` instead
 
 function call(foo= 5 + (await bar())){}
-                              ^------- error
+                              ^^^------- error
 `````
 
 ### Strict mode

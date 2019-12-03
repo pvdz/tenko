@@ -29,7 +29,7 @@ throws: Parser error!
   A `yield` expression is not allowed here
 
 class x extends yield y { }
-                ^------- error
+                ^^^^^------- error
 `````
 
 ### Strict mode

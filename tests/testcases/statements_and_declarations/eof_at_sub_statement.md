@@ -32,7 +32,7 @@ throws: Parser error!
   Statement must have a sub-statement but found EOF instead (at EOF)
 
 while (true)
-           ^------- error
+            ^------- error at EOF
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Char class can not contain `\B` with u-flag or without webcompat
 
 /[-\B]/
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode

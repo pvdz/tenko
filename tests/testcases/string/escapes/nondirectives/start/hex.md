@@ -33,7 +33,7 @@ throws: Lexer error!
 
 debugger;
 '\1';
-^------- error
+^^^^------- error
 
 '\x01';
 '\\1';
@@ -49,7 +49,7 @@ throws: Lexer error!
 
 debugger;
 '\1';
-^------- error
+^^^^------- error
 
 '\x01';
 '\\1';

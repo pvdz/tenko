@@ -56,7 +56,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 ( let )
-      ^------- error
+  ^^^------- error
 `````
 
 

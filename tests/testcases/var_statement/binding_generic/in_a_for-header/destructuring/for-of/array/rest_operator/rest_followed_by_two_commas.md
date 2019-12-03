@@ -29,7 +29,7 @@ throws: Parser error!
   The binding pattern is not destructible
 
 for (var [...foo,,] of obj);
-                    ^------- error
+                    ^^------- error
 `````
 
 ### Strict mode

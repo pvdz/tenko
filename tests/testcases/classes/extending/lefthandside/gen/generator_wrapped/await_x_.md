@@ -58,7 +58,7 @@ throws: Parser error!
 
 function *P(){
   class D extends await
-                  ^------- error
+                  ^^^^^------- error
 
 x; {}
 }

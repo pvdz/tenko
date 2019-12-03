@@ -31,7 +31,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
 for (let() in x);
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode
@@ -40,10 +40,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Let binding missing binding names
+  Let binding missing binding names in strict mode
 
 for (let() in x);
-        ^------- error
+     ^^^------- error
 `````
 
 

@@ -30,7 +30,7 @@ throws: Parser error!
   Cannot compound-assign to an array literal
 
 ({ident: {x:y} += x})
-               ^------- error
+               ^^------- error
 `````
 
 ### Strict mode

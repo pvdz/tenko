@@ -31,7 +31,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 "use strict"; (super = x);
-                     ^------- error
+               ^^^^^------- error
 `````
 
 ### Strict mode

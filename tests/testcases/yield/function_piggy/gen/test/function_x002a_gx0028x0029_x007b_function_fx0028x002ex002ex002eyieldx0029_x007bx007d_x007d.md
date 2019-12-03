@@ -100,7 +100,7 @@ throws: Parser error!
 
 function * g() {
   function f(...yield) {}
-                     ^------- error
+                ^^^^^------- error
 
 }
 `````

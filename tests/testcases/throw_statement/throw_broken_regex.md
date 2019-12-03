@@ -33,7 +33,7 @@ throws: Lexer error!
     Regex: Found EOF before regex was closed
 
 throw/("
-     ^------- error
+     ^^^------- error
 `````
 
 ### Strict mode

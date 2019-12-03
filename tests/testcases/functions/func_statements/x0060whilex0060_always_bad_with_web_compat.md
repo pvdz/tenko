@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot parse a function declaration here, only expecting statements here
 
 while (true) function f(){}
-                      ^------- error
+             ^^^^^^^^------- error
 `````
 
 ### Strict mode

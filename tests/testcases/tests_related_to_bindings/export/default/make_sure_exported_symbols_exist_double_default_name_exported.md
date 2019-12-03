@@ -48,7 +48,7 @@ throws: Parser error!
   Tried to export the name `default` twice
 
 var x, y; export default x; export {y as default};
-                                                 ^------- error
+                            ^^^^^^------- error
 `````
 
 

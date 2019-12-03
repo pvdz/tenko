@@ -29,7 +29,7 @@ throws: Parser error!
   Unable to ASI
 
 (a, 1, "c", d, e, f) => x;
-                     ^------- error
+                     ^^------- error
 `````
 
 ### Strict mode

@@ -37,7 +37,7 @@ throws: Parser error!
   A `do` must be followed by a `while`, but found `` instead (at EOF)
 
 do wow: while (x) while (x) continue wow;
-                                        ^------- error
+                                         ^------- error at EOF
 `````
 
 ### Strict mode

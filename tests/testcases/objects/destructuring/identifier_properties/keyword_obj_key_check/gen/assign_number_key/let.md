@@ -88,7 +88,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 ({500: let} = null)
-          ^------- error
+       ^^^------- error
 `````
 
 

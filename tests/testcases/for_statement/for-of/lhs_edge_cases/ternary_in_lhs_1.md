@@ -29,7 +29,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `of` instead
 
 for (a ? b : c of x);
-               ^------- error
+               ^^------- error
 `````
 
 ### Strict mode

@@ -58,7 +58,7 @@ throws: Parser error!
 function *f() {
   let
   await 0
-  ^------- error
+  ^^^^^------- error
 
 }
 `````

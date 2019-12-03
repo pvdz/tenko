@@ -29,7 +29,7 @@ throws: Parser error!
   Can not rest twice
 
 for (const [... ...foo] of obj);
-                ^------- error
+            ^^^^^^^------- error
 `````
 
 ### Strict mode

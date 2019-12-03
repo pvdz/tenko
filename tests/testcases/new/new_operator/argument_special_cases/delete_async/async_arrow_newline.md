@@ -31,7 +31,7 @@ throws: Parser error!
 
 delete async ()
  => x
- ^------- error
+ ^^------- error
 `````
 
 ### Strict mode

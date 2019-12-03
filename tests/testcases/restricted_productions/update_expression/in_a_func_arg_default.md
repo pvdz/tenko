@@ -32,7 +32,7 @@ throws: Parser error!
 
 function f(x=b
 ++c){}
-^------- error
+^^------- error
 `````
 
 ### Strict mode

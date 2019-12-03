@@ -26,10 +26,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (let) as a variable name because: Can not use `let` as a class name
+  Cannot use this name (`let`) as a variable name because: Can not use `let` as a class name
 
 class let {}
-      ^------- error
+      ^^^------- error
 `````
 
 ### Strict mode

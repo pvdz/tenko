@@ -31,7 +31,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 class a { constructor(){   class x extends y { [super()](){} }    }}
-                                                     ^------- error
+                                                ^^^^^^------- error
 `````
 
 ### Strict mode

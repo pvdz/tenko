@@ -36,7 +36,7 @@ throws: Lexer error!
 
 void
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

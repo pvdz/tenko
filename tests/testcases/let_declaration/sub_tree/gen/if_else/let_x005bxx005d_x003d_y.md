@@ -33,7 +33,7 @@ throws: Parser error!
 
 if (a) b;
 else let [x] = y;
-         ^------- error
+     ^^^^^------- error
 `````
 
 ### Strict mode
@@ -46,7 +46,7 @@ throws: Parser error!
 
 if (a) b;
 else let [x] = y;
-         ^------- error
+     ^^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
 
 delete x
 /f/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode
@@ -43,8 +43,9 @@ throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
 delete x
+       ^------- error
+
 /f/
-^------- error
 `````
 
 

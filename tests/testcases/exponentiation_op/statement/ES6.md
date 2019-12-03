@@ -31,7 +31,7 @@ throws: Parser error!
   `**` is not supported in ES6
 
 2 ** 4
-  ^------- error
+  ^^------- error
 `````
 
 ### Strict mode

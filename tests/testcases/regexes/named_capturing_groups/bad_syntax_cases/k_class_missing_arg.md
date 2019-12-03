@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Named back reference \k; missing group name: [47]
 
 /(?<a>.)\k/
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

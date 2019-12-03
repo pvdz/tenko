@@ -31,7 +31,7 @@ throws: Parser error!
   Constants must be initialized (at EOF)
 
 const x = async () => x, y
-                         ^------- error
+                          ^------- error at EOF
 `````
 
 ### Strict mode

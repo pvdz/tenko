@@ -29,7 +29,7 @@ throws: Parser error!
   Method had duplicate params
 
 class o {f([b, a], b=x) {}}
-                        ^------- error
+                   ^------- error
 `````
 
 ### Strict mode

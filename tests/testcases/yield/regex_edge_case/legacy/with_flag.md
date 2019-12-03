@@ -75,8 +75,9 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 yield
+^^^^^------- error
+
 /foo/g
-^------- error
 `````
 
 

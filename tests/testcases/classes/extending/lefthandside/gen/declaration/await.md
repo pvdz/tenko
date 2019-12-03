@@ -73,7 +73,7 @@ throws: Parser error!
   An `await` expression is not allowed here
 
 class A extends await {}
-                ^------- error
+                ^^^^^------- error
 `````
 
 

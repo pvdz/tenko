@@ -38,7 +38,7 @@ throws: Lexer error!
 function f() {
     "use strict";
     "You \077 ok";
-    ^------- error
+    ^^^^^^^^^^^^^------- error
 
 }
 `````

@@ -33,7 +33,7 @@ throws: Parser error!
   Cannot use `let` as a var name on the left side in a `for-of` header
 
 for(let()of t)x
-         ^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -42,10 +42,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Let binding missing binding names
+  Let binding missing binding names in strict mode
 
 for(let()of t)x
-       ^------- error
+    ^^^------- error
 `````
 
 

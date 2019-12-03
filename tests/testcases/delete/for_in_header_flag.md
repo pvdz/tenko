@@ -31,7 +31,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 for(delete(x in y) in z)x
-                   ^------- error
+^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

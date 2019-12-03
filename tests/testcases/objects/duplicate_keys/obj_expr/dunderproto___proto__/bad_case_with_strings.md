@@ -125,7 +125,7 @@ throws: Parser error!
   Found a part that cant destruct and a part that must destruct so it is not destructible (at EOF)
 
 x = {'__proto__': 1, "__proto__": 2}
-                                   ^------- error
+                                    ^------- error at EOF
 `````
 
 

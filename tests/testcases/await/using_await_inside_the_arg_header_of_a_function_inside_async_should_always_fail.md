@@ -31,7 +31,7 @@ throws: Parser error!
   Missing closing paren `)` for group, found `foo` instead
 
 let f = () => (y=await foo) => y;
-                       ^------- error
+                       ^^^------- error
 `````
 
 ### Strict mode

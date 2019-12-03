@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Early EOF while trying to parse unicode escape
 
 /\u/
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode

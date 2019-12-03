@@ -29,7 +29,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
 for (a + b in obj);
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode

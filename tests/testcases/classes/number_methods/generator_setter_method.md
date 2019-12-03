@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `12`
 
 class A {* set 12(x){}}
-               ^------- error
+               ^^------- error
 `````
 
 ### Strict mode

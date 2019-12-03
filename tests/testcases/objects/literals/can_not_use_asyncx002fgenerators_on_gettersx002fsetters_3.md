@@ -30,7 +30,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `foo`
 
 ({async set foo(){}});
-            ^------- error
+            ^^^------- error
 `````
 
 ### Strict mode

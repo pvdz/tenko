@@ -31,7 +31,7 @@ throws: Parser error!
   Class constructors can not be getters
 
 class x { get "constructor"(){} }
-                           ^------- error
+          ^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

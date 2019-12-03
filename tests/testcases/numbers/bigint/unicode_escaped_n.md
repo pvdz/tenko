@@ -39,7 +39,7 @@ throws: Parser error!
   Unable to ASI
 
 100\u006E
-   ^------- error
+   ^^^^^^------- error
 `````
 
 ### Strict mode

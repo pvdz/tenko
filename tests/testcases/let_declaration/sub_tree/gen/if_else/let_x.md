@@ -46,7 +46,7 @@ throws: Parser error!
 
 if (a) b;
 else let x;
-         ^------- error
+     ^^^------- error
 `````
 
 

@@ -29,7 +29,7 @@ throws: Parser error!
   Missing closing paren of the `for` header, found `of` instead
 
 for (x in y of) ;
-            ^------- error
+            ^^------- error
 `````
 
 ### Strict mode

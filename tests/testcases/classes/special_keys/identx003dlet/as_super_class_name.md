@@ -31,7 +31,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 class x extends let {}
-                    ^------- error
+                ^^^------- error
 `````
 
 ### Strict mode

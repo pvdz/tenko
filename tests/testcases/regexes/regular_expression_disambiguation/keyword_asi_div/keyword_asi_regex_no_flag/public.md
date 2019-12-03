@@ -33,7 +33,7 @@ throws: Parser error!
 
 public
 /x/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode
@@ -42,11 +42,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (public) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`public`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 public
+^^^^^^------- error
+
 /x/
-^------- error
 `````
 
 

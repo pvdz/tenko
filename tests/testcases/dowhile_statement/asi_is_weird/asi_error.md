@@ -31,7 +31,7 @@ throws: Parser error!
   Unable to ASI
 
 do foo while (bar);
-       ^------- error
+       ^^^^^------- error
 `````
 
 ### Strict mode

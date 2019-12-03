@@ -32,7 +32,7 @@ throws: Parser error!
   Expected to parse a value (at EOF)
 
 x  = import(/foo/) /bar/
-                       ^------- error
+                        ^------- error at EOF
 `````
 
 ### Strict mode

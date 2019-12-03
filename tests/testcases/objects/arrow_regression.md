@@ -35,7 +35,7 @@ throws: Parser error!
   Expected the closing curly `}` for an object, found `=>` instead
 
 x/{c:/ /=>
-        ^------- error
+        ^^------- error
 `````
 
 ### Strict mode

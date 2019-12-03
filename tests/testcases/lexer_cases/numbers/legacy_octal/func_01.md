@@ -76,7 +76,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 function f(){}(01)
-               ^------- error
+               ^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
   Left part of for-of must be assignable
 
 for (/foo/ of {});
-           ^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

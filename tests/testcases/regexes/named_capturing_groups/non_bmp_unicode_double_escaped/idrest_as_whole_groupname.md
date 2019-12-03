@@ -35,7 +35,7 @@ throws: Lexer error!
     Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Named capturing group named contained an invalid unicode escaped char: [`@{x1d7d0}@`, 120784]
 
 /(?<\uD835\uDFD0>foo)/
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -53,7 +53,7 @@ throws: Parser error!
 
 f = {
   f(x=let=10){
-         ^------- error
+      ^^^------- error
 
     "use strict";
   }

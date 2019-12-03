@@ -69,7 +69,7 @@ throws: Lexer error!
 
 yield
 /x
-^------- error
+^^------- error
 `````
 
 

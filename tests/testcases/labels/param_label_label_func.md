@@ -37,7 +37,7 @@ throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
 function w(casecase){y:j:function casecase(){}}
-                                  ^------- error
+                         ^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -30,7 +30,7 @@ throws: Parser error!
   Found second `default` in same switch
 
 switch(x) { default: break; case y: break; case z: break; default: break; }
-                                                          ^------- error
+                                                          ^^^^^^^------- error
 `````
 
 ### Strict mode

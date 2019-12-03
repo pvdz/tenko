@@ -30,7 +30,7 @@ throws: Parser error!
   Arrow had duplicate params
 
 ({a: x, c: {b: x}}) => {}
-                       ^------- error
+               ^------- error
 `````
 
 ### Strict mode

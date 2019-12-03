@@ -29,7 +29,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 {import {x} from "y";}
-        ^------- error
+ ^^^^^^------- error
 `````
 
 ### Strict mode
@@ -47,7 +47,7 @@ throws: Parser error!
   The `import` keyword is only supported at the top level
 
 {import {x} from "y";}
-        ^------- error
+ ^^^^^^------- error
 `````
 
 

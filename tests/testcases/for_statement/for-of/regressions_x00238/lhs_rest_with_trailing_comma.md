@@ -31,7 +31,7 @@ throws: Parser error!
   The for-header lhs binding pattern is not destructible
 
 for ([...x,] of [[]]);
-             ^------- error
+             ^^------- error
 `````
 
 ### Strict mode

@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
 
 /[\d-a]+/u
-^------- error
+^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\d-a]+/u
-^------- error
+^^^^^^^^^^------- error
 `````
 

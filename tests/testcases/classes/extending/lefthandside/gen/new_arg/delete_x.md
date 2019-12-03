@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot delete inside `new`
 
 new delete x
-           ^------- error
+    ^^^^^^------- error
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse the start of a property but found an unknown modifier
 
 ({static async * import(){}});
-         ^------- error
+  ^^^^^^------- error
 `````
 
 ### Strict mode

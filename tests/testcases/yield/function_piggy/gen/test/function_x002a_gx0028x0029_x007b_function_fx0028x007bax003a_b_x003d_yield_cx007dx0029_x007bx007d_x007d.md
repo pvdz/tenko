@@ -51,7 +51,7 @@ throws: Parser error!
 
 function * g() {
   function f({a: b = yield c}) {}
-                           ^------- error
+                     ^^^^^------- error
 
 }
 `````

@@ -29,7 +29,7 @@ throws: Parser error!
   Expected to parse a value (at EOF)
 
 new new
-    ^------- error
+       ^------- error at EOF
 `````
 
 ### Strict mode

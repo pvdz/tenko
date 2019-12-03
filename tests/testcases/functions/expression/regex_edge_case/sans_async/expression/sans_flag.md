@@ -33,7 +33,7 @@ throws: Parser error!
 
 typeof function f(){}
 /foo/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode

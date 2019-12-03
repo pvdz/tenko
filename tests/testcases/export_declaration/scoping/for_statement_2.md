@@ -29,7 +29,7 @@ throws: Parser error!
   Missing the closing curly of the switch body, found `export` instead
 
 switch (x) { export {x}; }
-             ^------- error
+             ^^^^^^------- error
 `````
 
 ### Strict mode

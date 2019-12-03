@@ -33,7 +33,7 @@ throws: Parser error!
   Cannot assign to lhs (starting with `2`)
 
 [2=y]
-  ^------- error
+ ^------- error
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   Unknown input followed the left side of a for loop header
 
 for ([] + b of obj);
-            ^------- error
+            ^^------- error
 `````
 
 ### Strict mode

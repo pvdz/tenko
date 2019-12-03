@@ -30,7 +30,7 @@ throws: Parser error!
   Cannot parse a function declaration here, only expecting statements here
 
 do async function f() {}; while (x);
-                  ^------- error
+         ^^^^^^^^------- error
 `````
 
 ### Strict mode

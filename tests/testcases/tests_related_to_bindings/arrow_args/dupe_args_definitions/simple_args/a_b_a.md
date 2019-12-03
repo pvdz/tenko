@@ -43,7 +43,7 @@ throws: Parser error!
   Arrow had duplicate params
 
 (a, b, a) => {}
-             ^------- error
+       ^------- error
 `````
 
 ### Strict mode

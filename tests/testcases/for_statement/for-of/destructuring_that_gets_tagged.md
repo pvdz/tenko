@@ -29,7 +29,7 @@ throws: Parser error!
   The for-header lhs binding pattern is not destructible
 
 for ({a: b.c}`z` of d) e
-                 ^------- error
+                 ^^------- error
 `````
 
 ### Strict mode

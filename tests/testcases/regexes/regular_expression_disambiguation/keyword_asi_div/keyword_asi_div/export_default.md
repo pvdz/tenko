@@ -56,7 +56,7 @@ throws: Lexer error!
 
 export default
 /x
-^------- error
+^^------- error
 `````
 
 

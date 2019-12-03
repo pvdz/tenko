@@ -66,10 +66,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (await) as a variable name because: Await is illegal as var name with module goal
+  Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
 async function *await(){}
-                ^------- error
+                ^^^^^------- error
 `````
 
 

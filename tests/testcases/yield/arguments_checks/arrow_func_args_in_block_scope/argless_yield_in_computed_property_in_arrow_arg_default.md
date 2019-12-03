@@ -107,7 +107,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 { (x = {[yield]: 1}) => z }
-              ^------- error
+         ^^^^^------- error
 `````
 
 

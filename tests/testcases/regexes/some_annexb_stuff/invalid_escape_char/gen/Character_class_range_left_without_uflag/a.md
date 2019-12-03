@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: the char class had an escape that would not be valid with and without u-flag (ord=-2)
 
 /[\a-z]/
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode

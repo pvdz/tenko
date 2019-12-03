@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The `\c` escape is only legal in a char class without uflag and in webcompat mode
 
 /[\c]/
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

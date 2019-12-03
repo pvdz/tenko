@@ -63,7 +63,7 @@ throws: Parser error!
   Arrows cannot be lhs to for-in
 
 for (x=>x in y;;);
-          ^------- error
+          ^^------- error
 `````
 
 ### Strict mode

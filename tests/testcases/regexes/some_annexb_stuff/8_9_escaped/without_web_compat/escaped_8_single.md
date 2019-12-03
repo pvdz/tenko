@@ -35,7 +35,7 @@ throws: Lexer error!
     Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode)
 
 /7\8/
-^------- error
+^^^^^------- error
 `````
 
 ### Strict mode

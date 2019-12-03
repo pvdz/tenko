@@ -99,7 +99,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 (x = delete ((let) = f)) => {}
-                 ^------- error
+              ^^^------- error
 `````
 
 

@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Illegal char escape char (ord=47)
 
 /\c/
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode

@@ -66,7 +66,7 @@ throws: Lexer error!
 
 yield
 /foo
-^------- error
+^^^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot use lhs as regular for-loop because it must destruct
 
 for ({x = y} ;;) {}
-             ^------- error
+     ^^^^^^^^------- error
 `````
 
 ### Strict mode

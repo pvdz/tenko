@@ -29,7 +29,7 @@ throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
 \Axxx
-^------- error
+^^------- error
 `````
 
 ### Strict mode

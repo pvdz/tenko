@@ -36,7 +36,7 @@ throws: Lexer error!
 
 function* f(){ yield
 /foo }
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -61,6 +61,6 @@ throws: Lexer error!
 
 function* f(){ yield
 /foo }
-^------- error
+^^^^^^------- error
 `````
 

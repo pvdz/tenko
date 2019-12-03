@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot compound-assign to an array literal
 
 ({ident: [foo, bar] += x} = y)
-                    ^------- error
+                    ^^------- error
 `````
 
 ### Strict mode

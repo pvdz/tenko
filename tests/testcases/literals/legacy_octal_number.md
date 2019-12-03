@@ -55,7 +55,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 0456
-^------- error
+^^^^------- error
 `````
 
 

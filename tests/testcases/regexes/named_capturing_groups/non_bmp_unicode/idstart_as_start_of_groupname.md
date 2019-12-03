@@ -33,7 +33,7 @@ throws: Lexer error!
     Regex: The start of an group name had a surrogate pair and is therefor only valid with u-flag; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
 /(?<@{x2f9df}@rest>foo)/
-^------- error
+^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Lexer error!
     Found `a`. It is not legal for an ident or number token to start after a number token without some form of separation
 
 0564a31c594b561d513e15c4861f5348791a2312341575123154656n + 1
-^------- error
+    ^------- error
 `````
 
 ### Strict mode
@@ -45,7 +45,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 0564a31c594b561d513e15c4861f5348791a2312341575123154656n + 1
-^------- error
+^^^^------- error
 `````
 
 

@@ -30,7 +30,7 @@ throws: Parser error!
   Cannot assign to lhs (starting with `function`) because it is not a valid assignment target
 
 while (function* () {} += x);
-                       ^------- error
+                       ^^------- error
 `````
 
 ### Strict mode

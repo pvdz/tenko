@@ -29,7 +29,7 @@ throws: Parser error!
   The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword
 
 async function a(){     ({g} = [{m: 5 + t(await bar)}]) => {}     }
-                                                        ^------- error
+                                                        ^^------- error
 `````
 
 ### Strict mode

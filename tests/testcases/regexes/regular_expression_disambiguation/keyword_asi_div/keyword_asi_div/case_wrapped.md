@@ -39,7 +39,7 @@ throws: Lexer error!
 switch (x) {
     case
     /x
-    ^------- error
+    ^^------- error
 
 }
 `````

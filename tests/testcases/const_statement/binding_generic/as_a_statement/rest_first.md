@@ -35,7 +35,7 @@ throws: Parser error!
   Expected identifier, or array/object destructuring
 
 const ...a = 1;
-      ^------- error
+      ^^^------- error
 `````
 
 ### Strict mode

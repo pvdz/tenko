@@ -88,8 +88,9 @@ throws: Parser error!
 
 if (a) b;
 else let
+     ^^^------- error
+
 {};
-^------- error
 `````
 
 

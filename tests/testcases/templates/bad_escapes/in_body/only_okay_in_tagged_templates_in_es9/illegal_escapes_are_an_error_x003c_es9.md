@@ -31,7 +31,7 @@ throws: Parser error!
   Template contained an illegal escape, these are only allowed in _tagged_ templates in >=ES2018
 
 f`${x} \xg ${x}`;
-     ^------- error
+     ^^^^^^^^------- error
 `````
 
 ### Strict mode

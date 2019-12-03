@@ -31,7 +31,7 @@ throws: Parser error!
   Missing start of catch clause (`(`) or start of catch body (`{`), found `foo` instead
 
 try {} catch foo {}
-             ^------- error
+             ^^^------- error
 `````
 
 ### Strict mode

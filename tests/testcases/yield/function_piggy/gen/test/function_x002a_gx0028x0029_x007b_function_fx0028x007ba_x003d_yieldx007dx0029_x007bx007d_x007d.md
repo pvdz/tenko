@@ -125,7 +125,7 @@ throws: Parser error!
 
 function * g() {
   function f({a = yield}) {}
-                       ^------- error
+                  ^^^^^------- error
 
 }
 `````

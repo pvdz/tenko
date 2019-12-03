@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: the char class had an escape that would not be valid with and without u-flag (ord=-2)
 
 /[\a-z]/u
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: Cannot escape ord=97 in a char class with uflag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\a-z]/u
-^------- error
+^^^^^^^^^------- error
 `````
 

@@ -35,7 +35,7 @@ throws: Parser error!
   A function declaration can only be the child of an `if`/`else` in sloppy web compat mode
 
 do if(8)function s(){}while(y)
-                 ^------- error
+        ^^^^^^^^------- error
 `````
 
 ### Strict mode

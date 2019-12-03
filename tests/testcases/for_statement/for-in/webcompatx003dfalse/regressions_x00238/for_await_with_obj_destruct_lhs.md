@@ -29,7 +29,7 @@ throws: Parser error!
   Can not use `for-await` with a `for-in`, only `for-of`
 
 async function f() { for await ({x} in y) {} }
-                                    ^------- error
+                                    ^^------- error
 `````
 
 ### Strict mode

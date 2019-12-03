@@ -35,7 +35,7 @@ throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
 switch (x) { case a: const foo = x; break; case b: var foo = x; break; }
-                                                       ^------- error
+                                                       ^^^------- error
 `````
 
 ### Strict mode

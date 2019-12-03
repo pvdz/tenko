@@ -31,7 +31,7 @@ throws: Parser error!
 
 function f(x = async
  () => x){}
-    ^------- error
+    ^^------- error
 `````
 
 ### Strict mode

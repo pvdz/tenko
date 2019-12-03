@@ -30,7 +30,7 @@ throws: Parser error!
   Expected to parse a(nother) binding but none was found
 
 function foo(001, 003) { "use strict"; }
-             ^------- error
+             ^^^------- error
 `````
 
 ### Strict mode
@@ -42,7 +42,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 function foo(001, 003) { "use strict"; }
-             ^------- error
+             ^^^------- error
 `````
 
 

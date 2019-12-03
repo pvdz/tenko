@@ -35,7 +35,7 @@ throws: Parser error!
   Unexpected character after object literal property name
 
 ({async **f(){}})
-        ^------- error
+        ^^------- error
 `````
 
 ### Strict mode

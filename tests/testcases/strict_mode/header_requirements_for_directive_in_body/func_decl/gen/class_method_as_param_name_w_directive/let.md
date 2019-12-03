@@ -32,11 +32,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (let) as a variable name because: Can not use `let` as variable name in strict mode
+  Cannot use this name (`let`) as a variable name because: Can not use `let` as variable name in strict mode
 
 class A {
   d(let){
-    ^------- error
+    ^^^------- error
 
     "use strict";
   }

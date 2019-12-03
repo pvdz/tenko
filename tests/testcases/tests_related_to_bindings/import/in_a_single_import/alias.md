@@ -37,7 +37,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 import {a, b as a} from "c"
-       ^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,7 +55,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `a` but another binding already existed on the same level
 
 import {a, b as a} from "c"
-                 ^------- error
+                ^------- error
 `````
 
 

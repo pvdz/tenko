@@ -29,7 +29,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 for (void a.b in c);
-              ^------- error
+^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

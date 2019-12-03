@@ -50,7 +50,7 @@ throws: Parser error!
   The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
 async function as(){ function *f(x=yield 100) {} }
-                                         ^------- error
+                                   ^^^^^------- error
 `````
 
 ### Strict mode

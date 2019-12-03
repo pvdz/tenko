@@ -31,7 +31,7 @@ throws: Parser error!
 
 if (a
 --);
-^------- error
+^^------- error
 `````
 
 ### Strict mode

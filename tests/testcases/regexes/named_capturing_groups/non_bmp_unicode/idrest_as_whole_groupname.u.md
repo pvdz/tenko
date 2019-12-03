@@ -37,7 +37,7 @@ throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`@{xd835}@`, 55349]
 
 /(?<@{x1d7d0}@>foo)/u
-^------- error
+^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

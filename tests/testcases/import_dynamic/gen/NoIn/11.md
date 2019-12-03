@@ -32,7 +32,7 @@ throws: Parser error!
   The dynamic import syntax explicitly forbids the `in` operator
 
 import(x in y);
-         ^------- error
+         ^^------- error
 `````
 
 ### Strict mode

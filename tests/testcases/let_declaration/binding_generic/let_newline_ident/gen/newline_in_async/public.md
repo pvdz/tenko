@@ -88,7 +88,7 @@ throws: Parser error!
 async function f() {
   let
   public
-  ^------- error
+  ^^^^^^------- error
 
 }
 `````

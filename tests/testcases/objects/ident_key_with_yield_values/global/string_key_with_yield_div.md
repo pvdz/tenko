@@ -94,7 +94,7 @@ throws: Lexer error!
     Regex: Encountered unescaped closing curly `}` while not parsing a quantifier
 
 s = {foo: yield / x}
-                ^------- error
+                ^^^^------- error
 `````
 
 

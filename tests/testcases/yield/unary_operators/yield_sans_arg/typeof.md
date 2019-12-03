@@ -33,7 +33,7 @@ throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
 function *f() {  return typeof yield;  }
-                                    ^------- error
+                               ^^^^^------- error
 `````
 
 ### Strict mode

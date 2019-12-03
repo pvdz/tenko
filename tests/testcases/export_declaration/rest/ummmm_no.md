@@ -47,7 +47,7 @@ throws: Parser error!
   Expected identifier, or array/object destructuring
 
 export let ...x = y
-           ^------- error
+           ^^^------- error
 `````
 
 

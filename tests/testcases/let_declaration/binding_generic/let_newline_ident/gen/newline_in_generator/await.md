@@ -94,7 +94,7 @@ throws: Parser error!
 function *f() {
   let
   await
-  ^------- error
+  ^^^^^------- error
 
 }
 `````

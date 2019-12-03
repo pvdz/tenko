@@ -31,7 +31,7 @@ throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
 foo: bar: third: function f(){}
-                          ^------- error
+                 ^^^^^^^^------- error
 `````
 
 ### Strict mode

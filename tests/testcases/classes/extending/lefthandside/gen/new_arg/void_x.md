@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot `void` inside `new`
 
 new void x
-         ^------- error
+    ^^^^------- error
 `````
 
 ### Strict mode

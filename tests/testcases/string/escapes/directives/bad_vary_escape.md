@@ -33,7 +33,7 @@ throws: Lexer error!
     Total of long unicode escape would exceed 0x10ffff, which is not allowed
 
 "oops \u{110001}"
-^------- error
+^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

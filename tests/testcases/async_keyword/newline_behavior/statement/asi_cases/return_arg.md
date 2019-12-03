@@ -31,7 +31,7 @@ throws: Parser error!
 
 function f(){   return async
  () => x    }
-    ^------- error
+    ^^------- error
 `````
 
 ### Strict mode

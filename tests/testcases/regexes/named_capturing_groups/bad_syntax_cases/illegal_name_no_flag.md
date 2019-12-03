@@ -35,7 +35,7 @@ throws: Lexer error!
     Regex: name contained a character that is only a valid identifier with u-flag; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
 /(?<$@{x104a4}@>a)/
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

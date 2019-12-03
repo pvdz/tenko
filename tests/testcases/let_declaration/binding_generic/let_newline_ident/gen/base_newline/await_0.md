@@ -52,7 +52,7 @@ throws: Parser error!
 
 let
 await 0
-^------- error
+^^^^^------- error
 `````
 
 

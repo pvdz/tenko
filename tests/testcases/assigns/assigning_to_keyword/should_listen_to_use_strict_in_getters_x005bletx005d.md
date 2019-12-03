@@ -29,7 +29,7 @@ throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
 x = { get x() { "use strict"; let = 787984536; } }
-                                  ^------- error
+                              ^^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Lexer error!
     Regex: The es6 long unicode escape is only valid with u-flag; Encountered extended unicode escape (`\u{}`) or surrogate pair unicode quads (`\uxxxx\uxxxx`) which is only valid with u-flag; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
 /(?<\u{2F9DF}xyz>foo)met\k<\u{2F9DF}xyz>/
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

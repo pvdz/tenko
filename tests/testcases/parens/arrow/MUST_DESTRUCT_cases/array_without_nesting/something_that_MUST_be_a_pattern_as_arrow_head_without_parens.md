@@ -30,7 +30,7 @@ throws: Parser error!
   Found a struct that must be destructured but was not
 
 [{x = y}] => z
-          ^------- error
+          ^^------- error
 `````
 
 ### Strict mode

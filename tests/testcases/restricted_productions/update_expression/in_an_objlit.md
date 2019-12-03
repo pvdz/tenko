@@ -34,7 +34,7 @@ throws: Parser error!
 
 z={x:b
 ++c};
-^------- error
+^^------- error
 `````
 
 ### Strict mode

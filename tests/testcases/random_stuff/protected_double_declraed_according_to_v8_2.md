@@ -29,7 +29,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `arguments` but another binding already existed on the same level
 
 function arguments(){}v:switch(x){default:}let arguments=l
-                                               ^------- error
+                                               ^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -38,10 +38,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (arguments) as a variable name because: Cannot create a binding named `arguments` in strict mode
+  Cannot use this name (`arguments`) as a variable name because: Cannot create a binding named `arguments` in strict mode
 
 function arguments(){}v:switch(x){default:}let arguments=l
-         ^------- error
+         ^^^^^^^^^------- error
 `````
 
 

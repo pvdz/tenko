@@ -29,7 +29,7 @@ throws: Parser error!
   A function declaration can only be the child of an `if`/`else` in sloppy web compat mode
 
 { var f = 123; if (true) function f(){} }
-                                  ^------- error
+                         ^^^^^^^^------- error
 `````
 
 ### Strict mode

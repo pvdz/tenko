@@ -44,7 +44,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 function f(x=let=10){ "use strict"; }
-                ^------- error
+             ^^^------- error
 `````
 
 

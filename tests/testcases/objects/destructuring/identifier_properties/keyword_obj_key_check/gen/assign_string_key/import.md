@@ -31,7 +31,7 @@ throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
 ({"key": import} = null)
-               ^------- error
+         ^^^^^^------- error
 `````
 
 ### Strict mode

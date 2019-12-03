@@ -48,7 +48,7 @@ throws: Parser error!
   Missing function param definition closing parenthesis, found `100` instead
 
 function *as(){ let f = function f(x=yield 100) {} }
-                                           ^------- error
+                                           ^^^------- error
 `````
 
 ### Strict mode
@@ -60,7 +60,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function *as(){ let f = function f(x=yield 100) {} }
-                                           ^------- error
+                                     ^^^^^------- error
 `````
 
 

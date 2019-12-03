@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `"foo"`
 
 class A {async get "foo"(){}}
-                   ^------- error
+                   ^^^^^------- error
 `````
 
 ### Strict mode

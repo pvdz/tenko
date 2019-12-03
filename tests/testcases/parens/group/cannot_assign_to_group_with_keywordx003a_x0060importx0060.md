@@ -34,7 +34,7 @@ throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
 (import)=2
-       ^------- error
+ ^^^^^^------- error
 `````
 
 ### Strict mode

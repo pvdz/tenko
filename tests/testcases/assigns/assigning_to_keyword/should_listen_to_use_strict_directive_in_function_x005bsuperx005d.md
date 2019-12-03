@@ -29,7 +29,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 function f() { "use strict"; (super = "sentinal 79845134"); }
-                                    ^------- error
+                              ^^^^^------- error
 `````
 
 ### Strict mode

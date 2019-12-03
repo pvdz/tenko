@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Missing closing angle bracket of name of capturing group
 
 /(?<a>.)\k<a/
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

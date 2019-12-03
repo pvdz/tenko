@@ -33,7 +33,7 @@ throws: Parser error!
   A `yield` expression is not allowed here
 
 class A extends yield
-                ^------- error
+                ^^^^^------- error
 
 x {}
 `````

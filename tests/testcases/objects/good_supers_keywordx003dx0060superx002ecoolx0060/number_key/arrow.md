@@ -29,7 +29,7 @@ throws: Parser error!
   The left hand side of the arrow can only be destructed through assignment so arrow is illegal
 
 class x extends y {constructor(){    ({790: super.cool}) => x    }}
-                                                         ^------- error
+                                                         ^^------- error
 `````
 
 ### Strict mode

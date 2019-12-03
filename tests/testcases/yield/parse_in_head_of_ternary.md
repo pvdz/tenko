@@ -30,7 +30,7 @@ throws: Parser error!
   Can not have a `yield` expression on the left side of a ternary
 
 function *f() { yield ? 1 : 1 ; }
-                      ^------- error
+                ^^^^^------- error
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   Can not rest twice
 
 for (let [... ...foo] = obj;;);
-              ^------- error
+          ^^^^^^^------- error
 `````
 
 ### Strict mode

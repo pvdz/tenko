@@ -32,7 +32,7 @@ throws: Parser error!
   Unable to ASI
 
 f(x=yield=10) => { "use strict"; }
-              ^------- error
+              ^^------- error
 `````
 
 ### Strict mode
@@ -44,7 +44,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 f(x=yield=10) => { "use strict"; }
-         ^------- error
+    ^^^^^------- error
 `````
 
 

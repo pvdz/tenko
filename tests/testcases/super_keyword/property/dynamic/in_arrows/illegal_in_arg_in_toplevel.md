@@ -30,7 +30,7 @@ throws: Parser error!
   Can only use `super[foo]` in class or object methods or in arrows nested in those methods/arrows
 
 let f = (a=super[bar]) => a;
-                ^------- error
+           ^^^^^^------- error
 `````
 
 ### Strict mode

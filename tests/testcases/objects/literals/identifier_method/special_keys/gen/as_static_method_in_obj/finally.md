@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static finally(){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

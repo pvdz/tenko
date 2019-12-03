@@ -29,7 +29,7 @@ throws: Parser error!
   Constants must be initialized (at EOF)
 
 const foo
-      ^------- error
+         ^------- error at EOF
 `````
 
 ### Strict mode

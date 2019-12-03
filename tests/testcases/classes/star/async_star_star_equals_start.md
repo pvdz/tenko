@@ -35,7 +35,7 @@ throws: Parser error!
   Expected to parse the modified key of a class method but could not parse one
 
 class A {async **=f(){}}
-               ^------- error
+               ^^^------- error
 `````
 
 ### Strict mode

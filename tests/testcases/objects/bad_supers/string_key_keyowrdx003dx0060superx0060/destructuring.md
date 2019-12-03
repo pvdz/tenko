@@ -29,7 +29,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 class x extends y {constructor(){    ({"foo": super} = x)    }}
-                                                   ^------- error
+                                              ^^^^^------- error
 `````
 
 ### Strict mode

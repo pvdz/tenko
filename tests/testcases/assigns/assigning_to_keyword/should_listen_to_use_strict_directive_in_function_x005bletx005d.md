@@ -29,7 +29,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 function f() { "use strict"; (let = "sentinal 7533336"); }
-                                  ^------- error
+                              ^^^------- error
 `````
 
 ### Strict mode

@@ -28,10 +28,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (eval) as a variable name because: Cannot create a binding named `eval` in strict mode
+  Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
 class eval {}
-      ^------- error
+      ^^^^------- error
 `````
 
 ### Strict mode

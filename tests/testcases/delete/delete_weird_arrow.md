@@ -33,7 +33,7 @@ throws: Parser error!
   Arrow is illegal as arg of `delete`
 
 delete(0)=>x
-         ^------- error
+         ^^------- error
 `````
 
 ### Strict mode

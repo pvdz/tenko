@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`4`, 52]
 
   /\k<4>/
-  ^------- error
+  ^^^^^^^------- error
 `````
 
 ### Strict mode

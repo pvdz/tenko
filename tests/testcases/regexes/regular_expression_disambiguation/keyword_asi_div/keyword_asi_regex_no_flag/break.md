@@ -35,8 +35,9 @@ throws: Parser error!
   Can only `break` without label inside a `switch` or loop
 
 break
+^^^^^------- error
+
 /x/
-^------- error
 `````
 
 ### Strict mode

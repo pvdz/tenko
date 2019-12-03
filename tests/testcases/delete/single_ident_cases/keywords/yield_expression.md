@@ -38,7 +38,7 @@ throws: Parser error!
 
 function *f() {
   delete yield;
-              ^------- error
+         ^^^^^------- error
 
 }
 `````

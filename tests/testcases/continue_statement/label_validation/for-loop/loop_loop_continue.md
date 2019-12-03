@@ -33,7 +33,7 @@ throws: Parser error!
   This `continue` had a label (`foo`) that was not defined in the current label set as the direct parent of a loop, which would be required
 
 for (;;) for(;;) continue foo
-                          ^------- error
+                          ^^^------- error
 `````
 
 ### Strict mode

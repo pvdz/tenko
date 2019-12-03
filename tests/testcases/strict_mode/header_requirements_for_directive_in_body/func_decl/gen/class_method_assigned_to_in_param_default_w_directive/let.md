@@ -36,7 +36,7 @@ throws: Parser error!
 
 class A {
   f(x=let=10){
-         ^------- error
+      ^^^------- error
 
     "use strict";
   }

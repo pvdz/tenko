@@ -36,7 +36,7 @@ throws: Parser error!
 function f() {
   "use strict";
   import = x
-         ^------- error
+  ^^^^^^------- error
 
 }
 `````
@@ -58,7 +58,7 @@ throws: Parser error!
 function f() {
   "use strict";
   import = x
-         ^------- error
+  ^^^^^^------- error
 
 }
 `````

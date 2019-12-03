@@ -32,7 +32,7 @@ throws: Parser error!
   Unexpected character after object literal property name
 
 ({foo += bar})
-      ^------- error
+      ^^------- error
 `````
 
 ### Strict mode

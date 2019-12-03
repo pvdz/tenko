@@ -87,7 +87,7 @@ throws: Parser error!
 
 async function f(){
   for await (yield of x);
-                   ^------- error
+             ^^^^^------- error
 
 }
 `````

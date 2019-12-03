@@ -29,7 +29,7 @@ throws: Parser error!
   Can not rest twice
 
 function f([... ...foo]){}
-                ^------- error
+            ^^^^^^^------- error
 `````
 
 ### Strict mode

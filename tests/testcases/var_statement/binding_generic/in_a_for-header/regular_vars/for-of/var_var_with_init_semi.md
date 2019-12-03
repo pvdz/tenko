@@ -30,7 +30,7 @@ throws: Parser error!
   For-in and for-of binding can not have an init
 
 for (var foo = bar of x);
-                   ^------- error
+                   ^^------- error
 `````
 
 ### Strict mode

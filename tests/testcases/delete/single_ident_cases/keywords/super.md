@@ -41,7 +41,7 @@ throws: Parser error!
 class X extends Y {
   constructor() {
     delete super;
-                ^------- error
+           ^^^^^------- error
 
   }
 }

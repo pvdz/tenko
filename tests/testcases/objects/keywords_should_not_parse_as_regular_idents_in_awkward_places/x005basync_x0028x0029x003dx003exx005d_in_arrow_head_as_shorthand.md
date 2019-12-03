@@ -29,7 +29,7 @@ throws: Parser error!
   Expected to parse an opening curly, found `=>`
 
 ({async ()=>x}) => x;
-          ^------- error
+          ^^------- error
 `````
 
 ### Strict mode

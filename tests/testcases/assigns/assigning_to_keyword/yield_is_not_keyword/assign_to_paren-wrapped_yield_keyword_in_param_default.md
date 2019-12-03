@@ -29,7 +29,7 @@ throws: Parser error!
   The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
 function *f(x = (yield) = f) {}
-                      ^------- error
+                 ^^^^^------- error
 `````
 
 ### Strict mode

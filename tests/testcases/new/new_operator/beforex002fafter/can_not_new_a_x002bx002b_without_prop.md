@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot `new` on a `++` expr
 
 new ++x
-    ^------- error
+    ^^------- error
 `````
 
 ### Strict mode

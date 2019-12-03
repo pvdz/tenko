@@ -33,7 +33,7 @@ throws: Parser error!
   The for-header lhs binding pattern is not destructible
 
 for ([x + y] in obj);
-             ^------- error
+             ^^------- error
 `````
 
 ### Strict mode

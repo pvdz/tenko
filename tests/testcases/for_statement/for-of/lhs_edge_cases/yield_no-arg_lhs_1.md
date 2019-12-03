@@ -65,7 +65,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 for (yield of x);
-           ^------- error
+     ^^^^^------- error
 `````
 
 

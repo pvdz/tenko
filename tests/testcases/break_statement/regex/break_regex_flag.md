@@ -32,7 +32,7 @@ throws: Parser error!
   Unable to ASI
 
 for (x of 3) break/x/g
-                  ^------- error
+                  ^^^^------- error
 `````
 
 ### Strict mode

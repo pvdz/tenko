@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Only unicode escapes are legal in identifier names
 
 /(?<xyz\x61>.)/;
-^------- error
+^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

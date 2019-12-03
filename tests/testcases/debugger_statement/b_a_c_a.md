@@ -29,7 +29,7 @@ throws: Parser error!
   Saw the same label twice which is not allowed
 
 bar: foo: ding: foo: x
-                   ^------- error
+                ^^^------- error
 `````
 
 ### Strict mode

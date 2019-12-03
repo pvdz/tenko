@@ -41,7 +41,7 @@ throws: Parser error!
   Can not use `arguments` as arg name in strict mode
 
 arguments => {"use strict";}
-          ^------- error
+^^^^^^^^^------- error
 `````
 
 

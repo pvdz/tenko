@@ -41,7 +41,7 @@ throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
 for (let [a, let] = x;;);
-                ^------- error
+             ^^^------- error
 `````
 
 ### Strict mode

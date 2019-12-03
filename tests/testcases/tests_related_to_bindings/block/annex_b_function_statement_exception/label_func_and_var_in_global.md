@@ -65,7 +65,7 @@ throws: Parser error!
 
 var f = 123;
 oops: function f(){}
-               ^------- error
+      ^^^^^^^^------- error
 `````
 
 ### Strict mode

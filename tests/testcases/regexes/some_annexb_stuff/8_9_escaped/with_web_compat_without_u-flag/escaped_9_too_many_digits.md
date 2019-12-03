@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Parsed too many digits
 
 /\986a/
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode

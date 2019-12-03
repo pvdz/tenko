@@ -36,8 +36,9 @@ throws: Parser error!
   Async methods are a restricted production and cannot have a newline following it
 
 (class A {async
+          ^^^^^^------- error
+
 'y'(){}get .2(){};;})
-^------- error
 `````
 
 ### Strict mode

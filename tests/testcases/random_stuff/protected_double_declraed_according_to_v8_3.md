@@ -29,7 +29,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `protected` but another binding already existed on the same level
 
 function protected(){for(;;)switch(x){default:}}const protected=x
-                                                      ^------- error
+                                                      ^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -38,10 +38,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (protected) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`protected`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 function protected(){for(;;)switch(x){default:}}const protected=x
-         ^------- error
+         ^^^^^^^^^------- error
 `````
 
 

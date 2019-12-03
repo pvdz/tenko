@@ -36,7 +36,7 @@ throws: Lexer error!
 
 break
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

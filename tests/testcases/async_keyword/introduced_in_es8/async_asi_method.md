@@ -34,8 +34,9 @@ throws: Parser error!
   Async functions are not supported in the currently targeted language version
 
 x = {async
+     ^^^^^------- error
+
  foo(){}}
-    ^------- error
 `````
 
 ### Strict mode

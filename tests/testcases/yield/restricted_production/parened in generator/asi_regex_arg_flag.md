@@ -40,7 +40,7 @@ function *f() {
   (
   yield
     /x/g
-    ^------- error
+    ^^^^------- error
 
   )
 }

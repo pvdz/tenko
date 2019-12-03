@@ -32,7 +32,7 @@ throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
 do foo: bar: function f(){}
-                      ^------- error
+             ^^^^^^^^------- error
 
 while (x);
 `````

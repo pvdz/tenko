@@ -34,7 +34,7 @@ throws: Parser error!
   Declaration destructuring must have init (at EOF)
 
 let []
-     ^------- error
+      ^------- error at EOF
 `````
 
 ### Strict mode

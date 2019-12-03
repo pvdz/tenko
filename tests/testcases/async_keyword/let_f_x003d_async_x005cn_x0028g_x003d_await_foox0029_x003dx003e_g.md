@@ -31,7 +31,7 @@ throws: Parser error!
 
 let f = async
  (g = await foo) => g
-            ^------- error
+            ^^^------- error
 `````
 
 ### Strict mode

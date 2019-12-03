@@ -31,7 +31,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `of` instead
 
 for (x = 0 of {});
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode

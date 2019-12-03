@@ -31,7 +31,7 @@ throws: Parser error!
   Targeted language version does not support trailing call arg comma
 
 foo(x,);
-      ^------- error
+     ^------- error
 `````
 
 ### Strict mode

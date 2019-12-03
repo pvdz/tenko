@@ -35,9 +35,9 @@ throws: Parser error!
   Found a newline between `throw` and its argument but that is not allowed
 
 throw
-`
-^------- error
+^^^^^^------- error
 
+`
 `
 `````
 

@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot apply `new` to an (async) arrow
 
 new async async => {}
-          ^------- error
+    ^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

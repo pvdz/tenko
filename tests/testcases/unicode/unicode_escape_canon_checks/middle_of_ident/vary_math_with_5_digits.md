@@ -29,7 +29,7 @@ throws: Lexer error!
     Identifier escape did not yield a valid identifier character
 
 PASS\u{1D7A9}PASS
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

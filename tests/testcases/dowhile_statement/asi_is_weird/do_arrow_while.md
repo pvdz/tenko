@@ -33,7 +33,7 @@ throws: Parser error!
   Unable to ASI
 
 do ()=>x while(c)
-         ^------- error
+         ^^^^^------- error
 `````
 
 ### Strict mode

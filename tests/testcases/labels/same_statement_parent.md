@@ -36,7 +36,7 @@ throws: Parser error!
 while(x) {
   LABEL: x;
   break LABEL;
-        ^------- error
+        ^^^^^------- error
 
 }
 `````

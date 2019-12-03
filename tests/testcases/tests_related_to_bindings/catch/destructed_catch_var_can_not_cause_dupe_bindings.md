@@ -30,7 +30,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `a` but another binding already existed on the same level
 
 try {} catch ([a,a]) { }
-                  ^------- error
+                 ^------- error
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Escaped property name/value contained illegal characters
 
 /\p{1=1234/g;
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

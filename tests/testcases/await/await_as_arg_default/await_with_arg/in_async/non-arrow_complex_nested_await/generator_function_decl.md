@@ -29,7 +29,7 @@ throws: Parser error!
   Expecting closing paren `)` for the call, found `bar` instead
 
 async function g(){function *f(foo = [h, {m: t(await bar)}]){}    }
-                                                     ^------- error
+                                                     ^^^------- error
 `````
 
 ### Strict mode

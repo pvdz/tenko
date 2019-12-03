@@ -30,7 +30,7 @@ throws: Parser error!
   Function had duplicate params
 
 function f(x, {"foo": x}) {}
-                           ^------- error
+                      ^------- error
 `````
 
 ### Strict mode

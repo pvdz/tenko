@@ -34,7 +34,7 @@ throws: Parser error!
 
 var f = 123;
 oops: async function f(){}
-                     ^------- error
+      ^^^^^------- error
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   The binding pattern is not destructible
 
 for (let [...[foo, bar],,] in obj);
-                           ^------- error
+                           ^^------- error
 `````
 
 ### Strict mode

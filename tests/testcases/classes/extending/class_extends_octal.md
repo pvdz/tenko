@@ -37,7 +37,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 class x extends 08 {}
-                ^------- error
+                ^^------- error
 `````
 
 ### Strict mode

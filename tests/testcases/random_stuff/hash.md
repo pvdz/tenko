@@ -31,7 +31,7 @@ throws: Lexer error!
     Unknown input
 
 #
- ^------- error at EOF
+^------- error
 `````
 
 ### Strict mode

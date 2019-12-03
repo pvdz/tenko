@@ -33,7 +33,7 @@ throws: Lexer error!
 
 debugger;
 'a \4 b';
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -46,7 +46,7 @@ throws: Lexer error!
 
 debugger;
 'a \4 b';
-^------- error
+^^^^^^^^------- error
 `````
 
 

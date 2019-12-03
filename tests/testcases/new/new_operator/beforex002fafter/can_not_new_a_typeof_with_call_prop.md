@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot `typeof` inside `new`
 
 new typeof x().y
-           ^------- error
+    ^^^^^^------- error
 `````
 
 ### Strict mode

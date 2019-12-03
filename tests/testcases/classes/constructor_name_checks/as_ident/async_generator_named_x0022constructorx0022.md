@@ -39,7 +39,7 @@ throws: Parser error!
   Class constructors can not be async
 
 class x { async *constructor(){} }
-                            ^------- error
+          ^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

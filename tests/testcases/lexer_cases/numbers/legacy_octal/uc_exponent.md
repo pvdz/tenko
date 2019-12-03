@@ -35,7 +35,7 @@ throws: Lexer error!
     An exponent is not allowed after a legacy octal number and an ident after number must be separated by some whitespace so this is an error
 
 034E1
-^------- error
+^^^------- error
 `````
 
 ### Strict mode
@@ -47,7 +47,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 034E1
-^------- error
+^^^------- error
 `````
 
 

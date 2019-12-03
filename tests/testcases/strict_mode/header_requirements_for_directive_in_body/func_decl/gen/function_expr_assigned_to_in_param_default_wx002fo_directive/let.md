@@ -106,7 +106,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 f = function e(x=let=10){ }
-                    ^------- error
+                 ^^^------- error
 `````
 
 

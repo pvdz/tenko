@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Regex A-ssertion "atoms" can not be quantified (so things like `^`, `$`, and `(?=` can not have `*`, `+`, `?`, or `{` following it) (by a `?`)
 
 /a(?!x)?b/
-^------- error
+^^^^^^^^^^------- error
 `````
 
 ### Strict mode

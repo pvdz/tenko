@@ -29,7 +29,7 @@ throws: Parser error!
   Static class methods can not be called `prototype`
 
 class x { static set prototype(x){} }
-                              ^------- error
+          ^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

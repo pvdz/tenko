@@ -94,7 +94,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 ({500: arguments}) => null
-                   ^------- error
+                   ^^------- error
 `````
 
 

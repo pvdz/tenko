@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot postfix `++` a non-assignable value
 
 new x++
-     ^------- error
+     ^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Parser error!
 
 typeof class{}
 /foo/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode

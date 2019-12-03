@@ -29,7 +29,7 @@ throws: Parser error!
   The rest/spread operator is missing an argument
 
 for (const [...] = obj;;);
-               ^------- error
+            ^^^^------- error
 `````
 
 ### Strict mode

@@ -35,7 +35,7 @@ throws: Lexer error!
     Found `e`. It is not legal for an ident or number token to start after a number token without some form of separation
 
 313e-n
-^------- error
+   ^------- error
 `````
 
 ### Strict mode

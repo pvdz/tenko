@@ -33,7 +33,7 @@ throws: Lexer error!
     Regex: Found EOF at start of a group name identifier
 
 /(?<\
-^------- error
+^^^^^------- error
 `````
 
 ### Strict mode

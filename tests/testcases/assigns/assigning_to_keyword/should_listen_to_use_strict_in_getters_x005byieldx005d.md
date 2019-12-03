@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 x = { get x() { "use strict"; yield = 787984536; } }
-                                    ^------- error
+                              ^^^^^------- error
 `````
 
 ### Strict mode

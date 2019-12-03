@@ -29,7 +29,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `foo`
 
 class x { async get foo(){ }}
-                    ^------- error
+                    ^^^------- error
 `````
 
 ### Strict mode

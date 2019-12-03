@@ -35,7 +35,7 @@ throws: Parser error!
 
 let
 throw y
-^------- error
+^^^^^------- error
 `````
 
 ### Strict mode

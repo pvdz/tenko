@@ -38,7 +38,7 @@ function f() {
   "use strict";
   let
   let x
-  ^------- error
+  ^^^------- error
 
 }
 `````

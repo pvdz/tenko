@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`>`, 62]
 
 /(?<a>.)\k<>/
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -53,6 +53,6 @@ throws: Lexer error!
     Regex: Missing closing angle bracket of name of capturing group; Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error
 
 /(?<a>.)\k<>/
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 

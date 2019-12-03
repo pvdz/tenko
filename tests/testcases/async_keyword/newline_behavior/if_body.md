@@ -31,7 +31,7 @@ throws: Parser error!
 
 if (x) async
  () => x
-    ^------- error
+    ^^------- error
 `````
 
 ### Strict mode

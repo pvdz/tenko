@@ -44,10 +44,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (export) as a variable name because: Cannot never use this reserved word as a variable name
+  Cannot use this name (`export`) as a variable name because: Cannot never use this reserved word as a variable name
 
 export var export = 10;
-           ^------- error
+           ^^^^^^------- error
 `````
 
 

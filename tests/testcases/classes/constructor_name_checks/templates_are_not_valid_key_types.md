@@ -29,7 +29,7 @@ throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
 class x { `constructor`(){} }
-          ^------- error
+          ^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

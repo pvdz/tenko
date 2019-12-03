@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Encountered unescaped quantifier (ord=63) without a value to quantify
 
 /a\b?b/
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode

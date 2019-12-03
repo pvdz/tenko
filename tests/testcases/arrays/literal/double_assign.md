@@ -35,7 +35,7 @@ throws: Parser error!
   Can not have an assignment after a non-assignment operator
 
 [(y)=n/v<<=y]
-        ^------- error
+        ^^^------- error
 `````
 
 ### Strict mode

@@ -41,9 +41,9 @@ throws: Parser error!
 class x extends y {
   constuctor() {
     super
-    /x/
-    ^------- error
+    ^^^^^------- error
 
+    /x/
   }
 }
 `````

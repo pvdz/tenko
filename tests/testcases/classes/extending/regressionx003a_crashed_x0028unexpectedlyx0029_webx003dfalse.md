@@ -33,7 +33,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 (class A extends B { method() { super() } })
-                                     ^------- error
+                                ^^^^^^------- error
 `````
 
 ### Strict mode

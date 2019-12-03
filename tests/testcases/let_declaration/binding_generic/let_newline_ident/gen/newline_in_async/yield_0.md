@@ -52,7 +52,7 @@ throws: Parser error!
 async function f() {
   let
   yield 0
-  ^------- error
+  ^^^^^------- error
 
 }
 `````

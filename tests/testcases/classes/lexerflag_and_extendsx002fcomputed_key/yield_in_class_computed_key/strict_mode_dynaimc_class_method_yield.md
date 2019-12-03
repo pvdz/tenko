@@ -35,7 +35,7 @@ throws: Parser error!
 
 "use strict";
 class x{[yield](a){}}
-              ^------- error
+         ^^^^^------- error
 `````
 
 ### Strict mode

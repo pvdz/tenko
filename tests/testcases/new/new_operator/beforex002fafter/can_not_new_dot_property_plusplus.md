@@ -39,7 +39,7 @@ throws: Parser error!
   Cannot postfix `++` a non-assignable value
 
 new x.y++
-       ^------- error
+       ^^------- error
 `````
 
 ### Strict mode

@@ -74,7 +74,7 @@ throws: Lexer error!
 
 class x{}
 02
-^------- error
+^^------- error
 `````
 
 

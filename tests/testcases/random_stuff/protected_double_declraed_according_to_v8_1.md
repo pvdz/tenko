@@ -30,7 +30,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `package` but another binding already existed on the same level
 
 function package(){}let package=a,function v(){}const v=x
-                        ^------- error
+                        ^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -39,10 +39,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (package) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`package`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 function package(){}let package=a,function v(){}const v=x
-         ^------- error
+         ^^^^^^^------- error
 `````
 
 

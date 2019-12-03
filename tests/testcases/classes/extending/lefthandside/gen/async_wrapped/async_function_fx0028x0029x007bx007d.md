@@ -34,7 +34,7 @@ throws: Parser error!
 
 async function p(){
   class C extends async function f(){} {}
-                        ^------- error
+                  ^^^^^^^^^^^^^^------- error
 
 }
 `````

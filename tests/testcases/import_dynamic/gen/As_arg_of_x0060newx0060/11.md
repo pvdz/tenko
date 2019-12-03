@@ -32,7 +32,7 @@ throws: Parser error!
   Cannot use dynamic import as an argument to `new`, the spec simply does not allow it
 
 new import(x);
-    ^------- error
+^^^^^^^^^^------- error
 `````
 
 ### Strict mode

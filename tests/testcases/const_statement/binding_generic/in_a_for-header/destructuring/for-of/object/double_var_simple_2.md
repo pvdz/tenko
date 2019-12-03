@@ -31,7 +31,7 @@ throws: Parser error!
   For-in and for-of can only have one binding, found 2
 
 for (const {x} = a, {y} of obj);
-                        ^------- error
+                        ^^------- error
 `````
 
 ### Strict mode

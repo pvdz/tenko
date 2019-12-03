@@ -29,7 +29,7 @@ throws: Lexer error!
     Identifier escape did not yield a valid identifier character
 
 var a\u2E2F
-    ^------- error
+    ^^^^^^^------- error
 `````
 
 ### Strict mode

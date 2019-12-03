@@ -31,7 +31,7 @@ throws: Parser error!
 
 const x = async
  () => x
-    ^------- error
+    ^^------- error
 `````
 
 ### Strict mode

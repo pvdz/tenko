@@ -30,7 +30,7 @@ throws: Parser error!
   Found something that had to be a Pattern but had to parse more, which is an error
 
 ({a: {x = y}.z})
-            ^------- error
+     ^^^^^^^------- error
 `````
 
 ### Strict mode

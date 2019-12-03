@@ -44,7 +44,7 @@ throws: Lexer error!
 
 function f() {
   "\5";
-  ^------- error
+  ^^^^------- error
 
   "use strict"
   ` \8 `
@@ -61,7 +61,7 @@ throws: Lexer error!
 
 function f() {
   "\5";
-  ^------- error
+  ^^^^------- error
 
   "use strict"
   ` \8 `

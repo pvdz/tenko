@@ -38,7 +38,7 @@ function f() {
   "use strict";
   let
   arguments.length
-  ^------- error
+  ^^^^^^^^^------- error
 
 }
 `````

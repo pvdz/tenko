@@ -31,7 +31,7 @@ throws: Parser error!
 
 function f(){
 "foo" "bar"
-      ^------- error
+      ^^^^^------- error
 `````
 
 ### Strict mode

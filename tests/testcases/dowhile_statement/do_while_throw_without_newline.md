@@ -37,7 +37,7 @@ throws: Parser error!
 do throw function (v, h) {
   "use strict"
 } while ((""))
-  ^------- error
+  ^^^^^------- error
 `````
 
 ### Strict mode

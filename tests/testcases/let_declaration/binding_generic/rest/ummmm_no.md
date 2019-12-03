@@ -29,7 +29,7 @@ throws: Parser error!
   Unable to ASI
 
 let ...x = y
-    ^------- error
+    ^^^------- error
 `````
 
 ### Strict mode
@@ -41,7 +41,7 @@ throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
 let ...x = y
-    ^------- error
+^^^------- error
 `````
 
 

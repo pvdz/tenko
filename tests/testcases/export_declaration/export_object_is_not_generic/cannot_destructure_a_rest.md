@@ -47,7 +47,7 @@ throws: Parser error!
   Export object cannot have spread
 
 var foo, bar; export {foo, ...bar}
-                           ^------- error
+                           ^^^------- error
 `````
 
 

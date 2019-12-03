@@ -29,7 +29,7 @@ throws: Parser error!
   Can not rest twice
 
 var [... ...foo] = obj;
-         ^------- error
+     ^^^^^^^------- error
 `````
 
 ### Strict mode

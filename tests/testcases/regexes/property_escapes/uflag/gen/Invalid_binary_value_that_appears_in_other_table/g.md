@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The escaped property value `Variation_Selector` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 /\P{Script_Extensions=Variation_Selector}/g;
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Lexer error!
 
 try {} finally {}
 /foo
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode

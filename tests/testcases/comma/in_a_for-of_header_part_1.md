@@ -29,7 +29,7 @@ throws: Parser error!
   Comma not allowed in left side of `for-in`/`for-of` header
 
 for (a,b of c) d;
-         ^------- error
+      ^------- error
 `````
 
 ### Strict mode

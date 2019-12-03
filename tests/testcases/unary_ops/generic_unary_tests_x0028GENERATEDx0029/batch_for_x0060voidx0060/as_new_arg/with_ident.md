@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot `void` inside `new` (at EOF)
 
 new void
-    ^------- error
+    ^^^^------- error
 `````
 
 ### Strict mode

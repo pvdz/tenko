@@ -31,7 +31,7 @@ throws: Parser error!
   Must have func arguments next but did not find `(` (at EOF)
 
 delete function
-       ^------- error
+               ^------- error at EOF
 `````
 
 ### Strict mode

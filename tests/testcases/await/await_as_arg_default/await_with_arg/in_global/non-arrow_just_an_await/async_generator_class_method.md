@@ -29,7 +29,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 class x {async *f(foo = await bar){}}
-                              ^------- error
+                        ^^^^^------- error
 `````
 
 ### Strict mode

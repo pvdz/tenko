@@ -79,7 +79,7 @@ throws: Lexer error!
 
 class x extends y{}
 09
-^------- error
+^^------- error
 `````
 
 

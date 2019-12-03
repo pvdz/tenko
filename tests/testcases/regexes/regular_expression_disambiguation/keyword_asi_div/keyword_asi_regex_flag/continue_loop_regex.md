@@ -34,7 +34,7 @@ throws: Parser error!
   Unable to ASI
 
 for (;;) continue /x/g
-                  ^------- error
+                  ^^^^------- error
 `````
 
 ### Strict mode

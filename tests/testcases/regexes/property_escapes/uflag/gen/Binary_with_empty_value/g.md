@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The escaped property value `` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 /\P{Script_Extensions=}/g;
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

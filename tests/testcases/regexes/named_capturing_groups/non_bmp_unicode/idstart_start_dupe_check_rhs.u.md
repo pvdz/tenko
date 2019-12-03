@@ -41,7 +41,7 @@ throws: Lexer error!
     Regex: The start of an group name had a surrogate pair and is therefor only valid with u-flag; Wanted to parse an unescaped group name specifier but it had a bad start: [`@{xfffd}@`, 65533]
 
 /(?<@{x2f9df}@xyz>foo)met\k<@{xfffd}@xyz>/u
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -65,6 +65,6 @@ throws: Lexer error!
     Regex: The start of an group name had a surrogate pair and is therefor only valid with u-flag; Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error
 
 /(?<@{x2f9df}@xyz>foo)met\k<@{xfffd}@xyz>/u
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 

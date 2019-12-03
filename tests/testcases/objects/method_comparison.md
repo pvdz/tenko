@@ -35,7 +35,7 @@ throws: Parser error!
   Expected the closing curly `}` for an object, found `==` instead
 
 +{f(){}==
-       ^------- error
+       ^^------- error
 `````
 
 ### Strict mode

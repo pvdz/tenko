@@ -29,7 +29,7 @@ throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
 `${'\07'}`;
-   ^------- error
+   ^^^^^------- error
 `````
 
 ### Strict mode
@@ -41,7 +41,7 @@ throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
 `${'\07'}`;
-   ^------- error
+   ^^^^^------- error
 `````
 
 

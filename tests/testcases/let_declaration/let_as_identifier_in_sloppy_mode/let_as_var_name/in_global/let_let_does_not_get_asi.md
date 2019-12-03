@@ -51,7 +51,7 @@ throws: Parser error!
 
 let
 let;
-^------- error
+^^^------- error
 `````
 
 ### Strict mode

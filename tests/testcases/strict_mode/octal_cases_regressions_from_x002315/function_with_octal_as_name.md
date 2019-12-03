@@ -30,7 +30,7 @@ throws: Parser error!
   Function decl missing required ident
 
 function 00004() { "use strict"; 00004; }
-         ^------- error
+         ^^^^^------- error
 `````
 
 ### Strict mode
@@ -42,7 +42,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 function 00004() { "use strict"; 00004; }
-         ^------- error
+         ^^^^^------- error
 `````
 
 

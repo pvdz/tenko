@@ -36,7 +36,7 @@ throws: Parser error!
 function f() {
   "use strict";
   (let = x);
-       ^------- error
+   ^^^------- error
 
 }
 `````

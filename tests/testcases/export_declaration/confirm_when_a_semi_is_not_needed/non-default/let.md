@@ -47,7 +47,7 @@ throws: Parser error!
   Unable to ASI
 
 export let foo = x foo
-                   ^------- error
+                   ^^^------- error
 `````
 
 

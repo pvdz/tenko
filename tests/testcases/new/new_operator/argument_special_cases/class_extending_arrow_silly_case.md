@@ -31,7 +31,7 @@ throws: Parser error!
   Arrow not allowed in this position
 
 class x extends () => {} {}
-                   ^------- error
+                ^^^^^------- error
 `````
 
 ### Strict mode

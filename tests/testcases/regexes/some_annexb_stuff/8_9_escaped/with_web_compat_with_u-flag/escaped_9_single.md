@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode)
 
 /7\9/u
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode); Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /7\9/u
-^------- error
+^^^^^^------- error
 `````
 

@@ -31,7 +31,7 @@ throws: Parser error!
   An async function expression is not allowed here
 
 (class B extends async function(){} {})
-                       ^------- error
+                 ^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

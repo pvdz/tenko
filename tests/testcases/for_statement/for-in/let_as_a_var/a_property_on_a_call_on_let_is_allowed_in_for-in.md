@@ -78,10 +78,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Let binding missing binding names
+  Let binding missing binding names in strict mode
 
 for (let().foo in x);
-        ^------- error
+     ^^^------- error
 `````
 
 

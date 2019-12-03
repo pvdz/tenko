@@ -42,7 +42,7 @@ throws: Parser error!
   For-in and for-of binding can not have an init
 
 for (const x = 0 in {});
-                 ^------- error
+                 ^^------- error
 `````
 
 ### Strict mode

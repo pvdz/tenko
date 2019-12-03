@@ -30,8 +30,9 @@ throws: Parser error!
   Missing closing paren of statement header, found `b` instead
 
 if (a++
+   ^^^^^^------- error
+
 b);
-^------- error
 `````
 
 ### Strict mode

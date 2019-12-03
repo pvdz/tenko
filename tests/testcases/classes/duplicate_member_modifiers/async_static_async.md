@@ -29,7 +29,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `async`
 
 class x {    async static async f(){}    }
-                          ^------- error
+                          ^^^^^------- error
 `````
 
 ### Strict mode

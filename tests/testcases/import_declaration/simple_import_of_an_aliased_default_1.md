@@ -29,7 +29,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 import * as a from "y"
-       ^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

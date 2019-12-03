@@ -57,7 +57,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `foo` but another binding already existed on the same level
 
 export let foo; export let foo;
-                           ^------- error
+                           ^^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `foo` but another binding already existed on the same level
 
 const {foo} = x, {foo} = y;
-                     ^------- error
+                  ^^^------- error
 `````
 
 ### Strict mode

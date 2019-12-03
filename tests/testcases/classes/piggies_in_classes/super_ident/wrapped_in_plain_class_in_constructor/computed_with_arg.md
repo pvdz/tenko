@@ -29,7 +29,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 class outer { constructor(){  class x { [super y](){} }  }}
-                                               ^------- error
+                                         ^^^^^------- error
 `````
 
 ### Strict mode

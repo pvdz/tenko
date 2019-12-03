@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The escaped binary property name `ASCII` is not valid (does not appear in "table 54") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 /\P{ASCII=Connector_Punctuation}/g;
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

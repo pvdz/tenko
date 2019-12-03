@@ -51,7 +51,7 @@ throws: Parser error!
   Unknown export type `*=` (note: you can only export individual vars through `export {foo};`)
 
 export *= from 'f';
-       ^------- error
+       ^^------- error
 `````
 
 

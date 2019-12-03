@@ -36,7 +36,7 @@ throws: Parser error!
 
 class A extends B {
   [super()](){}
-        ^------- error
+   ^^^^^^------- error
 
 }
 `````

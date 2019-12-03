@@ -32,7 +32,7 @@ throws: Lexer error!
     Unclosed multi line comment, early eof
 
 /*CHECK#1/
-^------- error
+^^^^^^^^^^------- error
 `````
 
 ### Strict mode

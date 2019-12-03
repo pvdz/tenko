@@ -44,7 +44,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function *g() { function f(x = x + yield y) {}; }
-                                         ^------- error
+                                   ^^^^^------- error
 `````
 
 

@@ -78,7 +78,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 function f([let]) {}
-               ^------- error
+            ^^^------- error
 `````
 
 

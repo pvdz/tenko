@@ -30,7 +30,7 @@ throws: Parser error!
   The left hand side of the async arrow is not destructible so arrow is illegal
 
 async ({a: x, ...x = y}) => {}
-                         ^------- error
+                         ^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Lexer error!
     Named back reference \k<b> was not defined in this regex: {#ab:true}
 
 /(?<ab>a)\k<b>/
-^------- error
+^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

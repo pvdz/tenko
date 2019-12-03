@@ -29,7 +29,7 @@ throws: Parser error!
   Can only use `for-await` inside an async function
 
 async function f() { function g(){ { for await (x of y) {} } }
-                                         ^------- error
+                                     ^^^^^^^^^------- error
 `````
 
 ### Strict mode

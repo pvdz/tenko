@@ -56,7 +56,7 @@ throws: Lexer error!
     Regex: Back reference is only one digit and cannot be followed by another digit
 
 /[\12-\14]/u
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -80,6 +80,6 @@ throws: Lexer error!
     Regex: Back reference is only one digit and cannot be followed by another digit; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\12-\14]/u
-^------- error
+^^^^^^^^^^^^------- error
 `````
 

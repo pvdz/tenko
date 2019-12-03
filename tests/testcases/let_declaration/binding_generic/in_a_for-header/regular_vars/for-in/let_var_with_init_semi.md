@@ -29,7 +29,7 @@ throws: Parser error!
   For-in and for-of binding can not have an init
 
 for (let foo = bar in x);
-                   ^------- error
+                   ^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Lexer error!
     Lookbehinds in regular expressions are not supported in the currently targeted language version
 
 /a(?<=x)b/
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

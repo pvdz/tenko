@@ -30,11 +30,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (\u0063ontinue) as a variable name because: Keywords may not have escapes in their name
+  Cannot use this name (`\u0063ontinue`) as a variable name because: Keywords may not have escapes in their name and this resolves to `continue`
 
 function *f(){
   \u0063ontinue = x
-                ^------- error
+  ^^^^^^^^^^^^^------- error
 
 }
 `````

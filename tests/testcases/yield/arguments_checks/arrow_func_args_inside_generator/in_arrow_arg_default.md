@@ -30,7 +30,7 @@ throws: Parser error!
   The arguments of an arrow cannot contain a yield expression in their defaults
 
 function *g() { (x = yield) => {}; }
-                            ^------- error
+                            ^^------- error
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
 for (x in y) foo: bar: third: function f(){}
-                                       ^------- error
+                              ^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -36,7 +36,7 @@ throws: Parser error!
 async function f() {
   let
   let
-  ^------- error
+  ^^^------- error
 
 }
 `````

@@ -31,7 +31,7 @@ throws: Parser error!
 
 delete (x)
 /f/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode

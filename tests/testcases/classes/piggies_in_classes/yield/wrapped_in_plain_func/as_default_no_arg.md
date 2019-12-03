@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function f(){  class x { foo(x=yield){} }  }
-                                    ^------- error
+                               ^^^^^------- error
 `````
 
 ### Strict mode

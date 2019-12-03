@@ -69,7 +69,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 (eval) => y
-       ^------- error
+       ^^------- error
 `````
 
 

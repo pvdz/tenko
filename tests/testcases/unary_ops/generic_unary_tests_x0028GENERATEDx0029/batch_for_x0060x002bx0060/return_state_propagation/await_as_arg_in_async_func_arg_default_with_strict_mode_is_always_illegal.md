@@ -31,7 +31,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function f(){   async function g(x = + await x) { "use strict"; }  }
-                                                   ^------- error
+                                             ^^^^^------- error
 `````
 
 ### Strict mode

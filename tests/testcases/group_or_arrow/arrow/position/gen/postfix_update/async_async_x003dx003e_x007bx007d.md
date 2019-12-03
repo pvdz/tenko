@@ -31,7 +31,7 @@ throws: Parser error!
   An arrow function can not have a postfix update operator
 
 async async => {}++
-                 ^------- error
+                 ^^------- error
 `````
 
 ### Strict mode

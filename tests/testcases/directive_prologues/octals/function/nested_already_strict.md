@@ -43,7 +43,7 @@ function f() {
     "use strict"
     function g() {
         "You \077 ok";
-        ^------- error
+        ^^^^^^^^^^^^^------- error
 
     }
 }

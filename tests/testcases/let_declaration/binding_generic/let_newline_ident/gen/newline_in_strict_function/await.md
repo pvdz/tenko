@@ -108,7 +108,7 @@ function f() {
   "use strict";
   let
   await
-  ^------- error
+  ^^^^^------- error
 
 }
 `````

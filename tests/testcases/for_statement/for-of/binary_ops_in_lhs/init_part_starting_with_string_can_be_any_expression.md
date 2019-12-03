@@ -29,7 +29,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `of` instead
 
 for ("abc" + b of obj);
-               ^------- error
+               ^^------- error
 `````
 
 ### Strict mode

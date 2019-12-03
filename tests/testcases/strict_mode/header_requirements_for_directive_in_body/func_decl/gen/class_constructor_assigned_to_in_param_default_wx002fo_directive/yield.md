@@ -34,7 +34,7 @@ throws: Parser error!
 
 class A {
   constructor(x=yield=10){ }
-                     ^------- error
+                ^^^^^------- error
 
 }
 `````

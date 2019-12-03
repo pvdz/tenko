@@ -31,7 +31,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 for (delete x in x) ;
-              ^------- error
+^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -43,7 +43,7 @@ throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
 for (delete x in x) ;
-              ^------- error
+            ^------- error
 `````
 
 

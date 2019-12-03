@@ -48,7 +48,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 class A {async f(x=await foo) {}}
-                         ^------- error
+                   ^^^^^------- error
 `````
 
 ### Strict mode

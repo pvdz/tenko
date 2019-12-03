@@ -29,7 +29,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 class x extends feh(super()) { }
-                         ^------- error
+                    ^^^^^^------- error
 `````
 
 ### Strict mode

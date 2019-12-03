@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot postfix `++` a non-assignable value
 
 new Date++;
-        ^------- error
+        ^^------- error
 `````
 
 ### Strict mode

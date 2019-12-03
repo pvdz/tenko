@@ -31,7 +31,7 @@ throws: Parser error!
   Class constructors can not be setters
 
 class x { set "constructor"(x){} }
-                           ^------- error
+          ^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

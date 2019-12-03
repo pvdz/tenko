@@ -29,7 +29,7 @@ throws: Parser error!
   Expected the opening curly `{` of a class body, found `` instead (at EOF)
 
 new class
-    ^------- error
+         ^------- error at EOF
 `````
 
 ### Strict mode

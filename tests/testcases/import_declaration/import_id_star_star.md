@@ -33,7 +33,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 import a, ** from 'f';
-       ^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -48,10 +48,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Can only import star or object after default
+  A default import can only be followed by a star or object specifier
 
 import a, ** from 'f';
-          ^------- error
+          ^^------- error
 `````
 
 

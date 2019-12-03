@@ -37,7 +37,7 @@ throws: Parser error!
   The arguments of an arrow cannot contain a yield expression in their defaults
 
 function *f(){ async (x = z = yield) => {} }
-                                     ^------- error
+                                     ^^------- error
 `````
 
 ### Strict mode

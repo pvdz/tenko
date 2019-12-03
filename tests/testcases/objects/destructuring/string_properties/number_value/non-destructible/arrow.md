@@ -30,7 +30,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 ({"x": 600}) => x
-             ^------- error
+             ^^------- error
 `````
 
 ### Strict mode

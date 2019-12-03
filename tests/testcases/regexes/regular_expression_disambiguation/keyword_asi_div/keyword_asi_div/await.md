@@ -75,7 +75,7 @@ throws: Lexer error!
 
 await
 /x
-^------- error
+^^------- error
 `````
 
 

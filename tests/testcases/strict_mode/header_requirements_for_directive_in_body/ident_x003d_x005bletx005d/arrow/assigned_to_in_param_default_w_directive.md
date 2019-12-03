@@ -32,7 +32,7 @@ throws: Parser error!
   Unable to ASI
 
 f(x=let=10) => { "use strict"; }
-            ^------- error
+            ^^------- error
 `````
 
 ### Strict mode
@@ -44,7 +44,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 f(x=let=10) => { "use strict"; }
-       ^------- error
+    ^^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
   It is never valid for an expression statement to begin with `let[`, and a `let` declaration would not be valid here
 
 while (a) let [x] = y;
-              ^------- error
+          ^^^^^------- error
 `````
 
 ### Strict mode
@@ -43,7 +43,7 @@ throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
 while (a) let [x] = y;
-              ^------- error
+          ^^^------- error
 `````
 
 

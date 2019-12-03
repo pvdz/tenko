@@ -41,7 +41,7 @@ throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
 let {foo: let} = x;
-             ^------- error
+          ^^^------- error
 `````
 
 ### Strict mode

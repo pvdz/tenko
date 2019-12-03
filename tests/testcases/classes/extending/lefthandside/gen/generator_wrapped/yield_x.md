@@ -36,7 +36,7 @@ throws: Parser error!
 
 function *P(){
   class D extends yield
-                  ^------- error
+                  ^^^^^------- error
 
 x {}
 }

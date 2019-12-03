@@ -30,11 +30,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (\u0066inally) as a variable name because: Keywords may not have escapes in their name
+  Cannot use this name (`\u0066inally`) as a variable name because: Keywords may not have escapes in their name and this resolves to `finally`
 
 function *f(){
   \u0066inally = x
-               ^------- error
+  ^^^^^^^^^^^^------- error
 
 }
 `````

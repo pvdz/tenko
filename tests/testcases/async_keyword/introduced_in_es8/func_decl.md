@@ -31,7 +31,7 @@ throws: Parser error!
   Unable to ASI
 
 async function f(){}
-      ^------- error
+      ^^^^^^^^------- error
 `````
 
 ### Strict mode

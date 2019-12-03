@@ -29,7 +29,7 @@ throws: Lexer error!
     `0b` is illegal without a digit
 
 0b2
-^------- error
+^^------- error
 `````
 
 ### Strict mode

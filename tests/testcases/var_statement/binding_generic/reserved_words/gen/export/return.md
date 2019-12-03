@@ -46,10 +46,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (return) as a variable name because: Cannot never use this reserved word as a variable name
+  Cannot use this name (`return`) as a variable name because: Cannot never use this reserved word as a variable name
 
 export var return = 10;
-           ^------- error
+           ^^^^^^------- error
 `````
 
 

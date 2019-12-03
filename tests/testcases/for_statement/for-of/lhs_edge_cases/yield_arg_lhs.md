@@ -29,7 +29,7 @@ throws: Parser error!
   Left part of for-of must be assignable
 
 function *f(){   for (yield x of y);   }
-                              ^------- error
+                 ^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

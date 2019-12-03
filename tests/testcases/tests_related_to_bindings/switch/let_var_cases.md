@@ -35,7 +35,7 @@ throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
 switch (x) { case a: let foo; break; case b: var foo; break; }
-                                                 ^------- error
+                                                 ^^^------- error
 `````
 
 ### Strict mode

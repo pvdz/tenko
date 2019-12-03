@@ -48,7 +48,7 @@ throws: Parser error!
   Unable to ASI
 
 let f = function f() { return await foo; }
-                                    ^------- error
+                                    ^^^------- error
 `````
 
 ### Strict mode

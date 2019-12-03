@@ -35,7 +35,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `foo` but another binding already existed on the same level
 
 switch (x) { case a: let foo; break; case b: const foo = x; break; }
-                                                   ^------- error
+                                                   ^^^------- error
 `````
 
 ### Strict mode

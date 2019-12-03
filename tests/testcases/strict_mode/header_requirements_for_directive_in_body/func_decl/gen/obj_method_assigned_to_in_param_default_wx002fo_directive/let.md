@@ -124,7 +124,7 @@ throws: Parser error!
 
 f = {
   e(x=let=10){ }
-         ^------- error
+      ^^^------- error
 
 }
 `````

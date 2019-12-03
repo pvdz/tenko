@@ -33,7 +33,7 @@ throws: Parser error!
   Left part of for-of must be assignable
 
 for (function(){} of x);
-                  ^------- error
+^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

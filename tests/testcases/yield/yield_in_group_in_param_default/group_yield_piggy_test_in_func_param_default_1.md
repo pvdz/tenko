@@ -95,7 +95,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function f(x=(yield)=y){}
-                   ^------- error
+              ^^^^^------- error
 `````
 
 

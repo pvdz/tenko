@@ -48,7 +48,7 @@ throws: Parser error!
   The rest/spread operator is missing an argument
 
 export var [...] = obj;
-               ^------- error
+            ^^^^------- error
 `````
 
 

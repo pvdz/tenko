@@ -47,7 +47,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 (x=let=10) => {
-      ^------- error
+   ^^^------- error
 
   "use strict";
 }

@@ -74,7 +74,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 function foo() { 00004; }
-                 ^------- error
+                 ^^^^^------- error
 `````
 
 

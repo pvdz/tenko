@@ -46,7 +46,7 @@ throws: Parser error!
 
 let
 arguments.length
-^------- error
+^^^^^^^^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
 
 f(async
 ()=>c)
-  ^------- error
+  ^^------- error
 `````
 
 ### Strict mode

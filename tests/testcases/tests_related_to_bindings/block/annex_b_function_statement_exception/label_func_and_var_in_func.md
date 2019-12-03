@@ -55,7 +55,7 @@ throws: Parser error!
 function g(){
   var f = 123;
   oops: function f(){}
-                 ^------- error
+        ^^^^^^^^------- error
 
 }
 `````

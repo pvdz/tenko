@@ -66,7 +66,7 @@ throws: Parser error!
 
 let
 interface
-^------- error
+^^^^^^^^^------- error
 `````
 
 

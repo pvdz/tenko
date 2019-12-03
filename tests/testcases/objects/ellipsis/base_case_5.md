@@ -31,7 +31,7 @@ throws: Parser error!
   Object spread/rest requires the requested version to be ES9+
 
 x = {...y}
-     ^------- error
+     ^^^------- error
 `````
 
 ### Strict mode

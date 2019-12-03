@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static set null(x){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

@@ -33,7 +33,7 @@ throws: Parser error!
 
 if (x) x;
 else async function f(){}
-                    ^------- error
+     ^^^^^------- error
 `````
 
 ### Strict mode

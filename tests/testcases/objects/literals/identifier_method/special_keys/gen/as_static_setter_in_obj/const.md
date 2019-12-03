@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static set const(x){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

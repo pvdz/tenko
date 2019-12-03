@@ -32,7 +32,7 @@ throws: Parser error!
   Next token should be `target` but was `` (at EOF)
 
 function d(){new.
-                ^------- error
+                 ^------- error at EOF
 `````
 
 ### Strict mode

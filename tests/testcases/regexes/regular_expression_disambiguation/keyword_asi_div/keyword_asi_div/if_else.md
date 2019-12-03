@@ -37,7 +37,7 @@ throws: Lexer error!
 if (x) ;
 else
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

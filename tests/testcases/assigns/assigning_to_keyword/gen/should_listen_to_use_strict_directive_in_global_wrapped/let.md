@@ -31,7 +31,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 "use strict"; (let = x);
-                   ^------- error
+               ^^^------- error
 `````
 
 ### Strict mode

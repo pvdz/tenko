@@ -29,7 +29,7 @@ throws: Parser error!
   The rest/spread operator is missing an argument
 
 function f([...]){}
-               ^------- error
+            ^^^^------- error
 `````
 
 ### Strict mode

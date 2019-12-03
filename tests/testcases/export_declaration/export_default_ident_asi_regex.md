@@ -57,7 +57,7 @@ throws: Parser error!
 
 export default x
 /y/
-  ^------- error
+   ^------- error at EOF
 `````
 
 

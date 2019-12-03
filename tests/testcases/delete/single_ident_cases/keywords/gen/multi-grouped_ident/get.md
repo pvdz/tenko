@@ -63,7 +63,7 @@ throws: Parser error!
   Bad delete case, can not delete an ident wrapped in parens (at EOF)
 
 delete (((get)))
-               ^------- error
+                ^------- error at EOF
 `````
 
 

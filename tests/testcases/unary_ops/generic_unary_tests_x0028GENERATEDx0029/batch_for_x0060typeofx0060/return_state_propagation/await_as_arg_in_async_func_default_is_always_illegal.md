@@ -29,7 +29,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function f(){   async function g(x = typeof await x) {}  }
-                                                        ^------- error
+                                                  ^^^^^------- error
 `````
 
 ### Strict mode

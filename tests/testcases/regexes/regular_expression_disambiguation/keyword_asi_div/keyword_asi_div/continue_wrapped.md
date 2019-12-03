@@ -39,7 +39,7 @@ throws: Lexer error!
 while (true) {
   continue
   /x
-  ^------- error
+  ^^------- error
 
 }
 `````

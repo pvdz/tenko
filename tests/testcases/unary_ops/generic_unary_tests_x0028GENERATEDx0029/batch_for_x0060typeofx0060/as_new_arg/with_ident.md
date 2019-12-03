@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot `typeof` inside `new` (at EOF)
 
 new typeof
-    ^------- error
+    ^^^^^^------- error
 `````
 
 ### Strict mode

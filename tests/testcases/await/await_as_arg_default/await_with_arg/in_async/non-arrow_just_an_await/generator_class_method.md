@@ -29,7 +29,7 @@ throws: Parser error!
   Missing function param definition closing parenthesis, found `bar` instead
 
 async function g(){class x {*f(foo = await bar){}}    }
-                                           ^------- error
+                                           ^^^------- error
 `````
 
 ### Strict mode

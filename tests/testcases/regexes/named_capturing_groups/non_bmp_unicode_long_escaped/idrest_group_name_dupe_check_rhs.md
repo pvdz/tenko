@@ -37,7 +37,7 @@ throws: Lexer error!
     Regex: The es6 long unicode escape is only valid with u-flag; Found "es6" unicode escape (`\u{..}`) or surrogate pair quads (`\uxxxx\uxxxx`) in regex ident, which is only valid with u-flag in regex; An escape that might be part of an identifier cannot be anything else so if it is invalid it must be an error
 
 /(?<abc\u{1D7D0}def>foo\k<abc\uDFD0def>)/
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

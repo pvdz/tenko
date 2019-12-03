@@ -30,7 +30,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 s = {"foo": super = x} = x
-                  ^------- error
+            ^^^^^------- error
 `````
 
 ### Strict mode

@@ -32,7 +32,7 @@ throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
 function *g() { (x = x + yield y); }
-                               ^------- error
+                         ^^^^^------- error
 `````
 
 ### Strict mode

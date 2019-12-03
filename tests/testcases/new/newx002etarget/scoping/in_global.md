@@ -31,7 +31,7 @@ throws: Parser error!
   Must be inside/nested a regular function to use `new.target`
 
 new.target
-   ^------- error
+^^^^------- error
 `````
 
 ### Strict mode

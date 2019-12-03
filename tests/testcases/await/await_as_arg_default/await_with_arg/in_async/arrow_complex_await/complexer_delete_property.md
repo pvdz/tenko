@@ -29,7 +29,7 @@ throws: Parser error!
   The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
 async function a(){     async ([y] = delete ((((foo))[await x]))) => {};     }
-                                                                  ^------- error
+                        ^^^^^------- error
 `````
 
 ### Strict mode

@@ -30,7 +30,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 function foo() { "use strict"; 00004; }
-                               ^------- error
+                               ^^^^^------- error
 `````
 
 ### Strict mode

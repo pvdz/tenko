@@ -29,7 +29,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 class outer { constructor(){  class x { [super()](){} }  }}
-                                              ^------- error
+                                         ^^^^^^------- error
 `````
 
 ### Strict mode

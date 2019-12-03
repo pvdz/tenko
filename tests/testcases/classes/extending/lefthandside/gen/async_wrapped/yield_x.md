@@ -36,7 +36,7 @@ throws: Parser error!
 
 async function p(){
   class C extends yield
-                  ^------- error
+                  ^^^^^------- error
 
 x {}
 }

@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The escaped lone property name `` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 /\p{}/g;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

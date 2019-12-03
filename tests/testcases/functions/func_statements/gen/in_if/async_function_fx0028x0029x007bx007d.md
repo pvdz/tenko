@@ -31,7 +31,7 @@ throws: Parser error!
   An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there
 
 if (x) async function f(){}
-                      ^------- error
+       ^^^^^------- error
 `````
 
 ### Strict mode

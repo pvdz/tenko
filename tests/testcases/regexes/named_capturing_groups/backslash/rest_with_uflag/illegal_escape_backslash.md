@@ -33,7 +33,7 @@ throws: Lexer error!
     Regex: Only unicode escapes are legal in identifier names
 
 /(?<xyz\0141>.)/u;
-^------- error
+^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

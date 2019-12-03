@@ -47,7 +47,7 @@ throws: Parser error!
   The `export` keyword is only supported at the top level
 
 while (x) export {x};
-          ^------- error
+          ^^^^^^------- error
 `````
 
 

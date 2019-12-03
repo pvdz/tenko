@@ -48,7 +48,7 @@ throws: Parser error!
   Unable to ASI
 
 function *as(){ class A {*f() { return await foo; }} }
-                                             ^------- error
+                                             ^^^------- error
 `````
 
 ### Strict mode

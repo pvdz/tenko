@@ -30,7 +30,7 @@ throws: Parser error!
   Unexpected character after object literal property name
 
 ({b => []} = [2])
-    ^------- error
+    ^^------- error
 `````
 
 ### Strict mode

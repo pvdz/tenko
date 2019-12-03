@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static async for(){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

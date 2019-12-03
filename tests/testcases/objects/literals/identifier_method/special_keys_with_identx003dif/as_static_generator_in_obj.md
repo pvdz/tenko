@@ -28,10 +28,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse the start of a generator method but found an ident that was not `async`
+  Object members can not be "static"
 
 ({static * if(){}});
-         ^------- error
+  ^^^^^^------- error
 `````
 
 ### Strict mode

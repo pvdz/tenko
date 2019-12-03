@@ -108,7 +108,7 @@ throws: Parser error!
   The for-header lhs binding pattern is not destructible
 
 for ({ eval = 0 } of [{}]) ;
-                  ^------- error
+                  ^^------- error
 `````
 
 

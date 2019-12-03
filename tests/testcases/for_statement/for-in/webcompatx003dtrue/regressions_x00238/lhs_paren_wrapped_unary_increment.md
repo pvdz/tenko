@@ -29,7 +29,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 for ((a++) in c);
-           ^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -39,7 +39,7 @@ foo = {
   get x(){
     "use strict";
     (yield = x);
-           ^------- error
+     ^^^^^------- error
 
   }
 }

@@ -33,7 +33,7 @@ throws: Parser error!
   Cannot use lhs as regular for-loop because it must destruct
 
 for ({ eval = 0 } ;;) ;
-                  ^------- error
+     ^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

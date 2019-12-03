@@ -29,7 +29,7 @@ throws: Parser error!
   Left part of for-of must be assignable
 
 for ((x)=>{} of y);
-             ^------- error
+^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Parser error!
 
 if (x) x;
 else function f(){}
-              ^------- error
+     ^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -64,7 +64,7 @@ throws: Parser error!
 var a, b;
 export {a};
 export {b as a};
-               ^------- error
+^^^^^^------- error
 `````
 
 

@@ -32,7 +32,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 class c {foo(x=let=y){ "use strict"; }}
-                  ^------- error
+               ^^^------- error
 `````
 
 ### Strict mode

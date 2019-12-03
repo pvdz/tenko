@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The `\c` escape is only legal in a char class without uflag and in webcompat mode
 
 /[-\c]/u
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: The `\c` escape is only legal in a char class without uflag and in webcompat mode; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[-\c]/u
-^------- error
+^^^^^^^^------- error
 `````
 

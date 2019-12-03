@@ -29,7 +29,7 @@ throws: Parser error!
   Arrow is illegal here
 
 delete ((a))=>b)
-            ^------- error
+            ^^------- error
 `````
 
 ### Strict mode

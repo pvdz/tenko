@@ -33,7 +33,7 @@ throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
 for (const [let] in obj);
-               ^------- error
+            ^^^------- error
 `````
 
 ### Strict mode

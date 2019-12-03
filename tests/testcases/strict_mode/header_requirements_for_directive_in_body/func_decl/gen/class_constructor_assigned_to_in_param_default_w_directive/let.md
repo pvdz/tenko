@@ -36,7 +36,7 @@ throws: Parser error!
 
 class A {
   constructor(x=let=10){
-                   ^------- error
+                ^^^------- error
 
     "use strict";
   }

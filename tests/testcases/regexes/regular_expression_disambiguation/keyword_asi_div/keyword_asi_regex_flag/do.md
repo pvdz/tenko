@@ -36,7 +36,7 @@ throws: Parser error!
 
 do
 /x/g
-^------- error
+    ^------- error at EOF
 `````
 
 ### Strict mode

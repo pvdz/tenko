@@ -45,10 +45,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (implements) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`implements`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 export var implements = 10;
-           ^------- error
+           ^^^^^^^^^^------- error
 `````
 
 

@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot `await` as the arg of `new`
 
 async function f(){ [new await foo] }
-                               ^------- error
+                         ^^^^^------- error
 `````
 
 ### Strict mode

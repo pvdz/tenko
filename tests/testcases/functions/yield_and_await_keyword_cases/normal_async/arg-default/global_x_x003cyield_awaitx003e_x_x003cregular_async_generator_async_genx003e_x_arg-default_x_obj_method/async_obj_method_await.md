@@ -48,7 +48,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function as(){ o = {async f(x=await foo) {}} }
-                                          ^------- error
+                                    ^^^^^------- error
 `````
 
 ### Strict mode

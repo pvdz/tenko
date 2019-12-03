@@ -30,7 +30,7 @@ throws: Parser error!
   The `import` keyword can only be used with the module goal
 
 import {eval} from "x";
-       ^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
@@ -45,10 +45,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (eval) as a variable name because: Cannot create a binding named `eval` in strict mode
+  Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
 import {eval} from "x";
-            ^------- error
+        ^^^^------- error
 `````
 
 

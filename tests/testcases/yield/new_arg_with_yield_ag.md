@@ -30,7 +30,7 @@ throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
 function *g() { new yield foo}
-                          ^------- error
+                    ^^^^^------- error
 `````
 
 ### Strict mode

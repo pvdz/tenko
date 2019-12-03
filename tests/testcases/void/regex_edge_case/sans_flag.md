@@ -34,7 +34,7 @@ throws: Parser error!
 
 void a
 /foo/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode

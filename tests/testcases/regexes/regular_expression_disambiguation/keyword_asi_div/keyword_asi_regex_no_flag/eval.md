@@ -33,7 +33,7 @@ throws: Parser error!
 
 eval
 /x/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode

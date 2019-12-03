@@ -32,7 +32,7 @@ throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid (at EOF)
 
 (a,)
-   ^------- error
+^^^^------- error
 `````
 
 ### Strict mode

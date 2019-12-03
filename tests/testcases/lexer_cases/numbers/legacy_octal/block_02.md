@@ -64,7 +64,7 @@ throws: Lexer error!
 
 {}
 02
-^------- error
+^^------- error
 `````
 
 

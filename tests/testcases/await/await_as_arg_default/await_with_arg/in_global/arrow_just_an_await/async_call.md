@@ -29,7 +29,7 @@ throws: Parser error!
   Missing closing paren `)` for group, found `bar` instead
 
 async (foo = await bar);
-                   ^------- error
+                   ^^^------- error
 `````
 
 ### Strict mode

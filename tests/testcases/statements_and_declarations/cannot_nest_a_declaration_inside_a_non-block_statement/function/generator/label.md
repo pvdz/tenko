@@ -31,7 +31,7 @@ throws: Parser error!
   A "labelled function declaration" can not be a generator
 
 foo: function *f() {}
-               ^------- error
+              ^------- error
 `````
 
 ### Strict mode

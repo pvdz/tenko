@@ -50,7 +50,7 @@ throws: Parser error!
   Unable to ASI
 
 async function f() { return yield 100; }
-                                  ^------- error
+                                  ^^^------- error
 `````
 
 ### Strict mode
@@ -62,7 +62,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 async function f() { return yield 100; }
-                                  ^------- error
+                            ^^^^^------- error
 `````
 
 

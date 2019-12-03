@@ -34,7 +34,7 @@ throws: Parser error!
   Function had duplicate params
 
 function f(a, a, b) {"use strict"}
-                                 ^------- error
+              ^------- error
 `````
 
 ### Strict mode

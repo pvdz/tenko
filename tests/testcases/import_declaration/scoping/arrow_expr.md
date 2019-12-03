@@ -29,7 +29,7 @@ throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
 let x = () => import {x} from "y"
-                     ^------- error
+              ^^^^^^------- error
 `````
 
 ### Strict mode

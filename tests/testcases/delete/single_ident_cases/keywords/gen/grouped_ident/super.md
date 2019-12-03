@@ -31,7 +31,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 delete (super)
-             ^------- error
+        ^^^^^------- error
 `````
 
 ### Strict mode

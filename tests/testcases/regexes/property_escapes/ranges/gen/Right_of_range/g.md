@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
 
 /[a-\p{Hex}]/g
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

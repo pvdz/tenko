@@ -60,7 +60,7 @@ throws: Parser error!
 
 var canBeUndeclared;
 export {mustExist as canBeUndeclared};
-                                     ^------- error
+                                      ^------- error at EOF
 `````
 
 

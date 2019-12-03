@@ -42,7 +42,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 { (x = u + yield z) => {}; }
-                 ^------- error
+           ^^^^^------- error
 `````
 
 

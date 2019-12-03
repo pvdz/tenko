@@ -29,7 +29,7 @@ throws: Parser error!
   Next token should be `=>` but was `` (at EOF)
 
 ()
- ^------- error
+  ^------- error at EOF
 `````
 
 ### Strict mode

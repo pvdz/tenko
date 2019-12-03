@@ -42,7 +42,7 @@ throws: Parser error!
   The left hand side of the async arrow is not destructible so arrow is illegal
 
 async (arguments) => {"use strict";}
-                  ^------- error
+                  ^^------- error
 `````
 
 

@@ -48,7 +48,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 async function as(){ class A {async f() { return yield 100; }} }
-                                                       ^------- error
+                                                 ^^^^^------- error
 `````
 
 ### Strict mode

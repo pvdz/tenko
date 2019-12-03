@@ -29,7 +29,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `obj` instead
 
 function *f(){ for (yield of obj); }
-                             ^------- error
+                             ^^^------- error
 `````
 
 ### Strict mode

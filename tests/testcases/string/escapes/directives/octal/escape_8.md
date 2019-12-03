@@ -31,7 +31,7 @@ throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
 'a \8 b';
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -43,7 +43,7 @@ throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
 'a \8 b';
-^------- error
+^^^^^^^^------- error
 `````
 
 

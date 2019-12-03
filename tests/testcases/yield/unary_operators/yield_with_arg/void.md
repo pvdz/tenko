@@ -33,7 +33,7 @@ throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
 function *f() {  return void yield foo;  }
-                                   ^------- error
+                             ^^^^^------- error
 `````
 
 ### Strict mode

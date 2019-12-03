@@ -78,7 +78,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 class x extends y{}(09)
-                    ^------- error
+                    ^^------- error
 `````
 
 

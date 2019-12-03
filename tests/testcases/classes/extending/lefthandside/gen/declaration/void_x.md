@@ -31,7 +31,7 @@ throws: Parser error!
   A unary expression is not allowed here
 
 class A extends void x {}
-                ^------- error
+                ^^^^------- error
 `````
 
 ### Strict mode

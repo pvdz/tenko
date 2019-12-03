@@ -31,7 +31,7 @@ throws: Parser error!
   The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)
 
 typeof 3 ** 2;
-         ^------- error
+         ^^------- error
 `````
 
 ### Strict mode

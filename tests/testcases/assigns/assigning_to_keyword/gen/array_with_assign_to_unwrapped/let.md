@@ -82,7 +82,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 async x => let = 1
-               ^------- error
+           ^^^------- error
 `````
 
 

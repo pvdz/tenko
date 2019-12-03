@@ -36,7 +36,7 @@ throws: Parser error!
 switch (X) {
   case k:
     foo: bar: function f(){}
-                       ^------- error
+              ^^^^^^^^------- error
 
 }
 `````

@@ -31,7 +31,7 @@ throws: Parser error!
   The left hand side of the arrow can only be destructed through assignment so arrow is illegal
 
 ({x: [x].length}) => x;
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

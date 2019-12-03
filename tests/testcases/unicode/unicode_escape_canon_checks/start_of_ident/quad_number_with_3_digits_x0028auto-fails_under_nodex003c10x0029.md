@@ -31,7 +31,7 @@ throws: Lexer error!
     Identifier escape did not yield a valid identifier character
 
 \u0B6EPASS
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

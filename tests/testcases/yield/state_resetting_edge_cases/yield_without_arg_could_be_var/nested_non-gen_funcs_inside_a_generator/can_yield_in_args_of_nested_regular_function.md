@@ -98,7 +98,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function *f(){  return function(x=yield) {};  }
-                                       ^------- error
+                                  ^^^^^------- error
 `````
 
 

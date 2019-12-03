@@ -68,7 +68,7 @@ throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode (at EOF)
 
 let
-   ^------- error at EOF
+^^^------- error
 `````
 
 

@@ -35,7 +35,7 @@ throws: Lexer error!
 
 "use strict";
 "You \077 ok";
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

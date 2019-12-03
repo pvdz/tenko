@@ -71,7 +71,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 034.e034
-^------- error
+^^^------- error
 `````
 
 

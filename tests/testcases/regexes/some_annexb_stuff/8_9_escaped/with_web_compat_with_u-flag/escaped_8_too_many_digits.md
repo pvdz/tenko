@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Parsed too many digits
 
 /\8912/u
-^------- error
+^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: Parsed too many digits; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\8912/u
-^------- error
+^^^^^^^^------- error
 `````
 

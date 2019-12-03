@@ -29,7 +29,7 @@ throws: Parser error!
   Expected identifier, or array/object destructuring
 
 const ...x = y
-      ^------- error
+      ^^^------- error
 `````
 
 ### Strict mode

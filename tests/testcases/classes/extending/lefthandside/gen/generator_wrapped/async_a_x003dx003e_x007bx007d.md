@@ -34,7 +34,7 @@ throws: Parser error!
 
 function *P(){
   class D extends async a => {} {}
-                        ^------- error
+                  ^^^^^^^------- error
 
 }
 `````

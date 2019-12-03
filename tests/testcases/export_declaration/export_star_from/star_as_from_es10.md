@@ -55,7 +55,7 @@ throws: Parser error!
   The `export * as x from src`, syntax was introduced in ES2020 but currently targeted version is lower
 
 export * as woo from 'bar';
-         ^------- error
+^^^^^^^^^^^------- error
 `````
 
 

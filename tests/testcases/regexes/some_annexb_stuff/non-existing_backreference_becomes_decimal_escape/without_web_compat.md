@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode)
 
 /foo \2 bar/
-^------- error
+^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

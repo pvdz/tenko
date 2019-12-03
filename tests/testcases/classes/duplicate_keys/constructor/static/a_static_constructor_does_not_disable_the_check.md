@@ -35,7 +35,7 @@ throws: Parser error!
   Classes may only have one constructor
 
 class x {static constructor(){}; constructor(){}; constructor(){}}
-                                                                 ^------- error
+                                                  ^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

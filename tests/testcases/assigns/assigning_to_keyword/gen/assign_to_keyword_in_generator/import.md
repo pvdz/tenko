@@ -34,7 +34,7 @@ throws: Parser error!
 
 function *f(){
   import = 1;
-         ^------- error
+  ^^^^^^------- error
 
 }
 `````
@@ -55,7 +55,7 @@ throws: Parser error!
 
 function *f(){
   import = 1;
-         ^------- error
+  ^^^^^^------- error
 
 }
 `````

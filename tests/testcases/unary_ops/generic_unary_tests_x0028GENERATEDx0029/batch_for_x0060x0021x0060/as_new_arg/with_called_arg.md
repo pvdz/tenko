@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot `!` inside `new`
 
 new ! x()
-      ^------- error
+    ^------- error
 `````
 
 ### Strict mode

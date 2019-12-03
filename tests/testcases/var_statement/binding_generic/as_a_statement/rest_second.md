@@ -35,7 +35,7 @@ throws: Parser error!
   Rest is not allowed as toplevel for var/let/const declaration binding
 
 var a, ...b = 1;
-       ^------- error
+       ^^^------- error
 `````
 
 ### Strict mode

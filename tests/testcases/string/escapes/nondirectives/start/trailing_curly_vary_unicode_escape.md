@@ -33,7 +33,7 @@ throws: Lexer error!
 
 debugger;
 '\u{abc}} yz;
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

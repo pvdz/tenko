@@ -32,7 +32,7 @@ throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
 function *g() { async (x = x + yield); }
-                                    ^------- error
+                               ^^^^^------- error
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Char class can not contain `\B` with u-flag or without webcompat
 
 /[a-\B]/u
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: Char class can not contain `\B` with u-flag or without webcompat; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[a-\B]/u
-^------- error
+^^^^^^^^^------- error
 `````
 

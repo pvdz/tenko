@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Escaped property name/value contained illegal characters
 
 /\p{1=1234/u;
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: Escaped property name/value contained illegal characters; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\p{1=1234/u;
-^------- error
+^^^^^^^^^^^^------- error
 `````
 

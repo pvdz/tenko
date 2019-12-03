@@ -36,7 +36,7 @@ throws: Parser error!
 
 async function f(){
   for await (function(){} of x);
-                          ^------- error
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 
 }
 `````

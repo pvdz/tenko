@@ -32,7 +32,7 @@ throws: Parser error!
   Cannot assign to lhs (starting with `(`) because it is not a valid assignment target
 
 (a=1)+=2
-     ^------- error
+     ^^------- error
 `````
 
 ### Strict mode

@@ -37,7 +37,7 @@ throws: Lexer error!
 
 delete
 /x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Parser error!
 async
  (x)
  => x
- ^------- error
+ ^^------- error
 `````
 
 ### Strict mode

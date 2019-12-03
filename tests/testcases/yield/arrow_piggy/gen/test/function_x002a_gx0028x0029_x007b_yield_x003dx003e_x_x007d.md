@@ -36,7 +36,7 @@ throws: Parser error!
 
 function * g() {
   yield => x
-        ^------- error
+        ^^------- error
 
 }
 `````

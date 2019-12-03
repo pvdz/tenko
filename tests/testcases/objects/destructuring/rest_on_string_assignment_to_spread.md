@@ -33,7 +33,7 @@ throws: Parser error!
   This `...` arg is invalid; rest only accepts idents, arrays, and objects and as spread the assignment is illegal because the lhs is not assignable
 
 ({..."foo"=x})
-          ^------- error
+  ^^^^^^^^^------- error
 `````
 
 ### Strict mode

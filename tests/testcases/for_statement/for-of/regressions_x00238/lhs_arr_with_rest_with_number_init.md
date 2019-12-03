@@ -31,7 +31,7 @@ throws: Parser error!
   The left side of a `for-of` and `for-in` can not be an assignment, even if it is a BindingPattern
 
 for ([...[a]] = 0 of {});
-                  ^------- error
+              ^------- error
 `````
 
 ### Strict mode

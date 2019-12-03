@@ -29,7 +29,7 @@ throws: Parser error!
   Expected to parse the start of a property but found an unknown modifier
 
 ({typeof x} = x);
-         ^------- error
+  ^^^^^^------- error
 `````
 
 ### Strict mode

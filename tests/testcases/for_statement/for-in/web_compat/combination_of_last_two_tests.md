@@ -42,7 +42,7 @@ throws: Parser error!
   For-in and for-of binding can not have an init
 
 for (var a = (++effects, -1) in stored = a, {a: 0, b: 1, c: 2});
-                             ^------- error
+                             ^^------- error
 `````
 
 ### Strict mode

@@ -37,7 +37,7 @@ throws: Lexer error!
 
 debugger;
 "xyz \373"
-^------- error
+^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -50,7 +50,7 @@ throws: Lexer error!
 
 debugger;
 "xyz \373"
-^------- error
+^^^^^^^^^^------- error
 `````
 
 

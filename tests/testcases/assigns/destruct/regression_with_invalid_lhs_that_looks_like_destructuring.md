@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot compound-assign to an array literal
 
 ({foo: {x:y} += x})
-             ^------- error
+             ^^------- error
 `````
 
 ### Strict mode

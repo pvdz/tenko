@@ -54,7 +54,7 @@ throws: Parser error!
 
 export let
 {}
- ^------- error
+  ^------- error at EOF
 `````
 
 

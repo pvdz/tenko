@@ -29,7 +29,7 @@ throws: Parser error!
   Unable to ASI
 
 let async => async
-          ^------- error
+          ^^------- error
 `````
 
 ### Strict mode

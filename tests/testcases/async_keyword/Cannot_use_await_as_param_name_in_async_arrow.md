@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot use `await` as an arg name with async arrows
 
 async await => {}
-      ^------- error
+      ^^^^^------- error
 `````
 
 ### Strict mode

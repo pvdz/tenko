@@ -29,7 +29,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 ({instanceof(){}}) => x;
-                   ^------- error
+                   ^^------- error
 `````
 
 ### Strict mode

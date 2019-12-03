@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse a value
 
 async () => await => x
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

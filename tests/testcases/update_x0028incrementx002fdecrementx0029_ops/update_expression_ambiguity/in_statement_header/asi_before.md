@@ -35,7 +35,7 @@ throws: Parser error!
 
 if (a
 ++b);
-^------- error
+^^------- error
 `````
 
 ### Strict mode

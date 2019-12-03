@@ -39,7 +39,7 @@ foo = {
   get x(){
     "use strict";
     import = x
-           ^------- error
+    ^^^^^^------- error
 
   }
 }
@@ -63,7 +63,7 @@ foo = {
   get x(){
     "use strict";
     import = x
-           ^------- error
+    ^^^^^^------- error
 
   }
 }

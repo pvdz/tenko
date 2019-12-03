@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 "use strict"; (yield = "sentinal 535426");
-                     ^------- error
+               ^^^^^------- error
 `````
 
 ### Strict mode

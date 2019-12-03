@@ -26,10 +26,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (implements) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`implements`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 x = { get x() { "use strict"; implements = 787984536; } }
-                                         ^------- error
+                              ^^^^^^^^^^------- error
 `````
 
 ### Strict mode

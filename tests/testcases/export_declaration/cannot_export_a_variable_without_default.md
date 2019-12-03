@@ -47,7 +47,7 @@ throws: Parser error!
   Unknown export type `foo` (note: you can only export individual vars through `export {foo};`)
 
 export foo;
-       ^------- error
+       ^^^------- error
 `````
 
 

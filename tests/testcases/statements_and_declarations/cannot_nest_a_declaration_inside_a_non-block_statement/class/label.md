@@ -30,7 +30,7 @@ throws: Parser error!
   Cannot parse a class declaration here, only expecting statements here
 
 foo: class x {}
-     ^------- error
+     ^^^^^------- error
 `````
 
 ### Strict mode

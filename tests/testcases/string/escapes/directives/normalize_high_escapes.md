@@ -29,7 +29,7 @@ throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
 'start \0737 \xaa \u{abc} \0 finish';
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -41,7 +41,7 @@ throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
 'start \0737 \xaa \u{abc} \0 finish';
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 

@@ -29,7 +29,7 @@ throws: Parser error!
   Can only use `for-await` inside an async function
 
 for await (;;) {}
-    ^------- error
+^^^^^^^^^------- error
 `````
 
 ### Strict mode

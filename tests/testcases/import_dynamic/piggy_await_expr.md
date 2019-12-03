@@ -35,7 +35,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function f(x = import(await x)) {}
-                                  ^------- error
+                            ^^^^^------- error
 `````
 
 ### Strict mode

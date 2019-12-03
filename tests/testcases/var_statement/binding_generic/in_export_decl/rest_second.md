@@ -53,7 +53,7 @@ throws: Parser error!
   Rest is not allowed as toplevel for var/let/const declaration binding
 
 export var a, ...b = 1;
-              ^------- error
+              ^^^------- error
 `````
 
 

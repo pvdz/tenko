@@ -32,7 +32,7 @@ throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
 try {} catch \n {}
-             ^------- error
+             ^^------- error
 `````
 
 ### Strict mode

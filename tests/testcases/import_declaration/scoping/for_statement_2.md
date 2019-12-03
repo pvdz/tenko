@@ -29,7 +29,7 @@ throws: Parser error!
   Missing the closing curly of the switch body, found `import` instead
 
 switch (x) { import {x} from "y"; }
-             ^------- error
+             ^^^^^^------- error
 `````
 
 ### Strict mode

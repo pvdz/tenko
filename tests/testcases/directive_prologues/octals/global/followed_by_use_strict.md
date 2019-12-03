@@ -34,7 +34,7 @@ throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
 "You \077 ok";
-^------- error
+^^^^^^^^^^^^^------- error
 
 "use strict"
 `````
@@ -48,7 +48,7 @@ throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
 "You \077 ok";
-^------- error
+^^^^^^^^^^^^^------- error
 
 "use strict"
 `````
@@ -70,6 +70,6 @@ throws: Parser error!
 
 "You \077 ok";
 "use strict"
-^------- error
+            ^------- error at EOF
 `````
 

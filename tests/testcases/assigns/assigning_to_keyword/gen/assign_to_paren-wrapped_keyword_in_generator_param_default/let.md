@@ -91,7 +91,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 function *f(x = (let) = f) {}
-                    ^------- error
+                 ^^^------- error
 `````
 
 

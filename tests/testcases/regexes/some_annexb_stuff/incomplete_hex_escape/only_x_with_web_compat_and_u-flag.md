@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: First char of hex escape not a valid digit
 
 /\x/u
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: First char of hex escape not a valid digit; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\x/u
-^------- error
+^^^^^------- error
 `````
 

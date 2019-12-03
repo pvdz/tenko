@@ -108,7 +108,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 yield({c=3} = {})
-     ^------- error
+^^^^^------- error
 `````
 
 

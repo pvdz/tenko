@@ -31,7 +31,7 @@ throws: Parser error!
   Expected the opening curly `{` of a class body, found `in` instead
 
 class A extends x in y {}
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

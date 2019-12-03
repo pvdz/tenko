@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse an opening paren, found `"foo"`
 
 class A {* get "foo"(){}}
-               ^------- error
+               ^^^^^------- error
 `````
 
 ### Strict mode

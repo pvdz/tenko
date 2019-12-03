@@ -31,7 +31,7 @@ throws: Parser error!
   A `yield` expression is not allowed here
 
 (class B extends yield {})
-                 ^------- error
+                 ^^^^^------- error
 `````
 
 ### Strict mode

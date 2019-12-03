@@ -29,7 +29,7 @@ throws: Parser error!
   An `await` expression is not allowed here
 
 async function f(){    (fail = class A extends await foo {}) => fail    }
-                                               ^------- error
+                                               ^^^^^------- error
 `````
 
 ### Strict mode

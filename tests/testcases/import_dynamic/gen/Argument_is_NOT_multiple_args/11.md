@@ -32,7 +32,7 @@ throws: Parser error!
   Dynamic `import` only expected exactly one argument and does not allow for a trailing comma
 
 import(a, b);
-        ^------- error
+^^^^^^^^^------- error
 `````
 
 ### Strict mode

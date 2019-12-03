@@ -55,7 +55,7 @@ throws: Lexer error!
     Regex: Back reference is only one digit and cannot be followed by another digit
 
 /[\12-\14]/
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

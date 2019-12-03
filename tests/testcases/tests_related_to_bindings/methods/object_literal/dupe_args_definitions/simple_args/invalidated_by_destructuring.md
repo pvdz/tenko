@@ -33,7 +33,7 @@ throws: Parser error!
   Method had duplicate params
 
 o = {f(b, a, b, a, [fine]) {}}
-                           ^------- error
+                ^------- error
 `````
 
 ### Strict mode

@@ -32,8 +32,9 @@ throws: Parser error!
   Missing opening paren of the `for` header, found `/` instead
 
 for
+^^^------- error
+
 /x/g
-^------- error
 `````
 
 ### Strict mode

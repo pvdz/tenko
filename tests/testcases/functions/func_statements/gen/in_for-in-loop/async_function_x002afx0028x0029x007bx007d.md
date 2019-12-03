@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot parse a function declaration here, only expecting statements here
 
 for (a in b) async function *f(){}
-                             ^------- error
+                   ^^^^^^^^------- error
 `````
 
 ### Strict mode

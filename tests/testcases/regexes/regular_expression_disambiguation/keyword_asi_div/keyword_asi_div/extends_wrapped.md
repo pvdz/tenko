@@ -33,7 +33,7 @@ throws: Lexer error!
 
 class x extends
 /x {}
-^------- error
+^^^^^------- error
 `````
 
 ### Strict mode
@@ -58,6 +58,6 @@ throws: Lexer error!
 
 class x extends
 /x {}
-^------- error
+^^^^^------- error
 `````
 

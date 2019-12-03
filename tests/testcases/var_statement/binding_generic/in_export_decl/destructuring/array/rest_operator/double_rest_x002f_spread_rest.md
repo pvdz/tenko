@@ -48,7 +48,7 @@ throws: Parser error!
   Can not rest twice
 
 export var [... ...foo] = obj;
-                ^------- error
+            ^^^^^^^------- error
 `````
 
 

@@ -90,7 +90,7 @@ throws: Parser error!
 
 function *f(){
   (let) = 1;
-      ^------- error
+   ^^^------- error
 
 }
 `````

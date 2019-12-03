@@ -31,7 +31,7 @@ throws: Parser error!
   Arrow not allowed in this position
 
 class A extends async (x, y) => ok {}
-                             ^------- error
+                ^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

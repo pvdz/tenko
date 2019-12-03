@@ -31,7 +31,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 x = { foo(){ return function() { return function() { super(); }; }; }}
-                                                          ^------- error
+                                                     ^^^^^^------- error
 `````
 
 ### Strict mode

@@ -77,7 +77,7 @@ throws: Lexer error!
 
 function f(){}
 02
-^------- error
+^^------- error
 `````
 
 

@@ -35,7 +35,7 @@ throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
 do x: function s(){}while(y)
-               ^------- error
+      ^^^^^^^^------- error
 `````
 
 ### Strict mode

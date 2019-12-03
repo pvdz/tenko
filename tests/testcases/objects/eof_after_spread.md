@@ -33,7 +33,7 @@ throws: Parser error!
   Encountered invalid input after spread/rest argument (at EOF)
 
 +{...x
-     ^------- error
+      ^------- error at EOF
 `````
 
 ### Strict mode

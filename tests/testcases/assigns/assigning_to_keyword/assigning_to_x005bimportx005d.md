@@ -29,7 +29,7 @@ throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
 (import = "sentinal 453543")
-        ^------- error
+ ^^^^^^------- error
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   For-in and for-of can only have one binding, found 2
 
 for (var foo = arr, [bar] of arr);
-                          ^------- error
+                          ^^------- error
 `````
 
 ### Strict mode

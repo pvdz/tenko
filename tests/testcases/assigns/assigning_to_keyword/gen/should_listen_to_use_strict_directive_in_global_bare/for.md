@@ -31,7 +31,7 @@ throws: Parser error!
   Missing opening paren of the `for` header, found `=` instead
 
 "use strict"; for = x;
-                  ^------- error
+              ^^^------- error
 `````
 
 ### Strict mode

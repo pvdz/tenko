@@ -34,7 +34,7 @@ throws: Parser error!
 
 if (a
 ++
-^------- error
+^^------- error
 
 b);
 `````

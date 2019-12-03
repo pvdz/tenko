@@ -31,7 +31,7 @@ throws: Parser error!
   Must be inside/nested a regular function to use `new.target`
 
 delete (new.prop)
-           ^------- error
+        ^^^^------- error
 `````
 
 ### Strict mode

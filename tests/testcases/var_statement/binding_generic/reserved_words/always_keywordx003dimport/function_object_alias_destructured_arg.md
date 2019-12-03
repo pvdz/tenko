@@ -31,7 +31,7 @@ throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
 function fh({x: import}) {}
-                      ^------- error
+                ^^^^^^------- error
 `````
 
 ### Strict mode

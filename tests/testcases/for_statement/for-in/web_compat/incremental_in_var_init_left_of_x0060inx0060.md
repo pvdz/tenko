@@ -44,7 +44,7 @@ throws: Parser error!
   For-in and for-of binding can not have an init
 
 for (var a = ++b in c);
-                 ^------- error
+                 ^^------- error
 `````
 
 ### Strict mode

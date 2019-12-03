@@ -29,7 +29,7 @@ throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
 function *f(){ new yield x }
-                         ^------- error
+                   ^^^^^------- error
 `````
 
 ### Strict mode

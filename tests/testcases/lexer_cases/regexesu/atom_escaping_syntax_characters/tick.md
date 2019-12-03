@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Atom escape can only escape certain syntax chars with u-flag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\`/u
-^------- error
+^^^^^------- error
 `````
 
 ### Strict mode

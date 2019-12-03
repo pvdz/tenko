@@ -361,14 +361,6 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
         throw new Error('Non-graceful error, fixme. Mode = ' + testVariant + ', file = ' + file + '; ' + errorMessage.message);
       }
     }
-
-    // if (tok) {
-    //   let context = tok.getErrorContext(tok.getStart(), tok.getStart()+1); // TODO: use stop
-    //   if (context.slice(-1) === '\n') context = context.slice(0, -1);
-    //   context = context.split('\n').map(s => s.trimRight()).join('\n'); // The error snippet can contain trailing whitespace but we want to keep indentations
-    //   if (INPUT_OVERRIDE) context = '```\n' + context + '\n```\n';
-    //   errorMessage += '\n\n' + context;
-    // }
   }
 
   let outputTestString = (

@@ -48,7 +48,7 @@ throws: Parser error!
   Unable to ASI
 
 function *as(){ let f = async function f() { return yield 100; } }
-                                                          ^------- error
+                                                          ^^^------- error
 `````
 
 ### Strict mode
@@ -60,7 +60,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function *as(){ let f = async function f() { return yield 100; } }
-                                                          ^------- error
+                                                    ^^^^^------- error
 `````
 
 

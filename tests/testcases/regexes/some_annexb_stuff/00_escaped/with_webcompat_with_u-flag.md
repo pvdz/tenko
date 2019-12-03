@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Back references can not have more two or more consecutive numbers
 
 /\00/u
-^------- error
+^^^^^------- error
 `````
 
 ### Strict mode
@@ -54,6 +54,6 @@ throws: Lexer error!
     Regex: Back references can not have more two or more consecutive numbers; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\00/u
-^------- error
+^^^^^^------- error
 `````
 

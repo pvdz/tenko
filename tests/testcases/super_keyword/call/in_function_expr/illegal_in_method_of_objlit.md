@@ -30,7 +30,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 x={ fo(){ return function() { super(); }; }}
-                                   ^------- error
+                              ^^^^^^------- error
 `````
 
 ### Strict mode

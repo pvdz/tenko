@@ -31,7 +31,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 let f = function(a=super()) {a};
-                        ^------- error
+                   ^^^^^^------- error
 `````
 
 ### Strict mode

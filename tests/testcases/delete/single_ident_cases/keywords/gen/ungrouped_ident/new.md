@@ -31,7 +31,7 @@ throws: Parser error!
   Expected to parse a value (at EOF)
 
 delete new
-       ^------- error
+          ^------- error at EOF
 `````
 
 ### Strict mode

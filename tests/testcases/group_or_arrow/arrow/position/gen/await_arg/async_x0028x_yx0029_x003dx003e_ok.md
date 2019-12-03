@@ -34,7 +34,7 @@ throws: Parser error!
 
 async function f() {
   await async (x, y) => ok
-                        ^------- error
+                        ^^------- error
 
 }
 `````

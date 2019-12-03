@@ -31,7 +31,7 @@ throws: Parser error!
 
 ()
 =>x
-^------- error
+^^------- error
 `````
 
 ### Strict mode

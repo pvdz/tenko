@@ -32,7 +32,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 ({...{a, b}}) => x
-              ^------- error
+              ^^------- error
 `````
 
 ### Strict mode

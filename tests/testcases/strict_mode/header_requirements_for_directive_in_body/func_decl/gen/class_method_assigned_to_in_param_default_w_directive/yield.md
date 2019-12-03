@@ -36,7 +36,7 @@ throws: Parser error!
 
 class A {
   f(x=yield=10){
-           ^------- error
+      ^^^^^------- error
 
     "use strict";
   }

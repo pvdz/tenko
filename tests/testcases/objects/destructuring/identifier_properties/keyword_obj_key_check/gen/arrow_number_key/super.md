@@ -31,7 +31,7 @@ throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
 ({500: super}) => null
-            ^------- error
+       ^^^^^------- error
 `````
 
 ### Strict mode

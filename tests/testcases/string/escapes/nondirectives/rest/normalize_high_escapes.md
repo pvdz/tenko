@@ -31,7 +31,7 @@ throws: Lexer error!
 
 debugger;
 'start \0737 \xaa \u{abc} \0 finish';
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -44,7 +44,7 @@ throws: Lexer error!
 
 debugger;
 'start \0737 \xaa \u{abc} \0 finish';
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 

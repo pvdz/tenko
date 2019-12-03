@@ -31,7 +31,7 @@ throws: Parser error!
   Class decl missing required ident, `extends` is not a valid variable name
 
 class extends {}
-      ^------- error
+      ^^^^^^^------- error
 `````
 
 ### Strict mode

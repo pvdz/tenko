@@ -33,7 +33,7 @@ throws: Parser error!
 
 x
 ** x => ok
-        ^------- error
+        ^^------- error
 `````
 
 ### Strict mode

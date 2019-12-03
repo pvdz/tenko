@@ -31,7 +31,7 @@ throws: Parser error!
   It is never valid for an expression statement to begin with `let[`, and a `let` declaration would not be valid here
 
 with (a) let [x] = y
-             ^------- error
+         ^^^^^------- error
 `````
 
 ### Strict mode

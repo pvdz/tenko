@@ -29,7 +29,7 @@ throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
 foo: function f() {}
-              ^------- error
+     ^^^^^^^^------- error
 `````
 
 ### Strict mode

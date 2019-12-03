@@ -72,7 +72,7 @@ throws: Parser error!
 
 let
 await
-^------- error
+^^^^^------- error
 `````
 
 

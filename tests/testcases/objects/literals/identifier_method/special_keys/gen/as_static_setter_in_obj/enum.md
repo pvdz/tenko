@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static set enum(x){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

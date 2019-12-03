@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot postfix `--` a non-assignable value
 
 function f(){ new.target-- }
-                        ^------- error
+                        ^^------- error
 `````
 
 ### Strict mode

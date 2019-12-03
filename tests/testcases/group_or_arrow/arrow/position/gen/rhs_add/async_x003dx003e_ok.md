@@ -31,7 +31,7 @@ throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
 x + async => ok
-             ^------- error
+             ^^------- error
 `````
 
 ### Strict mode

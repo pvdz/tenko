@@ -39,7 +39,7 @@ throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
 do x: function s(){}
-               ^------- error
+      ^^^^^^^^------- error
 
 while(y)
 `````

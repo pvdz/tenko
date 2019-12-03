@@ -49,7 +49,7 @@ throws: Parser error!
   Declaration destructuring must have init (at EOF)
 
 export let {x}
-             ^------- error
+              ^------- error at EOF
 `````
 
 

@@ -33,7 +33,7 @@ throws: Parser error!
   The left side of a `for-of` and `for-in` can not be an assignment, even if it is a BindingPattern
 
 for ([x.y] = z in obj);
-               ^------- error
+           ^------- error
 `````
 
 ### Strict mode

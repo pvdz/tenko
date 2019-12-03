@@ -36,7 +36,7 @@ throws: Lexer error!
     Regex: Regular expressions do not support line continuations (escaped newline)
 
 /\
-^------- error
+^^^^------- error
 
 /
 `````

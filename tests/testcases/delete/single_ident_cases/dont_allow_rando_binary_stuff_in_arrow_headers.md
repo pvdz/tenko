@@ -29,7 +29,7 @@ throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
 delete (a + b)=>b)
-              ^------- error
+              ^^------- error
 `````
 
 ### Strict mode

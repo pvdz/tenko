@@ -29,7 +29,7 @@ throws: Parser error!
   Class constructors can not be async
 
 class X {    async constructor() {}   }
-                              ^------- error
+             ^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

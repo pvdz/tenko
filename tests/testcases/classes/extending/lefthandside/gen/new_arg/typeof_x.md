@@ -31,7 +31,7 @@ throws: Parser error!
   Cannot `typeof` inside `new`
 
 new typeof x
-           ^------- error
+    ^^^^^^------- error
 `````
 
 ### Strict mode

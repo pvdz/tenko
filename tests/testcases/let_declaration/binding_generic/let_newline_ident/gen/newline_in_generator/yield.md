@@ -36,7 +36,7 @@ throws: Parser error!
 function *f() {
   let
   yield
-  ^------- error
+  ^^^^^------- error
 
 }
 `````
@@ -52,7 +52,7 @@ throws: Parser error!
 function *f() {
   let
   yield
-  ^------- error
+  ^^^^^------- error
 
 }
 `````

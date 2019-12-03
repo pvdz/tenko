@@ -124,7 +124,7 @@ throws: Parser error!
 
 f = {
   e(x=yield=10){ }
-           ^------- error
+      ^^^^^------- error
 
 }
 `````

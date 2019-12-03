@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot assign or destruct to keyword `true`
 
 [true = x] = x
-      ^------- error
+ ^^^^------- error
 `````
 
 ### Strict mode

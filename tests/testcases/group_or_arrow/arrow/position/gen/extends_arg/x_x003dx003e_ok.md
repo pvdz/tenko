@@ -31,7 +31,7 @@ throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
 class A extends x => ok {}
-                     ^------- error
+                     ^^------- error
 `````
 
 ### Strict mode

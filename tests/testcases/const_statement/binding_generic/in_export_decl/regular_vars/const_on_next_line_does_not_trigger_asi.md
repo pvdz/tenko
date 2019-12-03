@@ -51,7 +51,7 @@ throws: Parser error!
 
 export
 const foo
-      ^------- error
+         ^------- error at EOF
 `````
 
 

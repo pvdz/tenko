@@ -32,7 +32,7 @@ throws: Parser error!
   Unable to ASI
 
 f(x=arguments=10) => { "use strict"; }
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

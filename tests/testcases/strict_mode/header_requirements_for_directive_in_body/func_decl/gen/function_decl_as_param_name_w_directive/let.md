@@ -44,10 +44,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (let) as a variable name because: Can not use `let` as variable name in strict mode
+  Cannot use this name (`let`) as a variable name because: Can not use `let` as variable name in strict mode
 
 function d(let){
-           ^------- error
+           ^^^------- error
 
   "use strict";
 }

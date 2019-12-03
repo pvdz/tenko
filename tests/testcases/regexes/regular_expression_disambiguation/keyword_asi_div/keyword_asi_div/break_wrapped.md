@@ -39,7 +39,7 @@ throws: Lexer error!
 for (;;) {
   break
   /x
-  ^------- error
+  ^^------- error
 
 }
 `````

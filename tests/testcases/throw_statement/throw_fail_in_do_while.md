@@ -36,9 +36,9 @@ throws: Parser error!
 
 function f() {
   do throw
-  pass while(x);
-  ^------- error
+     ^^^^^^^^------- error
 
+  pass while(x);
 }
 `````
 

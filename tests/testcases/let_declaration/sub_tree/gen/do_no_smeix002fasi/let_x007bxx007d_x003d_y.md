@@ -43,7 +43,7 @@ throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
 do let {x} = y while (a);
-       ^------- error
+   ^^^------- error
 `````
 
 

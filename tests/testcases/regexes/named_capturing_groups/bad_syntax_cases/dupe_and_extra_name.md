@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Each group name can only be declared once: `a`
 
 /(?<a>a)(?<b>b)(?<a>a)/
-^------- error
+^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

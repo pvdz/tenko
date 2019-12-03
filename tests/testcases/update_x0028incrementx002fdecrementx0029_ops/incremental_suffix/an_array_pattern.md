@@ -31,7 +31,7 @@ throws: Parser error!
   Can only increment or decrement an identifier or member expression
 
 []++
-  ^------- error
+  ^^------- error
 `````
 
 ### Strict mode

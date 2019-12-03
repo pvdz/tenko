@@ -108,8 +108,9 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 _ => let
+     ^^^------- error
+
 {foo};
-^------- error
 `````
 
 

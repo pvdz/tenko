@@ -47,7 +47,7 @@ throws: Parser error!
   Can only export async functions (not arrows), did not find a function (at EOF)
 
 export async
-       ^------- error
+^^^^^^^^^^^^------- error
 `````
 
 

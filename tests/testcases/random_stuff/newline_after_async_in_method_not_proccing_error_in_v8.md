@@ -32,7 +32,7 @@ throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
 class K extends {} {;async\n async *1(){}}
-                     ^------- error
+                     ^^^^^^^------- error
 `````
 
 ### Strict mode

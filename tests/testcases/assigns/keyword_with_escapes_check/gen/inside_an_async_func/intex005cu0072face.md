@@ -83,10 +83,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (inte\u0072face) as a variable name because: Keywords may not have escapes in their name
+  Cannot use this name (`inte\u0072face`) as a variable name because: Keywords may not have escapes in their name and this resolves to `interface`
 
 async () => {  inte\u0072face = x  }
-                              ^------- error
+               ^^^^^^^^^^^^^^------- error
 `````
 
 

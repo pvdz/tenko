@@ -31,7 +31,7 @@ throws: Parser error!
   Static class methods can not be called `prototype`
 
 class x { static "prot\u006ftype"(){} }
-                                 ^------- error
+          ^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

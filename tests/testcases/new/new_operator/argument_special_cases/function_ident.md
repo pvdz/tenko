@@ -29,7 +29,7 @@ throws: Parser error!
   Must have func arguments next but did not find `(` (at EOF)
 
 new function
-    ^------- error
+            ^------- error at EOF
 `````
 
 ### Strict mode

@@ -47,7 +47,7 @@ throws: Parser error!
   Can not rest twice
 
 export let [... ...foo] = obj;
-                ^------- error
+            ^^^^^^^------- error
 `````
 
 

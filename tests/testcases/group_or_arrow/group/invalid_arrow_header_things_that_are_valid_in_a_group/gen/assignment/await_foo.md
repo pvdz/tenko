@@ -31,7 +31,7 @@ throws: Parser error!
   Missing closing paren `)` for group, found `foo` instead
 
 ( await foo ) = x
-        ^------- error
+        ^^^------- error
 `````
 
 ### Strict mode

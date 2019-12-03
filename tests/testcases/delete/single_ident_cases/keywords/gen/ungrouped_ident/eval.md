@@ -62,7 +62,7 @@ throws: Parser error!
   Cannot delete an identifier without tail, in strict mode (at EOF)
 
 delete eval
-       ^------- error
+       ^^^^------- error
 `````
 
 

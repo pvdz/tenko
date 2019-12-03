@@ -33,7 +33,7 @@ throws: Parser error!
 
 let
 let x
-^------- error
+^^^------- error
 `````
 
 ### Strict mode

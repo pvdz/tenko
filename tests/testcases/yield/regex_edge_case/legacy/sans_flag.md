@@ -32,7 +32,7 @@ throws: Parser error!
 
 yield
 /foo/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode
@@ -44,8 +44,9 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 yield
+^^^^^------- error
+
 /foo/
-^------- error
 `````
 
 

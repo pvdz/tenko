@@ -83,8 +83,9 @@ throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
 delete x
+       ^------- error
+
 /f/g
-^------- error
 `````
 
 

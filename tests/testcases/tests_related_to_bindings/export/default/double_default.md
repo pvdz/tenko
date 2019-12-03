@@ -48,7 +48,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `*default*` but another binding already existed on the same level
 
 export default function(){}; export default function(){};
-                                            ^------- error
+                                    ^^^^^^^------- error
 `````
 
 

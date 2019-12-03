@@ -48,7 +48,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 class A {f() { return yield 100; }}
-                            ^------- error
+                      ^^^^^------- error
 `````
 
 ### Strict mode

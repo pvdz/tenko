@@ -31,7 +31,7 @@ throws: Parser error!
 
 new x()
 /y/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode

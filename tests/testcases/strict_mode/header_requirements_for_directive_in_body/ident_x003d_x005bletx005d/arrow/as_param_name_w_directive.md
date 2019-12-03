@@ -42,7 +42,7 @@ throws: Parser error!
   Can not use `let` as variable name in strict mode
 
 f = (let) => { "use strict"; }
-        ^------- error
+     ^^^------- error
 `````
 
 

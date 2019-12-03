@@ -33,7 +33,7 @@ throws: Parser error!
 
 foo
 /bar/
-    ^------- error
+     ^------- error at EOF
 `````
 
 ### Strict mode

@@ -29,7 +29,7 @@ throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
 for (true ? 0 : 0 in {}; false; ) ;
-                  ^------- error
+                  ^^------- error
 `````
 
 ### Strict mode

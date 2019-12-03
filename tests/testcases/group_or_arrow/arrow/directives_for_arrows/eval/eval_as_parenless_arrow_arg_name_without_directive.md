@@ -69,7 +69,7 @@ throws: Parser error!
   Can not use `eval` as arg name in strict mode
 
 eval => {}
-     ^------- error
+^^^^------- error
 `````
 
 

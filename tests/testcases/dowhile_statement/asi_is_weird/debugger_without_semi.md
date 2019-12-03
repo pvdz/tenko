@@ -37,7 +37,7 @@ throws: Parser error!
   Unable to ASI
 
 do debugger while(x) x
-            ^------- error
+            ^^^^^------- error
 `````
 
 ### Strict mode

@@ -63,7 +63,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 {}(01)
-   ^------- error
+   ^^------- error
 `````
 
 

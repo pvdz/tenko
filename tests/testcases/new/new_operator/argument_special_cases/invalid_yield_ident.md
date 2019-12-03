@@ -59,7 +59,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode (at EOF)
 
 new yield
-    ^------- error
+    ^^^^^------- error
 `````
 
 

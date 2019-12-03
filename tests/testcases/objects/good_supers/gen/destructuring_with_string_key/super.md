@@ -37,7 +37,7 @@ throws: Parser error!
 class x extends y {
   constructor() {
     ({"foo": super} = x)
-                  ^------- error
+             ^^^^^------- error
 
   }
 }

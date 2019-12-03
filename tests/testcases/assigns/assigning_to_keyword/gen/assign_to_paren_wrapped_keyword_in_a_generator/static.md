@@ -86,11 +86,11 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (static) as a variable name because: `static` is a reserved word in strict mode
+  Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
 function *f(){
   (static) = 1;
-         ^------- error
+   ^^^^^^------- error
 
 }
 `````

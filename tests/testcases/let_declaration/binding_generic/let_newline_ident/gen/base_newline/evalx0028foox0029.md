@@ -46,7 +46,7 @@ throws: Parser error!
 
 let
 eval(foo)
-^------- error
+^^^^------- error
 `````
 
 

@@ -30,7 +30,7 @@ throws: Parser error!
   Cannot parse a class declaration here, only expecting statements here
 
 do class X {}; while (x);
-   ^------- error
+   ^^^^^------- error
 `````
 
 ### Strict mode

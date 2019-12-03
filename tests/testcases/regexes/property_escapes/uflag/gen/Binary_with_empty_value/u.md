@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: The escaped property value `` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 /\P{Script_Extensions=}/u;
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -55,6 +55,6 @@ throws: Lexer error!
     Regex: The escaped property value `` is not valid (does not appear in "table 56" nor "table 57"); Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\P{Script_Extensions=}/u;
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 

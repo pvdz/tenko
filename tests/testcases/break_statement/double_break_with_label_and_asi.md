@@ -31,7 +31,7 @@ throws: Parser error!
 
 foo: break foo
 break;
-     ^------- error
+^^^^^------- error
 `````
 
 ### Strict mode

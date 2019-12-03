@@ -88,7 +88,7 @@ throws: Parser error!
 function *f() {
   let
   implements
-  ^------- error
+  ^^^^^^^^^^------- error
 
 }
 `````

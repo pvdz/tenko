@@ -45,10 +45,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (eval) as a variable name because: Cannot create a binding named `eval` in strict mode
+  Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
 export var eval = x;
-           ^------- error
+           ^^^^------- error
 `````
 
 

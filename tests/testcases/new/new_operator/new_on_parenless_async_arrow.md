@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot apply `new` to an (async) arrow
 
 new async x => x
-          ^------- error
+    ^^^^^^^------- error
 `````
 
 ### Strict mode

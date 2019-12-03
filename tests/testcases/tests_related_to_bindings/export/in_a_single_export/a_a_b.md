@@ -57,7 +57,7 @@ throws: Parser error!
   Tried to export the name `a` twice
 
 var a, b; export {a, a, b}
-                      ^------- error
+                     ^------- error
 `````
 
 

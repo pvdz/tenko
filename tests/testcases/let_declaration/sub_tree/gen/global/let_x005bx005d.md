@@ -34,7 +34,7 @@ throws: Parser error!
 
 let
 []
- ^------- error
+  ^------- error at EOF
 `````
 
 ### Strict mode

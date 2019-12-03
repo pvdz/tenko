@@ -40,7 +40,7 @@ throws: Lexer error!
 function f(){
   return
   / x
-  ^------- error
+  ^^^------- error
 
 }
 `````

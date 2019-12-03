@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Illegal character after pseudo group marker `(?` [ord=120]
 
 match(/(?x.).kx/u)
-      ^------- error
+      ^^^^^^^^^^------- error
 `````
 
 ### Strict mode

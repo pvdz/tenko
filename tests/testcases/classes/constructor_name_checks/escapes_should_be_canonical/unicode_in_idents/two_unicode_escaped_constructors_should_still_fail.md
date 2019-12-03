@@ -29,7 +29,7 @@ throws: Parser error!
   Classes may only have one constructor
 
 class x { constructor(){}; \u0063onstructor(){}; }
-                                               ^------- error
+                           ^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

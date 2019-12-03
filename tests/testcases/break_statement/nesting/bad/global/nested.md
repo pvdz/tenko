@@ -29,7 +29,7 @@ throws: Parser error!
   Can only `break` without label inside a `switch` or loop (at EOF)
 
 if (x) break
-       ^------- error
+       ^^^^^------- error
 `````
 
 ### Strict mode

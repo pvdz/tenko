@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static get super(){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

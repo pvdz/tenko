@@ -30,7 +30,7 @@ throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
 function *f(){  class x{constructor(a=yield x){}}  }
-                                            ^------- error
+                                      ^^^^^------- error
 `````
 
 ### Strict mode

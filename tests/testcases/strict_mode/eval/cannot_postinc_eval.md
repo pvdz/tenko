@@ -60,7 +60,7 @@ throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
 eval++
-    ^------- error
+    ^^------- error
 `````
 
 

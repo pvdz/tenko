@@ -781,7 +781,7 @@ function Lexer(
         return parseBackslash(); // An ident that starts with a unicode escape can be valid
     }
 
-    THROW('Unknown input');
+    THROW('Unknown input', pointer - 1, pointer);
   }
 
   function incrementLine() {
@@ -1558,7 +1558,8 @@ function Lexer(
         (c >= $$0_30 && c <= $$9_39)                        // DecimalDigit, not even sure about an example
       )
     ) {
-      return THROW2('Found `' + String.fromCharCode(c) + '`. It is not legal for an ident or number token to start after a number token without some form of separation', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+      // TODO: improve semantic errors (change the error output and see what tests change). For example, using digits >1 for binary notation, or `n` when bigint is not supported, or E without an actual exponent value
+      return THROW('Found `' + String.fromCharCode(c) + '`. It is not legal for an ident or number token to start after a number token without some form of separation', pointer, pointer);
     }
   }
 
@@ -1590,7 +1591,7 @@ function Lexer(
         }
         if (e === $$N_6E) {
           if (!supportBigInt) {
-            return THROW2('BigInt suffix is not supported on legacy octals; use the `0o` prefix notation for that', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+            return THROW('BigInt suffix is not supported on legacy octals; use the `0o` prefix notation for that', startForError, pointer + 1);
           }
         }
         // The dot may still lead to valid (though obscure) code: `01.foo` is the same as `1..foo`
@@ -1616,7 +1617,7 @@ function Lexer(
     } else if (c === $$N_6E) {
       // [v] `0n`
       if (!supportBigInt) {
-        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+        return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_DEC;
@@ -1638,7 +1639,7 @@ function Lexer(
         // BigInt (ES2020 / ES11)
         // [v] `5464354354353n`
         if (!supportBigInt) {
-          return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+          return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer);
         }
         ASSERT_skip($$N_6E);
         verifyCharAfterNumber();
@@ -1720,7 +1721,7 @@ function Lexer(
       // BigInt (ES2020 / ES11)
       // [v] `0x54a643D54354353n`
       if (!supportBigInt) {
-        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+        return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_HEX;
@@ -1759,7 +1760,7 @@ function Lexer(
       // BigInt (ES2020 / ES11)
       // [v] `0o0043175346024n`
       if (!supportBigInt) {
-        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+        return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_OCT;
@@ -1792,7 +1793,7 @@ function Lexer(
       // BigInt (ES2020 / ES11)
       // [v] `0b10100110101011010101001010110100001101n`
       if (!supportBigInt) {
-        return THROW2('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+        return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
       }
       ASSERT_skip($$N_6E);
       return $NUMBER_BIG_DEC;
@@ -1921,7 +1922,7 @@ function Lexer(
       ASSERT_skip($$U_75);
     } else {
       // any other escape is not supported in identifiers
-      return THROW2('Only unicode escapes are supported in identifier escapes', startForError, startForError + 1); // TODO: this offset is incorrect, it should use pointer
+      return THROW('Only unicode escapes are supported in identifier escapes', startForError, pointer + 1);
     }
 
     if (eof()) {
@@ -2615,7 +2616,7 @@ function Lexer(
             let l = namedBackRefs.length;
             for (let i=0;i<l;++i) {
               if (groupNames['#' + namedBackRefs[i]] === undefined) {
-                return THROW2('Named back reference \\k<' + namedBackRefs[i] +'> was not defined in this regex: ' + JSON.stringify(groupNames).replace(/"/g,''), startForError, startForError + 1); // TODO: use stop
+                return THROW('Named back reference \\k<' + namedBackRefs[i] +'> was not defined in this regex: ' + JSON.stringify(groupNames).replace(/"/g,''), startForError, pointer + 1);
               }
             }
           }
@@ -2714,7 +2715,7 @@ function Lexer(
                 c = peek();
                 if (c === $$IS_3D || c === $$EXCL_21) {
                   if (!supportRegexLookbehinds) {
-                    return THROW2('Lookbehinds in regular expressions are not supported in the currently targeted language version', startForError, startForError + 1); // TODO: use stop
+                    return THROW('Lookbehinds in regular expressions are not supported in the currently targeted language version', startForError, pointer + 1);
                   }
                   // (?<= (?<!
                   ASSERT_skip(c);
@@ -3425,7 +3426,7 @@ function Lexer(
         // Ok, atom escape was acceptable but only without u-flag
         return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
     }
-    THROW('dis be dead code');
+    THROW('dis be dead code', pointer, pointer);
   }
   function parseRegexDecimalEscape(c) {
     // parseBackReference
@@ -4576,7 +4577,9 @@ function Lexer(
           ++y;
           break;
         case $$S_73:
-          if (!supportRegexDotallFlag) THROW('The dotall flag `s` is not supported in the currently targeted language version');
+          if (!supportRegexDotallFlag) {
+            return THROW('The dotall flag `s` is not supported in the currently targeted language version', pointer, pointer);
+          }
           ++s; // dotall flag was added in es9 / es2018
           break;
         case $$BACKSLASH_5C:
@@ -5037,23 +5040,11 @@ function Lexer(
     return $ERROR;
   }
 
-  function THROW(str) {
+  function THROW(str, tokenStart, tokenStop) {
     $error('Throwing this error:', str);
-    _THROW('Lexer error! ' + str, lastOffset, pointer); // TODO: add str as second param?
+    _THROW('Lexer error! ' + str, tokenStart, tokenStop); // TODO: add str as second param?
   }
-  function THROW2(str, tokenStart, tokenStop) {
-    $error('Throwing this error:', str);
-    _THROW2('Lexer error! ' + str, tokenStart, tokenStop); // TODO: add str as second param?
-  }
-  function _THROW(str, DONOTUSE, DONOTUSEEITHER, msg = '', fullErrorContext = false) {
-    $log('\n');
-    let ectxt = getCurrentErrorContext(msg, fullErrorContext); // TODO: use other context func
-    let context = '\n`````\n' + ectxt + (ectxt[ectxt.length-1] === '\n' ? '' : '\n') + '`````\n';
-    $log('Error at:' + context);
-    if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
-    else $error(str);
-  }
-  function _THROW2(str, tokenStart, tokenStop, msg = '', fullErrorContext = false) {
+  function _THROW(str, tokenStart, tokenStop, msg = '', fullErrorContext = false) {
     $log('\n');
     let ectxt = getErrorContext(tokenStart, tokenStop, msg, fullErrorContext);
     let context = '\n`````\n' + ectxt + (ectxt[ectxt.length-1] === '\n' ? '' : '\n') + '`````\n';
@@ -5061,14 +5052,9 @@ function Lexer(
     if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
     else $error(str);
   }
-  function getCurrentErrorContext(msg, fullErrorContext) {
-    let offset = startForError || pointer;
-    return getErrorContext(offset, offset + 1, msg, fullErrorContext);
-  }
   function getErrorContext(tokenStart, tokenStop, msg = '', fullErrorContext = false) {
     ASSERT(getErrorContext.length >= 2 && getErrorContext.length <= 4, 'arg count');
     ASSERT(tokenStart <= tokenStop, 'should have a positive length range', tokenStart, tokenStop);
-    tokenStop = tokenStart + 1; // TODO: remove this line
     let inputOffset = 0;
     if (!fullErrorContext && tokenStart > 100) inputOffset = tokenStart - 100;
     let inputLen = input.length;
@@ -5110,22 +5096,18 @@ function Lexer(
     nextToken: nextToken,
     asi: addAsi,
     throw: _THROW,
-    throw2: _THROW2,
     lexError: function() {
       if (lastReportableLexerError) {
-        THROW2(lastReportableLexerError, startForError,  startForError + 1); // TODO: set stop
+        THROW(lastReportableLexerError, startForError,  pointer);
       }
       if (lastPotentialRegexError) {
-        THROW2(lastPotentialRegexError, startForError,  startForError + 1); // TODO: set stop
+        THROW(lastPotentialRegexError, startForError,  pointer);
       }
       ASSERT(false, 'lexError should only be called if a lexer error was actually detected');
-      THROW('Parser thought lexer threw an error but lexer has no error message prepared so ... please file an issue with this input?');
+      THROW('Parser thought lexer threw an error but lexer has no error message prepared so ... please file an issue with this input?', pointer, pointer);
     },
     getTokenCountAny: function(){ return anyTokenCount; },
     getTokenCountSolid: function(){ return solidTokenCount; },
-    getErrorContext: getErrorContext,
-    getCurrentErrorContext: getCurrentErrorContext,
-    regexerror: function(){ return lastPotentialRegexError; },
     prevEndColumn: function(){ return prevTokenEndColumn; },
     prevEndLine: function(){ return prevTokenEndLine; },
     prevEndPointer: function(){ return prevTokenEndPointer; },

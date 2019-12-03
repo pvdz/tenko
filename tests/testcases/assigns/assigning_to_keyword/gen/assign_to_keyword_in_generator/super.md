@@ -34,7 +34,7 @@ throws: Parser error!
 
 function *f(){
   super = 1;
-        ^------- error
+  ^^^^^------- error
 
 }
 `````

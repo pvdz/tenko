@@ -39,7 +39,7 @@ throws: Lexer error!
     Regex: name contained a character that is only a valid identifier with u-flag; Missing closing angle bracket of name of capturing group
 
 /(?<abc@{x1d7d0}@def>foo\k<abc@{xfffd}@def>)/u
-^------- error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

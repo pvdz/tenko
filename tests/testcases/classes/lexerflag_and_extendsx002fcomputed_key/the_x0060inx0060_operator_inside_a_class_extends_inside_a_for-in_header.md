@@ -31,7 +31,7 @@ throws: Parser error!
   Expected the opening curly `{` of a class body, found `in` instead
 
 for (class x extends a in b {} in c);
-                       ^------- error
+                       ^^------- error
 `````
 
 ### Strict mode

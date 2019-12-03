@@ -29,7 +29,7 @@ throws: Parser error!
   The left side of a `for-of` and `for-in` can not be an assignment, even if it is a BindingPattern
 
 for ({x} = 0 in {});
-             ^------- error
+         ^------- error
 `````
 
 ### Strict mode

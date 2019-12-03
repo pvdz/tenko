@@ -33,7 +33,7 @@ throws: Lexer error!
     Regex: Found invalid escape character at the start of a group name identifier
 
 /(?<\0141>.)/u;
-^------- error
+^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

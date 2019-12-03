@@ -31,7 +31,7 @@ throws: Parser error!
   The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
 async ({await}) => x
-                ^------- error
+^^^^^------- error
 `````
 
 ### Strict mode
@@ -46,10 +46,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (await) as a variable name because: Await is illegal as var name with module goal
+  Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
 async ({await}) => x
-             ^------- error
+        ^^^^^------- error
 `````
 
 

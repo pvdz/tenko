@@ -77,7 +77,7 @@ throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
 let: foo;
-   ^------- error
+^^^------- error
 `````
 
 

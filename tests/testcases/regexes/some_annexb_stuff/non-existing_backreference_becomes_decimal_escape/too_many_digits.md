@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Parsed too many digits
 
 /foo \1234 bar/
-^------- error
+^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

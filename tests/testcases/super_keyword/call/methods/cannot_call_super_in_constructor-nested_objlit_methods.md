@@ -30,7 +30,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 class A { constructor(){  let x = { foo(){ super(); } };  }}
-                                                ^------- error
+                                           ^^^^^^------- error
 `````
 
 ### Strict mode

@@ -33,7 +33,7 @@ throws: Parser error!
   Unable to ASI
 
 034.1
-   ^------- error
+   ^^------- error
 `````
 
 ### Strict mode
@@ -45,7 +45,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 034.1
-^------- error
+^^^------- error
 `````
 
 

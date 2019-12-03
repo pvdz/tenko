@@ -29,7 +29,7 @@ throws: Parser error!
   Can only increment or decrement an identifier or member expression (at EOF)
 
 ++new x()
-        ^------- error
+         ^------- error at EOF
 `````
 
 ### Strict mode

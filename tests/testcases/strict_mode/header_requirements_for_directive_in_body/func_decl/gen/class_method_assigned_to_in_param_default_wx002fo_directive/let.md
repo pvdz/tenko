@@ -34,7 +34,7 @@ throws: Parser error!
 
 class A {
   e(x=let=10){ }
-         ^------- error
+      ^^^------- error
 
 }
 `````

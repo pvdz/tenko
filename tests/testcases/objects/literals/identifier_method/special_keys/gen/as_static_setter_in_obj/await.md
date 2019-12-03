@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static set await(x){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

@@ -32,7 +32,7 @@ throws: Parser error!
 
 async function f(){
   for await ((x)=>{} of y);
-                     ^------- error
+  ^^^^^^^^^^^^^^^^^^^^^------- error
 
 }
 `````

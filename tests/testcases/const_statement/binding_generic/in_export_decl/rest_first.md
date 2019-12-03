@@ -53,7 +53,7 @@ throws: Parser error!
   Expected identifier, or array/object destructuring
 
 export const ...a = 1;
-             ^------- error
+             ^^^------- error
 `````
 
 

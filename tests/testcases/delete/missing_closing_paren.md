@@ -31,7 +31,7 @@ throws: Parser error!
   Expecting at least one more closing paren, found `is` instead
 
 delete ((false) > th is)
-                     ^------- error
+                     ^^------- error
 `````
 
 ### Strict mode

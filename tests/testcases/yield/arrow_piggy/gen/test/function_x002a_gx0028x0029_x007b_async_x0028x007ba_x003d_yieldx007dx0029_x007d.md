@@ -36,8 +36,9 @@ throws: Parser error!
 
 function * g() {
   async ({a = yield})
+        ^^^^^^^^^^^^^^^------- error
+
 }
-^------- error
 `````
 
 ### Strict mode

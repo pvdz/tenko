@@ -29,7 +29,7 @@ throws: Parser error!
   A `yield` expression is not allowed here
 
 function f(){  class x extends yield { }  }
-                               ^------- error
+                               ^^^^^------- error
 `````
 
 ### Strict mode

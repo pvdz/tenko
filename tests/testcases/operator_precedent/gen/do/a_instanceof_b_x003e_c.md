@@ -31,7 +31,7 @@ throws: Parser error!
   Unable to ASI
 
 do a instanceof b > c while (x);
-                      ^------- error
+                      ^^^^^------- error
 `````
 
 ### Strict mode

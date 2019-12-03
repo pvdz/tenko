@@ -36,7 +36,7 @@ throws: Lexer error!
 
 do
 /x while (x)
-^------- error
+^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

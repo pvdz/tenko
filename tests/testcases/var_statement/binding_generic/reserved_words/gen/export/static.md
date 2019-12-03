@@ -46,10 +46,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (static) as a variable name because: `static` is a reserved word in strict mode
+  Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
 export var static = 10;
-           ^------- error
+           ^^^^^^------- error
 `````
 
 

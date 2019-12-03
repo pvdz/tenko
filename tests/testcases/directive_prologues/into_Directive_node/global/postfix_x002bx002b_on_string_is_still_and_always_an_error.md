@@ -29,7 +29,7 @@ throws: Parser error!
   Cannot postfix `++` a non-assignable value
 
 "ignore me"++
-           ^------- error
+           ^^------- error
 `````
 
 ### Strict mode

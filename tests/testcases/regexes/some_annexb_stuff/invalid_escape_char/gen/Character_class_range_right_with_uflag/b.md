@@ -31,7 +31,7 @@ throws: Lexer error!
     Regex: Encountered incorrect range (left>right) which is illegal with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag
 
 /[a-\b]/u
-^------- error
+^^^^^^^^------- error
 `````
 
 ### Strict mode

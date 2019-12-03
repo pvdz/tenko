@@ -31,7 +31,7 @@ throws: Parser error!
   Missing function param definition closing parenthesis, found `foo` instead
 
 async function x(){ function y(s=await foo){}}
-                                       ^------- error
+                                       ^^^------- error
 `````
 
 ### Strict mode

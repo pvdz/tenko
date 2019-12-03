@@ -45,10 +45,10 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (public) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`public`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 export var public = 10;
-           ^------- error
+           ^^^^^^------- error
 `````
 
 

@@ -42,7 +42,7 @@ throws: Parser error!
 function f() {
   "use strict"
   0777
-  ^------- error
+  ^^^^------- error
 
 }
 `````
@@ -58,7 +58,7 @@ throws: Lexer error!
 function f() {
   "use strict"
   0777
-  ^------- error
+  ^^^^------- error
 
 }
 `````

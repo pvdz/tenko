@@ -31,7 +31,7 @@ throws: Parser error!
   Await is illegal as default arg value
 
 async function f(x=(await z)=y){}
-                          ^------- error
+                    ^^^^^------- error
 `````
 
 ### Strict mode

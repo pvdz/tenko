@@ -128,7 +128,7 @@ throws: Parser error!
 
 async function f() {
   for await ({ eval = 0 } of [{}]) ;
-                          ^------- error
+                          ^^------- error
 
 }
 `````

@@ -34,7 +34,7 @@ throws: Parser error!
 
 ({
   static void(){}
-         ^------- error
+  ^^^^^^------- error
 
 });
 `````

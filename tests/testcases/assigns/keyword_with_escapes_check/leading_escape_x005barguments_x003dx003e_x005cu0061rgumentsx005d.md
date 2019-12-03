@@ -63,10 +63,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (\u0061rguments) as a variable name because: Cannot create a binding named `arguments` in strict mode
+  Cannot use this name (`\u0061rguments`) as a variable name because: Cannot create a binding named `arguments` in strict mode
 
 (\u0061rguments = "sentinal 432432")
-                ^------- error
+ ^^^^^^^^^^^^^^------- error
 `````
 
 

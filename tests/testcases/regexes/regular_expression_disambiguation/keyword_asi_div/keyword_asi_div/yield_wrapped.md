@@ -39,7 +39,7 @@ throws: Lexer error!
 function *f() {
   yield
   /x
-  ^------- error
+  ^^------- error
 
 }
 `````

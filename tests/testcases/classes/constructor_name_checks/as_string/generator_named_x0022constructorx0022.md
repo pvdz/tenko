@@ -31,7 +31,7 @@ throws: Parser error!
   Class constructors can not be generators
 
 class x { *"constructor"(){} }
-                        ^------- error
+          ^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

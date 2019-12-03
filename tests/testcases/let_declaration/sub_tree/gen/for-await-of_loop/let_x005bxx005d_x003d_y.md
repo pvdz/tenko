@@ -31,7 +31,7 @@ throws: Parser error!
   Can only use `for-await` inside an async function
 
 for await (a of b) let [x] = y
-    ^------- error
+^^^^^^^^^------- error
 `````
 
 ### Strict mode

@@ -30,7 +30,7 @@ throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
 class x extends y { constructor(){ async function g(a=super()) { a }; }}
-                                                           ^------- error
+                                                      ^^^^^^------- error
 `````
 
 ### Strict mode

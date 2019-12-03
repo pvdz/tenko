@@ -31,7 +31,7 @@ throws: Parser error!
   Block body arrows can not be immediately tagged without a group
 
 async async => {}`foo`
-                 ^------- error
+                 ^^^^^------- error
 `````
 
 ### Strict mode

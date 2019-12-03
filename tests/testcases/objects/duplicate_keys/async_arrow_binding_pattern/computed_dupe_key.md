@@ -30,7 +30,7 @@ throws: Parser error!
   Arrow had duplicate params
 
 async ({[a]: x, b: x}) => {}
-                          ^------- error
+                   ^------- error
 `````
 
 ### Strict mode

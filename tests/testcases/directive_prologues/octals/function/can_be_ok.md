@@ -36,7 +36,7 @@ throws: Lexer error!
 
 function f() {
     "You \077 ok"
-    ^------- error
+    ^^^^^^^^^^^^^------- error
 
 }
 `````
@@ -51,7 +51,7 @@ throws: Lexer error!
 
 function f() {
     "You \077 ok"
-    ^------- error
+    ^^^^^^^^^^^^^------- error
 
 }
 `````

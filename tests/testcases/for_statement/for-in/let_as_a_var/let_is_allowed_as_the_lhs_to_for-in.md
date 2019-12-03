@@ -66,7 +66,7 @@ throws: Parser error!
   Let binding missing binding names as `let` cannot be a var name in strict mode
 
 for (let in x);
-         ^------- error
+     ^^^^^^------- error
 `````
 
 

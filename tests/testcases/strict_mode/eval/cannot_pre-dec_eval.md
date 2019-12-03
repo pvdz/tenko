@@ -60,7 +60,7 @@ throws: Parser error!
   Cannot inc/dec a non-assignable value as prefix (at EOF)
 
 --eval
-  ^------- error
+^^------- error
 `````
 
 

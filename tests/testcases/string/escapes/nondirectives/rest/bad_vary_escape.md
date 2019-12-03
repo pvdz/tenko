@@ -35,7 +35,7 @@ throws: Lexer error!
 
 debugger;
 "oops \u{110001}"
-^------- error
+^^^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

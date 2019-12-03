@@ -52,7 +52,7 @@ throws: Parser error!
 function *f() {
   let
   arguments.length
-  ^------- error
+  ^^^^^^^^^------- error
 
 }
 `````

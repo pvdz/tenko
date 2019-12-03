@@ -31,7 +31,7 @@ throws: Lexer error!
     Named back reference \k<@{x4c3d}@> was not defined in this regex: {}
 
 /\k<\u4c3d/
-^------- error
+^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

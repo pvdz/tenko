@@ -73,7 +73,7 @@ throws: Lexer error!
     "Illegal" octal escape in strict mode
 
 class x{}(01)
-          ^------- error
+          ^^------- error
 `````
 
 

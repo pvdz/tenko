@@ -29,7 +29,7 @@ throws: Parser error!
   Left part of for-in must be assignable
 
 function *f(){   for (yield x in y in z);   }
-                              ^------- error
+                 ^^^^^^^^^^^^^^^------- error
 `````
 
 ### Strict mode

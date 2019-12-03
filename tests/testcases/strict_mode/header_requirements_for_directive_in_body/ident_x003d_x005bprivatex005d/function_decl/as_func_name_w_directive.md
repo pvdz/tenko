@@ -30,7 +30,7 @@ throws: Parser error!
   Can not use reserved keyword `private` in strict mode as id for function that has a use strict directive
 
 function private(b){ "use strict"; }
-                                   ^------- error
+         ^^^^^^^------- error
 `````
 
 ### Strict mode
@@ -39,10 +39,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Cannot use this name (private) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+  Cannot use this name (`private`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
 function private(b){ "use strict"; }
-         ^------- error
+         ^^^^^^^------- error
 `````
 
 

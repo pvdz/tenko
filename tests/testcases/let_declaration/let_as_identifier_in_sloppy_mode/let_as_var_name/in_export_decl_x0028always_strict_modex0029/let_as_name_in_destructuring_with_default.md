@@ -59,7 +59,7 @@ throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
 export let [let = a] = x;
-                ^------- error
+            ^^^------- error
 `````
 
 

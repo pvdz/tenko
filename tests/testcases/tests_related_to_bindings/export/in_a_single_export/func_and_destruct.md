@@ -57,7 +57,7 @@ throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
 export function x(){}; export let [x] = y;
-                                    ^------- error
+                                   ^------- error
 `````
 
 

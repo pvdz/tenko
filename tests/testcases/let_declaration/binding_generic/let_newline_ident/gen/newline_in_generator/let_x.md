@@ -36,7 +36,7 @@ throws: Parser error!
 function *f() {
   let
   let x
-  ^------- error
+  ^^^------- error
 
 }
 `````

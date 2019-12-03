@@ -36,7 +36,7 @@ throws: Parser error!
 
 arguments
 /x/
-  ^------- error
+   ^------- error at EOF
 `````
 
 ### Strict mode

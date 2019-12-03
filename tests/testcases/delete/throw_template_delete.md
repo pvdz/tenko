@@ -107,7 +107,7 @@ throws: Parser error!
 
 function f() {
   throw `${delete(y)}`;
-                    ^------- error
+                    ^^------- error
 
 }
 `````
