@@ -973,7 +973,7 @@ function Parser(code, options = {}) {
       name: tokenCanon,
     };
     if (babelCompat) identNode.loc.identifierName = tokenCanon;
-    ASSERT(identNode.loc.end.column - identNode.loc.start.column === $tt_identToken._str.length, 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
+    ASSERT(identNode.loc.end.column - identNode.loc.start.column === ($tt_identToken.stop - $tt_identToken.start), 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
 
     return identNode;
   }
@@ -1001,7 +1001,7 @@ function Parser(code, options = {}) {
       }
     }
     else if (isRegexToken($tt_litToken.type)) {
-      ASSERT($tt_litToken._str.split('/').length > 2, 'a regular expression should have at least two forward slashes', $tt_litToken._str);
+      ASSERT(tok_sliceInput($tt_litToken.start, $tt_litToken.stop).split('/').length > 2, 'a regular expression should have at least two forward slashes', tok_sliceInput($tt_litToken.start, $tt_litToken.stop));
       node = AST_setRegexLiteral(astProp, $tt_litToken);
     }
     else {
@@ -1009,7 +1009,7 @@ function Parser(code, options = {}) {
     }
     // It's difficult to make this generic but for idents and literals it's doable
     ASSERT(node, 'should be set by one of the branches');
-    ASSERT($tt_litToken._str.includes('\n') || $tt_litToken._str.includes('\r') || $tt_litToken._str.includes('\u2028') || $tt_litToken._str.includes('\u2029') || node.loc.end.column - node.loc.start.column === ($tt_litToken.stop - $tt_litToken.start), 'for literals the location should only span exactly the length of the lit', node.loc, $tt_litToken);
+    ASSERT(tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\n') || tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\r') || tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\u2028') || tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\u2029') || node.loc.end.column - node.loc.start.column === ($tt_litToken.stop - $tt_litToken.start), 'for literals the location should only span exactly the length of the lit', node.loc, $tt_litToken);
   }
   function AST_getStringNode($tt_stringToken, tokenCanon, fromDirective) {
     ASSERT(AST_getStringNode.length === arguments.length, 'arg count');
@@ -3494,7 +3494,7 @@ function Parser(code, options = {}) {
     //          ^
 
     let paramScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FUNC_PARAMS, 'parseFunctionFromParams(arg)');
-    ASSERT(!void(scoop._funcName = $tt_functionNameTokenToVerify && $tt_functionNameTokenToVerify._str));
+    ASSERT(!void(scoop._funcName = $tt_functionNameTokenToVerify === NO_ID_TO_VERIFY ?  '<anon>' : tok_sliceInput($tt_functionNameTokenToVerify.start, $tt_functionNameTokenToVerify.stop)));
     // `yield` can certainly NOT be a var name if either parent or current function was a generator, so track it
     let paramsSimple = parseFuncArguments(lexerFlags | LF_NO_ASI, paramScoop, bindingFrom, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken);
     ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'the paretocurlyopen should already throw (not assert) if the next token is not a curly open');
@@ -3507,7 +3507,7 @@ function Parser(code, options = {}) {
     }
 
     let finalFuncScope = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseFunctionFromParams(body)');
-    ASSERT(!void(finalFuncScope._funcName = $tt_functionNameTokenToVerify && $tt_functionNameTokenToVerify._str));
+    ASSERT(!void(finalFuncScope._funcName = $tt_functionNameTokenToVerify === NO_ID_TO_VERIFY ? '<anon>' : tok_sliceInput($tt_functionNameTokenToVerify.start, $tt_functionNameTokenToVerify.stop)));
     if (options_exposeScopes) AST_set('$scope', finalFuncScope);
     parseFunctionBody(lexerFlags, finalFuncScope, EMPTY_LABEL_SET, expressionState, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tt_functionNameTokenToVerify, functionNameToVerifyCanon);
   }
@@ -7204,7 +7204,7 @@ function Parser(code, options = {}) {
 
       let identCanon = tok_getCanon();
       // note: if this is the end of the var decl and there is no semi the next line can start with a regex
-      ASSERT_skipRex($tt_bindingTok._str, lexerFlags); // next is `=` or `,` or `;` or asi-continuation
+      ASSERT_skipRex(tok_sliceInput($tt_bindingTok.start, $tt_bindingTok.stop), lexerFlags); // next is `=` or `,` or `;` or asi-continuation
       AST_setIdent(astProp, $tt_identToken, identCanon);
 
       if (
@@ -7358,7 +7358,7 @@ function Parser(code, options = {}) {
   }
   function nonFatalBindingIdentCheckByEnum(lexerFlags, $tt_identToken, identCanon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByEnum.length === arguments.length, 'arg count');
-    ASSERT($tt_identToken._str === identCanon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
+    ASSERT(tok_sliceInput($tt_identToken.start, $tt_identToken.stop) === identCanon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
 
     // This doesn't get hit very often as there's a simple ==$IDENT check that takes the brink
     // of these keyword checks. Since most cases that would fall through would lead to an error, it's only
@@ -7468,7 +7468,7 @@ function Parser(code, options = {}) {
   }
   function nonFatalBindingIdentCheckByString(lexerFlags, $tt_identToken, identCanon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByString.length === arguments.length, 'arg count');
-    ASSERT($tt_identToken._str !== identCanon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
+    ASSERT(tok_sliceInput($tt_identToken.start, $tt_identToken.stop) !== identCanon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
 
     switch (identCanon) {
       // keywords
@@ -8685,14 +8685,14 @@ function Parser(code, options = {}) {
       return THROW_RANGE('The unary expression `' + opName + '` is not allowed here', $tt_unaryToken.start, $tt_unaryToken.stop);
     }
 
-    ASSERT_skipToExpressionStart($tt_unaryToken._str, lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
+    ASSERT_skipToExpressionStart(tok_sliceInput($tt_unaryToken.start, $tt_unaryToken.stop), lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
 
     return _parseUnary(lexerFlags, $tt_unaryToken, opName, isNewArg, astProp);
   }
   function _parseUnary(lexerFlags, $tt_unaryToken, opName, isNewArg, astProp) {
     ASSERT(_parseUnary.length === arguments.length, 'arg count');
     ASSERT(['+', '-', '~', '!', 'void', 'typeof'].includes(opName), '++, --, delete, new, yield, and await have special parsers', opName);
-    ASSERT($tt_unaryToken._str === opName, 'should match', opName, $tt_unaryToken+'');
+    ASSERT(tok_sliceInput($tt_unaryToken.start, $tt_unaryToken.stop) === opName, 'should match', opName, $tt_unaryToken+'');
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
 
     if (isNewArg === IS_NEW_ARG) {
@@ -11252,7 +11252,7 @@ function Parser(code, options = {}) {
       let $t_litToken_stop = tok_getStop();
 
       let litCanon = tok_getCanon();
-      ASSERT_skipToColonParenOpen($tt_litToken._str, lexerFlags);
+      ASSERT_skipToColonParenOpen(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
 
       if (tok_getType() === $PUNC_COLON) {
         // Any key-colon combo is destructible, the "value" determines assign/binding/both destructibility:
@@ -11460,7 +11460,7 @@ function Parser(code, options = {}) {
 
         let litCanon = tok_getCanon();
 
-        ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
         AST_setLiteral(astProp, $tt_litToken, litCanon);
 
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, $tt_starToken, UNDEF_GET, UNDEF_SET, $tt_litToken, undefined, astProp);
@@ -12219,7 +12219,7 @@ function Parser(code, options = {}) {
         let $t_litToken_stop = tok_getStop();
 
         let litCanon = tok_getCanon();
-        ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
         AST_setLiteral(astProp, $tt_litToken, litCanon);
         parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, undefined, astProp);
       } else if (tok_getType() === $PUNC_BRACKET_OPEN) {
@@ -12279,7 +12279,7 @@ function Parser(code, options = {}) {
       let $t_litToken_stop = tok_getStop();
 
       let litCanon = tok_getCanon();
-      ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+      ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
       AST_setLiteral(astProp, $tt_litToken, litCanon);
 
       parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, undefined, astProp);
@@ -13041,7 +13041,7 @@ function Parser(code, options = {}) {
     let $t_litToken_stop = tok_getStop();
 
     let litCanon = tok_getCanon();
-    ASSERT_skipToParenOpenOrDie($tt_litToken._str, lexerFlags);
+    ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
     AST_setLiteral(astProp, $tt_litToken, litCanon);
 
     // [v]: `class A {"x"(){}}`
@@ -13914,7 +13914,6 @@ function Parser(code, options = {}) {
     ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
     ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
     ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
-    ASSERT($tt_keyToken === undefined || $tt_keyToken._str !== undefined, 'keyToken is a token');
     ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.type) || isNumberStringToken($tt_keyToken.type)), 'keyToken is a number, string or ident', ''+$tt_keyToken);
     ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN);
 

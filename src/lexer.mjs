@@ -522,9 +522,11 @@ function Lexer(
   }
 
   function slice(from, to) {
-    ASSERT(typeof from === 'number' && from >= 0 && from <= len, 'from shoud be valid index');
-    ASSERT(typeof to === 'number' && to >= 0 && to <= len, 'to shoud be valid index');
-    ASSERT(arguments.length === 2, 'two args');
+    ASSERT(slice.length === arguments.length, 'arg count');
+    ASSERT(typeof from === 'number', '`from` should be valid number', from, to);
+    ASSERT(typeof to === 'number', '`to` should be valid number', from, to);
+    ASSERT(from >= 0 && from <= len, '`from` should be valid index', from, to);
+    ASSERT( to >= 0 && to <= len, '`to` should be valid index', from, to);
 
     return input.slice(from, to);
   }
@@ -824,12 +826,11 @@ function Lexer(
     // <SCRUB DEV>
     token = {
       _t: toktypeToString(type),
-      get _str() { return input.slice(start, stop); },
 
       ...token,
 
       toString() {
-        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${token._str}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
+        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${slice(start, stop)}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
       },
     };
     // </SCRUB DEV>
