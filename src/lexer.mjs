@@ -860,6 +860,12 @@ function Lexer(
       stop, // start of next token
       column, // of first char of token
       line, // of first char of token
+      // To be used inside asserts only (webstorm regex \w matches underscore but not dollar):
+      $type: type,
+      $start: start,
+      $stop: stop, // start of next token
+      $column: column, // of first char of token
+      $line: line, // of first char of token
     };
   }
 

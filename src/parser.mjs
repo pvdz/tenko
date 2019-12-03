@@ -924,17 +924,17 @@ function Parser(code, options = {}) {
   function AST_setIdent(astProp, $tt_identToken, $tp_identToken_canon) {
     ASSERT(AST_setIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof $tt_identToken === 'object' && $tt_identToken && typeof $tt_identToken.type === 'number', 'should receive token');
-    ASSERT($tt_identToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
-    ASSERT(isIdentToken($tt_identToken.type), 'token must be ident');
+    ASSERT(typeof $tt_identToken === 'object' && $tt_identToken && typeof $tt_identToken.$type === 'number', 'should receive token');
+    ASSERT($tt_identToken.$start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
+    ASSERT(isIdentToken($tt_identToken.$type), 'token must be ident');
 
     let identNode = AST_getIdentNode($tt_identToken, $tp_identToken_canon);
     return AST_setNode(astProp, identNode); // only for ASSERTS
   }
   function AST_getIdentNode($tt_identToken, $tp_identToken_canon) {
     ASSERT(AST_getIdentNode.length === arguments.length, 'arg count');
-    ASSERT(typeof $tt_identToken === 'object' && $tt_identToken && typeof $tt_identToken.type === 'number', 'should receive token');
-    ASSERT(isIdentToken($tt_identToken.type), 'token must be ident');
+    ASSERT(typeof $tt_identToken === 'object' && $tt_identToken && typeof $tt_identToken.$type === 'number', 'should receive token');
+    ASSERT(isIdentToken($tt_identToken.$type), 'token must be ident');
     ASSERT(typeof $tp_identToken_canon === 'string');
     ASSERT($tp_identToken_canon === $tp_identToken_canon);
 
@@ -952,7 +952,7 @@ function Parser(code, options = {}) {
       name: $tp_identToken_canon,
     };
     if (babelCompat) identNode.loc.identifierName = $tp_identToken_canon;
-    ASSERT(identNode.loc.end.column - identNode.loc.start.column === ($tt_identToken.stop - $tt_identToken.start), 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
+    ASSERT(identNode.loc.end.column - identNode.loc.start.column === ($tt_identToken.$stop - $tt_identToken.$start), 'for idents the location should only span exactly the length of the ident and cannot hold newlines');
 
     return identNode;
   }
@@ -965,8 +965,8 @@ function Parser(code, options = {}) {
     ASSERT(typeof $tt_litToken === 'object', 'token is obj');
     ASSERT(_path.length > 0, 'path shouldnt be empty');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
-    ASSERT(isNumberStringRegex($tt_litToken.type), 'should be number or string');
-    ASSERT($tt_litToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
+    ASSERT(isNumberStringRegex($tt_litToken.$type), 'should be number or string');
+    ASSERT($tt_litToken.$start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     let node; // for assert
     if (isStringToken($tt_litToken.type)) {
@@ -980,15 +980,15 @@ function Parser(code, options = {}) {
       }
     }
     else if (isRegexToken($tt_litToken.type)) {
-      ASSERT(tok_sliceInput($tt_litToken.start, $tt_litToken.stop).split('/').length > 2, 'a regular expression should have at least two forward slashes', tok_sliceInput($tt_litToken.start, $tt_litToken.stop));
+      ASSERT(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop).split('/').length > 2, 'a regular expression should have at least two forward slashes', tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop));
       node = AST_setRegexLiteral(astProp, $tt_litToken);
     }
     else {
-      ASSERT(false, 'what kind of literal is this?', T($tt_litToken.type), isNumberToken($tt_litToken.type));
+      ASSERT(false, 'what kind of literal is this?', T($tt_litToken.$type), isNumberToken($tt_litToken.$type));
     }
     // It's difficult to make this generic but for idents and literals it's doable
     ASSERT(node, 'should be set by one of the branches');
-    ASSERT(tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\n') || tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\r') || tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\u2028') || tok_sliceInput($tt_litToken.start, $tt_litToken.stop).includes('\u2029') || node.loc.end.column - node.loc.start.column === ($tt_litToken.stop - $tt_litToken.start), 'for literals the location should only span exactly the length of the lit', node.loc, $tt_litToken);
+    ASSERT(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop).includes('\n') || tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop).includes('\r') || tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop).includes('\u2028') || tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop).includes('\u2029') || node.loc.end.column - node.loc.start.column === ($tt_litToken.$stop - $tt_litToken.$start), 'for literals the location should only span exactly the length of the lit', node.loc, $tt_litToken);
   }
   function AST_getStringNode($tt_stringToken, $tp_stringToken_canon, fromDirective) {
     ASSERT(AST_getStringNode.length === arguments.length, 'arg count');
@@ -1008,8 +1008,8 @@ function Parser(code, options = {}) {
   function AST_setStringLiteral(astProp, $tt_stringToken, $tp_stringToken_canon, fromDirective) {
     ASSERT(AST_setStringLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof $tt_stringToken === 'object' && $tt_stringToken && typeof $tt_stringToken.type === 'number', 'should receive token');
-    ASSERT($tt_stringToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
+    ASSERT(typeof $tt_stringToken === 'object' && $tt_stringToken && typeof $tt_stringToken.$type === 'number', 'should receive token');
+    ASSERT($tt_stringToken.$start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
@@ -1050,8 +1050,8 @@ function Parser(code, options = {}) {
   function AST_setNumberLiteral(astProp, $tt_numberToken) {
     ASSERT(AST_setNumberLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.type === 'number', 'should receive token');
-    ASSERT($tt_numberToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_numberToken, tok_getStart());
+    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.$type === 'number', 'should receive token');
+    ASSERT($tt_numberToken.$start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_numberToken, tok_getStart());
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
@@ -1084,8 +1084,8 @@ function Parser(code, options = {}) {
   function AST_setBigInt(astProp, $tt_numberToken) {
     ASSERT(AST_setBigInt.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.type === 'number', 'should receive token', $tt_numberToken, typeof $tt_numberToken === 'object', $tt_numberToken && typeof $tt_numberToken.type === 'number');
-    ASSERT($tt_numberToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_numberToken, tok_getStart());
+    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.$type === 'number', 'should receive token', $tt_numberToken, typeof $tt_numberToken === 'object', $tt_numberToken && typeof $tt_numberToken.$type === 'number');
+    ASSERT($tt_numberToken.$start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_numberToken, tok_getStart());
 
     let bigintNode = AST_getBigIntNode($tt_numberToken);
     return AST_setNode(astProp, bigintNode); // for ASSERTs only!
@@ -1122,8 +1122,8 @@ function Parser(code, options = {}) {
   function AST_setRegexLiteral(astProp, $tt_regexToken) {
     ASSERT(AST_setRegexLiteral.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
-    ASSERT(typeof $tt_regexToken === 'object' && $tt_regexToken && typeof $tt_regexToken.type === 'number', 'should receive token', $tt_regexToken, typeof $tt_regexToken === 'object', $tt_regexToken && typeof $tt_regexToken.type === 'number');
-    ASSERT($tt_regexToken.start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_regexToken, tok_getStart());
+    ASSERT(typeof $tt_regexToken === 'object' && $tt_regexToken && typeof $tt_regexToken.$type === 'number', 'should receive token', $tt_regexToken, typeof $tt_regexToken === 'object', $tt_regexToken && typeof $tt_regexToken.$type === 'number');
+    ASSERT($tt_regexToken.$start !== tok_getStart(), 'token should be consumed to ensure location data is correct', $tt_regexToken, tok_getStart());
 
     let regexNode = AST_getRegexNode($tt_regexToken);
     return AST_setNode(astProp, regexNode); // for ASSERTs only!
@@ -1460,7 +1460,7 @@ function Parser(code, options = {}) {
   }
   function AST_babelGetStringNode($tt_stringToken, $tp_stringToken_canon, fromDirective) {
     ASSERT(AST_babelGetStringNode.length === arguments.length, 'arg count');
-    ASSERT(typeof $tt_stringToken === 'object' && $tt_stringToken && typeof $tt_stringToken.type === 'number', 'should receive token', [$tt_stringToken, typeof $tt_stringToken === 'object', $tt_stringToken && typeof $tt_stringToken.type === 'number']);
+    ASSERT(typeof $tt_stringToken === 'object' && $tt_stringToken && typeof $tt_stringToken.$type === 'number', 'should receive token', [$tt_stringToken, typeof $tt_stringToken === 'object', $tt_stringToken && typeof $tt_stringToken.$type === 'number']);
 
     // TODO: is a destructuring more efficient pref-wise? `let {canon, str, ...} = token`. It may be :)
 
@@ -1477,7 +1477,7 @@ function Parser(code, options = {}) {
   }
   function AST_babelGetNumberNode($tt_numberToken) {
     ASSERT(AST_babelGetNumberNode.length === arguments.length, 'arg count');
-    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.type === 'number', 'should receive token', [$tt_numberToken, typeof $tt_numberToken === 'object', $tt_numberToken && typeof $tt_numberToken.type === 'number']);
+    ASSERT(typeof $tt_numberToken === 'object' && $tt_numberToken && typeof $tt_numberToken.$type === 'number', 'should receive token', [$tt_numberToken, typeof $tt_numberToken === 'object', $tt_numberToken && typeof $tt_numberToken.$type === 'number']);
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
@@ -1517,7 +1517,7 @@ function Parser(code, options = {}) {
   }
   function AST_babelGetRegexNode($tt_regexToken) {
     ASSERT(AST_babelGetRegexNode.length === arguments.length, 'arg count');
-    ASSERT(typeof $tt_regexToken === 'object' && $tt_regexToken && typeof $tt_regexToken.type === 'number', 'should receive token', [$tt_regexToken, typeof $tt_regexToken === 'object', $tt_regexToken && typeof $tt_regexToken.type === 'number']);
+    ASSERT(typeof $tt_regexToken === 'object' && $tt_regexToken && typeof $tt_regexToken.$type === 'number', 'should receive token', [$tt_regexToken, typeof $tt_regexToken === 'object', $tt_regexToken && typeof $tt_regexToken.$type === 'number']);
 
     // Open a node and immediately close it. Only works if the column offsets do not depend on something being consumed
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
@@ -2973,8 +2973,8 @@ function Parser(code, options = {}) {
   function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, $tt_asyncToken, $tt_functionToken, optionalIdent, isLabelled, fdState, astProp) {
     ASSERT(parseFunctionDeclaration.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerflags number');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT(tok_getStart() === $tt_functionToken.start, 'should not have skipped token yet');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT(tok_getStart() === $tt_functionToken.$start, 'should not have skipped token yet');
     ASSERT_FDS(fdState);
     ASSERT(isLabelled === IS_LABELLED || isLabelled === NOT_LABELLED, 'isLabelled enum');
 
@@ -3130,7 +3130,7 @@ function Parser(code, options = {}) {
   }
   function parseFunctionExpression(lexerFlags, $tt_asyncToken, $tt_functionToken, astProp) {
     ASSERT(parseFunctionExpression.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token', $tt_asyncToken);
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token', $tt_asyncToken);
 
     let $tt_starToken = UNDEF_STAR;
     let $tp_starToken_line = 0;
@@ -3168,7 +3168,7 @@ function Parser(code, options = {}) {
   function parseAsyncFunctionDecl(lexerFlags, $tt_asyncToken, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp) {
     ASSERT(parseAsyncFunctionDecl.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $ID_function, 'already checked, not yet consumed');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
 
     let $tt_functionToken = __oldtok;
     let $tp_functionToken_type = tok_getType();
@@ -3218,12 +3218,12 @@ function Parser(code, options = {}) {
     astProp
   ) {
     ASSERT(arguments.length === parseFunctionAfterKeyword.length, 'arg count must match');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
     ASSERT((isFuncDecl === IS_FUNC_DECL) === (outerScoop !== DO_NOT_BIND), 'outerScoop is only used for func decl ids and required there', isFuncDecl === IS_FUNC_DECL, outerScoop !== DO_NOT_BIND);
-    ASSERT(typeof $tt_firstToken === 'object' && $tt_firstToken && typeof $tt_firstToken.type === 'number', 'token', $tt_firstToken);
+    ASSERT(typeof $tt_firstToken === 'object' && $tt_firstToken && typeof $tt_firstToken.$type === 'number', 'token', $tt_firstToken);
     ASSERT_FDS(fdState);
 
     /*
@@ -3400,7 +3400,7 @@ function Parser(code, options = {}) {
   }
   function getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, $tt_starToken) {
     ASSERT(getFuncIdentGeneratorState.length === arguments.length, 'arg count');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
     ASSERT(isRealFuncExpr === IS_FUNC_EXPR || isRealFuncExpr === NOT_FUNC_EXPR, 'isRealFuncExpr enum');
 
     // function idents can never be `yield` with the module goal
@@ -3411,7 +3411,7 @@ function Parser(code, options = {}) {
   }
   function getFuncIdentAsyncState(isRealFuncExpr, enclosingScopeFlags, $tt_asyncToken) {
     ASSERT(getFuncIdentAsyncState.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT(isRealFuncExpr === IS_FUNC_EXPR || isRealFuncExpr === NOT_FUNC_EXPR, 'isRealFuncExpr enum (2)');
 
     // function idents can never be `await` with the module goal
@@ -3422,16 +3422,16 @@ function Parser(code, options = {}) {
   }
   function getFuncIdentAsyncGenState(isRealFuncExpr, enclosingScopeFlags, $tt_starToken, $tt_asyncToken) {
     ASSERT(getFuncIdentAsyncGenState.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
 
     return getFuncIdentGeneratorState(isRealFuncExpr, enclosingScopeFlags, $tt_starToken) |
       getFuncIdentAsyncState(isRealFuncExpr, enclosingScopeFlags, $tt_asyncToken)
   }
   function resetLexerFlagsForFuncAndArrow(lexerFlags, $tt_starToken, $tt_asyncToken, funcType) {
     ASSERT(resetLexerFlagsForFuncAndArrow.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
 
     // this resets lexerflags for parsing a function from the arguments onwards or for the body of an arrow
     lexerFlags =
@@ -3458,10 +3458,10 @@ function Parser(code, options = {}) {
   }
   function parseFunctionFromParams(lexerFlags, scoop, bindingFrom, expressionState, isClassConstructor, $tt_functionNameToVerifyToken, $tp_functionNameToVerifyToken_canon, isMethod, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken) {
     ASSERT(parseFunctionFromParams.length === arguments.length, 'arg count should match');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
     ASSERT(typeof lexerFlags === 'number');
 
     // - `function f(a){}`
@@ -3470,7 +3470,7 @@ function Parser(code, options = {}) {
     //          ^
 
     let paramScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FUNC_PARAMS, 'parseFunctionFromParams(arg)');
-    ASSERT(!void(scoop._funcName = $tt_functionNameToVerifyToken === NO_ID_TO_VERIFY ?  '<anon>' : tok_sliceInput($tt_functionNameToVerifyToken.start, $tt_functionNameToVerifyToken.stop)));
+    ASSERT(!void(scoop._funcName = $tt_functionNameToVerifyToken === NO_ID_TO_VERIFY ?  '<anon>' : tok_sliceInput($tt_functionNameToVerifyToken.$start, $tt_functionNameToVerifyToken.$stop)));
     // `yield` can certainly NOT be a var name if either parent or current function was a generator, so track it
     let paramsSimple = parseFuncArguments(lexerFlags | LF_NO_ASI, paramScoop, bindingFrom, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken);
     ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'the paretocurlyopen should already throw (not assert) if the next token is not a curly open');
@@ -3483,17 +3483,17 @@ function Parser(code, options = {}) {
     }
 
     let finalFuncScope = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseFunctionFromParams(body)');
-    ASSERT(!void(finalFuncScope._funcName = $tt_functionNameToVerifyToken === NO_ID_TO_VERIFY ? '<anon>' : tok_sliceInput($tt_functionNameToVerifyToken.start, $tt_functionNameToVerifyToken.stop)));
+    ASSERT(!void(finalFuncScope._funcName = $tt_functionNameToVerifyToken === NO_ID_TO_VERIFY ? '<anon>' : tok_sliceInput($tt_functionNameToVerifyToken.$start, $tt_functionNameToVerifyToken.$stop)));
     if (options_exposeScopes) AST_set('$scope', finalFuncScope);
     parseFunctionBody(lexerFlags, finalFuncScope, EMPTY_LABEL_SET, expressionState, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tt_functionNameToVerifyToken, $tp_functionNameToVerifyToken_canon);
   }
   function parseFuncArguments(lexerFlags, scoop, bindingFrom, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken) {
     // parseArguments
     ASSERT(arguments.length === parseFuncArguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
 
     // - `function f(a){}`
     //              ^
@@ -3799,7 +3799,7 @@ function Parser(code, options = {}) {
     ASSERT(parseTickStatement.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
-    ASSERT($tt_tickToken.start === tok_getStart(), 'not yet skipped');
+    ASSERT($tt_tickToken.$start === tok_getStart(), 'not yet skipped');
 
     if (isBadTickToken($tt_tickToken.type)) {
       return THROW_RANGE('Template contained an illegal escape, illegal in a statement', $tt_tickToken.start, $tt_tickToken.start + 1);
@@ -3820,7 +3820,7 @@ function Parser(code, options = {}) {
 
   function parseAsyncStatement(lexerFlags, scoop, $tt_asyncToken, $tp_asyncToken_canon, isExport, exportedBindings, isLabelled, fdState, astProp) {
     ASSERT(parseAsyncStatement.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
 
     // an async statement is almost the same as an expression but it needs to know whether it was in fact
     // an expression or not so it knows how to apply the statement semi/asi.
@@ -3831,7 +3831,7 @@ function Parser(code, options = {}) {
   }
   function parseAsyncExpression(lexerFlags, $tt_asyncToken, $tp_asyncToken_canon, isNewArg, isExport, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(parseAsyncExpression.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // parsed the `async` keyword (-> $tt_asyncToken)
@@ -3840,8 +3840,8 @@ function Parser(code, options = {}) {
   function _parseAsync(lexerFlags, scoop, fromStmtOrExpr, $tt_asyncToken, $tp_asyncToken_canon, isNewArg, isExport, allowAssignment, exportedBindings, isLabelled, fdState, leftHandSideExpression, astProp) {
     ASSERT(_parseAsync.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop = string', astProp);
-    ASSERT($tt_asyncToken !== UNDEF_ASYNC && $tt_asyncToken.type === $ID_async, 'async token should be passed on');
-    ASSERT(tok_getStart() !== $tt_asyncToken.start, 'should have consumed the async keyword');
+    ASSERT($tt_asyncToken !== UNDEF_ASYNC && $tt_asyncToken.$type === $ID_async, 'async token should be passed on');
+    ASSERT(tok_getStart() !== $tt_asyncToken.$start, 'should have consumed the async keyword');
     ASSERT(scoop === DO_NOT_BIND || scoop, 'potentially need scoop, for async func decls (only)');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     // this function will parse tail but NOT parse op and rhs.
@@ -4082,8 +4082,8 @@ function Parser(code, options = {}) {
 
   function parseAwait(lexerFlags, $tt_awaitToken, $tp_awaitToken_canon, isNewArg, allowAssignment, astProp) {
     ASSERT(parseAwait.length === arguments.length, 'arg count');
-    ASSERT($tt_awaitToken.type === $ID_await, 'await token');
-    ASSERT($tt_awaitToken.start !== tok_getStart(), 'await should have been skipped');
+    ASSERT($tt_awaitToken.$type === $ID_await, 'await token');
+    ASSERT($tt_awaitToken.$start !== tok_getStart(), 'await should have been skipped');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // in module: only if lexerFlags allow await (inside async code)
@@ -6093,7 +6093,7 @@ function Parser(code, options = {}) {
     let $tp_identToken_stop = tok_getStop();
     let $tp_identToken_canon = tok_getCanoN();
 
-    ASSERT($tt_identToken.type === $ID_let, 'should pass on the let token');
+    ASSERT($tt_identToken.$type === $ID_let, 'should pass on the let token');
 
     // next token is ident, {, or [ in most cases. In sloppy mode it can also be any valid value tail, operator, and ASI-able.
     ASSERT_skipDiv($ID_let, lexerFlags); // in `let/foo/g` the `/` is always a division, so parse div
@@ -6191,7 +6191,7 @@ function Parser(code, options = {}) {
     let $tp_identToken_stop = tok_getStop();
     let $tp_identToken_canon = tok_getCanoN();
 
-    ASSERT($tt_identToken.type === $ID_let, 'should pass on the let token');
+    ASSERT($tt_identToken.$type === $ID_let, 'should pass on the let token');
 
     // next token is ident, {, or [ in most cases. In sloppy mode it can also be any valid value tail, operator, and ASI-able.
     ASSERT_skipDiv($ID_let, lexerFlags); // in `let/foo/g` the `/` is always a division, so parse div
@@ -6212,8 +6212,8 @@ function Parser(code, options = {}) {
   }
   function _parseLetAsPlainVarNameExpressionStatement(lexerFlags, scoop, labelSet, $tt_identToken, $tp_identToken_canon, fdState, nestedLabels, astProp) {
     ASSERT(_parseLetAsPlainVarNameExpressionStatement.length === arguments.length, 'arg count');
-    ASSERT($tt_identToken.type === $ID_let, 'should pass on the let token');
-    ASSERT($tt_identToken.start !== tok_getStart(), 'the `let` token should have been skipped');
+    ASSERT($tt_identToken.$type === $ID_let, 'should pass on the let token');
+    ASSERT($tt_identToken.$start !== tok_getStart(), 'the `let` token should have been skipped');
     ASSERT(hasNoFlag(lexerFlags, LF_STRICT_MODE), 'sloppy mode should be asserted at call site');
     ASSERT_LABELSET(labelSet);
     ASSERT(tok_getType() !== $PUNC_BRACKET_OPEN, 'should invalidate expr stmt starting with `let [` before calling this func');
@@ -6806,7 +6806,7 @@ function Parser(code, options = {}) {
 
     parseValueTail(lexerFlags, $tt_outerParenToken, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
     if (tok_getStart() === $tt_prevtok.start && canBeErrorCase && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      ASSERT(isIdentToken($tt_possibleIdentToken.type), 'this state is verified through piggies and if it wasnt an ident then this should never be reached', $tt_possibleIdentToken);
+      ASSERT(isIdentToken($tt_possibleIdentToken.$type), 'this state is verified through piggies and if it wasnt an ident then this should never be reached', $tt_possibleIdentToken);
       // https://tc39.github.io/ecma262/#sec-delete-operator-static-semantics-early-errors
       // strict mode only
       // This is the group-wrapped variant, which still holds the above rule
@@ -7047,7 +7047,7 @@ function Parser(code, options = {}) {
 
   function parseBindings(lexerFlags, scoop, bindingType, bindingOrigin, defaultOptions, $tt_setToken, exportedNames, exportedBindings, astProp) {
     ASSERT(parseBindings.length === arguments.length, 'expecting all args');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
     ASSERT_BINDING_ORIGIN(bindingOrigin);
     ASSERT_BINDING_TYPE(bindingType);
 
@@ -7146,7 +7146,7 @@ function Parser(code, options = {}) {
     ASSERT(defaultsOption === ASSIGNMENT_IS_INIT || defaultsOption === ASSIGNMENT_IS_DEFAULT, 'defaultsOption enum');
     ASSERT_BINDING_TYPE(bindingType);
     ASSERT_BINDING_ORIGIN(bindingOrigin);
-    ASSERT($tt_bindingStartToken.start === tok_getStart());
+    ASSERT($tt_bindingStartToken.$start === tok_getStart());
     // note: a "binding pattern" means a var/let/const var declaration with name or destructuring pattern
 
     // [v]: `try {} catch (e) {}`
@@ -7184,7 +7184,7 @@ function Parser(code, options = {}) {
       let $tp_identToken_canon = tok_getCanoN();
 
       // note: if this is the end of the var decl and there is no semi the next line can start with a regex
-      ASSERT_skipRex(tok_sliceInput($tt_bindingTok.start, $tt_bindingTok.stop), lexerFlags); // next is `=` or `,` or `;` or asi-continuation
+      ASSERT_skipRex(tok_sliceInput($tt_bindingTok.$start, $tt_bindingTok.$stop), lexerFlags); // next is `=` or `,` or `;` or asi-continuation
       AST_setIdent(astProp, $tt_identToken, $tp_identToken_canon);
 
       if (
@@ -7312,7 +7312,7 @@ function Parser(code, options = {}) {
 
   function fatalBindingIdentCheck($tt_identToken, $tp_identToken_canon, bindingType, lexerFlags) {
     ASSERT(fatalBindingIdentCheck.length === arguments.length, 'arg count');
-    ASSERT(isIdentToken($tt_identToken.type), 'ident check on ident tokens ok', $tt_identToken);
+    ASSERT(isIdentToken($tt_identToken.$type), 'ident check on ident tokens ok', $tt_identToken);
     ASSERT_BINDING_TYPE(bindingType);
 
     let str = nonFatalBindingIdentCheck($tt_identToken, $tp_identToken_canon, bindingType, lexerFlags);
@@ -7320,7 +7320,7 @@ function Parser(code, options = {}) {
   }
   function nonFatalBindingIdentCheck($tt_identToken, $tp_identToken_canon, bindingType, lexerFlags) {
     ASSERT(nonFatalBindingIdentCheck.length === arguments.length, 'expecting all args');
-    ASSERT(isIdentToken($tt_identToken.type), 'ident check on ident tokens ok', $tt_identToken);
+    ASSERT(isIdentToken($tt_identToken.$type), 'ident check on ident tokens ok', $tt_identToken);
     ASSERT_BINDING_TYPE(bindingType);
 
     // TODO: this check can be drastically improved.
@@ -7338,7 +7338,7 @@ function Parser(code, options = {}) {
   }
   function nonFatalBindingIdentCheckByEnum(lexerFlags, $tt_identToken, $tp_identToken_canon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByEnum.length === arguments.length, 'arg count');
-    ASSERT(tok_sliceInput($tt_identToken.start, $tt_identToken.stop) === $tp_identToken_canon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
+    ASSERT(tok_sliceInput($tt_identToken.$start, $tt_identToken.$stop) === $tp_identToken_canon, 'if the len is equal then the str must be equal because the canon can only differ through escapes and those are always longer, and that works one way');
 
     // This doesn't get hit very often as there's a simple ==$IDENT check that takes the brink
     // of these keyword checks. Since most cases that would fall through would lead to an error, it's only
@@ -7448,7 +7448,7 @@ function Parser(code, options = {}) {
   }
   function nonFatalBindingIdentCheckByString(lexerFlags, $tt_identToken, $tp_identToken_canon, bindingType) {
     ASSERT(nonFatalBindingIdentCheckByString.length === arguments.length, 'arg count');
-    ASSERT(tok_sliceInput($tt_identToken.start, $tt_identToken.stop) !== $tp_identToken_canon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
+    ASSERT(tok_sliceInput($tt_identToken.$start, $tt_identToken.$stop) !== $tp_identToken_canon, 'this is the slow path and must mean the ident had a unicode escape sequence. check canon by string (since .type is based on .src) which is much slower');
 
     switch ($tp_identToken_canon) {
       // keywords
@@ -7591,7 +7591,7 @@ function Parser(code, options = {}) {
   }
   function parseExpressionAfterAsyncAsVarName(lexerFlags, stmtOrExpr, $tt_asyncToken, $tp_asyncToken_canon, isNewArg, allowAssignment, astProp) {
     ASSERT(arguments.length === parseExpressionAfterAsyncAsVarName.length, 'arg count');
-    ASSERT($tt_asyncToken !== UNDEF_ASYNC && $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken !== UNDEF_ASYNC && $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // This token named "async" has already been verified not to be a bunch of things.
@@ -7636,7 +7636,7 @@ function Parser(code, options = {}) {
     ASSERT(tok_getNlwas() === false, '(Function and newline have already been asserted)');
     ASSERT(isIdentToken(tok_getType()), 'dont have to skip the ident to assert it having to be an arrow');
     ASSERT_ASSIGN_EXPR(allowAssignment);
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
 
     // We must parse an async arrow without parens now. We still have to validate the arg name too.
     // - `async foo => foo`
@@ -8249,8 +8249,8 @@ function Parser(code, options = {}) {
   }
   function parseValueHeadBodyAfterIdent(lexerFlags, $tt_identToken, $tp_identToken_canon, bindingType, isNewArg, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(parseValueHeadBodyAfterIdent.length === arguments.length, 'expecting args');
-    ASSERT(isIdentToken($tt_identToken.type), 'should have consumed token. make sure you checked whether the token after can be div or regex...');
-    ASSERT($tt_identToken.start !== tok_getStart(), 'should have consumed this');
+    ASSERT(isIdentToken($tt_identToken.$type), 'should have consumed token. make sure you checked whether the token after can be div or regex...');
+    ASSERT($tt_identToken.$start !== tok_getStart(), 'should have consumed this');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(isNewArg === NOT_NEW_ARG || allowAssignment === ASSIGN_EXPR_IS_ERROR, 'new arg does not allow assignments');
@@ -8665,14 +8665,14 @@ function Parser(code, options = {}) {
       return THROW_RANGE('The unary expression `' + opName + '` is not allowed here', $tt_unaryToken.start, $tt_unaryToken.stop);
     }
 
-    ASSERT_skipToExpressionStart(tok_sliceInput($tt_unaryToken.start, $tt_unaryToken.stop), lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
+    ASSERT_skipToExpressionStart(tok_sliceInput($tt_unaryToken.$start, $tt_unaryToken.$stop), lexerFlags); // next can be regex (`+/x/.y`), though it's very unlikely
 
     return _parseUnary(lexerFlags, $tt_unaryToken, opName, isNewArg, astProp);
   }
   function _parseUnary(lexerFlags, $tt_unaryToken, opName, isNewArg, astProp) {
     ASSERT(_parseUnary.length === arguments.length, 'arg count');
     ASSERT(['+', '-', '~', '!', 'void', 'typeof'].includes(opName), '++, --, delete, new, yield, and await have special parsers', opName);
-    ASSERT(tok_sliceInput($tt_unaryToken.start, $tt_unaryToken.stop) === opName, 'should match', opName, $tt_unaryToken+'');
+    ASSERT(tok_sliceInput($tt_unaryToken.$start, $tt_unaryToken.$stop) === opName, 'should match', opName, $tt_unaryToken+'');
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
 
     if (isNewArg === IS_NEW_ARG) {
@@ -8752,8 +8752,8 @@ function Parser(code, options = {}) {
 
   function parseYield(lexerFlags, $tt_yieldIdentToken, $tp_yieldIdentToken_canon, allowAssignment, astProp) {
     ASSERT(arguments.length === parseYield.length, 'arg count');
-    ASSERT($tt_yieldIdentToken.start !== tok_getStart(), 'should have consumed the ident already');
-    ASSERT($tt_yieldIdentToken.type === $ID_yield, 'should receive the yield keyword token that was already consumed');
+    ASSERT($tt_yieldIdentToken.$start !== tok_getStart(), 'should have consumed the ident already');
+    ASSERT($tt_yieldIdentToken.$type === $ID_yield, 'should receive the yield keyword token that was already consumed');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // Parse an async arrow as a plain call to `async` first, inheriting the async/generator state. Then when you
@@ -8902,7 +8902,7 @@ function Parser(code, options = {}) {
 
   function parseArrowParenlessFromPunc(lexerFlags, $tt_arrowStartToken, $tt_identToken, $tp_identToken_canon, allowAssignment, wasSimple, $tt_asyncToken, astProp) {
     ASSERT(parseArrowParenlessFromPunc.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_VALID(allowAssignment === ASSIGN_EXPR_IS_OK, 'arrows are assignment expressions so it should lead to an error if those are not allowed');
 
@@ -8943,9 +8943,9 @@ function Parser(code, options = {}) {
       return THROW_RANGE('The arrow is a restricted production and there can not be a newline before `=>` token', $tt_arrowToken.start, $tt_arrowToken.stop);
     }
 
-    ASSERT(($tt_identToken.type === $ID_eval || $tt_identToken.type === $ID_arguments) ? wasSimple === PARAMS_SOME_COMPLEX : true, 'eval and arguments must pass on complex so they throw if the body contains use strict');
-    ASSERT(!(($tt_identToken.type === $ID_eval || $tt_identToken.type === $ID_arguments) && hasAllFlags(lexerFlags, LF_STRICT_MODE)), 'caller should throw for eval/argument already in strict mode');
-    ASSERT(!(hasAnyFlag(lexerFlags, LF_STRICT_MODE) && $tt_identToken.type === $ID_yield), 'in strict mode this function will not be called by the parse yield function so we dont need to make an edge case for it');
+    ASSERT(($tt_identToken.$type === $ID_eval || $tt_identToken.$type === $ID_arguments) ? wasSimple === PARAMS_SOME_COMPLEX : true, 'eval and arguments must pass on complex so they throw if the body contains use strict');
+    ASSERT(!(($tt_identToken.$type === $ID_eval || $tt_identToken.$type === $ID_arguments) && hasAllFlags(lexerFlags, LF_STRICT_MODE)), 'caller should throw for eval/argument already in strict mode');
+    ASSERT(!(hasAnyFlag(lexerFlags, LF_STRICT_MODE) && $tt_identToken.$type === $ID_yield), 'in strict mode this function will not be called by the parse yield function so we dont need to make an edge case for it');
 
     // arrow with single param
     if (babelCompat) {
@@ -9453,7 +9453,7 @@ function Parser(code, options = {}) {
 
   function parseArrowFromPunc(lexerFlags, paramScoop, $tt_asyncToken, allowAssignment, paramsSimple) {
     ASSERT(arguments.length === parseArrowFromPunc.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_skipToExpressionStart('=>', lexerFlags); // the `{` for a block is subsumed in the expr-start lexer hint
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
@@ -9551,7 +9551,7 @@ function Parser(code, options = {}) {
   }
   function parseGroupToplevels(lexerFlags, asyncStmtOrExpr, allowAssignment, $tt_asyncToken, $tp_asyncToken_canon, newlineAfterAsync, leftHandSideExpression, astProp) {
     ASSERT(parseGroupToplevels.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'should have thrown if not currently at paren open');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     let $tt_parenToken = __oldtok;
@@ -9569,8 +9569,8 @@ function Parser(code, options = {}) {
     ASSERT(_parseGroupToplevels.length === arguments.length, 'arg count');
     ASSERT(newlineAfterAsync === NOT_ASYNC_PREFIXED || newlineAfterAsync === IS_ASYNC_PREFIXED, 'enum');
     ASSERT(typeof astProp === 'string');
-    ASSERT($tt_parenToken.start !== tok_getStart(), 'paren should be skipped');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_parenToken.$start !== tok_getStart(), 'paren should be skipped');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignmentForGroupToBeArrow);
     // = parseGroup(), = parseArrow()
     // will parse `=>` tail if it exists (except in async edge cases)
@@ -10393,7 +10393,7 @@ function Parser(code, options = {}) {
   function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, groupDestructible, zeroArgs, $tt_asyncToken, $tp_asyncToken_canon, assignable, astProp) {
     ASSERT(parseAfterAsyncGroup.length === arguments.length, 'arg count');
     ASSERT(typeof groupDestructible === 'number', 'destructible num');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // this is called after parsing a group that followed an `async` when it might be an async arrow
@@ -10525,7 +10525,7 @@ function Parser(code, options = {}) {
   }
   function parseArrowAfterAsyncNoArgGroup(lexerFlags, paramScoop, toplevelComma, $tt_asyncToken, allowAssignment, astProp) {
     ASSERT(parseArrowAfterAsyncNoArgGroup.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
 
     // The ast should look something like this now:
     // {
@@ -10568,7 +10568,7 @@ function Parser(code, options = {}) {
 
   function parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, $tt_asyncToken, $tp_arrowStart_line, $tp_arrowStart_column, $tp_arrowStart_start, allowAssignment, astProp) {
     ASSERT(parseArrowAfterGroup.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     AST_destructArrowParams(toplevelComma, $tt_asyncToken, $tp_arrowStart_line, $tp_arrowStart_column, $tp_arrowStart_start, astProp);
@@ -11235,7 +11235,7 @@ function Parser(code, options = {}) {
       let $tp_litToken_stop = tok_getStop();
       let $tp_litToken_canon = tok_getCanoN();
 
-      ASSERT_skipToColonParenOpen(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
+      ASSERT_skipToColonParenOpen(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop), lexerFlags);
 
       if (tok_getType() === $PUNC_COLON) {
         // Any key-colon combo is destructible, the "value" determines assign/binding/both destructibility:
@@ -11442,7 +11442,7 @@ function Parser(code, options = {}) {
         let $tp_litToken_stop = tok_getStop();
         let $tp_litToken_canon = tok_getCanoN();
 
-        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
+        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop), lexerFlags);
         AST_setLiteral(astProp, $tt_litToken, $tp_litToken_canon);
 
         let destructPiggies = parseObjectLikeMethodAfterKey(lexerFlags, UNDEF_ASYNC, $tt_starToken, UNDEF_GET, UNDEF_SET, $tt_litToken, undefined, astProp);
@@ -11585,8 +11585,8 @@ function Parser(code, options = {}) {
     // anything else as value is non-destructible
     // - `(x={y: await z}) => t`                    (propagate await/yield to invalidate this case)
     // - `({x: b = await c}) => d`                  (propagate await/yield to invalidate this case)
-    ASSERT($tt_startOfKeyToken && $tt_startOfKeyToken.type, 'duck type token check');
-    ASSERT($tt_startOfKeyToken.type === $PUNC_BRACKET_OPEN || isIdentToken($tt_startOfKeyToken.type) || isNumberStringToken($tt_startOfKeyToken.type));
+    ASSERT($tt_startOfKeyToken && $tt_startOfKeyToken.$type, 'duck type token check');
+    ASSERT($tt_startOfKeyToken.$type === $PUNC_BRACKET_OPEN || isIdentToken($tt_startOfKeyToken.$type) || isNumberStringToken($tt_startOfKeyToken.$type));
     ASSERT(tok_getType() === $PUNC_COLON, 'should not skip colon yet because that breaks end column');
 
     if (babelCompat) {
@@ -12198,7 +12198,7 @@ function Parser(code, options = {}) {
         let $tp_litToken_stop = tok_getStop();
         let $tp_litToken_canon = tok_getCanoN();
 
-        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
+        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop), lexerFlags);
         AST_setLiteral(astProp, $tt_litToken, $tp_litToken_canon);
         parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, undefined, astProp);
       } else if (tok_getType() === $PUNC_BRACKET_OPEN) {
@@ -12258,7 +12258,7 @@ function Parser(code, options = {}) {
       let $tp_litToken_stop = tok_getStop();
       let $tp_litToken_canon = tok_getCanoN();
 
-      ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
+      ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop), lexerFlags);
       AST_setLiteral(astProp, $tt_litToken, $tp_litToken_canon);
 
       parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_litToken, undefined, astProp);
@@ -12325,10 +12325,10 @@ function Parser(code, options = {}) {
   }
   function parseObjectMethod(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, $tt_bracketOpenToken, astProp) {
     ASSERT(parseObjectMethod.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
     ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
 
     // - `{*[expr](){}} = x`
@@ -12771,7 +12771,7 @@ function Parser(code, options = {}) {
     }
 
     if (isIdentToken(tok_getType())) {
-      ASSERT(tok_getType() !== $ID_static || $tt_staticToken.type === $ID_static);
+      ASSERT(tok_getType() !== $ID_static || $tt_staticToken.$type === $ID_static);
       destructible = parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, $tt_staticToken, exportedNames, exportedBindings, astProp);
     }
     else if (isNumberStringToken(tok_getType())) {
@@ -12840,7 +12840,7 @@ function Parser(code, options = {}) {
   function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, $tt_staticToken, exportedNames, exportedBindings, astProp) {
     ASSERT(parseClassMethodFromIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
-    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.$type === $ID_static, 'static token');
 
     let $tt_identToken = __oldtok;
     let $tp_identToken_type = tok_getType();
@@ -12969,11 +12969,11 @@ function Parser(code, options = {}) {
   function parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp) {
     ASSERT(parseClassMethodIdentKey.length === arguments.length, 'arg count');
     ASSERT(isIdentToken(tok_getType()), 'current is ident');
-    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.$type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
 
     let $tt_keyToken = __oldtok;
     let $tp_keyToken_type = tok_getType();
@@ -12988,13 +12988,13 @@ function Parser(code, options = {}) {
   }
   function _parseClassMethodIdentKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, $tp_keyToken_canon, astProp) {
     ASSERT(_parseClassMethodIdentKey.length === arguments.length, 'arg count');
-    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.$type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
     ASSERT($tt_keyToken !== undefined, 'key is token');
-    ASSERT(isIdentToken($tt_keyToken.type), 'key is ident');
+    ASSERT(isIdentToken($tt_keyToken.$type), 'key is ident');
 
     AST_setIdent(astProp, $tt_keyToken, $tp_keyToken_canon);
 
@@ -13007,11 +13007,11 @@ function Parser(code, options = {}) {
   function parseClassMethodLiteralKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp) {
     ASSERT(parseClassMethodLiteralKey.length === arguments.length, 'arg count');
     ASSERT(isNumberStringToken(tok_getType()));
-    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.$type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
 
     let $tt_litToken = __oldtok;
     let $tp_litToken_type = tok_getType();
@@ -13021,7 +13021,7 @@ function Parser(code, options = {}) {
     let $tp_litToken_stop = tok_getStop();
     let $tp_litToken_canon = tok_getCanoN();
 
-    ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.start, $tt_litToken.stop), lexerFlags);
+    ASSERT_skipToParenOpenOrDie(tok_sliceInput($tt_litToken.$start, $tt_litToken.$stop), lexerFlags);
     AST_setLiteral(astProp, $tt_litToken, $tp_litToken_canon);
 
     // [v]: `class A {"x"(){}}`
@@ -13042,11 +13042,11 @@ function Parser(code, options = {}) {
   function parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, astProp) {
     // skip computed key part first because we need to figure out whether we're parsing a method
     ASSERT(parseClassMethodComputedKey.length === arguments.length, 'arg count');
-    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.$type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
 
     let $tt_bracketOpenToken = __oldtok;
     let $tp_bracketOpenToken_type = tok_getType();
@@ -13084,14 +13084,14 @@ function Parser(code, options = {}) {
   }
   function parseClassMethodAfterKey(lexerFlags, $tt_staticToken, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, $tp_keyToken_canon, $tt_bracketOpenToken, astProp) {
     ASSERT(parseClassMethodAfterKey.length === arguments.length, 'want args');
-    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.type === $ID_static, 'static token');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
-    ASSERT($tt_keyToken === undefined || $tt_keyToken.type !== undefined, 'keyToken is a token', $tt_keyToken);
-    ASSERT(!$tt_bracketOpenToken || $tt_bracketOpenToken.type === $PUNC_BRACKET_OPEN, 'bracketOpenToken should be [', $tt_bracketOpenToken);
-    ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.type) || isNumberStringToken($tt_keyToken.type)), 'keyToken is a number, string or ident');
+    ASSERT($tt_staticToken === UNDEF_STATIC || $tt_staticToken.$type === $ID_static, 'static token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
+    ASSERT($tt_keyToken === undefined || $tt_keyToken.$type !== undefined, 'keyToken is a token', $tt_keyToken);
+    ASSERT(!$tt_bracketOpenToken || $tt_bracketOpenToken.$type === $PUNC_BRACKET_OPEN, 'bracketOpenToken should be [', $tt_bracketOpenToken);
+    ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.$type) || isNumberStringToken($tt_keyToken.$type)), 'keyToken is a number, string or ident');
     ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
 
     verifyGeneralMethodState($tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, true);
@@ -13233,10 +13233,10 @@ function Parser(code, options = {}) {
 
   function verifyGeneralMethodState($tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, isClass) {
     ASSERT(verifyGeneralMethodState.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
     ASSERT(typeof isClass === 'boolean', 'isclass bool', isClass);
 
     if (tok_getType() !== $PUNC_PAREN_OPEN) {
@@ -13395,7 +13395,7 @@ function Parser(code, options = {}) {
   function parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tt_asyncToken, exportedNames, exportedBindings, astProp) {
     // parseArrowableRest
     ASSERT(parseArrowableSpreadOrRest.length === arguments.length, 'want all args');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT(tok_getType() === $PUNC_DOT_DOT_DOT, 'current is `...`');
 
     let $tt_spreadToken = __oldtok;
@@ -13426,7 +13426,7 @@ function Parser(code, options = {}) {
   }
   function _parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tt_asyncToken, $tt_spreadToken, exportedNames, exportedBindings, astProp) {
     ASSERT(_parseArrowableSpreadOrRest.length === arguments.length, 'arg count');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
     ASSERT_BINDING_TYPE(bindingType);
 
     // returns CANT_DESTRUCT if the arg is not only an ident
@@ -13890,11 +13890,11 @@ function Parser(code, options = {}) {
   }
   function parseObjectLikeMethodAfterKey(lexerFlags, $tt_asyncToken, $tt_starToken, $tt_getToken, $tt_setToken, $tt_keyToken, $tt_bracketOpenToken, astProp) {
     ASSERT(arguments.length === parseObjectLikeMethodAfterKey.length, 'want args');
-    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.type === $ID_async, 'async token');
-    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.type === $PUNC_STAR, 'gen token');
-    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.type === $ID_get, 'get token');
-    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.type === $ID_set, 'set token');
-    ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.type) || isNumberStringToken($tt_keyToken.type)), 'keyToken is a number, string or ident');
+    ASSERT($tt_asyncToken === UNDEF_ASYNC || $tt_asyncToken.$type === $ID_async, 'async token');
+    ASSERT($tt_starToken === UNDEF_STAR || $tt_starToken.$type === $PUNC_STAR, 'gen token');
+    ASSERT($tt_getToken === UNDEF_GET || $tt_getToken.$type === $ID_get, 'get token');
+    ASSERT($tt_setToken === UNDEF_SET || $tt_setToken.$type === $ID_set, 'set token');
+    ASSERT($tt_keyToken === undefined || (isIdentToken($tt_keyToken.$type) || isNumberStringToken($tt_keyToken.$type)), 'keyToken is a number, string or ident');
     ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN);
 
     let $tt_parenToken = __oldtok;
@@ -14059,7 +14059,7 @@ function Parser(code, options = {}) {
   }
   if (assertExpectedFail !== '') {
     // An invariant was broken that should hold in valid input, yet no syntax error was reported by the parser.
-    return THROW_RANGE('Assertion fail (when valid): ' + assertExpectedFail, $tt_assertExpectedToken.start, $tt_assertExpectedToken.stop);
+    return THROW_RANGE('Assertion fail (when valid): ' + assertExpectedFail, $tt_assertExpectedToken.$start, $tt_assertExpectedToken.$stop);
   }
 
   // <SCRUB AST>
