@@ -917,7 +917,7 @@ function formatTokens(tokens) {
   let line = tokens.length > 1 ? ' '.repeat(6) : '';
 
   for (let i=0, l=tokens.length-1; i<l; ++i) {
-    let next = toktypeToString(tokens[i].type);
+    let next = toktypeToString(tokens[i].$type);
     if ((line + ' ' + next).length > 70) {
       s += line + '\n';
       line = ' '.repeat(7) + next;

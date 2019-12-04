@@ -186,6 +186,7 @@ ASSERT(__$flag_leaf < (1<<LEAF_BITS), 'cannot use more than LEAF_BITS (' + LEAF_
 // TODO: A future expansion, space permitting, would mark certain tokens as a particular string, like `in` or `=>`.
 // TODO: For this we can reserve more flags as continuous space. How much depends on how many groups we really need.
 // TODO: These token value constants would need their own continuous space to still be able to treat them generically.
+const $UNTYPED = 0;
 const $SPACE = $L_SPACE | $G_WHITE;
 const $TAB = $L_TAB | $G_WHITE;
 const $NL_SOLO = $L_NL_SINGLE | $G_WHITE | $G_NEWLINE; // Any specced line terminator that is not the combination of crlf
@@ -466,6 +467,7 @@ function toktypeToString(type, token, ignoreUnknown) {
   ASSERT(ALL_TOKEN_TYPES.includes(type), 'should be known type', 'type=', type, 'ALL_TOKEN_TYPES=', ALL_TOKEN_TYPES, 'token=', token);
 
   switch (type) {
+    case $UNTYPED: return 'UNTYPED';
     case $SPACE: return 'SPACE';
     case $TAB: return 'TAB';
     case $NL_SOLO: return 'NL_SOLO';
@@ -633,6 +635,7 @@ ASSERT(ALL_TOKEN_GROUPS = [
 ]);
 let ALL_TOKEN_TYPES;
 ASSERT(ALL_TOKEN_TYPES = [
+  // $UNTYPED,
   $SPACE,
   $TAB,
   $NL_SOLO,
@@ -1005,6 +1008,7 @@ export {
   $G_TICK_BAD_ESCAPE,
   $G_OTHER,
 
+  $UNTYPED,
   $SPACE,
   $TAB,
   $NL_SOLO,

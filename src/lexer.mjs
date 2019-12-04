@@ -161,6 +161,7 @@ import {
   KEYWORD_TRIE,
   MAX_START_VALUE,
 
+  $UNTYPED, // 0
   $SPACE,
   $TAB,
   $NL_SOLO,
@@ -815,6 +816,13 @@ function Lexer(
 
       ...token,
 
+      // To be used inside asserts only (webstorm regex \w matches underscore but not dollar):
+      $type: type,
+      $start: start,
+      $stop: stop, // start of next token
+      $column: column, // of first char of token
+      $line: line, // of first char of token
+
       toString() {
         return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${slice(start, stop)}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
       },
@@ -855,17 +863,10 @@ function Lexer(
     }
 
     return {
-      type,
       start,
       stop, // start of next token
       column, // of first char of token
       line, // of first char of token
-      // To be used inside asserts only (webstorm regex \w matches underscore but not dollar):
-      $type: type,
-      $start: start,
-      $stop: stop, // start of next token
-      $column: column, // of first char of token
-      $line: line, // of first char of token
     };
   }
 
@@ -5048,6 +5049,7 @@ function Lexer(
   function getErrorContext(tokenStart, tokenStop, msg = '', fullErrorContext = false) {
     ASSERT(getErrorContext.length >= 2 && getErrorContext.length <= 4, 'arg count');
     ASSERT(tokenStart <= tokenStop, 'should have a positive length range', tokenStart, tokenStop);
+
     let inputOffset = 0;
     if (!fullErrorContext && tokenStart > 100) inputOffset = tokenStart - 100;
     let inputLen = input.length;
