@@ -166,10 +166,6 @@ function ignoreTenkoTestForBabel(file) {
     'tests/testcases/delete/single_ident_cases/wrapped_arrow_wrapped_prop.md',
     'tests/testcases/delete/single_ident_cases/wrapped_assign_outer_prop.md',
 
-    // Bug in babel; regex on new line after typeof statement
-    //     https://github.com/babel/babel/issues/10410
-    'tests/testcases/functions/expression/regex_edge_case/with_async/expression/with_flag.md',
-
     // Bug in babel; incorrect use strict assignments to arguments/eval
     //    https://github.com/babel/babel/issues/10411
     'tests/testcases/objects/destructuring/identifier_properties/keyword_obj_key_check/gen/shorthand/arguments.md',
