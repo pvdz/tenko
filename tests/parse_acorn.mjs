@@ -213,13 +213,6 @@ function ignoreTenkoTestForAcorn(file) {
     'tests/testcases/templates/escapes/2028.md',
     'tests/testcases/templates/escapes/2029.md',
 
-    // Bug: value should be null for trying to escape \8 and \9
-    //     https://github.com/acornjs/acorn/issues/880
-    //     Babel issue: https://github.com/babel/babel/issues/10437
-    'tests/testcases/tagged_templates/escapes/octal/escape_8.md',
-    'tests/testcases/tagged_templates/escapes/octal/escape_9.md',
-    'tests/testcases/directive_prologues/octals/strict_mode_directive_as_tag.md',
-
     // Ignore: templates where I don't normalize the newlines
     'tests/testcases/printer/template_with_cr.md',
 
