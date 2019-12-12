@@ -33,7 +33,7 @@ throws: Parser error!
   Cannot compound assign to an object or array pattern
 
 for({}/=y;;)x
-      ^------- error
+      ^^------- error
 `````
 
 ### Strict mode

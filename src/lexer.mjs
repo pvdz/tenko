@@ -599,9 +599,9 @@ function Lexer(
       nlwas = consumedNewlinesBeforeSolid; // Do not include the newlines for the token itself unless whitespace (ex: `` throw `\n` ``)
 
       if (eof()) {
-        let token = createToken($EOF, pointer, pointer, startCol, startRow, false);
+        createToken($EOF, pointer, pointer, startCol, startRow, false);
         finished = true;
-        return returnSolidToken(token);
+        return returnSolidToken($EOF);
       }
 
       let start = startForError = pointer; // TODO: see if startForError makes a dent at all
@@ -612,23 +612,22 @@ function Lexer(
 
       // Non-whitespace tokens always get returned
       if (!isWhiteToken(consumedTokenType)) {
-        let token = createToken(consumedTokenType, start, pointer, startCol, startRow, false);
-        return returnSolidToken(token);
+        createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+        return returnSolidToken(consumedTokenType);
       }
 
       // Babel parity demands comments to be returned... Not sure whether the complexity (over checking $white) is worth
       if (isCommentToken(consumedTokenType)) {
         if (returnTokens === RETURN_COMMENT_TOKENS) {
-          let token = createToken(consumedTokenType, start, pointer, startCol, startRow, false);
-          return returnCommentToken(token);
+          createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+          return returnCommentToken(consumedTokenType);
         }
       }
 
       // This is a whitespace token (which may be a comment) that is not yet collected.
       if (collectTokens === COLLECT_TOKENS_ALL) {
-        let token = createToken(consumedTokenType, start, pointer, startCol, startRow, false);
-        ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
-        tokenStorage.push(token);
+        createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+        tokenStorage.push(consumedTokenType);
       }
 
       if (returnTokens === RETURN_ANY_TOKENS) {
@@ -649,23 +648,18 @@ function Lexer(
 
     ASSERT(false, 'unreachable');
   }
-  function returnCommentToken(token) {
+  function returnCommentToken(consumedTokenType) {
     if (collectTokens === COLLECT_TOKENS_ALL) {
-      ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
-      tokenStorage.push(token);
+      tokenStorage.push(consumedTokenType);
     }
-    return token;
   }
-  function returnSolidToken(token) {
+  function returnSolidToken(consumedTokenType) {
     ++solidTokenCount;
     if (collectTokens !== COLLECT_TOKENS_NONE) {
-      ASSERT(collectTokens === COLLECT_TOKENS_ALL || collectTokens === COLLECT_TOKENS_SOLID, 'collectTokens enum', collectTokens);
-      ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
-      tokenStorage.push(token);
+      tokenStorage.push(consumedTokenType);
     }
     consumedNewlinesBeforeSolid = false;
     prevTokenSolid = true;
-    return token;
   }
 
   function skipSpacesWithoutTokens() {
@@ -788,9 +782,8 @@ function Lexer(
     // are asi's whitespace? i dunno. they're kinda special so maybe.
     // put it _before_ the current token (that should be the "offending" token)
     if (collectTokens !== COLLECT_TOKENS_NONE) {
-      let token = createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine, true);
-      ASSERT(!tokenStorage.includes(token), 'should not have added token to the list of tokens yet');
-      tokenStorage.push(token, tokenStorage.pop());
+      // createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine, true);
+      tokenStorage.push($ASI, tokenStorage.pop());
     }
     ++anyTokenCount;
     ++solidTokenCount; // eh... i guess.
@@ -808,39 +801,14 @@ function Lexer(
 
     ASSERT(typeof lastCanonizedInput !== 'string' || lastCanonizedInput.length === lastCanonizedInputLen, 'the len cache should be equal to the canonized string len itself (thats the point)');
 
-    let token = createBaseToken(type, start, stop, column, line, asi);
-
-    // <SCRUB DEV>
-    token = {
-      _t: toktypeToString(type),
-
-      ...token,
-
-      // To be used inside asserts only (webstorm regex \w matches underscore but not dollar):
-      $type: type,
-      $start: start,
-      $stop: stop, // start of next token
-      $column: column, // of first char of token
-      $line: line, // of first char of token
-
-      toString() {
-        return `{# ${toktypeToString(type)} : nl=${nlwas?'Y':'N'} pos=${start}:${stop} loc=${column}:${line} \`${slice(start, stop)}\`${isIdentToken(type) || isStringToken(type) ?' (canonical=`' + lastCanonizedInput + '`)':''}#}`;
-      },
-    };
-    // </SCRUB DEV>
-
-    return token;
+    lastType = type;
+    lastStart = start;
+    lastStop = stop;
+    lastLine = line;
+    lastColumn = column;
   }
   function createBaseToken(type, start, stop, column, line, asi) {
     ASSERT(createBaseToken.length === arguments.length, 'arg count');
-
-    if (!asi) {
-      lastType = type;
-      lastStart = start;
-      lastStop = stop;
-      lastLine = line;
-      lastColumn = column;
-    }
 
     if (babelTokenCompat) {
       return {

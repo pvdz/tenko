@@ -32,7 +32,7 @@ throws: Parser error!
   Cannot parse a function declaration here, only expecting statements here
 
 do async function *f(){}
-         ^^^^^^^^------- error
+   ^^^^^^^^^^^^^^------- error
 
 while (x);
 `````
