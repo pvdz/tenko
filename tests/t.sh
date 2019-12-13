@@ -81,6 +81,7 @@ Tenko test runner help:
  --no-compat   For `z`; Replace the compat flags for Acorn and Babel to `false` so the minifier eliminates the dead code
  --no-ast      For `z`; Strip all AST code when creating a build
  --no-min      For `z`; Do not run Terser (minifier) on build output
+ --no-mangle   For `z`; Run Terser but tell it not to mangle identifiers (use together with `--pretty`)
  --pretty      For `z`; Run prettier on the build afterwards (useful with `--no-min`)
  --native-symbols For `z`; Special build step turns `PERF_$` prefixed functions into `%` to enable v8 internal functions.
  --inspect     Run with `node --inspect-brk` to debug node in the chrome devtools. Use `--devtools` to auto-profile.
@@ -231,7 +232,9 @@ Tenko test runner help:
     --no-compat)    NOCOMP='--no-compat'  ;;
     --no-ast)       NOAST='--no-ast'      ;;
     --no-min)       NOMIN='--no-min'      ;;
+    --no-mangle)    NOMIN='--no-mangle'   ;;
     --pretty)       PRETTIER='yes'        ;;
+    --prettier)     PRETTIER='yes'        ;;
     --native-symbols) NATIVESYMBOLS='--native-symbols' ;;
     --reset)        RESET='--reset'       ;;
     --record)       RECORD='--record'     ;;
