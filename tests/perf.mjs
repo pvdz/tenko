@@ -13,10 +13,6 @@ import path from 'path';
 
 const TENKO_DEV_FILE = path.resolve('./src/index.mjs');
 const TENKO_PROD_FILE = path.resolve('./build/tenko.prod.mjs');
-import TenkoBuild from '../build/tenko.prod.mjs';
-import {testTenko} from './parse_tenko.mjs';
-import {testBabel} from './parse_babel.mjs';
-import {testAcorn} from './parse_acorn.mjs';
 
 let filePath = import.meta.url.replace(/^file:\/\//,'');
 let dirname = path.dirname(filePath);
@@ -39,11 +35,36 @@ const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const RESET = '\x1b[0m';
 
+let parserCache = new Map
+let getParser = async (name) => {
+  if (parserCache.has(name)) return name;
+  let parser;
+  switch (name) {
+    case 'acorn':
+      let {runAcorn} = await import('./run_acorn.mjs');
+      parser = (code, testVariant) => runAcorn(code, testVariant, undefined);
+      break;
+    case 'babel':
+      let {runBabel} = await import('./parse_babel.mjs');
+      parser = (code, testVariant) => runBabel(code, testVariant);
+      break;
+    case 'tenko':
+    case 'tenk2':
+      let {Tenko} = await import(TENKO_PROD_FILE);
+      let {testTenko} = await import('./parse_tenko.mjs')
+      parser = (code, testVariant) => testTenko(Tenko, code, testVariant, true);
+      break;
+    default: throw '?';
+  }
+  parserCache.set(name, parser);
+  return parser;
+};
+
 let parsers = [
-  {name: 'tenko', parse: (code, testVariant) => testTenko(TenkoBuild, code, testVariant, true)}, // tenko, code, testVariant, enableAnnexb
-  {name: 'babel', parse: (code, testVariant) => testBabel(code, testVariant)}, // code, mode
-  {name: 'acorn', parse: (code, testVariant) => testAcorn(code, testVariant, undefined)}, // code, mode, version
-  {name: 'tenk2', parse: (code, testVariant) => testTenko(TenkoBuild, code, testVariant, true)}, // tenko, code, testVariant, enableAnnexb
+  'tenko',
+  'babel',
+  'acorn',
+  'tenk2'
 ];
 
 // See ./perf_data.json for example. I tuck it under /ignore because webstorm goes haywire trying to reindex the file while running the benchmark and updating it
@@ -60,27 +81,15 @@ let parsers = [
 //     }
 //   },
 //   ...
+let codeCache = new Map
 let data = JSON.parse(fs.readFileSync(path.join(dirname, '../ignore/perf_data.json'), 'utf8'));
+let getcode = (fpath) => {
+  if (codeCache.has(fpath)) return codeCache.get(fpath);
+  let code = fs.readFileSync(fpath, 'utf8');
+  codeCache.set(fpath, code);
+  return code;
+}
 let files = Object.getOwnPropertyNames(data).filter(s => !!s && (!NO_WEBKIT || s !== 'es5.webkit'));
-
-// Initialize the .code property of each entry to lazy load the input code
-files.forEach(title => {
-  let obj = data[title];
-  Object.defineProperty(obj, 'code', {
-    get(){
-      let code = fs.readFileSync(obj.path, 'utf8');
-      delete obj.code;
-      Object.defineProperty(obj, 'code', {
-        value: code,
-        enumerable: true,
-        configurable: true,
-      });
-      return code;
-    },
-    enumerable: true,
-    configurable: true,
-  });
-});
 
 function p2(x) {
   return Math.round(x * 100) / 100;
@@ -146,48 +155,57 @@ if (!NO_HEADER && N <= 1 && N != -2) {
   );
 }
 
-files.forEach((title) => {
-  let obj = data[title];
-  if (N <= 1) {
-    console.log('File:', obj.code.length, 'bytes:', obj.path);
-  }
-  parsers.forEach(({name, parse}) => {
-    if (--N > 0) return;
+// Block process
 
-    let {path, code, mode, baseline, last} = obj;
-    let t1 = performance.now();
-    try {
-      parse(code, mode);
-    } catch (e) {
-      console.log('Failed!', name, '->', path, '::', e.message);
+(async function main(){
+  for (let i=0; i<files.length; ++i) {
+    let ftitle = files[i];
+    let obj = data[ftitle];
+    if (N <= 1) {
+      console.log('File:', getcode(obj.path).length, 'bytes:', obj.path);
     }
-    let t2 = performance.now();
-    let time = t2 - t1;
-    let b = baseline[name];
-    let t = p2(time);
-    print(name, baseline, t, last);
 
-    let changedStats = false;
-    if (RESET_BASELINE || (IMPROVE_BASELINE && t < b)) {
-      baseline[name] = Math.floor(t);
-      changedStats = true;
-    }
-    if (name === 'tenko') {
-      obj.last = Math.floor(t);
-      changedStats = true;
-    }
-    if (N >= 0) {
-      if (changedStats) {
-        for (let key in data) delete data[key].code;
-        fs.writeFileSync('ignore/perf_data.json', JSON.stringify(data));
+    for (let j=0; j<parsers.length; ++j) {
+      if (--N > 0) continue;
+
+      let pname = parsers[j];
+      let parser = await getParser(pname);
+
+      let {path, mode, baseline, last} = obj;
+      let t1 = performance.now();
+
+      parser(getcode(path), mode);
+
+      let t2 = performance.now();
+      let time = t2 - t1;
+      let b = baseline[pname];
+      let t = p2(time);
+      print(pname, baseline, t, last);
+
+      let changedStats = false;
+      if (RESET_BASELINE || (IMPROVE_BASELINE && t < b)) {
+        baseline[pname] = Math.floor(t);
+        changedStats = true;
       }
-      // Signal ./t that this script is not finished, just the current run
-      process.exit(0);
+      if (pname === 'tenko') {
+        obj.last = Math.floor(t);
+        changedStats = true;
+      }
+      if (N >= 0) {
+        if (changedStats) {
+          fs.writeFileSync('ignore/perf_data.json', JSON.stringify(data));
+        }
+        // Signal ./t that this script is not finished, just the current run
+        process.exit(0);
+      }
     }
-  });
+  }
+  if (N >= 0) {
+    // signals ./t that this script is done
+    // console.log('exit(1)')
+    process.exit(1);
+  }
+
+})().catch((e) => console.log('error:', e)).then(() => {
+  process.exit(0);
 });
-if (N >= 0) {
-  // signals ./t that this script is done
-  // console.log('exit(1)')
-  process.exit(1);
-}

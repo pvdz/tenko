@@ -1,4 +1,4 @@
-import babel from '@babel/parser';
+import {runBabel} from './run_babel.mjs';
 import {
   ASSERT,
   astToString,
@@ -14,23 +14,11 @@ const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
 const TEST_WEB = 'web';
 
-function testBabel(code, mode) {
-  if (mode === 'strict' || mode === 'sloppy') return false;
-  // The Babel parser seems to apply AnnexB by default with no opt-out so we can't test strict/sloppy directly
-  return babel.parse(code, {
-    sourceType: mode === 'module' ? 'module' : 'script',
-    // https://babeljs.io/docs/en/babel-parser
-    // It explicitly mentions a strictMode option, but when running it this fails :(
-    // strictMode: mode === 'strict',
-    plugins: ['dynamicImport', 'bigInt', 'exportNamespaceFrom'],
-  });
-}
-
 function compareBabel(code, tenkoPassed, testVariant, enableAnnexb, file, timePerf) {
   let babelOk, babelFail, tasb;
   if (timePerf) console.time('Pure Babel parse time');
   try {
-    babelOk = testBabel(code, testVariant);
+    babelOk = runBabel(code, testVariant);
   } catch (e) {
     babelFail = e;
   }
@@ -620,5 +608,5 @@ export {
   ignoreTest262Babel,
   ignoreTenkoTestForBabel,
   processBabelResult,
-  testBabel,
+  runBabel,
 };

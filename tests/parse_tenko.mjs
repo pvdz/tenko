@@ -1,11 +1,9 @@
-import {COLLECT_TOKENS_SOLID, COLLECT_TOKENS_NONE , GOAL_MODULE, GOAL_SCRIPT} from "../src/enum_lexer.mjs";
-
 function testTenko(tenko, code, testVariant, enableAnnexb) {
   return tenko(
     code,
     {
-      goalMode: testVariant === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
-      collectTokens: COLLECT_TOKENS_NONE,
+      goalMode: testVariant === 'module' ? true : false,
+      collectTokens: 0,
       strictMode: testVariant === 'strict',
       webCompat: enableAnnexb || testVariant === 'web',
       // targetEsVersion: tob.inputOptions.es,

@@ -204,7 +204,7 @@ Tenko test runner help:
     devtools)
       # ./t p --inspect --devtools --build
       ACTION='perf'
-      INSPECT_NODE='--inspect-brk'
+      INSPECT_NODE='--inspect'
       INSPECT_ZEPAR='--devtools'
       DEVTOOLS='--devtools'
       BUILD='-b'
@@ -333,6 +333,7 @@ case "${ACTION}" in
       ${NODE_BIN} ${INSPECT_NODE} --experimental-modules cli/build.mjs ${NOCOMP} ${NOAST} ${NOMIN} ${INSPECT_ZEPAR} ${NATIVESYMBOLS}
       if [[ ! -z "${PRETTIER}" ]]; then
           node_modules/.bin/prettier build/tenko.prod.mjs --write
+          node_modules/.bin/prettier build/tenko.prod.js --write
       fi
     ;;
 

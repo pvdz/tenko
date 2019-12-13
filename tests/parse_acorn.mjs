@@ -1,4 +1,4 @@
-import acorn from 'acorn';
+import {runAcorn} from './run_acorn.mjs';
 import {
   ASSERT,
   astToString,
@@ -14,30 +14,12 @@ const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
 const TEST_WEB = 'web';
 
-function testAcorn(code, mode, version) {
-  if (mode === 'strict' || mode === 'sloppy') return false;
-  // The Acorn parser seems to apply AnnexB by default with no opt-out so we can't test strict/sloppy directly
-  return acorn.parse(code, {
-    ecmaVersion: Number.isFinite(version) ? version : 11,
-    sourceType: mode === 'module' ? 'module' : 'script',
-    locations: true,
-    // ranges: true,
-
-
-    // Not used:
-    allowReserved: true,
-    allowReturnOutsideFunction: false,
-    allowImportExportEverywhere: false,
-    allowAwaitOutsideFunction: false,
-    allowHashBang: false,
-  });
-}
 
 function compareAcorn(code, tenkoPassed, testVariant, enableAnnexb, file, version, timePerf) {
   let acornOk, acornFail, tasa;
   if (timePerf) console.time('Pure Acorn parse time');
   try {
-    acornOk = testAcorn(code, testVariant, version);
+    acornOk = runAcorn(code, testVariant, version);
   } catch (e) {
     acornFail = e;
   }
@@ -490,5 +472,5 @@ export {
   ignoreTest262Acorn,
   ignoreTenkoTestForAcorn,
   processAcornResult,
-  testAcorn,
+  runAcorn,
 };
