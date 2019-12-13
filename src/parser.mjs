@@ -2819,7 +2819,8 @@ function Parser(code, options = {}) {
     ASSERT(labelSet === EMPTY_LABEL_SET || typeof labelSet === 'object');
     ASSERT(labelSet === EMPTY_LABEL_SET || labelSet.IS_LABEL_SET === true, 'must receive a labelset', labelSet);
 
-    let set = {parentLabels: labelSet, iterationLabels: null};
+    // Note: we create the Set now because the whole reason this labelSet was made was because we needed it
+    let set = {parentLabels: labelSet, statementLabels: new Set, iterationLabels: null};
     ASSERT(set.IS_LABEL_SET = true);
     ASSERT(set.desc = desc);
     return set;
@@ -4294,16 +4295,20 @@ function Parser(code, options = {}) {
       return THROW_RANGE(`The label (\`${tok_sliceInput($tp_labelToken_start, $tp_labelToken_stop)}\`) for this \`break\` was not defined in the current label set, which is illegal`, $tp_labelToken_start, $tp_labelToken_stop);
     }
 
+    let labelSet = inputLabelSet;
+
+    if (!labelSet) {
+      return THROW_RANGE('The label (`' + $tp_labelNameToken_canon + '`) for this `break` was not defined in the current label set, which is illegal', $tp_labelToken_start, $tp_labelToken_stop);
+    }
+
     // Note: the assumption is that the label set only contains valid labels so we don't need to validate the label
     // here. We assume that it must be valid if it is in a label set
 
-    let id = '#' + $tp_labelNameToken_canon;
-
-    let labelSet = inputLabelSet;
+    let id = $tp_labelNameToken_canon;
 
     // Check parents all the way up to the label root (global or any kind of function scope)
     do {
-      if (labelSet[id]) {
+      if (labelSet.statementLabels.has(id)) {
         return;
       }
     } while (labelSet = labelSet.parentLabels);
@@ -4345,7 +4350,7 @@ function Parser(code, options = {}) {
 
     // Check parents all the way up to the label root (global or any kind of function scope)
     do {
-      if (set.iterationLabels && set.iterationLabels.includes($tp_labelToken_canon)) {
+      if (set.iterationLabels && set.iterationLabels.has($tp_labelToken_canon)) {
         return;
       }
     } while (set = set.parentLabels);
@@ -6824,7 +6829,7 @@ function Parser(code, options = {}) {
   function parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tp_identToken_type, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLabeledStatementInstead.length, 'arg count');
     ASSERT_LABELSET(labelSet);
-    ASSERT(nestedLabels === PARENT_NOT_LABEL || nestedLabels instanceof Array, 'nestedLabels should be a list of names of uninterupted label parents');
+    ASSERT(nestedLabels === PARENT_NOT_LABEL || nestedLabels instanceof Set, 'nestedLabels should be a set of names of uninterupted label parents');
 
     // This is an exception to the general case where eval and arguments are okay to use as label name. Thanks, spec.
     if ($tp_identToken_type !== $ID_eval && $tp_identToken_type !== $ID_arguments) {
@@ -6833,13 +6838,14 @@ function Parser(code, options = {}) {
 
     let set = labelSet;
     while (set) {
-      if (set['#' + $tp_identToken_canon]) {
+      if (set.statementLabels.has($tp_identToken_canon)) {
         return THROW_RANGE('Saw the same label twice which is not allowed', $tp_identToken_start, $tp_identToken_stop);
       }
       set = set.parentLabels;
     }
+
     labelSet = wrapLabelSet(labelSet, 'labelled statement');
-    labelSet['#' + $tp_identToken_canon] = true;
+    labelSet.statementLabels.add($tp_identToken_canon);
     ASSERT_skipToStatementStart(':', lexerFlags);
 
     if (fdState === FDS_IFELSE) {
@@ -6848,16 +6854,20 @@ function Parser(code, options = {}) {
     }
 
     if (nestedLabels === PARENT_NOT_LABEL) {
-      nestedLabels = [$tp_identToken_canon];
-    } else {
-      nestedLabels[nestedLabels.length] = $tp_identToken_canon;
+      nestedLabels = new Set()
     }
+    nestedLabels.add($tp_identToken_canon);
 
     // We have already consumed the colon for the label so the next token must start the child-statement of this label
     // Scan forward to see whether we are about to parse a loop statement. If so we can mark nestedLabels for `continue`
-    if (isIdentToken(tok_getType()) && (
-      tok_getType() === $ID_for || tok_getType() === $ID_while || tok_getType() === $ID_do
-    )) {
+    if (
+      isIdentToken(tok_getType()) &&
+      (
+        tok_getType() === $ID_for ||
+        tok_getType() === $ID_while ||
+        tok_getType() === $ID_do
+      )
+    ) {
       // Either the next statement is invalid or it will be a valid iteration statement
       labelSet.iterationLabels = nestedLabels; // When scanning labels for `continue`, only visit these arrays
     }
@@ -7528,7 +7538,7 @@ function Parser(code, options = {}) {
       // Note: param name is `async` and there is nothing else so args guaranteed to be simple
       // - `async => x`
       //          ^^
-      assignable |= parseArrowParenlessFromPunc(lexerFlags, $tp_asyncToken_start, $tp_asyncToken_line, $tp_asyncToken_column, $ID_async, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_asyncToken_canon, allowAssignment, PARAMS_ALL_SIMPLE, $UNTYPED, astProp);
+      assignable = parseArrowParenlessFromPunc(lexerFlags, $tp_asyncToken_start, $tp_asyncToken_line, $tp_asyncToken_column, $ID_async, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_asyncToken_canon, allowAssignment, PARAMS_ALL_SIMPLE, $UNTYPED, astProp);
     } else {
       // - `async foo => x`
       //          ^^^
