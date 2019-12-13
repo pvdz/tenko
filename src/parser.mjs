@@ -2160,7 +2160,6 @@ function Parser(code, options = {}) {
           return THROW_RANGE('Exporting a name that was not bound in global: `' + name + '`', tok_getStart(), tok_getStop());
         }
       });
-      ASSERT((function(){for (let key in exportedBindings) ASSERT(key[0] !== '#' || exportedBindings[key] === 1, 'key should be 1', exportedBindings[key]); return true})(), 'all bindings should exist exactly one, or have thrown an error');
     }
   }
 
