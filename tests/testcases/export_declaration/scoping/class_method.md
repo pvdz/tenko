@@ -29,7 +29,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 class x { foo(){ export {x}; }}
-                 ^------- error
+                 ^^^^^^------- error
 `````
 
 ### Strict mode

@@ -30,7 +30,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export default function(){}; export default function(){};
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

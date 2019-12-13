@@ -54,7 +54,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 class X { foo() { with (x) y; } }
-                  ^------- error
+                  ^^^^------- error
 `````
 
 ### Strict mode

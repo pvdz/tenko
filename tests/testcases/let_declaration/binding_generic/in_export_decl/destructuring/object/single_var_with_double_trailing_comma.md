@@ -31,7 +31,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export let {x,,} = obj;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

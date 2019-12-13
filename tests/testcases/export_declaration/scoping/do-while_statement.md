@@ -29,7 +29,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 do export {x}; while (x);
-   ^------- error
+   ^^^^^^------- error
 `````
 
 ### Strict mode

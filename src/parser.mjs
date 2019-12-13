@@ -4896,7 +4896,7 @@ function Parser(code, options = {}) {
     // regarding asi; classes and function decls dont get asi, anything else does. `default` does not change this.
     // note: the regular function, async function, and class may have no name only with `default`
     if (goalMode !== GOAL_MODULE) {
-      return THROW_RANGE('The `export` keyword can only be used with the module goal', $tp_exportToken_start, $tp_exportToken_start + 1); // TODO: this should span the whole keyword
+      return THROW_RANGE('The `export` keyword can only be used with the module goal', $tp_exportToken_start, $tp_exportToken_stop); // TODO: this should span the whole keyword
     }
     if (isGlobalToplevel === NOT_GLOBAL_TOPLEVEL) {
       return THROW_RANGE('The `export` keyword is only supported at the top level', $tp_exportToken_start, $tp_exportToken_stop);
@@ -6920,9 +6920,10 @@ function Parser(code, options = {}) {
     let $tp_withToken_line = tok_getLine();
     let $tp_withToken_column = tok_getColumn();
     let $tp_withToken_start = tok_getStart();
+    let $tp_withToken_stop = tok_getStop();
 
     if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      return THROW_RANGE('The `with` statement is not allowed in strict mode', $tp_withToken_start, $tp_withToken_start + 1); // TODO: span entire keyword
+      return THROW_RANGE('The `with` statement is not allowed in strict mode', $tp_withToken_start, $tp_withToken_stop); // TODO: span entire keyword
     }
 
     ASSERT_skipToParenOpenOrDie($ID_with, lexerFlags);

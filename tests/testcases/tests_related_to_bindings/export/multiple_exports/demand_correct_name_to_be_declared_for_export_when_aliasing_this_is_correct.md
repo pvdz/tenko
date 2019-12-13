@@ -37,7 +37,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 var mustExist; export {mustExist as canBeUndeclared};
-               ^------- error
+               ^^^^^^------- error
 `````
 
 ### Strict mode

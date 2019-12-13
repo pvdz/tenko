@@ -34,7 +34,7 @@ throws: Parser error!
 // one comment
 /* two
  comment */ "use strict"; with (x) y;
-                          ^------- error
+                          ^^^^------- error
 `````
 
 ### Strict mode

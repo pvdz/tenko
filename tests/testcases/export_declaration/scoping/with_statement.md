@@ -31,7 +31,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 with (x) export {x};
-         ^------- error
+         ^^^^^^------- error
 `````
 
 ### Strict mode
@@ -43,7 +43,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 with (x) export {x};
-^------- error
+^^^^------- error
 `````
 
 

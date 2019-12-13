@@ -31,7 +31,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export const [...bar = foo] = obj;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

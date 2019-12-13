@@ -42,7 +42,7 @@ throws: Parser error!
 
 var a,b;
 export {b, a};
-^------- error
+^^^^^^------- error
 
 export {a};
 `````

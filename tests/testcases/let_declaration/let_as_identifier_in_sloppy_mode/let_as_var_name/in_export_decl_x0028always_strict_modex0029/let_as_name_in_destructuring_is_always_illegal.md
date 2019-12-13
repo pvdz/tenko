@@ -41,7 +41,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export let [let] = x;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

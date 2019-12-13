@@ -33,7 +33,7 @@ throws: Parser error!
 
 var \u0061bc = 5;
 export { abc }
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

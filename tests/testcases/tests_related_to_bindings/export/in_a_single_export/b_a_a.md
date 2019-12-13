@@ -39,7 +39,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 var a, b; export {b, a, a}
-          ^------- error
+          ^^^^^^------- error
 `````
 
 ### Strict mode

@@ -31,7 +31,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export var function = 10;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

@@ -40,7 +40,7 @@ throws: Parser error!
 
 var a,b;
 export {a};
-^------- error
+^^^^^^------- error
 
 export {b};
 `````

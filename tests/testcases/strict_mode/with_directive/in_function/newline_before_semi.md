@@ -32,7 +32,7 @@ throws: Parser error!
 
 function f(){ "use strict"
 ;with (x) y; }
- ^------- error
+ ^^^^------- error
 `````
 
 ### Strict mode

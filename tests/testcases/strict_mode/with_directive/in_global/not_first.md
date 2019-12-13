@@ -91,7 +91,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 var x; "use strict"; with (x) y;
-                     ^------- error
+                     ^^^^------- error
 `````
 
 

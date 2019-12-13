@@ -29,7 +29,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export const [a=[...b], ...c] = obj;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

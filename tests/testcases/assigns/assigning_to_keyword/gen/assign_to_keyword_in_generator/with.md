@@ -49,7 +49,7 @@ throws: Parser error!
 
 function *f(){
   with = 1;
-  ^------- error
+  ^^^^------- error
 
 }
 `````

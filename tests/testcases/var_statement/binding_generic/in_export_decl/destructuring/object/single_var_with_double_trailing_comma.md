@@ -32,7 +32,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export var {x,,} = obj;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

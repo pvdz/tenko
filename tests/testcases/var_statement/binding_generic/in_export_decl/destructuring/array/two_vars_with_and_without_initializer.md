@@ -29,7 +29,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export var [foo=a, bar] = arr;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

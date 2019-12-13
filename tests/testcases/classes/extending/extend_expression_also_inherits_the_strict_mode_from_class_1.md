@@ -31,7 +31,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 class X extends function(){ with(obj); } {}
-                            ^------- error
+                            ^^^^------- error
 `````
 
 ### Strict mode

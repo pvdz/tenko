@@ -29,7 +29,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 let x; export {x as new}; import {new as foo} from "bar";
-       ^------- error
+       ^^^^^^------- error
 `````
 
 ### Strict mode

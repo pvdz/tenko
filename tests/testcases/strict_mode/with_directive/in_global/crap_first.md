@@ -30,7 +30,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 "not a directive"; "use strict"; with (x) y;
-                                 ^------- error
+                                 ^^^^------- error
 `````
 
 ### Strict mode

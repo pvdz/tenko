@@ -123,7 +123,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 function g() { function f(){ "use strict"; foo; } with (x) y; }
-                                                  ^------- error
+                                                  ^^^^------- error
 `````
 
 

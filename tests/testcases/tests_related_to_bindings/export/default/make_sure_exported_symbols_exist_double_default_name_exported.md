@@ -30,7 +30,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 var x, y; export default x; export {y as default};
-          ^------- error
+          ^^^^^^------- error
 `````
 
 ### Strict mode

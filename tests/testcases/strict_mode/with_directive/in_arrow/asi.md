@@ -32,7 +32,7 @@ throws: Parser error!
 
 () => { "use strict"
 with (x) y; }
-^------- error
+^^^^------- error
 `````
 
 ### Strict mode

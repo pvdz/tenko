@@ -100,7 +100,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 function f(){ `use strict`; with (x) y; }
-                            ^------- error
+                            ^^^^------- error
 `````
 
 

@@ -43,7 +43,7 @@ throws: Parser error!
   The `with` statement is not allowed in strict mode
 
 with: x
-^------- error
+^^^^------- error
 `````
 
 

@@ -33,7 +33,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export *, {bar} from 'bar';
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode

@@ -41,7 +41,7 @@ throws: Parser error!
   The `export` keyword can only be used with the module goal
 
 export const let;
-^------- error
+^^^^^^------- error
 `````
 
 ### Strict mode
