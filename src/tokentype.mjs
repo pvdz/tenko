@@ -333,95 +333,105 @@ let KEYWORD_TRIE = { 0:
     { 17:
         { 6:
             { 20:
-                { 12: { 4: { 13: { 19: { 18: { hit: $ID_arguments } } } } } } } },
-      18: { 24: { 13: { 2: { hit: $ID_async } } }, hit: $ID_as },
-      22: { 0: { 8: { 19: { hit: $ID_await } } } } },
-  1: { 17: { 4: { 0: { 10: { hit: $ID_break } } } } },
+                { 12: { 4: { 13: { 19: { 18: { hit: $ID_arguments, canon: 'arguments' } } } } } } } },
+      18: {
+        24: { 13: { 2: { hit: $ID_async, canon: 'async' } } },
+        hit: $ID_as, canon: 'as'
+      },
+      22: { 0: { 8: { 19: { hit: $ID_await, canon: 'await' } } } } },
+  1: { 17: { 4: { 0: { 10: { hit: $ID_break, canon: 'break' } } } } },
   2:
     { 0:
-        { 18: { 4: { hit: $ID_case } },
-          19: { 2: { 7: { hit: $ID_catch } } } },
-      11: { 0: { 18: { 18: { hit: $ID_class } } } },
+        { 18: { 4: { hit: $ID_case, canon: 'case' } },
+          19: { 2: { 7: { hit: $ID_catch, canon: 'catch' } } } },
+      11: { 0: { 18: { 18: { hit: $ID_class, canon: 'class' } } } },
       14:
         { 13:
-            { 18: { 19: { hit: $ID_const } },
-              19: { 8: { 13: { 20: { 4: { hit: $ID_continue } } } } } } } },
+            { 18: { 19: { hit: $ID_const, canon: 'const' } },
+              19: { 8: { 13: { 20: { 4: { hit: $ID_continue, canon: 'continue' } } } } } } } },
   3:
     { 4:
         { 1:
-            { 20: { 6: { 6: { 4: { 17: { hit: $ID_debugger } } } } } },
-          5: { 0: { 20: { 11: { 19: { hit: $ID_default } } } } },
-          11: { 4: { 19: { 4: { hit: $ID_delete } } } } },
-      14: { hit: $ID_do } },
+            { 20: { 6: { 6: { 4: { 17: { hit: $ID_debugger, canon: 'debugger' } } } } } },
+          5: { 0: { 20: { 11: { 19: { hit: $ID_default, canon: 'default' } } } } },
+          11: { 4: { 19: { 4: { hit: $ID_delete, canon: 'delete' } } } } },
+      14: { hit: $ID_do, canon: 'do' } },
   4:
-    { 11: { 18: { 4: { hit: $ID_else } } },
-      13: { 20: { 12: { hit: $ID_enum } } },
-      21: { 0: { 11: { hit: $ID_eval } } },
+    { 11: { 18: { 4: { hit: $ID_else, canon: 'else' } } },
+      13: { 20: { 12: { hit: $ID_enum, canon: 'enum' } } },
+      21: { 0: { 11: { hit: $ID_eval, canon: 'eval' } } },
       23:
-        { 15: { 14: { 17: { 19: { hit: $ID_export } } } },
-          19: { 4: { 13: { 3: { 18: { hit: $ID_extends } } } } } } },
+        { 15: { 14: { 17: { 19: { hit: $ID_export, canon: 'export' } } } },
+          19: { 4: { 13: { 3: { 18: { hit: $ID_extends, canon: 'extends' } } } } } } },
   5:
-    { 0: { 11: { 18: { 4: { hit: $ID_false } } } },
+    { 0: { 11: { 18: { 4: { hit: $ID_false, canon: 'false' } } } },
       8:
-        { 13: { 0: { 11: { 11: { 24: { hit: $ID_finally } } } } } },
-      14: { 17: { hit: $ID_for } },
-      17: { 14: { 12: { hit: $ID_from } } },
+        { 13: { 0: { 11: { 11: { 24: { hit: $ID_finally, canon: 'finally' } } } } } },
+      14: { 17: { hit: $ID_for, canon: 'for' } },
+      17: { 14: { 12: { hit: $ID_from, canon: 'from' } } },
       20:
         { 13:
-            { 2: { 19: { 8: { 14: { 13: { hit: $ID_function } } } } } } } },
-  6: { 4: { 19: { hit: $ID_get } } },
+            { 2: { 19: { 8: { 14: { 13: { hit: $ID_function, canon: 'function' } } } } } } } },
+  6: { 4: { 19: { hit: $ID_get, canon: 'get' } } },
   8:
-    { 5: { hit: $ID_if },
+    {
+      5: { hit: $ID_if, canon: 'if' },
       12:
         { 15:
             { 11:
                 { 4:
-                    { 12: { 4: { 13: { 19: { 18: { hit: $ID_implements } } } } } } },
-              14: { 17: { 19: { hit: $ID_import } } } } },
-      13:
-        { 18:
+                    { 12: { 4: { 13: { 19: { 18: { hit: $ID_implements, canon: 'implements' } } } } } } },
+              14: { 17: { 19: { hit: $ID_import, canon: 'import' } } } } },
+        13: {
+          18:
             { 19:
                 { 0:
-                    { 13: { 2: { 4: { 14: { 5: { hit: $ID_instanceof } } } } } } } },
-          19:
-            { 4:
-                { 17: { 5: { 0: { 2: { 4: { hit: $ID_interface } } } } } } },
-          hit: $ID_in } },
-  11: { 4: { 19: { hit: $ID_let } } },
+                    { 13: { 2: { 4: { 14: { 5: { hit: $ID_instanceof, canon: 'instanceof' } } } } } } }
+          },
+          19: {
+            4: { 17: { 5: { 0: { 2: { 4: { hit: $ID_interface, canon: 'interface' } } } } } }
+          },
+          hit: $ID_in, canon: 'in'
+        }
+    },
+  11: { 4: { 19: { hit: $ID_let, canon: 'let' } } },
   13:
-    { 4: { 22: { hit: $ID_new } },
-      20: { 11: { 11: { hit: $ID_null } } } },
-  14: { 5: { hit: $ID_of } },
+    { 4: { 22: { hit: $ID_new, canon: 'new' } },
+      20: { 11: { 11: { hit: $ID_null, canon: 'null' } } } },
+  14: { 5: { hit: $ID_of, canon: 'of' } },
   15:
     { 0:
-        { 2: { 10: { 0: { 6: { 4: { hit: $ID_package } } } } } },
+        { 2: { 10: { 0: { 6: { 4: { hit: $ID_package, canon: 'package' } } } } } },
       17:
-        { 8: { 21: { 0: { 19: { 4: { hit: $ID_private } } } } },
+        { 8: { 21: { 0: { 19: { 4: { hit: $ID_private, canon: 'private' } } } } },
           14:
             { 19:
-                { 4: { 2: { 19: { 4: { 3: { hit: $ID_protected } } } } } } } },
-      20: { 1: { 11: { 8: { 2: { hit: $ID_public } } } } } },
+                { 4: { 2: { 19: { 4: { 3: { hit: $ID_protected, canon: 'protected' } } } } } } } },
+      20: { 1: { 11: { 8: { 2: { hit: $ID_public, canon: 'public' } } } } } },
   17:
-    { 4: { 19: { 20: { 17: { 13: { hit: $ID_return } } } } } },
+    { 4: { 19: { 20: { 17: { 13: { hit: $ID_return, canon: 'return' } } } } } },
   18:
-    { 4: { 19: { hit: $ID_set } },
-      19: { 0: { 19: { 8: { 2: { hit: $ID_static } } } } },
-      20: { 15: { 4: { 17: { hit: $ID_super } } } },
-      22: { 8: { 19: { 2: { 7: { hit: $ID_switch } } } } } },
+    { 4: { 19: { hit: $ID_set, canon: 'set' } },
+      19: { 0: { 19: { 8: { 2: { hit: $ID_static, canon: 'static' } } } } },
+      20: { 15: { 4: { 17: { hit: $ID_super, canon: 'super' } } } },
+      22: { 8: { 19: { 2: { 7: { hit: $ID_switch, canon: 'switch' } } } } } },
   19:
-    { 0: { 17: { 6: { 4: { 19: { hit: $ID_target } } } } },
+    { 0: { 17: { 6: { 4: { 19: { hit: $ID_target, canon: 'target' } } } } },
       7:
-        { 8: { 18: { hit: $ID_this } },
-          17: { 14: { 22: { hit: $ID_throw } } } },
-      17: { 20: { 4: { hit: $ID_true } }, 24: { hit: $ID_try } },
-      24: { 15: { 4: { 14: { 5: { hit: $ID_typeof } } } } } },
+        { 8: { 18: { hit: $ID_this, canon: 'this' } },
+          17: { 14: { 22: { hit: $ID_throw, canon: 'throw' } } } },
+      17: {
+        20: { 4: { hit: $ID_true, canon: 'true' } },
+        24: { hit: $ID_try, canon: 'try' }
+      },
+      24: { 15: { 4: { 14: { 5: { hit: $ID_typeof, canon: 'typeof' } } } } } },
   21:
-    { 0: { 17: { hit: $ID_var } },
-      14: { 8: { 3: { hit: $ID_void } } } },
+    { 0: { 17: { hit: $ID_var, canon: 'var' } },
+      14: { 8: { 3: { hit: $ID_void, canon: 'void' } } } },
   22:
-    { 7: { 8: { 11: { 4: { hit: $ID_while } } } },
-      8: { 19: { 7: { hit: $ID_with } } } },
-  24: { 8: { 4: { 11: { 3: { hit: $ID_yield } } } } } };
+    { 7: { 8: { 11: { 4: { hit: $ID_while, canon: 'while' } } } },
+      8: { 19: { 7: { hit: $ID_with, canon: 'with' } } } },
+  24: { 8: { 4: { 11: { 3: { hit: $ID_yield, canon: 'yield' } } } } } };
 
 function isWhiteToken(type) {
   return (type & $G_WHITE) === $G_WHITE;

@@ -2038,14 +2038,19 @@ function Lexer(
 
     pointer = n - 1;
     skip();
-    lastCanonizedInput = slice(start, n);
     lastCanonizedInputLen = n - start;
 
     if (trie.hit !== undefined) {
       ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
       ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
+      ASSERT(typeof trie.canon === 'string');
+      ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+
+      lastCanonizedInput = trie.canon;
       return trie.hit;
     }
+
+    lastCanonizedInput = slice(start, n);
     return $IDENT;
   }
   function endOfPotentialKeyword(trie, d, n, start) {
@@ -2064,11 +2069,14 @@ function Lexer(
       let wide = isIdentRestChr(d, n - 1);
       if (wide === INVALID_IDENT_CHAR) {
         // This ends the ident and it is a keyword
-        lastCanonizedInput = slice(start, n - 1);
         lastCanonizedInputLen = (n - 1) - start;
         if (trie.hit === undefined) {
+          lastCanonizedInput = slice(start, n - 1);
           return $IDENT;
         }
+        ASSERT(typeof trie.canon === 'string');
+        ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+        lastCanonizedInput = trie.canon;
         return trie.hit;
       }
       return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
@@ -2086,8 +2094,10 @@ function Lexer(
       // End of id, this was a keyword
       pointer = n - 1;
       cache = d;
-      lastCanonizedInput = slice(start, n - 1);
       lastCanonizedInputLen = (n - 1) - start;
+      ASSERT(typeof trie.canon === 'string');
+      ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+      lastCanonizedInput = trie.canon;
       ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
       ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
       return trie.hit;
