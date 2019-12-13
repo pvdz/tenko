@@ -30,11 +30,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse the start of a property but found an unknown modifier
+  Expected to parse an opening paren, found `catch`
 
 ({
   static set catch(x){}
-  ^^^^^^------- error
+             ^^^^^------- error
 
 });
 `````

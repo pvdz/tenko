@@ -11947,11 +11947,6 @@ function Parser(code, options = {}) {
       // - ({get ident(){}})
       // - ({set ident(ident){}})
 
-      // TODO: remove this throw in favor of the one below (churns lots of tests but is faster that way ...)
-      if ($tp_propLeadingIdentToken_type !== $ID_get && $tp_propLeadingIdentToken_type !== $ID_set && $tp_propLeadingIdentToken_type !== $ID_async) {
-        return THROW_RANGE('Expected to parse the start of a property but found an unknown modifier', $tp_propLeadingIdentToken_start, $tp_propLeadingIdentToken_stop);
-      }
-
       let $tp_secondIdentToken_type = tok_getType();
       let $tp_secondIdentToken_line = tok_getLine();
       let $tp_secondIdentToken_column = tok_getColumn();
