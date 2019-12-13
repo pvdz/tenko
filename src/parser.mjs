@@ -773,16 +773,16 @@ function Parser(code, options = {}) {
       // Note: return two distinct object when using ranges to prevent deopt
       return {
         start: {
-          line: startLine, // offset 1
-          column: startColumn,
+          line: startLine | 0, // offset 1
+          column: startColumn | 0,
         },
         end: {
-          line: endLine,
-          column: endColumn,
+          line: endLine | 0,
+          column: endColumn | 0,
         },
         range: {
-          start: startIndex,
-          end: endIndex,
+          start: startIndex | 0,
+          end: endIndex | 0,
         },
         source: sourceField, // File containing the code being parsed. Source maps may use this.
       };
@@ -843,8 +843,6 @@ function Parser(code, options = {}) {
 
     ASSERT(!void _pnames.pop(), '(dev-only verification and debugging tool)');
     ASSERT(!names_ASSERT_ONLY || (typeof names_ASSERT_ONLY === 'string' && names_ASSERT_ONLY === was.type) || (names_ASSERT_ONLY instanceof Array && names_ASSERT_ONLY.indexOf(was.type) >= 0), 'Expecting to close a node with given name(s), expected: ' + names_ASSERT_ONLY + ' but closed: ' + was.type)
-
-    return was; // debug/assertions only...
   }
   function AST_closeTemplateElement(isTemplateDouble) {
     ASSERT(AST_closeTemplateElement.length === arguments.length, 'arg count');
@@ -878,8 +876,6 @@ function Parser(code, options = {}) {
 
     ASSERT(!void _pnames.pop(), '(dev-only verification and debugging tool)');
     ASSERT(was.type === 'TemplateElement', 'Expecting to close a TemplateElement node but closed: ' + was.type)
-
-    return was; // debug/assertions only...
   }
   function AST_set(prop, value) {
     ASSERT(AST_set.length === arguments.length, 'expecting two args');
@@ -912,8 +908,6 @@ function Parser(code, options = {}) {
       ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`);
       parentNode[astProp] = node;
     }
-
-    return node; // for ASSERTs only!
   }
   function AST_setNodeDangerously(astProp, node) {
     ASSERT(AST_setNode.length === arguments.length, 'arg count');
@@ -934,8 +928,6 @@ function Parser(code, options = {}) {
       ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`);
       parentNode[astProp] = node;
     }
-
-    return node; // for ASSERTs only!
   }
   function AST_setIdent(astProp, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon) {
     ASSERT(AST_setIdent.length === arguments.length, 'arg count');
@@ -943,7 +935,7 @@ function Parser(code, options = {}) {
     ASSERT($tp_identToken_start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     let identNode = AST_getIdentNode($tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon);
-    return AST_setNode(astProp, identNode); // only for ASSERTS
+    AST_setNode(astProp, identNode);
   }
   function AST_getIdentNode($tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon) {
     ASSERT(AST_getIdentNode.length === arguments.length, 'arg count');
@@ -978,27 +970,23 @@ function Parser(code, options = {}) {
     ASSERT(isNumberStringRegex($tp_litToken_type), 'should be number or string');
     ASSERT($tp_litToken_start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
-    let node; // for assert
     if (isStringToken($tp_litToken_type)) {
-      node = AST_setStringLiteral(astProp, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column, $tp_litToken_canon, fromDirective);
+      AST_setStringLiteral(astProp, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column, $tp_litToken_canon, fromDirective);
     }
     else if (isNumberToken($tp_litToken_type)) {
       if (isBigintToken($tp_litToken_type)) {
-        node = AST_setBigInt(astProp, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column);
+        AST_setBigInt(astProp, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column);
       } else {
-        node = AST_setNumberLiteral(astProp, $tp_litToken_type, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column);
+        AST_setNumberLiteral(astProp, $tp_litToken_type, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column);
       }
     }
     else if (isRegexToken($tp_litToken_type)) {
       ASSERT(tok_sliceInput($tp_litToken_start, $tp_litToken_stop).split('/').length > 2, 'a regular expression should have at least two forward slashes', tok_sliceInput($tp_litToken_start, $tp_litToken_stop));
-      node = AST_setRegexLiteral(astProp, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column);
+      AST_setRegexLiteral(astProp, $tp_litToken_start, $tp_litToken_stop, $tp_litToken_line, $tp_litToken_column);
     }
     else {
       ASSERT(false, 'what kind of literal is this?', T($tp_litToken_type), isNumberToken($tp_litToken_type));
     }
-    // It's difficult to make this generic but for idents and literals it's doable
-    ASSERT(node, 'should be set by one of the branches');
-    ASSERT(tok_sliceInput($tp_litToken_start, $tp_litToken_stop).includes('\n') || tok_sliceInput($tp_litToken_start, $tp_litToken_stop).includes('\r') || tok_sliceInput($tp_litToken_start, $tp_litToken_stop).includes('\u2028') || tok_sliceInput($tp_litToken_start, $tp_litToken_stop).includes('\u2029') || node.loc.end.column - node.loc.start.column === ($tp_litToken_stop - $tp_litToken_start), 'for literals the location should only span exactly the length of the lit');
   }
   function AST_getStringNode($tp_stringToken_start, $tp_stringToken_stop, $tp_stringToken_line, $tp_stringToken_column, $tp_stringToken_canon, fromDirective) {
     ASSERT(AST_getStringNode.length === arguments.length, 'arg count');
@@ -1022,7 +1010,7 @@ function Parser(code, options = {}) {
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
     let stringNode = AST_getStringNode($tp_stringToken_start, $tp_stringToken_stop, $tp_stringToken_line, $tp_stringToken_column, $tp_stringToken_canon, fromDirective);
-    return AST_setNode(astProp, stringNode); // for ASSERTs only!
+    AST_setNode(astProp, stringNode); // for ASSERTs only!
   }
   function AST_getNumberNode($tp_numberToken_type, $tp_numberToken_start, $tp_numberToken_stop, $tp_numberToken_line, $tp_numberToken_column) {
     ASSERT(AST_getNumberNode.length === arguments.length, 'arg count');
@@ -1060,7 +1048,7 @@ function Parser(code, options = {}) {
     // between open and close (which is often the case). So this is used for literals (while idents have their own func)
 
     let numberNode = AST_getNumberNode($tp_numberToken_type, $tp_numberToken_start, $tp_numberToken_stop, $tp_numberToken_line, $tp_numberToken_column);
-    return AST_setNode(astProp, numberNode); // for ASSERTs only!
+    AST_setNode(astProp, numberNode); // for ASSERTs only!
   }
   function AST_getBigIntNode($tp_numberToken_start, $tp_numberToken_stop, $tp_numberToken_line, $tp_numberToken_column ) {
     // [v] `45n`
@@ -1088,7 +1076,7 @@ function Parser(code, options = {}) {
     ASSERT($tp_numberToken_start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     let bigintNode = AST_getBigIntNode($tp_numberToken_start, $tp_numberToken_stop, $tp_numberToken_line, $tp_numberToken_column);
-    return AST_setNode(astProp, bigintNode); // for ASSERTs only!
+    AST_setNode(astProp, bigintNode); // for ASSERTs only!
   }
   function AST_getRegexNode($tp_regexToken_start, $tp_regexToken_stop, $tp_regexToken_line, $tp_regexToken_column) {
     ASSERT(AST_getRegexNode.length === arguments.length, 'arg count');
@@ -1123,7 +1111,7 @@ function Parser(code, options = {}) {
     ASSERT($tp_regexToken_start !== tok_getStart(), 'token should be consumed to ensure location data is correct');
 
     let regexNode = AST_getRegexNode($tp_regexToken_start, $tp_regexToken_stop, $tp_regexToken_line, $tp_regexToken_column);
-    return AST_setNode(astProp, regexNode); // for ASSERTs only!
+    AST_setNode(astProp, regexNode); // for ASSERTs only!
   }
   function AST_add(prop, value) {
     ASSERT(typeof prop === 'string', 'prop should be string');
@@ -1526,7 +1514,7 @@ function Parser(code, options = {}) {
   }
   function AST_acornGetBigIntNode($tp_numberToken_start, $tp_numberToken_stop, $tp_numberToken_line, $tp_numberToken_column) {
     ASSERT(AST_acornGetBigIntNode.length === arguments.length, 'arg count');
-    
+
     let strn = tok_sliceInput($tp_numberToken_start, $tp_numberToken_stop);
     let str = strn.slice(0, -1);
     return {
@@ -3149,7 +3137,7 @@ function Parser(code, options = {}) {
     );
   }
   function parseGeneratorFunctionExpression(lexerFlags, $tp_functionToken_start, $tp_functionToken_line, $tp_functionToken_column, astProp) {
-    ASSERT(parseFunctionExpression.length === arguments.length, 'arg count');
+    ASSERT(parseGeneratorFunctionExpression.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $PUNC_STAR, 'not yet skipped');
 
     ASSERT_skipToIdentParenOpen('*', lexerFlags);
@@ -4975,7 +4963,7 @@ function Parser(code, options = {}) {
         $tp_exportedNameToken_start = tok_getStart();
         $tp_exportedNameToken_stop = tok_getStop();
         $tp_exportedNameToken_canon = tok_getCanoN();
-        
+
         ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
       }
 
@@ -5056,7 +5044,7 @@ function Parser(code, options = {}) {
     let $tp_forToken_stop = tok_getStop();
 
     ASSERT_skipToAwaitParenOpen($ID_for, lexerFlags);
-    
+
     let awaitable = tok_getType() === $ID_await;
     if (awaitable) {
 
