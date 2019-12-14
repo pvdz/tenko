@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Statement must have a sub-statement but found EOF instead (at EOF)
+  Unexpected EOF (at EOF)
 
 while (true)
             ^------- error at EOF

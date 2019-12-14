@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Missing `for` child statement (at EOF)
+  Unexpected EOF (at EOF)
 
 for (eval instanceof this; new 2e308;)
                                       ^------- error at EOF

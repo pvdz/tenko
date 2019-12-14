@@ -2877,16 +2877,13 @@ function Parser(code, options = {}) {
     ASSERT_LABELSET(labelSet);
 
     // nested statements like that of if, while, for, try, etc
-    if (tok_getType() === $EOF) {
-      return THROW_RANGE('Statement must have a sub-statement but found EOF instead', tok_getStart(), tok_getStop());
-    }
     parseBodyPart(lexerFlags, scoop, labelSet, UNDEF_EXPORTS, UNDEF_EXPORTS, NOT_GLOBAL_TOPLEVEL, isLabelled, fdState, nestedLabels, astProp);
   }
 
   function parseBodyPart(lexerFlags, scoop, labelSet, exportedNames, exportedBindings, isGlobalToplevel, isLabelled, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseBodyPart.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
-    ASSERT(tok_getType() !== $ERROR && tok_getType() !== $EOF && tok_getType() !== $ASI, 'token type should not have $error or $eof or $asi at this point');
+    ASSERT(tok_getType() !== $ERROR  && tok_getType() !== $ASI, 'token type should not have $error or $eof or $asi at this point');
     ASSERT(isLabelled === IS_LABELLED || isLabelled === NOT_LABELLED, 'isLabelled enum');
     ASSERT_LABELSET(labelSet);
 
@@ -2934,9 +2931,14 @@ function Parser(code, options = {}) {
       return;
     }
 
+    if (tok_getType() === $EOF) {
+      THROW_RANGE('Unexpected EOF', tok_getStart(), tok_getStop());
+      return;
+    }
+
     THROW_RANGE('Unexpected token'
       // <SCRUB DEV>
-      + ': ' + T(tok_getType())
+      + ':: ' + T(tok_getType())
       // </SCRUB DEV>
       , tok_getStart(), tok_getStop()
     );
@@ -4187,12 +4189,8 @@ function Parser(code, options = {}) {
 
     if (options_exposeScopes) AST_set('$scope', scoop);
 
-    while (tok_getType() !== $EOF && tok_getType() !== $PUNC_CURLY_CLOSE) {
+    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
       parseNestedBodyPart(lexerFlagsNoTemplate, scoop, labelSet, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL,'body');
-    }
-
-    if (tok_getType() === $EOF) {
-      return THROW_RANGE('Unexpected EOF while parsing a block', tok_getStart(), tok_getStop());
     }
 
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlags);
@@ -5066,9 +5064,6 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Missing closing paren of the `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
     }
     ASSERT_skipToStatementStart($PUNC_PAREN_CLOSE, lexerFlags);
-    if (tok_getType() === $EOF) {
-      return THROW_RANGE('Missing `for` child statement', tok_getStart(), tok_getStop());
-    }
     parseNestedBodyPart(lexerFlags | LF_IN_ITERATION, scoop, labelSet, NOT_LABELLED, FDS_ILLEGAL, PARENT_NOT_LABEL, 'body');
     AST_close(['ForStatement', 'ForInStatement', 'ForOfStatement']);
   }
@@ -6145,31 +6140,27 @@ function Parser(code, options = {}) {
     ASSERT_LABELSET(labelSet);
     ASSERT(tok_getType() !== $PUNC_BRACKET_OPEN, 'should invalidate expr stmt starting with `let [` before calling this func');
 
-    if (tok_getType() === $EOF) {
-      parseSemiOrAsi(lexerFlags);
-      AST_setNode(astProp, {
-        type: 'ExpressionStatement',
-        loc: AST_getClosedLoc($tp_identToken_start, $tp_identToken_line,  $tp_identToken_column),
-        expression: AST_getIdentNode($tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon),
-      });
-    } else if (tok_getType() === $PUNC_COLON) {
+    if (tok_getType() === $PUNC_COLON) {
       return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tp_identToken_type, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon, fdState, nestedLabels, astProp);
-    } else {
-      AST_open(astProp, {
-        type: 'ExpressionStatement',
-        loc: AST_getOpenLoc($tp_identToken_start, $tp_identToken_line, $tp_identToken_column),
-        expression: undefined,
-      });
-      let assignable = parseIdentOrParenlessArrow(lexerFlags, $tp_identToken_type, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
-      assignable = parseValueTail(lexerFlags, $tp_identToken_start, $tp_identToken_line, $tp_identToken_column, assignable, NOT_NEW_ARG, NOT_LHSE, 'expression');
-      parseExpressionFromOp(lexerFlags, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, assignable, 'expression');
-      if (tok_getType() === $PUNC_COMMA) {
-        // Don't care about assignable await/yield flags
-        _parseExpressions(lexerFlags, $tp_identToken_start, $tp_identToken_line, $tp_identToken_column, initNotAssignable(), 'expression');
-      }
-      parseSemiOrAsi(lexerFlags);
-      AST_close('ExpressionStatement');
     }
+
+    AST_open(astProp, {
+      type: 'ExpressionStatement',
+      loc: AST_getOpenLoc($tp_identToken_start, $tp_identToken_line, $tp_identToken_column),
+      expression: undefined,
+    });
+
+    let assignable = parseIdentOrParenlessArrow(lexerFlags, $tp_identToken_type, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon, IS_ASSIGNABLE, ASSIGN_EXPR_IS_OK, 'expression');
+    assignable = parseValueTail(lexerFlags, $tp_identToken_start, $tp_identToken_line, $tp_identToken_column, assignable, NOT_NEW_ARG, NOT_LHSE, 'expression');
+    parseExpressionFromOp(lexerFlags, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, assignable, 'expression');
+
+    if (tok_getType() === $PUNC_COMMA) {
+      // Don't care about assignable await/yield flags
+      _parseExpressions(lexerFlags, $tp_identToken_start, $tp_identToken_line, $tp_identToken_column, initNotAssignable(), 'expression');
+    }
+
+    parseSemiOrAsi(lexerFlags);
+    AST_close('ExpressionStatement');
   }
 
   function parseReturnStatement(lexerFlags, astProp) {
@@ -6287,7 +6278,7 @@ function Parser(code, options = {}) {
         break;
       }
       ASSERT_skipToStatementStart(':', lexerFlags);
-      while (tok_getType() !== $EOF && tok_getType() !== $PUNC_CURLY_CLOSE && (tok_getType() !== $ID_case && tok_getType() !== $ID_default)) {
+      while (tok_getType() !== $PUNC_CURLY_CLOSE && tok_getType() !== $ID_case && tok_getType() !== $ID_default) {
         parseNestedBodyPart(lexerFlags, scoop, labelSet, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL, 'consequent');
       }
       AST_close('SwitchCase');
@@ -12597,9 +12588,6 @@ function Parser(code, options = {}) {
     } else {
       // - `class x {} /foo/`
       // - `class x {} 06`
-      if (tok_getType() === $EOF) {
-        return THROW_RANGE('Unexpected EOF while parsing a class body', tok_getStart(), tok_getStop());
-      }
       ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
     }
 
