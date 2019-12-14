@@ -228,7 +228,7 @@ Tenko test runner help:
     -q)             EXTRA='-q'            ;;
     -b);&
     --build)        BUILD='-b'            ;;
-    --nb)           NO_BUILDING='on'      ;;
+    --nb)           NO_BUILDING='--nb'    ;;
     --no-compat)    NOCOMP='--no-compat'  ;;
     --no-ast)       NOAST='--no-ast'      ;;
     --no-min)       NOMIN='--no-min'      ;;
@@ -282,7 +282,7 @@ done
 HFPID=''
 if [[ "${HF}" = "yes" ]]; then
     # Note: the build is self-hosted so we should start this before transforming with HF. Use actual dev source with --nb
-    if [[ ! -z "${BUILD}" ]]; then
+    if [[ ! -z "${BUILD}" ]] || [[ ! -z "${NO_BUILDING}" ]]; then
       echo "Running on build"
       set -x
 
@@ -422,7 +422,7 @@ case "${ACTION}" in
     ;;
 
     hf)
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${INSPECT_ZEPAR}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${NO_BUILDING} ${INSPECT_ZEPAR}
     ;;
 
     doptigate)

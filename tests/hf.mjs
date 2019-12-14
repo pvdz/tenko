@@ -2,7 +2,7 @@ import fs from 'fs';
 
 import {testTenko} from './parse_tenko.mjs';
 
-const USE_BUILD = process.argv.includes('--build') || process.argv.includes('-b');
+const USE_BUILD = process.argv.includes('--build') || process.argv.includes('-b') || process.argv.includes('--nb');
 const USE_DEVTOOLS = process.argv.includes('--devtools');
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
