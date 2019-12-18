@@ -38,6 +38,7 @@ ASSERT(__$flag_group < 32, 'cannot use more than 32 flags but have ' + __$flag_g
 // Token types that are mutually exclusive can be encoded as as a unique id within a few bits of sequential space
 // You can still have group bits to complement these but it's far more space efficient this way
 // I don't think you should ever need the $L constants outside of defining the concrete token type constants below...
+// Note: leaf 0 is reserved for $IDENT
 const $L_SPACE = ++__$flag_leaf;
 const $L_TAB = ++__$flag_leaf;
 const $L_NL_SINGLE = ++__$flag_leaf;
@@ -45,7 +46,7 @@ const $L_NL_CRLF = ++__$flag_leaf;
 const $L_COMMENT_SINGLE = ++__$flag_leaf;
 const $L_COMMENT_MULTI = ++__$flag_leaf;
 const $L_COMMENT_HTML = ++__$flag_leaf;
-const $L_IDENT = ++__$flag_leaf;
+const $L_IDENT = 0; // This is a hack which causes the leaf bits to be clear. This way (value | $IDENT) yields, at least, $IDENT without destroying an $ID_foo special keyword
 const $L_NUMBER_HEX = ++__$flag_leaf;
 const $L_NUMBER_DEC = ++__$flag_leaf;
 const $L_NUMBER_BIN = ++__$flag_leaf;
@@ -329,109 +330,1411 @@ const $EOF = $L_EOF | $G_OTHER;
 const $ASI = $L_ASI | $G_OTHER;
 const $ERROR = $L_ERROR | $G_OTHER;
 
-let KEYWORD_TRIE = { 0:
-    { 17:
-        { 6:
-            { 20:
-                { 12: { 4: { 13: { 19: { 18: { hit: $ID_arguments, canon: 'arguments' } } } } } } } },
-      18: {
-        24: { 13: { 2: { hit: $ID_async, canon: 'async' } } },
-        hit: $ID_as, canon: 'as'
-      },
-      22: { 0: { 8: { 19: { hit: $ID_await, canon: 'await' } } } } },
-  1: { 17: { 4: { 0: { 10: { hit: $ID_break, canon: 'break' } } } } },
-  2:
-    { 0:
-        { 18: { 4: { hit: $ID_case, canon: 'case' } },
-          19: { 2: { 7: { hit: $ID_catch, canon: 'catch' } } } },
-      11: { 0: { 18: { 18: { hit: $ID_class, canon: 'class' } } } },
-      14:
-        { 13:
-            { 18: { 19: { hit: $ID_const, canon: 'const' } },
-              19: { 8: { 13: { 20: { 4: { hit: $ID_continue, canon: 'continue' } } } } } } } },
-  3:
-    { 4:
-        { 1:
-            { 20: { 6: { 6: { 4: { 17: { hit: $ID_debugger, canon: 'debugger' } } } } } },
-          5: { 0: { 20: { 11: { 19: { hit: $ID_default, canon: 'default' } } } } },
-          11: { 4: { 19: { 4: { hit: $ID_delete, canon: 'delete' } } } } },
-      14: { hit: $ID_do, canon: 'do' } },
-  4:
-    { 11: { 18: { 4: { hit: $ID_else, canon: 'else' } } },
-      13: { 20: { 12: { hit: $ID_enum, canon: 'enum' } } },
-      21: { 0: { 11: { hit: $ID_eval, canon: 'eval' } } },
-      23:
-        { 15: { 14: { 17: { 19: { hit: $ID_export, canon: 'export' } } } },
-          19: { 4: { 13: { 3: { 18: { hit: $ID_extends, canon: 'extends' } } } } } } },
-  5:
-    { 0: { 11: { 18: { 4: { hit: $ID_false, canon: 'false' } } } },
-      8:
-        { 13: { 0: { 11: { 11: { 24: { hit: $ID_finally, canon: 'finally' } } } } } },
-      14: { 17: { hit: $ID_for, canon: 'for' } },
-      17: { 14: { 12: { hit: $ID_from, canon: 'from' } } },
-      20:
-        { 13:
-            { 2: { 19: { 8: { 14: { 13: { hit: $ID_function, canon: 'function' } } } } } } } },
-  6: { 4: { 19: { hit: $ID_get, canon: 'get' } } },
-  8:
-    {
-      5: { hit: $ID_if, canon: 'if' },
-      12:
-        { 15:
-            { 11:
-                { 4:
-                    { 12: { 4: { 13: { 19: { 18: { hit: $ID_implements, canon: 'implements' } } } } } } },
-              14: { 17: { 19: { hit: $ID_import, canon: 'import' } } } } },
-        13: {
-          18:
-            { 19:
-                { 0:
-                    { 13: { 2: { 4: { 14: { 5: { hit: $ID_instanceof, canon: 'instanceof' } } } } } } }
-          },
-          19: {
-            4: { 17: { 5: { 0: { 2: { 4: { hit: $ID_interface, canon: 'interface' } } } } } }
-          },
-          hit: $ID_in, canon: 'in'
-        }
-    },
-  11: { 4: { 19: { hit: $ID_let, canon: 'let' } } },
-  13:
-    { 4: { 22: { hit: $ID_new, canon: 'new' } },
-      20: { 11: { 11: { hit: $ID_null, canon: 'null' } } } },
-  14: { 5: { hit: $ID_of, canon: 'of' } },
-  15:
-    { 0:
-        { 2: { 10: { 0: { 6: { 4: { hit: $ID_package, canon: 'package' } } } } } },
-      17:
-        { 8: { 21: { 0: { 19: { 4: { hit: $ID_private, canon: 'private' } } } } },
-          14:
-            { 19:
-                { 4: { 2: { 19: { 4: { 3: { hit: $ID_protected, canon: 'protected' } } } } } } } },
-      20: { 1: { 11: { 8: { 2: { hit: $ID_public, canon: 'public' } } } } } },
-  17:
-    { 4: { 19: { 20: { 17: { 13: { hit: $ID_return, canon: 'return' } } } } } },
-  18:
-    { 4: { 19: { hit: $ID_set, canon: 'set' } },
-      19: { 0: { 19: { 8: { 2: { hit: $ID_static, canon: 'static' } } } } },
-      20: { 15: { 4: { 17: { hit: $ID_super, canon: 'super' } } } },
-      22: { 8: { 19: { 2: { 7: { hit: $ID_switch, canon: 'switch' } } } } } },
-  19:
-    { 0: { 17: { 6: { 4: { 19: { hit: $ID_target, canon: 'target' } } } } },
-      7:
-        { 8: { 18: { hit: $ID_this, canon: 'this' } },
-          17: { 14: { 22: { hit: $ID_throw, canon: 'throw' } } } },
-      17: {
-        20: { 4: { hit: $ID_true, canon: 'true' } },
-        24: { hit: $ID_try, canon: 'try' }
-      },
-      24: { 15: { 4: { 14: { 5: { hit: $ID_typeof, canon: 'typeof' } } } } } },
-  21:
-    { 0: { 17: { hit: $ID_var, canon: 'var' } },
-      14: { 8: { 3: { hit: $ID_void, canon: 'void' } } } },
-  22:
-    { 7: { 8: { 11: { 4: { hit: $ID_while, canon: 'while' } } } },
-      8: { 19: { 7: { hit: $ID_with, canon: 'with' } } } },
-  24: { 8: { 4: { 11: { 3: { hit: $ID_yield, canon: 'yield' } } } } } };
+let KEYWORD_HASH = {
+  arguments: $ID_arguments,
+  async: $ID_async,
+  as: $ID_as,
+  await: $ID_await,
+  break: $ID_break,
+  case: $ID_case,
+  catch: $ID_catch,
+  class: $ID_class,
+  const: $ID_const,
+  continue: $ID_continue,
+  debugger: $ID_debugger,
+  default: $ID_default,
+  delete: $ID_delete,
+  do: $ID_do,
+  else: $ID_else,
+  enum: $ID_enum,
+  eval: $ID_eval,
+  export: $ID_export,
+  extends: $ID_extends,
+  false: $ID_false,
+  finally: $ID_finally,
+  for: $ID_for,
+  from: $ID_from,
+  function: $ID_function,
+  get: $ID_get,
+  if: $ID_if,
+  implements: $ID_implements,
+  import: $ID_import,
+  instanceof: $ID_instanceof,
+  interface: $ID_interface,
+  in: $ID_in,
+  let: $ID_let,
+  new: $ID_new,
+  null: $ID_null,
+  of: $ID_of,
+  package: $ID_package,
+  private: $ID_private,
+  protected: $ID_protected,
+  public: $ID_public,
+  return: $ID_return,
+  set: $ID_set,
+  static: $ID_static,
+  super: $ID_super,
+  switch: $ID_switch,
+  target: $ID_target,
+  this: $ID_this,
+  throw: $ID_throw,
+  true: $ID_true,
+  try: $ID_try,
+  typeof: $ID_typeof,
+  var: $ID_var,
+  void: $ID_void,
+  while: $ID_while,
+  with: $ID_with,
+  yield: $ID_yield,
+}
+let KEYWORD_HASH_OC = Object.create(null, {
+  arguments: {value: $ID_arguments},
+  async: {value: $ID_async},
+  as: {value: $ID_as},
+  await: {value: $ID_await},
+  break: {value: $ID_break},
+  case: {value: $ID_case},
+  catch: {value: $ID_catch},
+  class: {value: $ID_class},
+  const: {value: $ID_const},
+  continue: {value: $ID_continue},
+  debugger: {value: $ID_debugger},
+  default: {value: $ID_default},
+  delete: {value: $ID_delete},
+  do: {value: $ID_do},
+  else: {value: $ID_else},
+  enum: {value: $ID_enum},
+  eval: {value: $ID_eval},
+  export: {value: $ID_export},
+  extends: {value: $ID_extends},
+  false: {value: $ID_false},
+  finally: {value: $ID_finally},
+  for: {value: $ID_for},
+  from: {value: $ID_from},
+  function: {value: $ID_function},
+  get: {value: $ID_get},
+  if: {value: $ID_if},
+  implements: {value: $ID_implements},
+  import: {value: $ID_import},
+  instanceof: {value: $ID_instanceof},
+  interface: {value: $ID_interface},
+  in: {value: $ID_in},
+  let: {value: $ID_let},
+  new: {value: $ID_new},
+  null: {value: $ID_null},
+  of: {value: $ID_of},
+  package: {value: $ID_package},
+  private: {value: $ID_private},
+  protected: {value: $ID_protected},
+  public: {value: $ID_public},
+  return: {value: $ID_return},
+  set: {value: $ID_set},
+  static: {value: $ID_static},
+  super: {value: $ID_super},
+  switch: {value: $ID_switch},
+  target: {value: $ID_target},
+  this: {value: $ID_this},
+  throw: {value: $ID_throw},
+  true: {value: $ID_true},
+  try: {value: $ID_try},
+  typeof: {value: $ID_typeof},
+  var: {value: $ID_var},
+  void: {value: $ID_void},
+  while: {value: $ID_while},
+  with: {value: $ID_with},
+  yield: {value: $ID_yield},
+});
+
+let KEYWORD_MAP = new Map([
+  ['arguments', $ID_arguments],
+  ['async', $ID_async],
+  ['as', $ID_as],
+  ['await', $ID_await],
+  ['break', $ID_break],
+  ['case', $ID_case],
+  ['catch', $ID_catch],
+  ['class', $ID_class],
+  ['const', $ID_const],
+  ['continue', $ID_continue],
+  ['debugger', $ID_debugger],
+  ['default', $ID_default],
+  ['delete', $ID_delete],
+  ['do', $ID_do],
+  ['else', $ID_else],
+  ['enum', $ID_enum],
+  ['eval', $ID_eval],
+  ['export', $ID_export],
+  ['extends', $ID_extends],
+  ['false', $ID_false],
+  ['finally', $ID_finally],
+  ['for', $ID_for],
+  ['from', $ID_from],
+  ['function', $ID_function],
+  ['get', $ID_get],
+  ['if', $ID_if],
+  ['implements', $ID_implements],
+  ['import', $ID_import],
+  ['instanceof', $ID_instanceof],
+  ['interface', $ID_interface],
+  ['in', $ID_in],
+  ['let', $ID_let],
+  ['new', $ID_new],
+  ['null', $ID_null],
+  ['of', $ID_of],
+  ['package', $ID_package],
+  ['private', $ID_private],
+  ['protected', $ID_protected],
+  ['public', $ID_public],
+  ['return', $ID_return],
+  ['set', $ID_set],
+  ['static', $ID_static],
+  ['super', $ID_super],
+  ['switch', $ID_switch],
+  ['target', $ID_target],
+  ['this', $ID_this],
+  ['throw', $ID_throw],
+  ['true', $ID_true],
+  ['try', $ID_try],
+  ['typeof', $ID_typeof],
+  ['var', $ID_var],
+  ['void', $ID_void],
+  ['while', $ID_while],
+  ['with', $ID_with],
+  ['yield', $ID_yield],
+]);
+
+// let KEYWORD_TRIE = {
+//   0: {
+//     17: { 6: { 20: { 12: { 4: { 13: { 19: { 18: { hit: $ID_arguments, canon: 'arguments' } } } } } } } },
+//     18: {
+//       24: { 13: { 2: { hit: $ID_async, canon: 'async' } } },
+//       hit: $ID_as, canon: 'as'
+//     },
+//     22: { 0: { 8: { 19: { hit: $ID_await, canon: 'await' } } } }
+//   },
+//   1: { 17: { 4: { 0: { 10: { hit: $ID_break, canon: 'break' } } } } },
+//   2: {
+//     0: {
+//       18: { 4: { hit: $ID_case, canon: 'case' } },
+//       19: { 2: { 7: { hit: $ID_catch, canon: 'catch' } } }
+//     },
+//     11: { 0: { 18: { 18: { hit: $ID_class, canon: 'class' } } } },
+//     14: {
+//       13: { 18: { 19: { hit: $ID_const, canon: 'const' } },
+//       19: { 8: { 13: { 20: { 4: { hit: $ID_continue, canon: 'continue' } } } } } }
+//     }
+//   },
+//   3: {
+//     4: {
+//       1: { 20: { 6: { 6: { 4: { 17: { hit: $ID_debugger, canon: 'debugger' } } } } } },
+//       5: { 0: { 20: { 11: { 19: { hit: $ID_default, canon: 'default' } } } } },
+//       11: { 4: { 19: { 4: { hit: $ID_delete, canon: 'delete' } } } }
+//     },
+//     14: { hit: $ID_do, canon: 'do' }
+//   },
+//   4: {
+//     11: { 18: { 4: { hit: $ID_else, canon: 'else' } } },
+//     13: { 20: { 12: { hit: $ID_enum, canon: 'enum' } } },
+//     21: { 0: { 11: { hit: $ID_eval, canon: 'eval' } } },
+//     23: {
+//       15: { 14: { 17: { 19: { hit: $ID_export, canon: 'export' } } } },
+//       19: { 4: { 13: { 3: { 18: { hit: $ID_extends, canon: 'extends' } } } } }
+//     }
+//   },
+//   5: {
+//     0: { 11: { 18: { 4: { hit: $ID_false, canon: 'false' } } } },
+//     8: { 13: { 0: { 11: { 11: { 24: { hit: $ID_finally, canon: 'finally' } } } } } },
+//     14: { 17: { hit: $ID_for, canon: 'for' } },
+//     17: { 14: { 12: { hit: $ID_from, canon: 'from' } } },
+//     20: { 13: { 2: { 19: { 8: { 14: { 13: { hit: $ID_function, canon: 'function' } } } } } } }
+//   },
+//   6: { 4: { 19: { hit: $ID_get, canon: 'get' } } },
+//   8: {
+//     5: { hit: $ID_if, canon: 'if' },
+//     12: { 15: { 11: {
+//       4: { 12: { 4: { 13: { 19: { 18: { hit: $ID_implements, canon: 'implements' } } } } } } },
+//       14: { 17: { 19: { hit: $ID_import, canon: 'import' } } } }
+//     },
+//     13: {
+//       18: { 19: { 0: { 13: { 2: { 4: { 14: { 5: { hit: $ID_instanceof, canon: 'instanceof' } } } } } } } },
+//       19: { 4: { 17: { 5: { 0: { 2: { 4: { hit: $ID_interface, canon: 'interface' } } } } } } },
+//       hit: $ID_in, canon: 'in'
+//     },
+//   },
+//   11: { 4: { 19: { hit: $ID_let, canon: 'let' } } },
+//   13: {
+//     4: { 22: { hit: $ID_new, canon: 'new' } },
+//     20: { 11: { 11: { hit: $ID_null, canon: 'null' } } }
+//   },
+//   14: { 5: { hit: $ID_of, canon: 'of' } },
+//   15: {
+//     0: { 2: { 10: { 0: { 6: { 4: { hit: $ID_package, canon: 'package' } } } } } },
+//     17: {
+//       8: { 21: { 0: { 19: { 4: { hit: $ID_private, canon: 'private' } } } } },
+//       14: { 19: { 4: { 2: { 19: { 4: { 3: { hit: $ID_protected, canon: 'protected' } } } } } } }
+//     },
+//     20: { 1: { 11: { 8: { 2: { hit: $ID_public, canon: 'public' } } } } }
+//   },
+//   17: { 4: { 19: { 20: { 17: { 13: { hit: $ID_return, canon: 'return' } } } } } },
+//   18: {
+//     4: { 19: { hit: $ID_set, canon: 'set' } },
+//     19: { 0: { 19: { 8: { 2: { hit: $ID_static, canon: 'static' } } } } },
+//     20: { 15: { 4: { 17: { hit: $ID_super, canon: 'super' } } } },
+//     22: { 8: { 19: { 2: { 7: { hit: $ID_switch, canon: 'switch' } } } } }
+//   },
+//   19: {
+//     0: { 17: { 6: { 4: { 19: { hit: $ID_target, canon: 'target' } } } } },
+//     7: {
+//       8: { 18: { hit: $ID_this, canon: 'this' } },
+//       17: { 14: { 22: { hit: $ID_throw, canon: 'throw' } } }
+//     },
+//     17: {
+//       20: { 4: { hit: $ID_true, canon: 'true' } },
+//       24: { hit: $ID_try, canon: 'try' }
+//     },
+//     24: { 15: { 4: { 14: { 5: { hit: $ID_typeof, canon: 'typeof' } } } } }
+//   },
+//   21: {
+//     0: { 17: { hit: $ID_var, canon: 'var' } },
+//     14: { 8: { 3: { hit: $ID_void, canon: 'void' } } }
+//   },
+//   22: {
+//     7: { 8: { 11: { 4: { hit: $ID_while, canon: 'while' } } } },
+//     8: { 19: { 7: { hit: $ID_with, canon: 'with' } } }
+//   },
+//   24: { 8: { 4: { 11: { 3: { hit: $ID_yield, canon: 'yield' } } } } }
+// };
+
+// let KEYWORD_TRIE_OC = Object.create(null, {
+//   0: {
+//     value: Object.create(null, {
+//       17: {
+//         value: Object.create(null, {
+//           6: {
+//             value: Object.create(null, {
+//               20: {
+//                 value: Object.create(null, {
+//                   12: {
+//                     value: Object.create(null, {
+//                       4: {
+//                         value: Object.create(null, {
+//                           13: {
+//                             value: Object.create(null, {
+//                               19: {
+//                                 value: Object.create(null, {
+//                                   18: {
+//                                     value: Object.create(null, {
+//                                       hit: {value: $ID_arguments},
+//                                       canon: {value: 'arguments'}
+//                                     })
+//                                   }
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       18: {
+//         value: Object.create(null, {
+//           24: {
+//             value: Object.create(null, {
+//               13: {
+//                 value: Object.create(null, {
+//                   2: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_async},
+//                       canon: {value: 'async'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           hit: {value: $ID_as},
+//           canon: {value: 'as'}
+//         }),
+//       },
+//       22: {
+//         value: Object.create(null, {
+//           0: {
+//             value: Object.create(null, {
+//               8: {
+//                 value: Object.create(null, {
+//                   19: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_await},
+//                       canon: {value: 'await'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   1: {
+//     value: Object.create(null, {
+//       17: {
+//         value: Object.create(null, {
+//           4: {
+//             value: Object.create(null, {
+//               0: {
+//                 value: Object.create(null, {
+//                   10: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_break},
+//                       canon: {value: 'break'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   2: {
+//     value: Object.create(null, {
+//       0: {
+//         value: Object.create(null, {
+//           18: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_case},
+//                   canon: {value: 'case'}
+//                 })
+//               }
+//             })
+//           },
+//           19: {
+//             value: Object.create(null, {
+//               2: {
+//                 value: Object.create(null, {
+//                   7: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_catch},
+//                       canon: {value: 'catch'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       11: {
+//         value: Object.create(null, {
+//           0: {
+//             value: Object.create(null, {
+//               18: {
+//                 value: Object.create(null, {
+//                   18: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_class},
+//                       canon: {value: 'class'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       14: {
+//         value: Object.create(null, {
+//           13: {
+//             value: Object.create(null, {
+//               18: {
+//                 value: Object.create(null, {
+//                   19: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_const},
+//                       canon: {value: 'const'}
+//                     })
+//                   }
+//                 })
+//               },
+//               19: {
+//                 value: Object.create(null, {
+//                   8: {
+//                     value: Object.create(null, {
+//                       13: {
+//                         value: Object.create(null, {
+//                           20: {
+//                             value: Object.create(null, {
+//                               4: {
+//                                 value: Object.create(null, {
+//                                   hit: {value: $ID_continue},
+//                                   canon: {value: 'continue'}
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   3: {
+//     value: Object.create(null, {
+//       4: {
+//         value: Object.create(null, {
+//           1: {
+//             value: Object.create(null, {
+//               20: {
+//                 value: Object.create(null, {
+//                   6: {
+//                     value: Object.create(null, {
+//                       6: {
+//                         value: Object.create(null, {
+//                           4: {
+//                             value: Object.create(null, {
+//                               17: {
+//                                 value: Object.create(null, {
+//                                   hit: {value: $ID_debugger},
+//                                   canon: {value: 'debugger'}
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           5: {
+//             value: Object.create(null, {
+//               0: {
+//                 value: Object.create(null, {
+//                   20: {
+//                     value: Object.create(null, {
+//                       11: {
+//                         value: Object.create(null, {
+//                           19: {
+//                             value: Object.create(null, {
+//                               hit: {value: $ID_default},
+//                               canon: {value: 'default'}
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           11: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   19: {
+//                     value: Object.create(null, {
+//                       4: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_delete},
+//                           canon: {value: 'delete'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       14: {value: Object.create(null, {hit: {value: $ID_do}, canon: {value: 'do'}})}
+//     })
+//   },
+//   4: {
+//     value: Object.create(null, {
+//       11: {
+//         value: Object.create(null, {
+//           18: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_else},
+//                   canon: {value: 'else'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       13: {
+//         value: Object.create(null, {
+//           20: {
+//             value: Object.create(null, {
+//               12: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_enum},
+//                   canon: {value: 'enum'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       21: {
+//         value: Object.create(null, {
+//           0: {
+//             value: Object.create(null, {
+//               11: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_eval},
+//                   canon: {value: 'eval'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       23: {
+//         value: Object.create(null, {
+//           15: {
+//             value: Object.create(null, {
+//               14: {
+//                 value: Object.create(null, {
+//                   17: {
+//                     value: Object.create(null, {
+//                       19: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_export},
+//                           canon: {value: 'export'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           19: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   13: {
+//                     value: Object.create(null, {
+//                       3: {
+//                         value: Object.create(null, {
+//                           18: {
+//                             value: Object.create(null, {
+//                               hit: {value: $ID_extends},
+//                               canon: {value: 'extends'}
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   5: {
+//     value: Object.create(null, {
+//       0: {
+//         value: Object.create(null, {
+//           11: {
+//             value: Object.create(null, {
+//               18: {
+//                 value: Object.create(null, {
+//                   4: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_false},
+//                       canon: {value: 'false'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       8: {
+//         value: Object.create(null, {
+//           13: {
+//             value: Object.create(null, {
+//               0: {
+//                 value: Object.create(null, {
+//                   11: {
+//                     value: Object.create(null, {
+//                       11: {
+//                         value: Object.create(null, {
+//                           24: {
+//                             value: Object.create(null, {
+//                               hit: {value: $ID_finally},
+//                               canon: {value: 'finally'}
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       14: {
+//         value: Object.create(null, {
+//           17: {
+//             value: Object.create(null, {
+//               hit: {value: $ID_for},
+//               canon: {value: 'for'}
+//             })
+//           }
+//         })
+//       },
+//       17: {
+//         value: Object.create(null, {
+//           14: {
+//             value: Object.create(null, {
+//               12: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_from},
+//                   canon: {value: 'from'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       20: {
+//         value: Object.create(null, {
+//           13: {
+//             value: Object.create(null, {
+//               2: {
+//                 value: Object.create(null, {
+//                   19: {
+//                     value: Object.create(null, {
+//                       8: {
+//                         value: Object.create(null, {
+//                           14: {
+//                             value: Object.create(null, {
+//                               13: {
+//                                 value: Object.create(null, {
+//                                   hit: {value: $ID_function},
+//                                   canon: {value: 'function'}
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   6: {
+//     value: Object.create(null, {
+//       4: {
+//         value: Object.create(null, {
+//           19: {
+//             value: Object.create(null, {
+//               hit: {value: $ID_get},
+//               canon: {value: 'get'}
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   8: {
+//     value: Object.create(null, {
+//       5: {value: Object.create(null, {hit: {value: $ID_if}, canon: {value: 'if'}})},
+//       12: {
+//         value: Object.create(null, {
+//           15: {
+//             value: Object.create(null, {
+//               11: {
+//                 value: Object.create(null, {
+//                   4: {
+//                     value: Object.create(null, {
+//                       12: {
+//                         value: Object.create(null, {
+//                           4: {
+//                             value: Object.create(null, {
+//                               13: {
+//                                 value: Object.create(null, {
+//                                   19: {
+//                                     value: Object.create(null, {
+//                                       18: {
+//                                         value: Object.create(null, {
+//                                           hit: {value: $ID_implements},
+//                                           canon: {value: 'implements'}
+//                                         })
+//                                       }
+//                                     })
+//                                   }
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               },
+//               14: {
+//                 value: Object.create(null, {
+//                   17: {
+//                     value: Object.create(null, {
+//                       19: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_import},
+//                           canon: {value: 'import'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       13: {
+//         value: Object.create(null, {
+//           18: {
+//             value: Object.create(null, {
+//               19: {
+//                 value: Object.create(null, {
+//                   0: {
+//                     value: Object.create(null, {
+//                       13: {
+//                         value: Object.create(null, {
+//                           2: {
+//                             value: Object.create(null, {
+//                               4: {
+//                                 value: Object.create(null, {
+//                                   14: {
+//                                     value: Object.create(null, {
+//                                       5: {
+//                                         value: Object.create(null, {
+//                                           hit: {value: $ID_instanceof},
+//                                           canon: {value: 'instanceof'}
+//                                         })
+//                                       }
+//                                     })
+//                                   }
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           19: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   17: {
+//                     value: Object.create(null, {
+//                       5: {
+//                         value: Object.create(null, {
+//                           0: {
+//                             value: Object.create(null, {
+//                               2: {
+//                                 value: Object.create(null, {
+//                                   4: {
+//                                     value: Object.create(null, {
+//                                       hit: {value: $ID_interface},
+//                                       canon: {value: 'interface'}
+//                                     })
+//                                   }
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           hit: {value: $ID_in},
+//           canon: {value: 'in'},
+//         })
+//       },
+//     })
+//   },
+//   11: {
+//     value: Object.create(null, {
+//       4: {
+//         value: Object.create(null, {
+//           19: {
+//             value: Object.create(null, {
+//               hit: {value: $ID_let},
+//               canon: {value: 'let'}
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   13: {
+//     value: Object.create(null, {
+//       4: {
+//         value: Object.create(null, {
+//           22: {
+//             value: Object.create(null, {
+//               hit: {value: $ID_new},
+//               canon: {value: 'new'}
+//             })
+//           }
+//         })
+//       },
+//       20: {
+//         value: Object.create(null, {
+//           11: {
+//             value: Object.create(null, {
+//               11: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_null},
+//                   canon: {value: 'null'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   14: {value: Object.create(null, {5: {value: Object.create(null, {hit: {value: $ID_of}, canon: {value: 'of'}})}})},
+//   15: {
+//     value: Object.create(null, {
+//       0: {
+//         value: Object.create(null, {
+//           2: {
+//             value: Object.create(null, {
+//               10: {
+//                 value: Object.create(null, {
+//                   0: {
+//                     value: Object.create(null, {
+//                       6: {
+//                         value: Object.create(null, {
+//                           4: {
+//                             value: Object.create(null, {
+//                               hit: {value: $ID_package},
+//                               canon: {value: 'package'}
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       17: {
+//         value: Object.create(null, {
+//           8: {
+//             value: Object.create(null, {
+//               21: {
+//                 value: Object.create(null, {
+//                   0: {
+//                     value: Object.create(null, {
+//                       19: {
+//                         value: Object.create(null, {
+//                           4: {
+//                             value: Object.create(null, {
+//                               hit: {value: $ID_private},
+//                               canon: {value: 'private'}
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           },
+//           14: {
+//             value: Object.create(null, {
+//               19: {
+//                 value: Object.create(null, {
+//                   4: {
+//                     value: Object.create(null, {
+//                       2: {
+//                         value: Object.create(null, {
+//                           19: {
+//                             value: Object.create(null, {
+//                               4: {
+//                                 value: Object.create(null, {
+//                                   3: {
+//                                     value: Object.create(null, {
+//                                       hit: {value: $ID_protected},
+//                                       canon: {value: 'protected'}
+//                                     })
+//                                   }
+//                                 })
+//                               }
+//                             })
+//                           }
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       20: {
+//         value: Object.create(null, {
+//           1: {
+//             value: Object.create(null, {
+//               11: {
+//                 value: Object.create(null, {
+//                   8: {
+//                     value: Object.create(null, {
+//                       2: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_public},
+//                           canon: {value: 'public'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   17: {
+//     value: Object.create(null, {
+//       4: {
+//         value: Object.create(null, {
+//           19: {
+//             value: Object.create(null, {
+//               20: {
+//                 value: Object.create(null, {
+//                   17: {
+//                     value: Object.create(null, {
+//                       13: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_return},
+//                           canon: {value: 'return'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   18: {
+//     value: Object.create(null, {
+//       4: {
+//         value: Object.create(null, {
+//           19: {
+//             value: Object.create(null, {
+//               hit: {value: $ID_set},
+//               canon: {value: 'set'}
+//             })
+//           }
+//         })
+//       },
+//       19: {
+//         value: Object.create(null, {
+//           0: {
+//             value: Object.create(null, {
+//               19: {
+//                 value: Object.create(null, {
+//                   8: {
+//                     value: Object.create(null, {
+//                       2: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_static},
+//                           canon: {value: 'static'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       20: {
+//         value: Object.create(null, {
+//           15: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   17: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_super},
+//                       canon: {value: 'super'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       22: {
+//         value: Object.create(null, {
+//           8: {
+//             value: Object.create(null, {
+//               19: {
+//                 value: Object.create(null, {
+//                   2: {
+//                     value: Object.create(null, {
+//                       7: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_switch},
+//                           canon: {value: 'switch'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   19: {
+//     value: Object.create(null, {
+//       0: {
+//         value: Object.create(null, {
+//           17: {
+//             value: Object.create(null, {
+//               6: {
+//                 value: Object.create(null, {
+//                   4: {
+//                     value: Object.create(null, {
+//                       19: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_target},
+//                           canon: {value: 'target'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       7: {
+//         value: Object.create(null, {
+//           8: {
+//             value: Object.create(null, {
+//               18: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_this},
+//                   canon: {value: 'this'}
+//                 })
+//               }
+//             })
+//           },
+//           17: {
+//             value: Object.create(null, {
+//               14: {
+//                 value: Object.create(null, {
+//                   22: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_throw},
+//                       canon: {value: 'throw'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       17: {
+//         value: Object.create(null, {
+//           20: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_true},
+//                   canon: {value: 'true'}
+//                 })
+//               }
+//             })
+//           },
+//           24: {value: Object.create(null, {hit: {value: $ID_try}, canon: {value: 'try'}})}
+//         })
+//       },
+//       24: {
+//         value: Object.create(null, {
+//           15: {
+//             value: Object.create(null, {
+//               4: {
+//                 value: Object.create(null, {
+//                   14: {
+//                     value: Object.create(null, {
+//                       5: {
+//                         value: Object.create(null, {
+//                           hit: {value: $ID_typeof},
+//                           canon: {value: 'typeof'}
+//                         })
+//                       }
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   21: {
+//     value: Object.create(null, {
+//       0: {
+//         value: Object.create(null, {
+//           17: {
+//             value: Object.create(null, {
+//               hit: {value: $ID_var},
+//               canon: {value: 'var'}
+//             })
+//           }
+//         })
+//       },
+//       14: {
+//         value: Object.create(null, {
+//           8: {
+//             value: Object.create(null, {
+//               3: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_void},
+//                   canon: {value: 'void'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   22: {
+//     value: Object.create(null, {
+//       7: {
+//         value: Object.create(null, {
+//           8: {
+//             value: Object.create(null, {
+//               11: {
+//                 value: Object.create(null, {
+//                   4: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_while},
+//                       canon: {value: 'while'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       },
+//       8: {
+//         value: Object.create(null, {
+//           19: {
+//             value: Object.create(null, {
+//               7: {
+//                 value: Object.create(null, {
+//                   hit: {value: $ID_with},
+//                   canon: {value: 'with'}
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   },
+//   24: {
+//     value: Object.create(null, {
+//       8: {
+//         value: Object.create(null, {
+//           4: {
+//             value: Object.create(null, {
+//               11: {
+//                 value: Object.create(null, {
+//                   3: {
+//                     value: Object.create(null, {
+//                       hit: {value: $ID_yield},
+//                       canon: {value: 'yield'}
+//                     })
+//                   }
+//                 })
+//               }
+//             })
+//           }
+//         })
+//       }
+//     })
+//   }
+// });
+
+// let KEYWORD_TRIE_MAP = new Map([
+//   [0, new Map([
+//     [17, new Map([[6, new Map([[20, new Map([[12, new Map([[4, new Map([[13, new Map([[19, new Map([[18, new Map([['hit', $ID_arguments], ['canon', 'arguments']])]])]])]])]])]])]])]])],
+//     [18, new Map([
+//       [24, new Map([[13, new Map([[2, new Map([['hit', $ID_async], ['canon', 'async']])]])]])],
+//       ['hit', $ID_as], ['canon', 'as'],
+//     ])],
+//     [22, new Map([[0, new Map([[8, new Map([[19, new Map([['hit', $ID_await], ['canon', 'await']])]])]])]])],
+//   ])],
+//   [1, new Map([[17, new Map([[4, new Map([[0, new Map([[10, new Map([['hit', $ID_break], ['canon', 'break']])]])]])]])]])],
+//   [2, new Map([
+//     [0,  new Map([
+//       [18,  new Map([[4, new Map([['hit', $ID_case], ['canon', 'case']])]])],
+//       [19,  new Map([[2, new Map([[7, new Map([['hit', $ID_catch], ['canon', 'catch']])]])]])]
+//     ])],
+//     [11,  new Map([[0, new Map([[18, new Map([[18, new Map([['hit', $ID_class], ['canon', 'class']])]])]])]])],
+//     [14,  new Map([[13,  new Map([
+//       [18,  new Map([[19, new Map([['hit', $ID_const], ['canon', 'const']])]])],
+//       [19,  new Map([[8, new Map([[13, new Map([[20, new Map([[4, new Map([['hit', $ID_continue], ['canon', 'continue']])]])]])]])]])]
+//     ])]])]
+//   ])],
+//   [3,  new Map([
+//     [4,  new Map([
+//       [1,  new Map([[20, new Map([[6, new Map([[6, new Map([[4, new Map([[17, new Map([['hit', $ID_debugger], ['canon', 'debugger']])]])]])]])]])]])],
+//       [5,  new Map([[0, new Map([[20, new Map([[11, new Map([[19, new Map([['hit', $ID_default], ['canon', 'default']])]])]])]])]])],
+//       [11,  new Map([[4, new Map([[19, new Map([[4, new Map([['hit', $ID_delete], ['canon', 'delete']])]])]])]])]
+//     ])],
+//     [14,  new Map([['hit', $ID_do], ['canon', 'do']])]
+//   ])],
+//   [4,  new Map([
+//     [11,  new Map([[18, new Map([[4, new Map([['hit', $ID_else], ['canon', 'else']])]])]])],
+//     [13,  new Map([[20, new Map([[12, new Map([['hit', $ID_enum], ['canon', 'enum']])]])]])],
+//     [21,  new Map([[0, new Map([[11, new Map([['hit', $ID_eval], ['canon', 'eval']])]])]])],
+//     [23,  new Map([
+//       [15,  new Map([[14, new Map([[17, new Map([[19, new Map([['hit', $ID_export], ['canon', 'export']])]])]])]])],
+//       [19,  new Map([[4, new Map([[13, new Map([[3, new Map([[18, new Map([['hit', $ID_extends], ['canon', 'extends']])]])]])]])]])]
+//     ])],
+//   ])],
+//   [5,  new Map([
+//     [0,  new Map([[11, new Map([[18, new Map([[4, new Map([['hit', $ID_false], ['canon', 'false']])]])]])]])],
+//     [8,  new Map([[13, new Map([[0, new Map([[11, new Map([[11, new Map([[24, new Map([['hit', $ID_finally], ['canon', 'finally']])]])]])]])]])]])],
+//     [14,  new Map([[17, new Map([['hit', $ID_for], ['canon', 'for']])]])],
+//     [17,  new Map([[14, new Map([[12, new Map([['hit', $ID_from], ['canon', 'from']])]])]])],
+//     [20,  new Map([[13, new Map([[2, new Map([[19, new Map([[8, new Map([[14, new Map([[13, new Map([['hit', $ID_function], ['canon', 'function']])]])]])]])]])]])]])]
+//   ])],
+//   [6,  new Map([[4, new Map([[19, new Map([['hit', $ID_get], ['canon', 'get']])]])]])],
+//   [8,  new Map([
+//     [5,  new Map([['hit', $ID_if], ['canon', 'if']])],
+//     [12,  new Map([[15,  new Map([
+//       [11,  new Map([[4, new Map([[12, new Map([[4, new Map([[13, new Map([[19, new Map([[18, new Map([['hit', $ID_implements], ['canon', 'implements']])]])]])]])]])]])]])],
+//       [14,  new Map([[17, new Map([[19, new Map([['hit', $ID_import], ['canon', 'import']])]])]])],
+//     ])]])],
+//     [13,  new Map([
+//       [18,  new Map([[19, new Map([[0, new Map([[13, new Map([[2, new Map([[4, new Map([[14, new Map([[5, new Map([['hit', $ID_instanceof], ['canon', 'instanceof']])]])]])]])]])]])]])]])],
+//       [19,  new Map([[4, new Map([[17, new Map([[5, new Map([[0, new Map([[2, new Map([[4, new Map([['hit', $ID_interface], ['canon', 'interface']])]])]])]])]])]])]])],
+//       ['hit', $ID_in], ['canon', 'in'],
+//     ])],
+//   ])],
+//   [11,  new Map([[4, new Map([[19, new Map([['hit', $ID_let], ['canon', 'let']])]])]])],
+//   [13,  new Map([
+//     [4,  new Map([[22, new Map([['hit', $ID_new], ['canon', 'new']])]])],
+//     [20,  new Map([[11, new Map([[11, new Map([['hit', $ID_null], ['canon', 'null']])]])]])]
+//   ])],
+//   [14,  new Map([[5, new Map([['hit', $ID_of], ['canon', 'of']])]])],
+//   [15,  new Map([
+//     [0,  new Map([[2, new Map([[10, new Map([[0, new Map([[6, new Map([[4, new Map([['hit', $ID_package], ['canon', 'package']])]])]])]])]])]])],
+//     [17,  new Map([
+//       [8,  new Map([[21, new Map([[0, new Map([[19, new Map([[4, new Map([['hit', $ID_private], ['canon', 'private']])]])]])]])]])],
+//       [14,  new Map([[19, new Map([[4, new Map([[2, new Map([[19, new Map([[4, new Map([[3, new Map([['hit', $ID_protected], ['canon', 'protected']])]])]])]])]])]])]])]
+//     ])],
+//     [20,  new Map([[1, new Map([[11, new Map([[8, new Map([[2, new Map([['hit', $ID_public], ['canon', 'public']])]])]])]])]])]
+//   ])],
+//   [17,  new Map([[4, new Map([[19, new Map([[20, new Map([[17, new Map([[13, new Map([['hit', $ID_return], ['canon', 'return']])]])]])]])]])]])],
+//   [18,  new Map([
+//     [4,  new Map([[19, new Map([['hit', $ID_set], ['canon', 'set']])]])],
+//     [19,  new Map([[0, new Map([[19, new Map([[8, new Map([[2, new Map([['hit', $ID_static], ['canon', 'static']])]])]])]])]])],
+//     [20,  new Map([[15, new Map([[4, new Map([[17, new Map([['hit', $ID_super], ['canon', 'super']])]])]])]])],
+//     [22,  new Map([[8, new Map([[19, new Map([[2, new Map([[7, new Map([['hit', $ID_switch], ['canon', 'switch']])]])]])]])]])]
+//   ])],
+//   [19,  new Map([
+//     [0,  new Map([[17, new Map([[6, new Map([[4, new Map([[19, new Map([['hit', $ID_target], ['canon', 'target']])]])]])]])]])],
+//     [7,  new Map([
+//       [8,  new Map([[18, new Map([['hit', $ID_this], ['canon', 'this']])]])],
+//       [17,  new Map([[14, new Map([[22, new Map([['hit', $ID_throw], ['canon', 'throw']])]])]])]
+//     ])],
+//     [17,  new Map([
+//       [20,  new Map([[4, new Map([['hit', $ID_true], ['canon', 'true']])]])],
+//       [24,  new Map([['hit', $ID_try], ['canon', 'try']])]
+//     ])],
+//     [24,  new Map([[15, new Map([[4, new Map([[14, new Map([[5, new Map([['hit', $ID_typeof], ['canon', 'typeof']])]])]])]])]])]
+//   ])],
+//   [21,  new Map([
+//     [0,  new Map([[17, new Map([['hit', $ID_var], ['canon', 'var']])]])],
+//     [14,  new Map([[8, new Map([[3, new Map([['hit', $ID_void], ['canon', 'void']])]])]])]
+//   ])],
+//   [22,  new Map([
+//     [7,  new Map([[8, new Map([[11, new Map([[4, new Map([['hit', $ID_while], ['canon', 'while']])]])]])]])],
+//     [8,  new Map([[19, new Map([[7, new Map([['hit', $ID_with], ['canon', 'with']])]])]])]
+//   ])],
+//   [24,  new Map([[8, new Map([[4, new Map([[11, new Map([[3, new Map([['hit', $ID_yield], ['canon', 'yield']])]])]])]])]])]
+// ]);
 
 function isWhiteToken(type) {
   return (type & $G_WHITE) === $G_WHITE;
@@ -824,6 +2127,17 @@ ASSERT(ALL_GEES.every(type => type > __$flag_start), 'the G start at bit 7 or wh
 ASSERT(ALL_TOKEN_TYPES.every(type => type > __$flag_start), 'all tokens must be higher than the start numbers because they are all combinations with at least one G. this is important so we can distinguish them when reading the token start');
 // </SCRUB ASSERTS TO COMMENT>
 
+const STRING_PART = 0;
+const STRING_QUOTE = 1;
+const STRING_BS = 2;
+const STRING_UNICODE = 3;
+const STRING_NL = 4;
+
+const IDENT_PART = 0;
+const IDENT_END = 1;
+const IDENT_BS = 2;
+const IDENT_UNICODE = 3;
+
 // Inspired by https://twitter.com/Ghost1240145716/status/1186595972232564736 / https://gist.github.com/KFlash/c53a2f0adb25e88ab7cdc3d77d295635
 let tokenStartJumpTable = [
   // val                     hex    end   desc
@@ -931,29 +2245,293 @@ let tokenStartJumpTable = [
   START_KEY,               // 0x65   no*   e
   START_KEY,               // 0x66   no*   f
   START_KEY,               // 0x67   no*   g
-  START_KEY,               // 0x68   no*   h
+  START_ID,               // 0x68   no*   h
   START_KEY,               // 0x69   no*   i
-  START_KEY,               // 0x6A   no*   j
-  START_KEY,               // 0x6B   no*   k
+  START_ID,               // 0x6A   no*   j
+  START_ID,               // 0x6B   no*   k
   START_KEY,               // 0x6C   no*   l
-  START_KEY,               // 0x6D   no*   m
+  START_ID,               // 0x6D   no*   m
   START_KEY,               // 0x6E   no*   n
   START_KEY,               // 0x6F   no*   o
   START_KEY,               // 0x70   no*   p
-  START_KEY,               // 0x71   no*   q
+  START_ID,               // 0x71   no*   q
   START_KEY,               // 0x72   no*   r
   START_KEY,               // 0x73   no*   s
   START_KEY,               // 0x74   no*   t
-  START_KEY,               // 0x75   no*   u
+  START_ID,               // 0x75   no*   u
   START_KEY,               // 0x76   no*   v
   START_KEY,               // 0x77   no*   w
-  START_KEY,               // 0x78   no*   x
+  START_ID,               // 0x78   no*   x
   START_KEY,               // 0x79   no*   y
-  START_KEY,               // 0x7A   no*   z
+  START_ID,               // 0x7A   no*   z
   $PUNC_CURLY_OPEN,       // 0x7B   yes   {
   START_OR,               // 0x7C   no3   | :: | || |=
   START_CURLY_CLOSE,      // 0x7D   no3   } :: } }...` }...${
   $PUNC_TILDE,            // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+  // START_ERROR,            // 0x7F   yes   DEL
+];
+let stringScanTable = [
+  // val                     hex    end   desc
+  STRING_PART,            // 0x00   yes   NUL
+  STRING_PART,            // 0x01   yes   SOH
+  STRING_PART,            // 0x02   yes   STX
+  STRING_PART,            // 0x03   yes   ETX
+  STRING_PART,            // 0x04   yes   EOT
+  STRING_PART,            // 0x05   yes   ENQ
+  STRING_PART,            // 0x06   yes   ACK
+  STRING_PART,            // 0x07   yes   BEL
+  STRING_PART,            // 0x08   yes   BS
+  STRING_PART,            // 0x09   yes   HT
+  STRING_NL,              // 0x0A   yes   LF
+  STRING_PART,            // 0x0B   yes   VT
+  STRING_PART,            // 0x0C   yes   FF
+  STRING_NL,              // 0x0D   no2   CR :: CR CRLF
+  STRING_PART,            // 0x0E   yes   SO
+  STRING_PART,            // 0x0F   yes   SI
+  STRING_PART,            // 0x10   yes   DLE
+  STRING_PART,            // 0x11   yes   DC1
+  STRING_PART,            // 0x12   yes   DC2
+  STRING_PART,            // 0x13   yes   DC3
+  STRING_PART,            // 0x14   yes   DC4
+  STRING_PART,            // 0x15   yes   NAK
+  STRING_PART,            // 0x16   yes   SYN
+  STRING_PART,            // 0x17   yes   ETB
+  STRING_PART,            // 0x18   yes   CAN
+  STRING_PART,            // 0x19   yes   EM
+  STRING_PART,            // 0x1A   yes   SUB
+  STRING_PART,            // 0x1B   yes   ESC
+  STRING_PART,            // 0x1C   yes   FS
+  STRING_PART,            // 0x1D   yes   GS
+  STRING_PART,            // 0x1E   yes   RS
+  STRING_PART,            // 0x1F   yes   US
+  STRING_PART,            // 0x20   yes   space
+  STRING_PART,            // 0x21   no3   ! :: ! != !==
+  STRING_QUOTE,           // 0x22   no*   "
+  STRING_PART,            // 0x23   yes   #
+  STRING_PART,            // 0x24   no*   $
+  STRING_PART,            // 0x25   no2   % :: % %=
+  STRING_PART,            // 0x26   no3   & :: & && &=
+  STRING_QUOTE,           // 0x27   no*   '
+  STRING_PART,            // 0x28   yes   (
+  STRING_PART,            // 0x29   yes   )
+  STRING_PART,            // 0x2A   no4   * :: * ** *= **=
+  STRING_PART,            // 0x2B   no3   + :: + ++ +=
+  STRING_PART,            // 0x2C   yes   ,
+  STRING_PART,            // 0x2D   no4   - :: - -- -= -->
+  STRING_PART,            // 0x2E   no3   . :: . ... number
+  STRING_PART,            // 0x2F   no*   / :: / regex
+  STRING_PART,            // 0x30   no*   0
+  STRING_PART,            // 0x31   no*   1
+  STRING_PART,            // 0x32   no*   2
+  STRING_PART,            // 0x33   no*   3
+  STRING_PART,            // 0x34   no*   4
+  STRING_PART,            // 0x35   no*   5
+  STRING_PART,            // 0x36   no*   6
+  STRING_PART,            // 0x37   no*   7
+  STRING_PART,            // 0x38   no*   8
+  STRING_PART,            // 0x39   no*   9
+  STRING_PART,            // 0x3A   yes   :
+  STRING_PART,            // 0x3B   yes   ;
+  STRING_PART,            // 0x3C   no4   < :: < << <= <<= <!--
+  STRING_PART,            // 0x3D   no4   = :: = == === =>
+  STRING_PART,            // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  STRING_PART,            // 0x3F   yes   ?
+  STRING_PART,            // 0x40   yes   @
+  STRING_PART,            // 0x41   no*   A
+  STRING_PART,            // 0x42   no*   B
+  STRING_PART,            // 0x43   no*   C
+  STRING_PART,            // 0x44   no*   D
+  STRING_PART,            // 0x45   no*   E
+  STRING_PART,            // 0x46   no*   F
+  STRING_PART,            // 0x47   no*   G
+  STRING_PART,            // 0x48   no*   H
+  STRING_PART,            // 0x49   no*   I
+  STRING_PART,            // 0x4A   no*   J
+  STRING_PART,            // 0x4B   no*   K
+  STRING_PART,            // 0x4C   no*   L
+  STRING_PART,            // 0x4D   no*   M
+  STRING_PART,            // 0x4E   no*   N
+  STRING_PART,            // 0x4F   no*   O
+  STRING_PART,            // 0x50   no*   P
+  STRING_PART,            // 0x51   no*   Q
+  STRING_PART,            // 0x52   no*   R
+  STRING_PART,            // 0x53   no*   S
+  STRING_PART,            // 0x54   no*   T
+  STRING_PART,            // 0x55   no*   U
+  STRING_PART,            // 0x56   no*   V
+  STRING_PART,            // 0x57   no*   W
+  STRING_PART,            // 0x58   no*   X
+  STRING_PART,            // 0x59   no*   Y
+  STRING_PART,            // 0x5A   no*   Z
+  STRING_PART,            // 0x5B   yes   [
+  STRING_BS,              // 0x5C   no2   \ :: \uHHHH \u{H*}
+  STRING_PART,            // 0x5D   yes   ]
+  STRING_PART,            // 0x5E   no2   ^ :: ^ ^=
+  STRING_PART,            // 0x5F   no*   _ (lodash)
+  STRING_PART,            // 0x60   no*   ` :: `...${ `...`
+  STRING_PART,            // 0x61   no*   a
+  STRING_PART,            // 0x62   no*   b
+  STRING_PART,            // 0x63   no*   c
+  STRING_PART,            // 0x64   no*   d
+  STRING_PART,            // 0x65   no*   e
+  STRING_PART,            // 0x66   no*   f
+  STRING_PART,            // 0x67   no*   g
+  STRING_PART,            // 0x68   no*   h
+  STRING_PART,            // 0x69   no*   i
+  STRING_PART,            // 0x6A   no*   j
+  STRING_PART,            // 0x6B   no*   k
+  STRING_PART,            // 0x6C   no*   l
+  STRING_PART,            // 0x6D   no*   m
+  STRING_PART,            // 0x6E   no*   n
+  STRING_PART,            // 0x6F   no*   o
+  STRING_PART,            // 0x70   no*   p
+  STRING_PART,            // 0x71   no*   q
+  STRING_PART,            // 0x72   no*   r
+  STRING_PART,            // 0x73   no*   s
+  STRING_PART,            // 0x74   no*   t
+  STRING_PART,            // 0x75   no*   u
+  STRING_PART,            // 0x76   no*   v
+  STRING_PART,            // 0x77   no*   w
+  STRING_PART,            // 0x78   no*   x
+  STRING_PART,            // 0x79   no*   y
+  STRING_PART,            // 0x7A   no*   z
+  STRING_PART,            // 0x7B   yes   {
+  STRING_PART,            // 0x7C   no3   | :: | || |=
+  STRING_PART,            // 0x7D   no3   } :: } }...` }...${
+  STRING_PART,            // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+  // START_ERROR,            // 0x7F   yes   DEL
+];
+let identScanTable = [
+  // val                     hex    end   desc
+  IDENT_END,              // 0x00   yes   NUL
+  IDENT_END,              // 0x01   yes   SOH
+  IDENT_END,              // 0x02   yes   STX
+  IDENT_END,              // 0x03   yes   ETX
+  IDENT_END,              // 0x04   yes   EOT
+  IDENT_END,              // 0x05   yes   ENQ
+  IDENT_END,              // 0x06   yes   ACK
+  IDENT_END,              // 0x07   yes   BEL
+  IDENT_END,              // 0x08   yes   BS
+  IDENT_END,              // 0x09   yes   HT
+  IDENT_END,              // 0x0A   yes   LF
+  IDENT_END,              // 0x0B   yes   VT
+  IDENT_END,              // 0x0C   yes   FF
+  IDENT_END,              // 0x0D   no2   CR :: CR CRLF
+  IDENT_END,              // 0x0E   yes   SO
+  IDENT_END,              // 0x0F   yes   SI
+  IDENT_END,              // 0x10   yes   DLE
+  IDENT_END,              // 0x11   yes   DC1
+  IDENT_END,              // 0x12   yes   DC2
+  IDENT_END,              // 0x13   yes   DC3
+  IDENT_END,              // 0x14   yes   DC4
+  IDENT_END,              // 0x15   yes   NAK
+  IDENT_END,              // 0x16   yes   SYN
+  IDENT_END,              // 0x17   yes   ETB
+  IDENT_END,              // 0x18   yes   CAN
+  IDENT_END,              // 0x19   yes   EM
+  IDENT_END,              // 0x1A   yes   SUB
+  IDENT_END,              // 0x1B   yes   ESC
+  IDENT_END,              // 0x1C   yes   FS
+  IDENT_END,              // 0x1D   yes   GS
+  IDENT_END,              // 0x1E   yes   RS
+  IDENT_END,              // 0x1F   yes   US
+  IDENT_END,              // 0x20   yes   space
+  IDENT_END,              // 0x21   no3   ! :: ! != !==
+  IDENT_END,              // 0x22   no*   "
+  IDENT_END,              // 0x23   yes   #
+  IDENT_PART,             // 0x24   no*   $
+  IDENT_END,              // 0x25   no2   % :: % %=
+  IDENT_END,              // 0x26   no3   & :: & && &=
+  IDENT_END,              // 0x27   no*   '
+  IDENT_END,              // 0x28   yes   (
+  IDENT_END,              // 0x29   yes   )
+  IDENT_END,              // 0x2A   no4   * :: * ** *= **=
+  IDENT_END,              // 0x2B   no3   + :: + ++ +=
+  IDENT_END,              // 0x2C   yes   ,
+  IDENT_END,              // 0x2D   no4   - :: - -- -= -->
+  IDENT_END,              // 0x2E   no3   . :: . ... number
+  IDENT_END,              // 0x2F   no*   / :: / regex
+  IDENT_PART,             // 0x30   no*   0
+  IDENT_PART,             // 0x31   no*   1
+  IDENT_PART,             // 0x32   no*   2
+  IDENT_PART,             // 0x33   no*   3
+  IDENT_PART,             // 0x34   no*   4
+  IDENT_PART,             // 0x35   no*   5
+  IDENT_PART,             // 0x36   no*   6
+  IDENT_PART,             // 0x37   no*   7
+  IDENT_PART,             // 0x38   no*   8
+  IDENT_PART,             // 0x39   no*   9
+  IDENT_END,              // 0x3A   yes   :
+  IDENT_END,              // 0x3B   yes   ;
+  IDENT_END,              // 0x3C   no4   < :: < << <= <<= <!--
+  IDENT_END,              // 0x3D   no4   = :: = == === =>
+  IDENT_END,              // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  IDENT_END,              // 0x3F   yes   ?
+  IDENT_END,              // 0x40   yes   @
+  IDENT_PART,             // 0x41   no*   A
+  IDENT_PART,             // 0x42   no*   B
+  IDENT_PART,             // 0x43   no*   C
+  IDENT_PART,             // 0x44   no*   D
+  IDENT_PART,             // 0x45   no*   E
+  IDENT_PART,             // 0x46   no*   F
+  IDENT_PART,             // 0x47   no*   G
+  IDENT_PART,             // 0x48   no*   H
+  IDENT_PART,             // 0x49   no*   I
+  IDENT_PART,             // 0x4A   no*   J
+  IDENT_PART,             // 0x4B   no*   K
+  IDENT_PART,             // 0x4C   no*   L
+  IDENT_PART,             // 0x4D   no*   M
+  IDENT_PART,             // 0x4E   no*   N
+  IDENT_PART,             // 0x4F   no*   O
+  IDENT_PART,             // 0x50   no*   P
+  IDENT_PART,             // 0x51   no*   Q
+  IDENT_PART,             // 0x52   no*   R
+  IDENT_PART,             // 0x53   no*   S
+  IDENT_PART,             // 0x54   no*   T
+  IDENT_PART,             // 0x55   no*   U
+  IDENT_PART,             // 0x56   no*   V
+  IDENT_PART,             // 0x57   no*   W
+  IDENT_PART,             // 0x58   no*   X
+  IDENT_PART,             // 0x59   no*   Y
+  IDENT_PART,             // 0x5A   no*   Z
+  IDENT_END,              // 0x5B   yes   [
+  IDENT_BS,               // 0x5C   no2   \ :: \uHHHH \u{H*}
+  IDENT_END,              // 0x5D   yes   ]
+  IDENT_END,              // 0x5E   no2   ^ :: ^ ^=
+  IDENT_PART,             // 0x5F   no*   _ (lodash)
+  IDENT_END,              // 0x60   no*   ` :: `...${ `...`
+  IDENT_PART,             // 0x61   no*   a
+  IDENT_PART,             // 0x62   no*   b
+  IDENT_PART,             // 0x63   no*   c
+  IDENT_PART,             // 0x64   no*   d
+  IDENT_PART,             // 0x65   no*   e
+  IDENT_PART,             // 0x66   no*   f
+  IDENT_PART,             // 0x67   no*   g
+  IDENT_PART,             // 0x68   no*   h
+  IDENT_PART,             // 0x69   no*   i
+  IDENT_PART,             // 0x6A   no*   j
+  IDENT_PART,             // 0x6B   no*   k
+  IDENT_PART,             // 0x6C   no*   l
+  IDENT_PART,             // 0x6D   no*   m
+  IDENT_PART,             // 0x6E   no*   n
+  IDENT_PART,             // 0x6F   no*   o
+  IDENT_PART,             // 0x70   no*   p
+  IDENT_PART,             // 0x71   no*   q
+  IDENT_PART,             // 0x72   no*   r
+  IDENT_PART,             // 0x73   no*   s
+  IDENT_PART,             // 0x74   no*   t
+  IDENT_PART,             // 0x75   no*   u
+  IDENT_PART,             // 0x76   no*   v
+  IDENT_PART,             // 0x77   no*   w
+  IDENT_PART,             // 0x78   no*   x
+  IDENT_PART,             // 0x79   no*   y
+  IDENT_PART,             // 0x7A   no*   z
+  IDENT_END,              // 0x7B   yes   {
+  IDENT_END,              // 0x7C   no3   | :: | || |=
+  IDENT_END,              // 0x7D   no3   } :: } }...` }...${
+  IDENT_END,              // 0x7E   yes   ~
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
   // START_ERROR,            // 0x7F   yes   DEL
 ];
@@ -965,12 +2543,39 @@ ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, STAR
 
 function getTokenStart(c) {
   ASSERT(getTokenStart.length === arguments.length, 'arg count');
-  ASSERT(c >= 0, 'nothing generates negatives for chars');
+  ASSERT(typeof c === 'number' &&c >= 0, 'nothing generates negatives for chars');
   ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+
   if (c > 0x7e) return START_UNICODE;
   let s = tokenStartJumpTable[c];
+
   ASSERT(s <= __$flag_start ? ALL_START_TYPES.includes(s) : ALL_TOKEN_TYPES.includes(s), 'confirm the jump table is returning correct values');
   ASSERT(ALL_START_TYPES.includes(s) !== ALL_TOKEN_TYPES.includes(s), 'confirm the jump table returns either a start type or a token type (and that it cant be both nor neither)');
+
+  return s;
+}
+function getStringPart(c) {
+  ASSERT(getStringPart.length === arguments.length, 'arg count');
+  ASSERT(typeof c === 'number' && c >= 0, 'nothing generates negatives for chars');
+  ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+
+  if (c > 0x7e) return STRING_UNICODE;
+  let s = stringScanTable[c];
+
+  ASSERT(typeof s === 'number', 'should be an enum and not undefined (oob)', s);
+
+  return s;
+}
+function getIdentPart(c) {
+  ASSERT(getIdentPart.length === arguments.length, 'arg count');
+  ASSERT(typeof c === 'number' && c >= 0, 'nothing generates negatives for chars');
+  ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+
+  if (c > 0x7e) return IDENT_UNICODE;
+  let s = identScanTable[c];
+
+  ASSERT(typeof s === 'number', 'should be an enum and not undefined (oob)', s);
+
   return s;
 }
 
@@ -982,6 +2587,8 @@ function T(type) {
 }
 
 export {
+  getIdentPart,
+  getStringPart,
   getTokenStart,
   isWhiteToken,
   isNewlineToken,
@@ -1000,7 +2607,12 @@ export {
   toktypeToString,
   T,
 
-  KEYWORD_TRIE,
+  // KEYWORD_TRIE,
+  // KEYWORD_TRIE_OC,
+  // KEYWORD_TRIE_MAP,
+  KEYWORD_HASH,
+  KEYWORD_HASH_OC,
+  KEYWORD_MAP,
   MAX_START_VALUE,
 
   $G_WHITE,
@@ -1187,6 +2799,17 @@ export {
   START_UNICODE,
   START_BSLASH,
   START_ERROR,
+
+  STRING_PART,
+  STRING_QUOTE,
+  STRING_BS,
+  STRING_UNICODE,
+  STRING_NL,
+
+  IDENT_PART,
+  IDENT_END,
+  IDENT_BS,
+  IDENT_UNICODE,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,

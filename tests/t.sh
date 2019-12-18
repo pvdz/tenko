@@ -9,6 +9,7 @@ set -e # Exit on error
 ACTION=''
 ARG=''
 MODE=''
+PARSER=''
 ACORN=''
 BABEL=''
 EXTRA=''
@@ -57,6 +58,7 @@ Tenko test runner help:
  p1            Same as ./t p except it attempts to run node as stable as possible (can run much slower than usual! With reduced variance)
  p2            My shortcut for working with p1 with sudo :p
  p3            Undo system settings applied in p3
+ p5            Build once (no-compat min) and repetitively parse and report the parse time for the active file in hf.mjs
  z             Create build
  tb            Test build (checks whether exports work as intended for parameters etc)
  devtools      Alias for `./t p --inspect --devtools --build` which can be used to debug the parser in chrome devtools
@@ -69,6 +71,7 @@ Tenko test runner help:
  --min         Only for f and i, for invalid input; minify the test case while keeping same error
  --min-printer Only for f and i, for inputs that cause bad printer behavior; minify the test case while keeping same error
  --no-printer  Do not run the printer-step (helps with debugging in certain cases)
+ --parser <ab> Run test with given parser (any of 'tenko', 'acorn', 'babel', 'ghost'). Only for selected commands.
  --acorn       Run in Acorn compat mode
  --test-acorn  Also compare AST of test cases to Acorn output
  --babel       Run in Babel compat mode
@@ -90,6 +93,7 @@ Tenko test runner help:
  --record      For perf, updates baseline if better
  --node-bin <path> Specify the path to the node binary to run, defaults to the answer of `which node`
  --concise     Just parse and exit. No post processing, printing, or anything else.
+ --lsync       Start lsyncd (watcher + rsync) by config. I use it to sync tenko source to local dedicated benchmark server.
  6 ... 11      Parse according to the rules of this particular version of the spec
         "
       exit
@@ -198,6 +202,9 @@ Tenko test runner help:
     p4)
       ACTION='perf2'
       ;;
+    p5)
+      ACTION='perf5'
+      ;;
     d);&
     deoptigate)
       ACTION='doptigate'
@@ -258,6 +265,11 @@ Tenko test runner help:
         shift
         NODE_BIN=$1
         echo "Using '${NODE_BIN}' as node binary"
+        ;;
+    --parser)
+        shift
+        PARSER="--parser $1"
+        echo "Using '${PARSER}' where supported"
         ;;
 
     6)  ES='--es6'  ;;
@@ -333,6 +345,7 @@ case "${ACTION}" in
     ;;
 
     build)
+      mkdir -p build
       ${NODE_BIN} ${INSPECT_NODE} --experimental-modules cli/build.mjs ${NOCOMP} ${NOAST} ${NOMIN} ${INSPECT_ZEPAR} ${NATIVESYMBOLS}
       if [[ ! -z "${PRETTIER}" ]]; then
           node_modules/.bin/prettier build/tenko.prod.mjs --write
@@ -345,6 +358,47 @@ case "${ACTION}" in
         ./t z --node-bin ${NODE_BIN}
       fi
       ${NODE_BIN} --experimental-modules --max-old-space-size=8192 tests/build.mjs
+      ;;
+
+    perf5)
+      if [[ -z "${NO_BUILDING}" && ( -z "${PARSER}" || "${PARSER}" = "--parser tenko" ) ]]; then
+        ./t z --no-compat;
+      fi
+
+      trap "
+        echo 'Removing benchmarking cpu setup';
+        # Disable clockspeed scaling (cpu will run at variable ghz)
+        sudo su -c 'echo 0 > /sys/devices/system/cpu/intel_pstate/no_turbo';
+        # Restore access control of low level telemetry while running this benchmark
+        sudo su -c 'echo 3 > /proc/sys/kernel/perf_event_paranoid';
+        # Drop the cpu shield
+        sudo cset shield -r;
+        echo 'System should be normal again. What is, normal, anyways.';
+        echo 'Last stats:';
+        cat /tmp/tenko.bench.track.txt;
+        echo -e '\nThe end.';
+      " SIGINT SIGTERM
+
+      # Allow access to low level telemetry while running this benchmark
+      sudo su -c "echo -1 > /proc/sys/kernel/perf_event_paranoid"
+      # Disable clockspeed scaling (cpu will run at fixed ghz)
+      sudo su -c "echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo"
+
+      # Allocate one core for nodejs, "shielding" it from anything else
+      # This works fairly generically, but even more so on a headless dedicated machine
+      # With one core it means nodejs cannot spawn out multiple processes
+      sudo cset shield --cpu=1,2,3 -k on
+
+      # Wait a seconds for mots processes to move out
+      sleep 1;
+
+      # Now run the benchmark in an infinite loop under cset
+      # The loop is inside cset because cset prints a message after each invoke that I was unable to suppress
+      # ("cset: --> last message, executed args into cpuset "/user", new pid is xxxx") and that messes up the cli
+      # So the first iteration will use RESET with --reset, the subsequent iterations have RESET as empty string.
+      sudo cset shield --exec -- chrt --rr 99 sh -c 'RESET="--reset"; while true; do NODE_NO_WARNINGS=1 /home/peter/.nvm/versions/node/v12.14.0/bin/node --experimental-modules --max-old-space-size=8192 tests/hf.mjs --nb --only-time --track ${RESET}; sleep 1; RESET=""; done '
+
+      # Should never reach here. There's a trap that should undo changes to system settings.
       ;;
 
     perf2)
@@ -360,7 +414,7 @@ case "${ACTION}" in
       # - It shields cpu 3 so I can use that core exclusively to spawn new node processes
       # (See https://easyperf.net/blog/2019/08/02/Perf-measurement-environment-on-Linux )
       sudo su -c "echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo"
-      sudo su -c "echo 0 > /sys/devices/system/cpu/cpu7/online"
+#      sudo su -c "echo 0 > /sys/devices/system/cpu/cpu7/online"
       sudo su -c "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
       sudo cset shield --cpu=3 -k on
 

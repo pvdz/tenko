@@ -64,6 +64,7 @@ let parsers = [
   'tenko',
   'babel',
   'acorn',
+  'ghost',
   'tenk2'
 ];
 

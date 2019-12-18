@@ -140,6 +140,8 @@ import {
 } from './lexerflags.mjs';
 // Token type stuff is put in their own file
 import {
+  getIdentPart,
+  getStringPart,
   getTokenStart,
   isWhiteToken,
   isNewlineToken,
@@ -158,7 +160,12 @@ import {
   toktypeToString,
   T,
 
-  KEYWORD_TRIE,
+  // KEYWORD_TRIE,
+  // KEYWORD_TRIE_OC,
+  // KEYWORD_TRIE_MAP,
+  KEYWORD_HASH,
+  KEYWORD_HASH_OC,
+  KEYWORD_MAP,
   MAX_START_VALUE,
 
   $UNTYPED, // 0
@@ -330,6 +337,17 @@ import {
   START_UNICODE,
   START_BSLASH,
   START_ERROR,
+
+  STRING_PART,
+  STRING_QUOTE,
+  STRING_BS,
+  STRING_UNICODE,
+  STRING_NL,
+
+  IDENT_PART,
+  IDENT_END,
+  IDENT_BS,
+  IDENT_UNICODE,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,
@@ -713,10 +731,11 @@ function Lexer(
       case START_SPACE:
         return parseSpace();
       case START_ID:
-        return parseIdentifierRest(String.fromCharCode(c), 1);
+        return parseIdSpecial(c);
       case START_KEY:
-        if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c), 1);
-        return parsePotentialKeyword(c);
+        return parseIdSpecial(c);
+        // if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c), 1);
+        // return parsePotentialKeyword(c);
       case START_NL_SOLO:
         return parseNewlineSolo();
       case START_CR:
@@ -765,6 +784,76 @@ function Lexer(
     }
 
     THROW('Unknown input', pointer - 1, pointer);
+  }
+
+  function parseIdSpecial(c) {
+    let start = pointer - 1; // c already skipped
+    let i = parseIdentifierRest(String.fromCharCode(c), 1);
+
+    if (i !== $IDENT) return i; // error
+    if (pointer - start !== lastCanonizedInputLen) return $IDENT; // ident has an escape of any kind (=> not keyword)
+
+    // Map with has/get
+    {
+      if (KEYWORD_MAP.has(lastCanonizedInput)) return KEYWORD_MAP.get(lastCanonizedInput);
+      return $IDENT;
+    }
+
+    // Map with immediate get
+    // {
+    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
+    //   if (t === undefined) return $IDENT;
+    //   return t;
+    // }
+
+    // Map with |$ident hack
+    // {
+    //   return $IDENT | KEYWORD_MAP.get(lastCanonizedInput);
+    // }
+
+    // Plain object with direct access
+    // {
+    //   let t = KEYWORD_HASH[lastCanonizedInput];
+    //   if (typeof t === 'number') return t;
+    //   return $IDENT;
+    // }
+
+    // Plain object with `>` coercion check
+    {
+      let t = KEYWORD_HASH[lastCanonizedInput];
+      if (t > 0) return t;
+      return $IDENT;
+    }
+
+    // Object.create with direct access
+    // {
+    //   let t = KEYWORD_HASH_OC[lastCanonizedInput];
+    //   if (typeof t === 'number') return t;
+    //   return $IDENT;
+    // }
+
+    // Object.create with `in` check before direct access
+    // {
+    //   if (lastCanonizedInput in KEYWORD_HASH_OC) {
+    //     return KEYWORD_HASH_OC[lastCanonizedInput];
+    //   }
+    //   return $IDENT;
+    // }
+
+    // Object.create with `>` coercion check
+    // {
+    //   let t = KEYWORD_HASH_OC[lastCanonizedInput];
+    //   if (t > 0) return t;
+    //   return $IDENT;
+    // }
+
+    // Object.create with |$IDENT hack
+    // {
+    //   // This works because $IDENT has the leaf flag as 0, so $ID_do|$IDENT===$ID_do but undefined|$IDENT===$IDENT
+    //   // Only works on OC because regular objects will return function for `constructor`
+    //   // ASSERT(KEYWORD_HASH_OC[lastCanonizedInput] === undefined || (KEYWORD_HASH_OC[lastCanonizedInput]|$IDENT)===KEYWORD_HASH_OC[lastCanonizedInput], 'confirm hack works');
+    //   return KEYWORD_HASH_OC[lastCanonizedInput] | $IDENT;
+    // }
   }
 
   function incrementLine() {
@@ -895,75 +984,146 @@ function Lexer(
     let pointerOffset = pointer;
     let badEscape = false;
     let hadNewline = false;
+
     while (neof()) {
-      // while we will want to consume at least one more byte for proper strings,
+
+      // Peek: while we will want to consume at least one more byte for proper strings,
       // there could be a malformed string and we wouldnt want to consume the newline
       let c = peek();
 
-      /*
-        There are a handful of chars that we must verify for strings;
-          - $$LF_0A                       1010    newline
-          - $$CR_0D                       1101    newline
-          - $$DQUOTE_22                 100010    end of double quoted strings
-          - $$SQUOTE_27                 100111    end of single quoted strings
-          - $$BACKSLASH_5C             1011100    starts an escape
-          - $$PS_2028           10000000101000    special edge case for locations
-          - $$LS_2029           10000000101001    special edge case for locations
-       */
+      let s = getStringPart(c);
+      if (s <= MAX_START_VALUE) {
+        // This means c must be a single char token, like `(` or `:`
 
-      // Break on the marker (we only need to check one of the quotes and the marker tells us which quote)
-      if (c <= marker) {
-        // This can catch characters; space, !, ", #, $, %, &, ' (and a bunch of non-printables)
-        // This range needs to (only) check for the marker (matches once) and the newlines \r and \n (matches never)
+        // Note: these cases should be ordered 0, 1, 2 ...
+        // TODO: we can skip() before the loop if we update the backslash consumer
+        switch (s) {
+          case STRING_PART:
+            ASSERT_skip(c);
+            break;
 
-        if (c === marker) {
-          ASSERT_skip(marker);
+          case STRING_QUOTE:
+            ASSERT_skip(c);
+            if (c === marker) {
+              if (badEscape) {
+                if (!lastReportableLexerError) lastReportableLexerError = 'String had an illegal escape';
+                return $ERROR;
+              }
 
-          if (badEscape) {
-            if (!lastReportableLexerError) lastReportableLexerError = 'String had an illegal escape';
-            return $ERROR;
-          }
+              // Note: LF and PS are newlines that are _explicitly_ allowed in a string, so only check for LF and CR here
+              if (hadNewline) {
+                if (!lastReportableLexerError) lastReportableLexerError = 'Encountered newline in string which is not allowed';
+                return $ERROR;
+              }
 
-          // Note: LF and PS are newlines that are _explicitly_ allowed in a string, so only check for LF and CR here
-          if (hadNewline) {
-            if (!lastReportableLexerError) lastReportableLexerError = 'Encountered newline in string which is not allowed';
-            return $ERROR;
-          }
+              lastCanonizedInput += slice(pointerOffset, pointer - 1);
+              lastCanonizedInputLen += (pointer - 1) - pointerOffset;
 
-          lastCanonizedInput += slice(pointerOffset, pointer - 1);
-          lastCanonizedInputLen += (pointer - 1) - pointerOffset;
+              return marker === $$DQUOTE_22 ? $STRING_DOUBLE : $STRING_SINGLE;
+            }
+            break;
 
-          return marker === $$DQUOTE_22 ? $STRING_DOUBLE : $STRING_SINGLE;
-        }
+          case STRING_BS:
+            lastCanonizedInput += slice(pointerOffset, pointer);
+            lastCanonizedInputLen += pointer - pointerOffset;
+            // The canonized value will be updated too
+            badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
+            pointerOffset = pointer;
 
-        hadNewline = hadNewline || c === $$LF_0A || c === $$CR_0D;
+            break;
 
-        ASSERT_skip(c);
-      } else if (c <= 0x7e) {
-        // This catches all the other ascii characters
-        // This range only needs to check the backslash, which unfortunately occurs in the middle of the range
+          case STRING_UNICODE:
+            ASSERT_skip(c);
+            if (c <= $$LS_2029 && c >= $$PS_2028) {
+              // (Increment after consumption as that's what incrementLine expects and asserts)
+              // Note: this is not an error but it does increase the line counter
+              incrementLine();
+            }
+            break;
 
-        if (c === $$BACKSLASH_5C) { // This seems to hit quite frequently, relative to this function
-          lastCanonizedInput += slice(pointerOffset, pointer);
-          lastCanonizedInputLen += pointer - pointerOffset;
-          // The canonized value will be updated too
-          badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
-          pointerOffset = pointer;
-        } else {
-          ASSERT_skip(c);
-        }
-      } else {
-        // This is anything non-ascii
-        // This range (which is fairly uncommon at time of writing) needs to check the 2028 and 2029 "newlines"
+          case STRING_NL:
+            ASSERT_skip(c);
+            hadNewline = true;
+            break;
 
-        ASSERT_skip(c);
-        if (isPsLs(c)) {
-          // This is a bit of a weird case for strings.
-          // (Increment after consumption as that's what incrementLine expects and asserts)
-          incrementLine();
+          // <SCRUB ASSERTS>
+          default:
+            ASSERT(false, 'unreachable', c);
+          // </SCRUB ASSERTS>
         }
       }
     }
+
+    // while (neof()) {
+    //   // while we will want to consume at least one more byte for proper strings,
+    //   // there could be a malformed string and we wouldnt want to consume the newline
+    //   let c = peek();
+    //
+    //   /*
+    //     There are a handful of chars that we must verify for strings;
+    //       - $$LF_0A                       1010    newline
+    //       - $$CR_0D                       1101    newline
+    //       - $$DQUOTE_22                 100010    end of double quoted strings
+    //       - $$SQUOTE_27                 100111    end of single quoted strings
+    //       - $$BACKSLASH_5C             1011100    starts an escape
+    //       - $$PS_2028           10000000101000    special edge case for locations
+    //       - $$LS_2029           10000000101001    special edge case for locations
+    //    */
+    //
+    //   // Break on the marker (we only need to check one of the quotes and the marker tells us which quote)
+    //   if (c <= marker) {
+    //     // This can catch characters; space, !, ", #, $, %, &, ' (and a bunch of non-printables)
+    //     // This range needs to (only) check for the marker (matches once) and the newlines \r and \n (matches never)
+    //
+    //     if (c === marker) {
+    //       ASSERT_skip(marker);
+    //
+    //       if (badEscape) {
+    //         if (!lastReportableLexerError) lastReportableLexerError = 'String had an illegal escape';
+    //         return $ERROR;
+    //       }
+    //
+    //       // Note: LF and PS are newlines that are _explicitly_ allowed in a string, so only check for LF and CR here
+    //       if (hadNewline) {
+    //         if (!lastReportableLexerError) lastReportableLexerError = 'Encountered newline in string which is not allowed';
+    //         return $ERROR;
+    //       }
+    //
+    //       lastCanonizedInput += slice(pointerOffset, pointer - 1);
+    //       lastCanonizedInputLen += (pointer - 1) - pointerOffset;
+    //
+    //       return marker === $$DQUOTE_22 ? $STRING_DOUBLE : $STRING_SINGLE;
+    //     }
+    //
+    //     hadNewline = hadNewline || c === $$LF_0A || c === $$CR_0D;
+    //
+    //     ASSERT_skip(c);
+    //   } else if (c <= 0x7e) {
+    //     // This catches all the other ascii characters
+    //     // This range only needs to check the backslash, which unfortunately occurs in the middle of the range
+    //
+    //     if (c === $$BACKSLASH_5C) { // This seems to hit quite frequently, relative to this function
+    //       lastCanonizedInput += slice(pointerOffset, pointer);
+    //       lastCanonizedInputLen += pointer - pointerOffset;
+    //       // The canonized value will be updated too
+    //       badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
+    //       pointerOffset = pointer;
+    //     } else {
+    //       ASSERT_skip(c);
+    //     }
+    //   } else {
+    //     // This is anything non-ascii
+    //     // This range (which is fairly uncommon at time of writing) needs to check the 2028 and 2029 "newlines"
+    //
+    //     ASSERT_skip(c);
+    //     if (isPsLs(c)) {
+    //       // This is a bit of a weird case for strings.
+    //       // (Increment after consumption as that's what incrementLine expects and asserts)
+    //       incrementLine();
+    //     }
+    //   }
+    // }
+
     ASSERT(eof(), 'this is only reachable in the early EOF case');
     if (!lastReportableLexerError) lastReportableLexerError = 'Unclosed string at EOF';
     return $ERROR;
@@ -1810,56 +1970,105 @@ function Lexer(
     ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty');
     ASSERT(typeof prevLen === 'number' && prevStr.length === prevLen, 'should be in sync');
 
+
     let start = pointer;
 
-    let c = 0;
+    while (neof()) {
+      let c = peek();
+      let s = getIdentPart(c);
+      switch (s) {
+        case IDENT_PART:
+          ASSERT_skip(c);
+          break;
 
-    // Main scan loop, [a-zA-Z0-9$_]
-    while (neof() && isIdentRestCharAscii(c = peek())) {
-      ASSERT_skip(c);
-    }
+        case IDENT_END:
+          lastCanonizedInput = prevStr + slice(start, pointer);
+          lastCanonizedInputLen = prevLen + (pointer - start);
+          return $IDENT;
 
-    if (eof()) {
-      lastCanonizedInput = prevStr + slice(start, pointer);
-      lastCanonizedInputLen = prevLen + (pointer - start);
-      return $IDENT;
-    }
+        case IDENT_BS:
+          // `foo\u0030bar`  (is canonical ident `foo0bar`)
+          let x = prevStr + slice(start, pointer);
+          let xlen = prevLen + (pointer - start);
+          ASSERT_skip($$BACKSLASH_5C);
+          return parseIdentFromUnicodeEscape(NON_START, x, xlen);
 
-    // Confirm this is the end of the ident, or a special case
-    let s = getTokenStart(c);
-    ASSERT(eof() || s !== START_ID && s !== START_KEY && s !== START_DECIMAL && s !== START_ZERO, 'should already have checked these in the loop');
-    if (s === START_UNICODE) {
-      // Slow unicode check
-      let wide = isIdentRestChrUnicode(c, pointer);
+        case IDENT_UNICODE:
+          let wide = isIdentRestChrUnicode(c, pointer);
 
-      if (wide === INVALID_IDENT_CHAR) {
-        lastCanonizedInput = prevStr + slice(start, pointer);
-        lastCanonizedInputLen = prevLen + (pointer - start);
-        return $IDENT;
+          if (wide === INVALID_IDENT_CHAR) {
+            lastCanonizedInput = prevStr + slice(start, pointer);
+            lastCanonizedInputLen = prevLen + (pointer - start);
+            return $IDENT;
+          }
+
+          if (wide === VALID_DOUBLE_CHAR) {
+            skipFastWithoutUpdatingCache();
+          }
+          skip();
+          break;
+
+        // <SCRUB ASSERTS>
+        default:
+          ASSERT(false, 'unreachable', c);
+        // </SCRUB ASSERTS>
       }
-
-      if (wide === VALID_DOUBLE_CHAR) {
-        skipFastWithoutUpdatingCache();
-      }
-      skip();
-
-      // Recursion ... should be okay for idents even without tail recursion?
-      return parseIdentifierRest(prevStr + slice(start, pointer), prevLen + (pointer - start));
     }
 
-    if (s === START_BSLASH) {
-      // `foo\u0030bar`  (is canonical ident `foo0bar`)
-      let x = prevStr + slice(start, pointer);
-      let xlen = prevLen + (pointer - start);
-      ASSERT_skip($$BACKSLASH_5C);
-      return parseIdentFromUnicodeEscape(NON_START, x, xlen);
-    }
+    lastCanonizedInput = prevStr + slice(start, pointer);
+    lastCanonizedInputLen = prevLen + (pointer - start);
+    return $IDENT;
 
-    {
-      lastCanonizedInput = prevStr + slice(start, pointer);
-      lastCanonizedInputLen = prevLen + (pointer - start);
-      return $IDENT;
-    }
+
+
+    // let c = 0;
+    //
+    // // Main scan loop, [a-zA-Z0-9$_]
+    // while (neof() && isIdentRestCharAscii(c = peek())) {
+    //   ASSERT_skip(c);
+    // }
+    //
+    // if (eof()) {
+    //   lastCanonizedInput = prevStr + slice(start, pointer);
+    //   lastCanonizedInputLen = prevLen + (pointer - start);
+    //   return $IDENT;
+    // }
+    //
+    // // Confirm this is the end of the ident, or a special case
+    // let s = getTokenStart(c);
+    // ASSERT(eof() || s !== START_ID && s !== START_KEY && s !== START_DECIMAL && s !== START_ZERO, 'should already have checked these in the loop');
+    // if (s === START_UNICODE) {
+    //   // Slow unicode check
+    //   let wide = isIdentRestChrUnicode(c, pointer);
+    //
+    //   if (wide === INVALID_IDENT_CHAR) {
+    //     lastCanonizedInput = prevStr + slice(start, pointer);
+    //     lastCanonizedInputLen = prevLen + (pointer - start);
+    //     return $IDENT;
+    //   }
+    //
+    //   if (wide === VALID_DOUBLE_CHAR) {
+    //     skipFastWithoutUpdatingCache();
+    //   }
+    //   skip();
+    //
+    //   // Recursion ... should be okay for idents even without tail recursion?
+    //   return parseIdentifierRest(prevStr + slice(start, pointer), prevLen + (pointer - start));
+    // }
+    //
+    // if (s === START_BSLASH) {
+    //   // `foo\u0030bar`  (is canonical ident `foo0bar`)
+    //   let x = prevStr + slice(start, pointer);
+    //   let xlen = prevLen + (pointer - start);
+    //   ASSERT_skip($$BACKSLASH_5C);
+    //   return parseIdentFromUnicodeEscape(NON_START, x, xlen);
+    // }
+    //
+    // {
+    //   lastCanonizedInput = prevStr + slice(start, pointer);
+    //   lastCanonizedInputLen = prevLen + (pointer - start);
+    //   return $IDENT;
+    // }
   }
   function isIdentRestCharAscii(c) {
     if (c >= $$A_61 && c <= $$Z_7A) return true;
@@ -2002,113 +2211,1311 @@ function Lexer(
     return uflagStatus;
   }
 
-  function parsePotentialKeyword(c) {
-    ASSERT(parsePotentialKeyword.length === arguments.length, 'arg count');
-    ASSERT(pointer > 0 && c === input.charCodeAt(pointer - 1), 'c should have been peekSkipped');
+  // function trie(c, offset) {
+  //   switch (c) {
+  //     case $$A_61: return trie_a(offset);
+  //     case $$B_62: return trie_b(offset);
+  //     case $$C_63: return trie_c(offset);
+  //     case $$D_64: return trie_d(offset);
+  //     case $$E_65: return trie_e(offset);
+  //     case $$F_66: return trie_f(offset);
+  //     case $$G_67: return trie_g(offset);
+  //     case $$I_69: return trie_i(offset);
+  //     case $$L_6C: return trie_l(offset);
+  //     case $$N_6E: return trie_n(offset);
+  //     case $$O_6F: return trie_o(offset);
+  //     case $$P_70: return trie_p(offset);
+  //     case $$R_72: return trie_r(offset);
+  //     case $$S_73: return trie_s(offset);
+  //     case $$T_74: return trie_t(offset);
+  //     case $$V_76: return trie_v(offset);
+  //     case $$W_77: return trie_w(offset);
+  //     case $$Y_79: return trie_y(offset);
+  //   }
+  //   return parseIdentRestNotKeyword(c, 0, offset, '');
+  // }
+  // function trie_a(offset) {
+  //   // "arguments", "as", "async", "await"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'a');
+  //
+  //   let c = peek();
+  //   if (c === $$R_72) return trie_ar(offset);
+  //   if (c === $$S_73) return trie_as(offset);
+  //   if (c === $$W_77) return trie_aw(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'a');
+  // }
+  // function trie_ar(offset) {
+  //   // "arguments"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ar');
+  //
+  //   let g = peekd(1);
+  //   if (eofd(7) || g !== $$G_67) return parseIdentRestNotKeyword(g, 2, offset, 'ar');
+  //   let u = peekd(2);
+  //   if (u !== $$U_75) return parseIdentRestNotKeyword(u, 3, offset, 'arg');
+  //   let m = peekd(3);
+  //   if (m !== $$M_6D) return parseIdentRestNotKeyword(m, 4, offset, 'argu');
+  //   let e = peekd(4);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 5, offset, 'argum');
+  //   let n = peekd(5);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 6, offset, 'argume');
+  //   let t = peekd(6);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 7, offset, 'argumen');
+  //   let s = peekd(7);
+  //   if (s !== $$S_73) return parseIdentRestNotKeyword(s, 8, offset, 'argument');
+  //
+  //   return keywordIfEnd(offset, 9, $ID_arguments, 'arguments');
+  // }
+  // function trie_as(offset) {
+  //   // "async", "as"
+  //
+  //   if (eofd(1)) return keywordIfEnd(offset, 2, $ID_as, 'as');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$Y_79) return trie_asy(offset);
+  //
+  //   return keywordIfEnd(offset, 2, $ID_as, 'as');
+  // }
+  // function trie_asy(offset) {
+  //   // "async"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'asy');
+  //
+  //   let n = peekd(2);
+  //   if (eofd(3) || n !== $$N_6E) return parseIdentRestNotKeyword(n, 3, offset, 'asy');
+  //   let c = peekd(3);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 4, offset, 'asyn');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_async, 'async');
+  // }
+  // function trie_aw(offset) {
+  //   // "await"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'aw');
+  //
+  //   let a = peekd(1);
+  //   if (eofd(3) || a !== $$A_61) return parseIdentRestNotKeyword(a, 2, offset, 'aw');
+  //   let i = peekd(2);
+  //   if (i !== $$I_69) return parseIdentRestNotKeyword(i, 3, offset, 'awa');
+  //   let t = peekd(3);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 4, offset, 'awai');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_await, 'await');
+  // }
+  // function trie_b(offset) {
+  //   // "break"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'b');
+  //
+  //   let r = peek();
+  //   if (eofd(3) || r !== $$R_72) return parseIdentRestNotKeyword(r, 1, offset, 'b');
+  //   let e = peekd(1);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 2, offset, 'br');
+  //   let a = peekd(2);
+  //   if (a !== $$A_61) return parseIdentRestNotKeyword(a, 3, offset, 'bre');
+  //   let k = peekd(3);
+  //   if (k !== $$K_6B) return parseIdentRestNotKeyword(k, 4, offset, 'brea');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_break, 'break');
+  // }
+  // function trie_c(offset) {
+  //   // "case", "const", "catch", "class", "continue"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'c');
+  //
+  //   let c = peek();
+  //   if (c === $$A_61) return trie_ca(offset);
+  //   if (c === $$L_6C) return trie_cl(offset);
+  //   if (c === $$O_6F) return trie_co(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'c');
+  // }
+  // function trie_ca(offset) {
+  //   // "catch" "case"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ca');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$S_73) return trie_cas(offset);
+  //   if (c === $$T_74) return trie_cat(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 2, offset, 'ca');
+  // }
+  // function trie_cas(offset) {
+  //   // "case"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'cas');
+  //
+  //   let e = peekd(2);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'cas');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_case, 'case');
+  // }
+  // function trie_cat(offset) {
+  //   // "catch"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'cat');
+  //
+  //   let c = peekd(2);
+  //   if (eofd(3) || c !== $$C_63) return parseIdentRestNotKeyword(c, 3, offset, 'cat');
+  //   let h = peekd(3);
+  //   if (h !== $$H_68) return parseIdentRestNotKeyword(h, 4, offset, 'catc');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_catch, 'catch');
+  // }
+  // function trie_cl(offset) {
+  //   // "class"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'cl');
+  //
+  //   let a = peekd(1);
+  //   if (eofd(3) || a !== $$A_61) return parseIdentRestNotKeyword(a, 2, offset, 'cl');
+  //   let s = peekd(2);
+  //   if (s !== $$S_73) return parseIdentRestNotKeyword(s, 3, offset, 'cla');
+  //   let s2 = peekd(3);
+  //   if (s2 !== $$S_73) return parseIdentRestNotKeyword(s2, 4, offset, 'clas');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_class, 'class');
+  // }
+  // function trie_co(offset) {
+  //   // "const" "continue"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'co');
+  //
+  //   let n = peekd(1);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 2, offset, 'co');
+  //   if (eofd(3)) return parseIdentRestNotKeyword(n, 3, offset, 'con');
+  //
+  //   let st = peekd(2);
+  //   if (st === $$S_73) return trie_cons(offset);
+  //   if (st === $$T_74) return trie_cont(offset);
+  //
+  //   return parseIdentRestNotKeyword(st, 3, offset, 'con');
+  // }
+  // function trie_cons(offset) {
+  //   // "const"
+  //
+  //   if (eofd(3)) return eofNotKeyword(offset, 4, 'cons');
+  //
+  //   let t = peekd(3);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 4, offset, 'cons');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_const, 'const');
+  // }
+  // function trie_cont(offset) {
+  //   // "continue"
+  //
+  //   if (eofd(3)) return eofNotKeyword(offset, 4, 'cont');
+  //
+  //   let i = peekd(3);
+  //   if (i !== $$I_69) return parseIdentRestNotKeyword(i, 4, offset, 'cont');
+  //   if (eofd(6)) return parseIdentRestNotKeyword(5, offset, 'conti');
+  //   let n = peekd(4);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 5, offset, 'conti');
+  //   let u = peekd(5);
+  //   if (u !== $$U_75) return parseIdentRestNotKeyword(u, 6, offset, 'contin');
+  //   let e = peekd(6);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 7, offset, 'continu');
+  //
+  //   return keywordIfEnd(offset, 8, $ID_continue, 'continue');
+  // }
+  // function trie_d(offset) {
+  //   // "debugger", "default", "delete", "do"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'd');
+  //
+  //   let c = peek();
+  //   if (c === $$E_65) return trie_de(offset);
+  //
+  //   if (c !== $$O_6F) return parseIdentRestNotKeyword(c, 1, offset, 'd');
+  //
+  //   return keywordIfEnd(offset, 2, $ID_do, 'do');
+  // }
+  // function trie_de(offset) {
+  //   // "debugger", "default", "delete"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'de');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$B_62) return trie_deb(offset);
+  //   if (c === $$F_66) return trie_def(offset);
+  //   if (c === $$L_6C) return trie_del(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 2, offset, 'de');
+  // }
+  // function trie_deb(offset) {
+  //   // "debugger"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'deb');
+  //
+  //   let u = peekd(2);
+  //   if (eofd(6) || u !== $$U_75) return parseIdentRestNotKeyword(u, 3, offset, 'deb');
+  //   let g = peekd(3);
+  //   if (g !== $$G_67) return parseIdentRestNotKeyword(g, 4, offset, 'debu');
+  //   let g2 = peekd(4);
+  //   if (g2 !== $$G_67) return parseIdentRestNotKeyword(g2, 5, offset, 'debug');
+  //   let e = peekd(5);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 6, offset, 'debugg');
+  //   let r = peekd(6);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 7, offset, 'debugge');
+  //
+  //   return keywordIfEnd(offset, 8, $ID_debugger, 'debugger');
+  // }
+  // function trie_def(offset) {
+  //   // "default"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'def');
+  //
+  //   let a = peekd(2);
+  //   if (eofd(5) || a !== $$A_61) return parseIdentRestNotKeyword(a, 3, offset, 'def');
+  //   let u = peekd(3);
+  //   if (u !== $$U_75) return parseIdentRestNotKeyword(u, 4, offset, 'defa');
+  //   let l = peekd(4);
+  //   if (l !== $$L_6C) return parseIdentRestNotKeyword(l, 5, offset, 'defau');
+  //   let t = peekd(5);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 6, offset, 'defaul');
+  //
+  //   return keywordIfEnd(offset, 7, $ID_default, 'default');
+  // }
+  // function trie_del(offset) {
+  //   // "delete"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'del');
+  //
+  //   let e = peekd(2);
+  //   if (eofd(4) || e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'del');
+  //   let t = peekd(3);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 4, offset, 'dele');
+  //   let e2 = peekd(4);
+  //   if (e2 !== $$E_65) return parseIdentRestNotKeyword(e2, 5, offset, 'delet');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_delete, 'delete');
+  // }
+  // function trie_e(offset) {
+  //   // "else", "enum", "eval", "export", "extends"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'e');
+  //
+  //   let c = peek();
+  //   if (c === $$L_6C) return trie_el(offset);
+  //   if (c === $$N_6E) return trie_en(offset);
+  //   if (c === $$V_76) return trie_ev(offset);
+  //   if (c === $$X_78) return trie_ex(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'e');
+  // }
+  // function trie_el(offset) {
+  //   // "else"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'el');
+  //
+  //   let s = peekd(1);
+  //   if (eofd(2) || s !== $$S_73) return parseIdentRestNotKeyword(s, 2, offset, 'el');
+  //   let e = peekd(2);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'els');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_else, 'else');
+  // }
+  // function trie_en(offset) {
+  //   // "enum"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'en');
+  //
+  //   let u = peekd(1);
+  //   if (eofd(2) || u !== $$U_75) return parseIdentRestNotKeyword(u, 2, offset, 'en');
+  //   let m = peekd(2);
+  //   if (m !== $$M_6D) return parseIdentRestNotKeyword(m, 3, offset, 'enu');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_enum, 'enum');
+  // }
+  // function trie_ev(offset) {
+  //   // "eval"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ev');
+  //
+  //   let a = peekd(1);
+  //   if (eofd(2) || a !== $$A_61) return parseIdentRestNotKeyword(a, 2, offset, 'ev');
+  //   let l = peekd(2);
+  //   if (l !== $$L_6C) return parseIdentRestNotKeyword(l, 3, offset, 'eva');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_eval, 'eval');
+  // }
+  // function trie_ex(offset) {
+  //   // "export", "extends"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ex');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$P_70) return trie_exp(offset);
+  //   if (c === $$T_74) return trie_ext(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 2, offset, 'ex');
+  // }
+  // function trie_exp(offset) {
+  //   // "export"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'exp');
+  //
+  //   let o = peekd(2);
+  //   if (eofd(4) || o !== $$O_6F) return parseIdentRestNotKeyword(o, 3, offset, 'exp');
+  //   let r = peekd(3);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 4, offset, 'expo');
+  //   let t = peekd(4);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 5, offset, 'expor');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_export, 'export');
+  // }
+  // function trie_ext(offset) {
+  //   // "extends"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'ext');
+  //
+  //   let e = peekd(2);
+  //   if (eofd(5) || e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'ext');
+  //   let n = peekd(3);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 4, offset, 'exte');
+  //   let d = peekd(4);
+  //   if (d !== $$D_64) return parseIdentRestNotKeyword(d, 5, offset, 'exten');
+  //   let s = peekd(5);
+  //   if (s !== $$S_73) return parseIdentRestNotKeyword(s, 6, offset, 'extend');
+  //
+  //   return keywordIfEnd(offset, 7, $ID_extends, 'extends');
+  // }
+  // function trie_f(offset) {
+  //   // "false", "finally", "for", "from", "function"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'f');
+  //
+  //   let c = peek();
+  //   if (c === $$A_61) return trie_fa(offset);
+  //   if (c === $$I_69) return trie_fi(offset);
+  //   if (c === $$O_6F) return trie_fo(offset);
+  //   if (c === $$R_72) return trie_fr(offset);
+  //   if (c === $$U_75) return trie_fu(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'f');
+  // }
+  // function trie_fa(offset) {
+  //   // "false"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'fa');
+  //
+  //   let l = peekd(1);
+  //   if (eofd(3) || l !== $$L_6C) return parseIdentRestNotKeyword(l, 2, offset, 'fa');
+  //   let s = peekd(2);
+  //   if (s !== $$S_73) return parseIdentRestNotKeyword(s, 3, offset, 'fal');
+  //   let e = peekd(3);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 4, offset, 'fals');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_false, 'false');
+  // }
+  // function trie_fi(offset) {
+  //   // "finally"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'fi');
+  //
+  //   let n = peekd(1);
+  //   if (eofd(5) || n !== $$N_6E) return parseIdentRestNotKeyword(n, 2, offset, 'fi');
+  //   let a = peekd(2);
+  //   if (a !== $$A_61) return parseIdentRestNotKeyword(a, 3, offset, 'fin');
+  //   let l = peekd(3);
+  //   if (l !== $$L_6C) return parseIdentRestNotKeyword(l, 4, offset, 'fina');
+  //   let l2 = peekd(4);
+  //   if (l2 !== $$L_6C) return parseIdentRestNotKeyword(l2, 5, offset, 'final');
+  //   let y = peekd(5);
+  //   if (y !== $$Y_79) return parseIdentRestNotKeyword(y, 6, offset, 'finall');
+  //
+  //   return keywordIfEnd(offset, 7, $ID_finally, 'finally');
+  // }
+  // function trie_fo(offset) {
+  //   // "for"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'fo');
+  //
+  //   let r = peekd(1);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 2, offset, 'fo');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_for, 'for');
+  // }
+  // function trie_fr(offset) {
+  //   // "from"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'fr');
+  //
+  //   let o = peekd(1);
+  //   if (eofd(2) || o !== $$O_6F) return parseIdentRestNotKeyword(o, 2, offset, 'fr');
+  //   let m = peekd(2);
+  //   if (m !== $$M_6D) return parseIdentRestNotKeyword(m, 3, offset, 'fro');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_from, 'from');
+  // }
+  // function trie_fu(offset) {
+  //   // "function"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'fu');
+  //
+  //   let n = peekd(1);
+  //   if (eofd(6) || n !== $$N_6E) return parseIdentRestNotKeyword(n, 2, offset, 'fu');
+  //   let c = peekd(2);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 3, offset, 'fun');
+  //   let t = peekd(3);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 4, offset, 'func');
+  //   let i = peekd(4);
+  //   if (i !== $$I_69) return parseIdentRestNotKeyword(i, 5, offset, 'funct');
+  //   let o = peekd(5);
+  //   if (o !== $$O_6F) return parseIdentRestNotKeyword(o, 6, offset, 'functi');
+  //   let n2 = peekd(6);
+  //   if (n2 !== $$N_6E) return parseIdentRestNotKeyword(n2, 7, offset, 'functio');
+  //
+  //   return keywordIfEnd(offset, 8, $ID_function, 'function');
+  // }
+  // function trie_g(offset) {
+  //   // "get"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'g');
+  //
+  //   let e = peek();
+  //   if (eofd(1) || e !== $$E_65) return parseIdentRestNotKeyword(e, 1, offset, 'g');
+  //   let t = peekd(1);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 2, offset, 'ge');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_get, 'get');
+  // }
+  // function trie_i(offset) {
+  //   // "if", "implements", "import", "instanceof", "interface", "in"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'i');
+  //
+  //   let c = peek();
+  //   if (c === $$F_66) return keywordIfEnd(offset, 2, $ID_if, 'if');
+  //   if (c === $$M_6D) return trie_im(offset);
+  //   if (c === $$N_6E) return trie_in(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'i');
+  // }
+  // function trie_im(offset) {
+  //   // "implements", "import"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'im');
+  //
+  //   let m = peekd(1);
+  //   if (eofd(4) || m !== $$P_70) return parseIdentRestNotKeyword(m, 2, offset, 'im');
+  //
+  //   let c = peekd(2);
+  //   if (c === $$L_6C) return trie_impl(offset);
+  //   if (c === $$O_6F) return trie_impo(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 3, offset, 'imp');
+  // }
+  // function trie_impl(offset) {
+  //   // "implements"
+  //
+  //   if (eofd(3)) return eofNotKeyword(offset, 4, 'impl'); // redundant?
+  //
+  //   let e = peekd(3);
+  //   if (eofd(8) || e !== $$E_65) return parseIdentRestNotKeyword(e, 4, offset, 'impl');
+  //   let m = peekd(4);
+  //   if (m !== $$M_6D) return parseIdentRestNotKeyword(m, 5, offset, 'imple');
+  //   let e2 = peekd(5);
+  //   if (e2 !== $$E_65) return parseIdentRestNotKeyword(e2, 6, offset, 'implem');
+  //   let n = peekd(6);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 7, offset, 'impleme');
+  //   let t = peekd(7);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 8, offset, 'implemen');
+  //   let s = peekd(8);
+  //   if (s !== $$S_73) return parseIdentRestNotKeyword(s, 9, offset, 'implement');
+  //
+  //   return keywordIfEnd(offset, 10, $ID_implements, 'implements');
+  // }
+  // function trie_impo(offset) {
+  //   // "import"
+  //
+  //   if (eofd(3)) return eofNotKeyword(offset, 4, 'impo'); // redundant?
+  //
+  //   let r = peekd(3);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 4, offset, 'impo');
+  //   let t = peekd(4);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 5, offset, 'impor');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_import, 'import');
+  // }
+  // function trie_in(offset) {
+  //   // "instanceof", "interface", "in"
+  //
+  //   if (eofd(1)) return keywordIfEnd(offset, 2, $ID_in, 'in');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$S_73) return trie_ins(offset);
+  //   if (c === $$T_74) return trie_int(offset);
+  //
+  //   return keywordIfEnd(offset, 2, $ID_in, 'in');
+  // }
+  // function trie_ins(offset) {
+  //   // "instanceof"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'ins');
+  //
+  //   let t = peekd(2);
+  //   if (eofd(8) || t !== $$T_74) return parseIdentRestNotKeyword(t, 3, offset, 'ins');
+  //   let a = peekd(3);
+  //   if (a !== $$A_61) return parseIdentRestNotKeyword(a, 4, offset, 'inst');
+  //   let n = peekd(4);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 5, offset, 'insta');
+  //   let c = peekd(5);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 6, offset, 'instan');
+  //   let e = peekd(6);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 7, offset, 'instanc');
+  //   let o = peekd(7);
+  //   if (o !== $$O_6F) return parseIdentRestNotKeyword(o, 8, offset, 'instance');
+  //   let f = peekd(8);
+  //   if (f !== $$F_66) return parseIdentRestNotKeyword(f, 9, offset, 'instanceo');
+  //
+  //   return keywordIfEnd(offset, 10, $ID_instanceof, 'instanceof');
+  // }
+  // function trie_int(offset) {
+  //   // "interface"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 4, 'int');
+  //
+  //   let e = peekd(2);
+  //   if (eofd(7) || e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'int');
+  //   let r = peekd(3);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 4, offset, 'inte');
+  //   let f = peekd(4);
+  //   if (f !== $$F_66) return parseIdentRestNotKeyword(f, 5, offset, 'inter');
+  //   let a = peekd(5);
+  //   if (a !== $$A_61) return parseIdentRestNotKeyword(a, 6, offset, 'interf');
+  //   let c = peekd(6);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 7, offset, 'interfa');
+  //   let e2 = peekd(7);
+  //   if (e2 !== $$E_65) return parseIdentRestNotKeyword(e2, 8, offset, 'interfac');
+  //
+  //   return keywordIfEnd(offset, 9, $ID_interface, 'interface');
+  // }
+  // function trie_l(offset) {
+  //   // "let"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'l');
+  //
+  //   let e = peek();
+  //   if (eofd(1) || e !== $$E_65) return parseIdentRestNotKeyword(e, 1, offset, 'l');
+  //   let t = peekd(1);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 2, offset, 'le');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_let, 'let');
+  // }
+  // function trie_n(offset) {
+  //   // "new", "null"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'n');
+  //
+  //   let c = peek();
+  //   if (c === $$E_65) return trie_ne(offset);
+  //   if (c === $$U_75) return trie_nu(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'n');
+  // }
+  // function trie_ne(offset) {
+  //   // "new"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ne');
+  //
+  //   let w = peekd(1);
+  //   if (w !== $$W_77) return parseIdentRestNotKeyword(w, 2, offset, 'ne');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_new, 'new');
+  // }
+  // function trie_nu(offset) {
+  //   // "null"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'nu');
+  //
+  //   let l = peekd(1);
+  //   if (eofd(2) || l !== $$L_6C) return parseIdentRestNotKeyword(l, 2, offset, 'nu');
+  //   let l2 = peekd(2);
+  //   if (l2 !== $$L_6C) return parseIdentRestNotKeyword(l2, 3, offset, 'nul');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_null, 'null');
+  // }
+  // function trie_o(offset) {
+  //   // "of"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'o');
+  //
+  //   let f = peek();
+  //   if (f !== $$F_66) return parseIdentRestNotKeyword(f, 1, offset, 'o');
+  //
+  //   return keywordIfEnd(offset, 2, $ID_of, 'of');
+  // }
+  // function trie_p(offset) {
+  //   // "package", "private", "protected", "public"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'p');
+  //
+  //   let c = peek();
+  //   if (c === $$A_61) return trie_pa(offset);
+  //   if (c === $$R_72) return trie_pr(offset);
+  //   if (c === $$U_75) return trie_pu(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'p');
+  // }
+  // function trie_pa(offset) {
+  //   // "package"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'pa');
+  //
+  //   let c = peekd(1);
+  //   if (eofd(5) || c !== $$C_63) return parseIdentRestNotKeyword(c, 2, offset, 'pa');
+  //   let k = peekd(2);
+  //   if (k !== $$K_6B) return parseIdentRestNotKeyword(k, 3, offset, 'pac');
+  //   let a = peekd(3);
+  //   if (a !== $$A_61) return parseIdentRestNotKeyword(a, 4, offset, 'pack');
+  //   let g = peekd(4);
+  //   if (g !== $$G_67) return parseIdentRestNotKeyword(g, 5, offset, 'packa');
+  //   let e = peekd(5);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 6, offset, 'packag');
+  //
+  //   return keywordIfEnd(offset, 7, $ID_package, 'package');
+  // }
+  // function trie_pr(offset) {
+  //   // "private", "protected"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'pr');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$I_69) return trie_pri(offset);
+  //   if (c === $$O_6F) return trie_pro(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 2, offset, 'pr');
+  // }
+  // function trie_pri(offset) {
+  //   // "private"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'pri');
+  //
+  //   let v = peekd(2);
+  //   if (eofd(5) || v !== $$V_76) return parseIdentRestNotKeyword(v, 3, offset, 'pri');
+  //   let a = peekd(3);
+  //   if (a !== $$A_61) return parseIdentRestNotKeyword(a, 4, offset, 'priv');
+  //   let t = peekd(4);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 5, offset, 'priva');
+  //   let e = peekd(5);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 6, offset, 'privat');
+  //
+  //   return keywordIfEnd(offset, 7, $ID_private, 'private');
+  // }
+  // function trie_pro(offset) {
+  //   // "protected"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'pro');
+  //
+  //   let t = peekd(2);
+  //   if (eofd(7) || t !== $$T_74) return parseIdentRestNotKeyword(t, 3, offset, 'pro');
+  //   let e = peekd(3);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 4, offset, 'prot');
+  //   let c = peekd(4);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 5, offset, 'prote');
+  //   let t2 = peekd(5);
+  //   if (t2 !== $$T_74) return parseIdentRestNotKeyword(t2, 6, offset, 'protec');
+  //   let e2 = peekd(6);
+  //   if (e2 !== $$E_65) return parseIdentRestNotKeyword(e2, 7, offset, 'protect');
+  //   let d = peekd(7);
+  //   if (d !== $$D_64) return parseIdentRestNotKeyword(d, 8, offset, 'protecte');
+  //
+  //   return keywordIfEnd(offset, 9, $ID_protected, 'protected');
+  // }
+  // function trie_pu(offset) {
+  //   // "public"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'pu');
+  //
+  //   let b = peekd(1);
+  //   if (eofd(4) || b !== $$B_62) return parseIdentRestNotKeyword(b, 2, offset, 'pu');
+  //   let l = peekd(2);
+  //   if (l !== $$L_6C) return parseIdentRestNotKeyword(l, 3, offset, 'pub');
+  //   let i = peekd(3);
+  //   if (i !== $$I_69) return parseIdentRestNotKeyword(i, 4, offset, 'publ');
+  //   let c = peekd(4);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 5, offset, 'publi');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_public, 'public');
+  // }
+  // function trie_r(offset) {
+  //   // "return"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'r');
+  //
+  //   let e = peek();
+  //   if (eofd(4) || e !== $$E_65) return parseIdentRestNotKeyword(e, 1, offset, 'r');
+  //   let t = peekd(1);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 2, offset, 're');
+  //   let u = peekd(2);
+  //   if (u !== $$U_75) return parseIdentRestNotKeyword(u, 3, offset, 'ret');
+  //   let r = peekd(3);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 4, offset, 'retu');
+  //   let n = peekd(4);
+  //   if (n !== $$N_6E) return parseIdentRestNotKeyword(n, 5, offset, 'retur');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_return, 'return');
+  // }
+  // function trie_s(offset) {
+  //   // "set", "static", "super", "switch"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 's');
+  //
+  //   let c = peek();
+  //   if (c === $$E_65) return trie_se(offset);
+  //   if (c === $$T_74) return trie_st(offset);
+  //   if (c === $$U_75) return trie_su(offset);
+  //   if (c === $$W_77) return trie_sw(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 's');
+  // }
+  // function trie_se(offset) {
+  //   // "set"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'se');
+  //
+  //   let t = peekd(1);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 2, offset, 'se');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_set, 'set');
+  // }
+  // function trie_st(offset) {
+  //   // "static"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'st');
+  //
+  //   let a = peekd(1);
+  //   if (eofd(4) || a !== $$A_61) return parseIdentRestNotKeyword(a, 2, offset, 'st');
+  //   let t = peekd(2);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 3, offset, 'sta');
+  //   let i = peekd(3);
+  //   if (i !== $$I_69) return parseIdentRestNotKeyword(i, 4, offset, 'stat');
+  //   let c = peekd(4);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 5, offset, 'stati');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_static, 'static');
+  // }
+  // function trie_su(offset) {
+  //   // "super"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'su');
+  //
+  //   let p = peekd(1);
+  //   if (eofd(3) || p !== $$P_70) return parseIdentRestNotKeyword(p, 2, offset, 'su');
+  //   let e = peekd(2);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'sup');
+  //   let r = peekd(3);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 4, offset, 'supe');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_super, 'super');
+  // }
+  // function trie_sw(offset) {
+  //   // "switch"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'sw');
+  //
+  //   let i = peekd(1);
+  //   if (eofd(4) || i !== $$I_69) return parseIdentRestNotKeyword(i, 2, offset, 'sw');
+  //   let t = peekd(2);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 3, offset, 'swi');
+  //   let c = peekd(3);
+  //   if (c !== $$C_63) return parseIdentRestNotKeyword(c, 4, offset, 'swit');
+  //   let h = peekd(4);
+  //   if (h !== $$H_68) return parseIdentRestNotKeyword(h, 5, offset, 'switc');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_switch, 'switch');
+  // }
+  // function trie_t(offset) {
+  //   // "target", "this", "throw", "true", "try", "typeof"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 't');
+  //
+  //   let c = peek();
+  //   if (c === $$A_61) return trie_ta(offset);
+  //   if (c === $$H_68) return trie_th(offset);
+  //   if (c === $$R_72) return trie_tr(offset);
+  //   if (c === $$Y_79) return trie_ty(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 't');
+  // }
+  // function trie_ta(offset) {
+  //   // "target"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ta');
+  //
+  //   let r = peekd(1);
+  //   if (eofd(4) || r !== $$R_72) return parseIdentRestNotKeyword(r, 2, offset, 'ta');
+  //   let g = peekd(2);
+  //   if (g !== $$G_67) return parseIdentRestNotKeyword(g, 3, offset, 'tar');
+  //   let e = peekd(3);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 4, offset, 'targ');
+  //   let t = peekd(4);
+  //   if (t !== $$T_74) return parseIdentRestNotKeyword(t, 5, offset, 'targe');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_target, 'target');
+  // }
+  // function trie_th(offset) {
+  //   // "throw" "this"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'th');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$I_69) return trie_thi(offset);
+  //   if (c === $$R_72) return trie_thr(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 2, offset, 'th');
+  // }
+  // function trie_thi(offset) {
+  //   // "this"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'thi');
+  //
+  //   let s = peekd(2);
+  //   if (s !== $$S_73) return parseIdentRestNotKeyword(s, 3, offset, 'thi');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_this, 'this');
+  // }
+  // function trie_thr(offset) {
+  //   // "throw"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'thr');
+  //
+  //   let o = peekd(2);
+  //   if (eofd(3) || o !== $$O_6F) return parseIdentRestNotKeyword(o, 3, offset, 'thr');
+  //   let w = peekd(3);
+  //   if (w !== $$W_77) return parseIdentRestNotKeyword(w, 4, offset, 'thro');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_throw, 'throw');
+  // }
+  // function trie_tr(offset) {
+  //   // "true" "try"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'tr');
+  //
+  //   let c = peekd(1);
+  //   if (c === $$U_75) return trie_tru(offset);
+  //
+  //   if (c !== $$Y_79) return parseIdentRestNotKeyword(c, 2, offset, 'tr');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_try, 'try');
+  // }
+  // function trie_tru(offset) {
+  //   // "true"
+  //
+  //   if (eofd(2)) return eofNotKeyword(offset, 3, 'tru');
+  //
+  //   let e = peekd(2);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'tru');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_true, 'true');
+  // }
+  // function trie_ty(offset) {
+  //   // "typeof"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'ty');
+  //
+  //   let p = peekd(1);
+  //   if (eofd(4) || p !== $$P_70) return parseIdentRestNotKeyword(p, 2, offset, 'ty');
+  //   let e = peekd(2);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 3, offset, 'typ');
+  //   let o = peekd(3);
+  //   if (o !== $$O_6F) return parseIdentRestNotKeyword(o, 4, offset, 'type');
+  //   let f = peekd(4);
+  //   if (f !== $$F_66) return parseIdentRestNotKeyword(f, 5, offset, 'typeo');
+  //
+  //   return keywordIfEnd(offset, 6, $ID_typeof, 'typeof');
+  // }
+  // function trie_v(offset) {
+  //   // "var" "void"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'v');
+  //
+  //   let c = peek();
+  //   if (c === $$A_61) return trie_va(offset);
+  //   if (c === $$O_6F) return trie_vo(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'v');
+  // }
+  // function trie_va(offset) {
+  //   // "var"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'va');
+  //
+  //   let r = peekd(1);
+  //   if (r !== $$R_72) return parseIdentRestNotKeyword(r, 2, offset, 'va');
+  //
+  //   return keywordIfEnd(offset, 3, $ID_var, 'var');
+  // }
+  // function trie_vo(offset) {
+  //   // "void"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'vo');
+  //
+  //   let i = peekd(1);
+  //   if (eofd(2) || i !== $$I_69) return parseIdentRestNotKeyword(i, 2, offset, 'vo');
+  //   let d = peekd(2);
+  //   if (d !== $$D_64) return parseIdentRestNotKeyword(d, 3, offset, 'voi');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_void, 'void');
+  // }
+  // function trie_w(offset) {
+  //   // "while" "with"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'w');
+  //
+  //   let c = peek();
+  //   if (c === $$H_68) return trie_wh(offset);
+  //   if (c === $$I_69) return trie_wi(offset);
+  //
+  //   return parseIdentRestNotKeyword(c, 1, offset, 'w');
+  // }
+  // function trie_wh(offset) {
+  //   // "while"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'wh');
+  //
+  //   let i = peekd(1);
+  //   if (eofd(3) || i !== $$I_69) return parseIdentRestNotKeyword(i, 2, offset, 'wh');
+  //   let l = peekd(2);
+  //   if (l !== $$L_6C) return parseIdentRestNotKeyword(l, 3, offset, 'whi');
+  //   let e = peekd(3);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 4, offset, 'whil');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_while, 'while');
+  // }
+  // function trie_wi(offset) {
+  //   // "with"
+  //
+  //   if (eofd(1)) return eofNotKeyword(offset, 2, 'wi');
+  //
+  //   let t = peekd(1);
+  //   if (eofd(2) || t !== $$T_74) return parseIdentRestNotKeyword(t, 2, offset, 'wi');
+  //   let h = peekd(2);
+  //   if (h !== $$H_68) return parseIdentRestNotKeyword(h, 3, offset, 'wit');
+  //
+  //   return keywordIfEnd(offset, 4, $ID_with, 'with');
+  // }
+  // function trie_y(offset) {
+  //   // "yield"
+  //
+  //   if (eof()) return eofNotKeyword(offset, 1, 'y');
+  //
+  //   let i = peek();
+  //   if (eofd(3) || i !== $$I_69) return parseIdentRestNotKeyword(i, 1, offset, 'y');
+  //   let e = peekd(1);
+  //   if (e !== $$E_65) return parseIdentRestNotKeyword(e, 2, offset, 'yi');
+  //   let l = peekd(2);
+  //   if (l !== $$L_6C) return parseIdentRestNotKeyword(l, 3, offset, 'yie');
+  //   let d = peekd(3);
+  //   if (d !== $$D_64) return parseIdentRestNotKeyword(d, 4, offset, 'yiel');
+  //
+  //   return keywordIfEnd(offset, 5, $ID_yield, 'yield');
+  // }
+  // function keywordIfEnd(start, len, type, str) {
+  //   ASSERT(keywordIfEnd.length === arguments.length, 'args count');
+  //   ASSERT(str.length === len, 'trie should deliver reliable info :)');
+  //
+  //   if (eofd(len - 1)) {
+  //     // EOF immediately after the keyword
+  //     lastCanonizedInput = str;
+  //     lastCanonizedInputLen = len;
+  //     pointer = start + len - 2;
+  //     skip(); // setup EOF
+  //     return type;
+  //   }
+  //
+  //   let d = peekd(len - 1); // (pointer has only been incremented by 1! so use len-1)
+  //   let s = getTokenStart(d);
+  //   // Only valid "starts" for ident are id, key, numbers, and certain unicodes
+  //   if (s === START_ID || s === START_KEY || s === START_DECIMAL || s === START_ZERO) {
+  //     pointer = start + len - 2;
+  //     skip(); // TODO: replace to use unusedChar instead
+  //     return parseIdentifierRest(str, len);
+  //   }
+  //   if (s === START_UNICODE) {
+  //     // maybe rest id
+  //     pointer = start + len - 1;
+  //     cache = d;
+  //     // This is potentially double the work but I already consider this very much a cold path
+  //     let wide = isIdentRestChr(d, len - 1);
+  //     if (wide === INVALID_IDENT_CHAR) {
+  //       // This ends the ident and it is a keyword
+  //       lastCanonizedInputLen = (len - 1) - start;
+  //       if (trie.hit === undefined) {
+  //         lastCanonizedInput = slice(start, len - 1);
+  //         return $IDENT;
+  //       }
+  //       ASSERT(typeof trie.canon === 'string');
+  //       ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+  //
+  //       lastCanonizedInput = str;
+  //       lastCanonizedInputLen = len;
+  //       pointer = start + len;
+  //       cache = d;
+  //       return $IDENT;
+  //     }
+  //     return parseIdentifierRest(str, len);
+  //   }
+  //   if (s === START_BSLASH) {
+  //     pointer = start + len - 2;
+  //     skip(); // TODO: replace to use unusedChar instead
+  //     // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
+  //     return parseIdentifierRest(str, len);
+  //   }
+  //
+  //   lastCanonizedInput = str;
+  //   lastCanonizedInputLen = len;
+  //   pointer = start + len - 1;
+  //   // skip(); // TODO: fixme, the cache should be d now ...
+  //   cache = d;
+  //   return type;
+  // }
 
-    // c = input[pointer-1]
-    // Keep reading chars until;
-    // - eof
-    // - next char is not a start_key
-    // - next char is not found in the trie
-
-    let trie = KEYWORD_TRIE[c - $$A_61];
-    let start = pointer - 1; // c was peekSkipped
-    let n = start + 1;
-    if (trie === undefined) return parseIdentifierRest(slice(start, n), n - start);
-    do {
-      if (n >= len) return eofAfterPotentialKeyword(trie, n, start);
-      let d = input.charCodeAt(n++);
-      ASSERT(typeof d === 'number' && d >= 0 && Number.isFinite(d), 'dont oob please');
-      if (d < $$A_61 || d > $$Z_7A) return endOfPotentialKeyword(trie, d, n, start);
-      // Next step in trie
-      trie = trie[d - $$A_61];
-      if (trie === undefined) return parseIdentRestNotKeyword(d, n, start);
-    } while (true);
-    ASSERT(false, 'unreachable');
-  }
-  function parseIdentRestNotKeyword(d, n, start) {
-      pointer = n - 1;
-      cache = d;
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-  }
-  function eofAfterPotentialKeyword(trie, n, start) {
-    // EOF
-    ASSERT(trie !== undefined, 'checked before and at end of loop');
-
-    pointer = n - 1;
-    skip();
-    lastCanonizedInputLen = n - start;
-
-    if (trie.hit !== undefined) {
-      ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
-      ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
-      ASSERT(typeof trie.canon === 'string');
-      ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
-
-      lastCanonizedInput = trie.canon;
-      return trie.hit;
-    }
-
-    lastCanonizedInput = slice(start, n);
-    return $IDENT;
-  }
-  function endOfPotentialKeyword(trie, d, n, start) {
-    let s = getTokenStart(d);
-    // Only valid "starts" for ident are id, key, numbers, and certain unicodes
-    if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
-      pointer = n - 1;
-      cache = d;
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-    if (s === START_UNICODE) {
-      // maybe rest id
-      pointer = n - 1;
-      cache = d;
-      // This is potentially double the work but I already consider this very much a cold path
-      let wide = isIdentRestChr(d, n - 1);
-      if (wide === INVALID_IDENT_CHAR) {
-        // This ends the ident and it is a keyword
-        lastCanonizedInputLen = (n - 1) - start;
-        if (trie.hit === undefined) {
-          lastCanonizedInput = slice(start, n - 1);
-          return $IDENT;
-        }
-        ASSERT(typeof trie.canon === 'string');
-        ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
-        lastCanonizedInput = trie.canon;
-        return trie.hit;
-      }
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-    if (s === START_BSLASH) {
-      pointer = n - 1;
-      cache = d;
-      // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-
-    // So this must be the end of the identifier. Either we found a keyword, or we didn't :)
-
-    if (trie.hit !== undefined) {
-      // End of id, this was a keyword
-      pointer = n - 1;
-      cache = d;
-      lastCanonizedInputLen = (n - 1) - start;
-      ASSERT(typeof trie.canon === 'string');
-      ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
-      lastCanonizedInput = trie.canon;
-      ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
-      ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
-      return trie.hit;
-    }
-
-    lastCanonizedInput = slice(start, n - 1);
-    lastCanonizedInputLen = (n - 1) - start;
-    pointer = n - 1;
-    cache = d;
-    return $IDENT;
-  }
+  // function parsePotentialKeyword(c) {
+  //   ASSERT(parsePotentialKeyword.length === arguments.length, 'arg count');
+  //   ASSERT(pointer > 0 && c === input.charCodeAt(pointer - 1), 'c should have been peekSkipped');
+  //
+  //   // c = input[pointer-1]
+  //   // Keep reading chars until;
+  //   // - eof
+  //   // - next char is not a start_key
+  //   // - next char is not found in the trie
+  //
+  //   // if (false) { // funcTrie
+  //   //   return trie(c, pointer)
+  //   // } else { // hashTrie
+  //     let trie = KEYWORD_TRIE[c - $$A_61];
+  //     let start = pointer - 1; // c was peekSkipped
+  //     let n = start + 1;
+  //     if (trie === undefined) return parseIdentifierRest(slice(start, n), n - start);
+  //     do {
+  //       if (n >= len) return eofAfterPotentialKeyword(trie, n, start);
+  //       let d = input.charCodeAt(n++);
+  //       ASSERT(typeof d === 'number' && d >= 0 && Number.isFinite(d), 'dont oob please');
+  //       if (d < $$A_61 || d > $$Z_7A) return endOfPotentialKeyword(trie, d, n, start);
+  //       // Next step in trie
+  //       trie = trie[d - $$A_61];
+  //       if (trie === undefined) return parseIdentRestNotKeywordObjTrie(d, n, start);
+  //     } while (true);
+  //     ASSERT(false, 'unreachable');
+  //   // }
+  // }
+  // function parseIdentRestNotKeyword(unusedChar, len, offset, str) {
+  //   ASSERT(parseIdentRestNotKeyword.length === arguments.length, 'arg count');
+  //   ASSERT(typeof unusedChar === 'number' && unusedChar >= 0, 'unusedChar num', unusedChar);
+  //   ASSERT(typeof str === 'string', 'str str', str);
+  //   ASSERT(typeof len === 'number' && len >= 0, 'len num', len);
+  //   ASSERT(typeof offset === 'number' && offset >= 0, 'offset num', offset);
+  //   ASSERT(input.charCodeAt(offset + len - 1) === unusedChar, 'offset+len should be the unused char...', unusedChar, len, offset, input.charCodeAt(offset + len - 1), str);
+  //
+  //   pointer = offset + len - 2;
+  //   skip(); // TODO: we shouldnt need this skip because we have all the relevant pieces
+  //   cache = unusedChar;
+  //   return parseIdentifierRest(str, len);
+  // }
+  // function parseIdentRestNotKeywordObjTrie(d, n, start) {
+  //   pointer = n - 1;
+  //   cache = d;
+  //   return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  // }
+  // function eofNotKeyword(offset, len, canon) {
+  //   ASSERT(eofNotKeyword.length === arguments.length, 'arg count');
+  //   ASSERT(len === canon.length, 'len should match canon');
+  //
+  //   pointer = offset + len - 2; // back up to set up EOF
+  //   skip();
+  //   lastCanonizedInput = canon;
+  //   lastCanonizedInputLen = len;
+  //
+  //   return $IDENT;
+  // }
+  // function parsePotentialKeywordTrieMap(c) {
+  //   ASSERT(parsePotentialKeyword.length === arguments.length, 'arg count');
+  //   ASSERT(pointer > 0 && c === input.charCodeAt(pointer - 1), 'c should have been peekSkipped');
+  //
+  //   // c = input[pointer-1]
+  //   // Keep reading chars until;
+  //   // - eof
+  //   // - next char is not a start_key
+  //   // - next char is not found in the trie
+  //
+  //   // if (false) { // funcTrie
+  //   //   return trie(c, pointer)
+  //   // } else { // hashTrie
+  //   let trie = KEYWORD_TRIE_MAP.get(c - $$A_61);
+  //   let start = pointer - 1; // c was peekSkipped
+  //   let n = start + 1;
+  //   if (trie === undefined) return parseIdentifierRest(slice(start, n), n - start);
+  //   do {
+  //     if (n >= len) return eofAfterPotentialKeyword(trie, n, start);
+  //     let d = input.charCodeAt(n++);
+  //     ASSERT(typeof d === 'number' && d >= 0 && Number.isFinite(d), 'dont oob please');
+  //     if (d < $$A_61 || d > $$Z_7A) return endOfPotentialKeyword(trie, d, n, start);
+  //     // Next step in trie
+  //     trie = trie.get(d - $$A_61);
+  //     if (trie === undefined) return parseIdentRestNotKeywordObjTrie(d, n, start);
+  //   } while (true);
+  //   ASSERT(false, 'unreachable');
+  //   // }
+  // }
+  // function eofAfterPotentialKeywordTrieMap(trieMap, n, start) {
+  //   // EOF
+  //   ASSERT(trieMap !== undefined, 'checked before and at end of loop');
+  //
+  //   pointer = n - 1;
+  //   skip();
+  //   lastCanonizedInputLen = n - start;
+  //
+  //   if (trieMap.hit !== undefined) {
+  //     ASSERT(ALL_TOKEN_TYPES.includes(trieMap.hit), 'trie leafs should be valid types');
+  //     ASSERT(isIdentToken(trieMap.hit), 'trie leafs should contain ident types');
+  //     ASSERT(typeof trieMap.canon === 'string');
+  //     ASSERT(trieMap.canon.length === lastCanonizedInputLen, 'should be equal now', trieMap.canon);
+  //
+  //     lastCanonizedInput = trieMap.canon;
+  //     return trieMap.hit;
+  //   }
+  //
+  //   lastCanonizedInput = slice(start, n);
+  //   return $IDENT;
+  // }
+  // function endOfPotentialKeywordTrieMap(trieMap, d, n, start) {
+  //   let s = getTokenStart(d);
+  //   // Only valid "starts" for ident are id, key, numbers, and certain unicodes
+  //   if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
+  //     pointer = n - 1;
+  //     cache = d;
+  //     return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  //   }
+  //   if (s === START_UNICODE) {
+  //     // maybe rest id
+  //     pointer = n - 1;
+  //     cache = d;
+  //     // This is potentially double the work but I already consider this very much a cold path
+  //     let wide = isIdentRestChr(d, n - 1);
+  //     if (wide === INVALID_IDENT_CHAR) {
+  //       // This ends the ident and it is a keyword
+  //       lastCanonizedInputLen = (n - 1) - start;
+  //       if (trieMap.hit === undefined) {
+  //         lastCanonizedInput = slice(start, n - 1);
+  //         return $IDENT;
+  //       }
+  //       ASSERT(typeof trieMap.canon === 'string');
+  //       ASSERT(trieMap.canon.length === lastCanonizedInputLen, 'should be equal now', trieMap.canon);
+  //       lastCanonizedInput = trieMap.canon;
+  //       return trieMap.hit;
+  //     }
+  //     return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  //   }
+  //   if (s === START_BSLASH) {
+  //     pointer = n - 1;
+  //     cache = d;
+  //     // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
+  //     return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  //   }
+  //
+  //   // So this must be the end of the identifier. Either we found a keyword, or we didn't :)
+  //
+  //   if (trieMap.hit !== undefined) {
+  //     // End of id, this was a keyword
+  //     pointer = n - 1;
+  //     cache = d;
+  //     lastCanonizedInputLen = (n - 1) - start;
+  //     ASSERT(typeof trieMap.canon === 'string');
+  //     ASSERT(trieMap.canon.length === lastCanonizedInputLen, 'should be equal now', trieMap.canon);
+  //     lastCanonizedInput = trieMap.canon;
+  //     ASSERT(ALL_TOKEN_TYPES.includes(trieMap.hit), 'trie leafs should be valid types');
+  //     ASSERT(isIdentToken(trieMap.hit), 'trie leafs should contain ident types');
+  //     return trieMap.hit;
+  //   }
+  //
+  //   lastCanonizedInput = slice(start, n - 1);
+  //   lastCanonizedInputLen = (n - 1) - start;
+  //   pointer = n - 1;
+  //   cache = d;
+  //   return $IDENT;
+  // }
+  // function eofAfterPotentialKeyword(trie, n, start) {
+  //   // EOF
+  //   ASSERT(trie !== undefined, 'checked before and at end of loop');
+  //
+  //   pointer = n - 1;
+  //   skip();
+  //   lastCanonizedInputLen = n - start;
+  //
+  //   if (trie.hit !== undefined) {
+  //     ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
+  //     ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
+  //     ASSERT(typeof trie.canon === 'string');
+  //     ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+  //
+  //     lastCanonizedInput = trie.canon;
+  //     return trie.hit;
+  //   }
+  //
+  //   lastCanonizedInput = slice(start, n);
+  //   return $IDENT;
+  // }
+  // function endOfPotentialKeyword(trie, d, n, start) {
+  //   let s = getTokenStart(d);
+  //   // Only valid "starts" for ident are id, key, numbers, and certain unicodes
+  //   if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
+  //     pointer = n - 1;
+  //     cache = d;
+  //     return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  //   }
+  //   if (s === START_UNICODE) {
+  //     // maybe rest id
+  //     pointer = n - 1;
+  //     cache = d;
+  //     // This is potentially double the work but I already consider this very much a cold path
+  //     let wide = isIdentRestChr(d, n - 1);
+  //     if (wide === INVALID_IDENT_CHAR) {
+  //       // This ends the ident and it is a keyword
+  //       lastCanonizedInputLen = (n - 1) - start;
+  //       if (trie.hit === undefined) {
+  //         lastCanonizedInput = slice(start, n - 1);
+  //         return $IDENT;
+  //       }
+  //       ASSERT(typeof trie.canon === 'string');
+  //       ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+  //       lastCanonizedInput = trie.canon;
+  //       return trie.hit;
+  //     }
+  //     return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  //   }
+  //   if (s === START_BSLASH) {
+  //     pointer = n - 1;
+  //     cache = d;
+  //     // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
+  //     return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  //   }
+  //
+  //   // So this must be the end of the identifier. Either we found a keyword, or we didn't :)
+  //
+  //   if (trie.hit !== undefined) {
+  //     // End of id, this was a keyword
+  //     pointer = n - 1;
+  //     cache = d;
+  //     lastCanonizedInputLen = (n - 1) - start;
+  //     ASSERT(typeof trie.canon === 'string');
+  //     ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
+  //     lastCanonizedInput = trie.canon;
+  //     ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
+  //     ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
+  //     return trie.hit;
+  //   }
+  //
+  //   lastCanonizedInput = slice(start, n - 1);
+  //   lastCanonizedInputLen = (n - 1) - start;
+  //   pointer = n - 1;
+  //   cache = d;
+  //   return $IDENT;
+  // }
 
   function readNextCodepointAsStringExpensive(c, offset, forError) {
     ASSERT(readNextCodepointAsStringExpensive.length === arguments.length, 'arg count');
