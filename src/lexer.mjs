@@ -160,11 +160,6 @@ import {
   toktypeToString,
   T,
 
-  // KEYWORD_TRIE,
-  // KEYWORD_TRIE_OC,
-  // KEYWORD_TRIE_MAP,
-  KEYWORD_HASH,
-  KEYWORD_HASH_OC,
   KEYWORD_MAP,
   MAX_START_VALUE,
 
@@ -731,9 +726,9 @@ function Lexer(
       case START_SPACE:
         return parseSpace();
       case START_ID:
-        return parseIdSpecial(c);
+        return parseIdSpecial(c, lexerFlags);
       case START_KEY:
-        return parseIdSpecial(c);
+        return parseIdSpecial(c, lexerFlags);
         // if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c), 1);
         // return parsePotentialKeyword(c);
       case START_NL_SOLO:
@@ -786,24 +781,25 @@ function Lexer(
     THROW('Unknown input', pointer - 1, pointer);
   }
 
-  function parseIdSpecial(c) {
+  function parseIdSpecial(c, lexerFlags) {
     let start = pointer - 1; // c already skipped
     let i = parseIdentifierRest(String.fromCharCode(c), 1);
 
     if (i !== $IDENT) return i; // error
+    if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return $IDENT;
     if (pointer - start !== lastCanonizedInputLen) return $IDENT; // ident has an escape of any kind (=> not keyword)
 
-    // Map with has/get
+    // Map get !== undefined
     {
-      if (KEYWORD_MAP.has(lastCanonizedInput)) return KEYWORD_MAP.get(lastCanonizedInput);
-      return $IDENT;
+      let t = KEYWORD_MAP.get(lastCanonizedInput);
+      if (t === undefined) return $IDENT;
+      return t;
     }
 
-    // Map with immediate get
+    // Map with has/get
     // {
-    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
-    //   if (t === undefined) return $IDENT;
-    //   return t;
+    //   if (KEYWORD_MAP.has(lastCanonizedInput)) return KEYWORD_MAP.get(lastCanonizedInput);
+    //   return $IDENT;
     // }
 
     // Map with |$ident hack
@@ -811,48 +807,17 @@ function Lexer(
     //   return $IDENT | KEYWORD_MAP.get(lastCanonizedInput);
     // }
 
-    // Plain object with direct access
+    // Map with `>` coercion check
     // {
-    //   let t = KEYWORD_HASH[lastCanonizedInput];
-    //   if (typeof t === 'number') return t;
-    //   return $IDENT;
-    // }
-
-    // Plain object with `>` coercion check
-    {
-      let t = KEYWORD_HASH[lastCanonizedInput];
-      if (t > 0) return t;
-      return $IDENT;
-    }
-
-    // Object.create with direct access
-    // {
-    //   let t = KEYWORD_HASH_OC[lastCanonizedInput];
-    //   if (typeof t === 'number') return t;
-    //   return $IDENT;
-    // }
-
-    // Object.create with `in` check before direct access
-    // {
-    //   if (lastCanonizedInput in KEYWORD_HASH_OC) {
-    //     return KEYWORD_HASH_OC[lastCanonizedInput];
-    //   }
-    //   return $IDENT;
-    // }
-
-    // Object.create with `>` coercion check
-    // {
-    //   let t = KEYWORD_HASH_OC[lastCanonizedInput];
+    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
     //   if (t > 0) return t;
     //   return $IDENT;
     // }
 
-    // Object.create with |$IDENT hack
+    // Map with `??` check
+    // (Can't bench this with native support yet)
     // {
-    //   // This works because $IDENT has the leaf flag as 0, so $ID_do|$IDENT===$ID_do but undefined|$IDENT===$IDENT
-    //   // Only works on OC because regular objects will return function for `constructor`
-    //   // ASSERT(KEYWORD_HASH_OC[lastCanonizedInput] === undefined || (KEYWORD_HASH_OC[lastCanonizedInput]|$IDENT)===KEYWORD_HASH_OC[lastCanonizedInput], 'confirm hack works');
-    //   return KEYWORD_HASH_OC[lastCanonizedInput] | $IDENT;
+    //   return KEYWORD_MAP.get(lastCanonizedInput) ?? $IDENT;
     // }
   }
 
