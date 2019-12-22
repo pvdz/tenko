@@ -156,8 +156,6 @@ import {
   isNumberStringToken,
   isNumberStringRegex,
 
-  KEYWORD_TRIE,
-
   // <SCRUB ASSERTS TO COMMENT>
   // (These are only used to assert a token type group when skipping. For all other use cases use the `isXXXtoken()` funcs
   $G_WHITE,

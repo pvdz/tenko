@@ -38,6 +38,7 @@ ASSERT(__$flag_group < 32, 'cannot use more than 32 flags but have ' + __$flag_g
 // Token types that are mutually exclusive can be encoded as as a unique id within a few bits of sequential space
 // You can still have group bits to complement these but it's far more space efficient this way
 // I don't think you should ever need the $L constants outside of defining the concrete token type constants below...
+// Note: leaf 0 is reserved for $IDENT
 const $L_SPACE = ++__$flag_leaf;
 const $L_TAB = ++__$flag_leaf;
 const $L_NL_SINGLE = ++__$flag_leaf;
@@ -45,7 +46,7 @@ const $L_NL_CRLF = ++__$flag_leaf;
 const $L_COMMENT_SINGLE = ++__$flag_leaf;
 const $L_COMMENT_MULTI = ++__$flag_leaf;
 const $L_COMMENT_HTML = ++__$flag_leaf;
-const $L_IDENT = ++__$flag_leaf;
+const $L_IDENT = 0; // This is a hack which causes the leaf bits to be clear. This way (value | $IDENT) yields, at least, $IDENT without destroying an $ID_foo special keyword
 const $L_NUMBER_HEX = ++__$flag_leaf;
 const $L_NUMBER_DEC = ++__$flag_leaf;
 const $L_NUMBER_BIN = ++__$flag_leaf;
@@ -329,109 +330,63 @@ const $EOF = $L_EOF | $G_OTHER;
 const $ASI = $L_ASI | $G_OTHER;
 const $ERROR = $L_ERROR | $G_OTHER;
 
-let KEYWORD_TRIE = { 0:
-    { 17:
-        { 6:
-            { 20:
-                { 12: { 4: { 13: { 19: { 18: { hit: $ID_arguments, canon: 'arguments' } } } } } } } },
-      18: {
-        24: { 13: { 2: { hit: $ID_async, canon: 'async' } } },
-        hit: $ID_as, canon: 'as'
-      },
-      22: { 0: { 8: { 19: { hit: $ID_await, canon: 'await' } } } } },
-  1: { 17: { 4: { 0: { 10: { hit: $ID_break, canon: 'break' } } } } },
-  2:
-    { 0:
-        { 18: { 4: { hit: $ID_case, canon: 'case' } },
-          19: { 2: { 7: { hit: $ID_catch, canon: 'catch' } } } },
-      11: { 0: { 18: { 18: { hit: $ID_class, canon: 'class' } } } },
-      14:
-        { 13:
-            { 18: { 19: { hit: $ID_const, canon: 'const' } },
-              19: { 8: { 13: { 20: { 4: { hit: $ID_continue, canon: 'continue' } } } } } } } },
-  3:
-    { 4:
-        { 1:
-            { 20: { 6: { 6: { 4: { 17: { hit: $ID_debugger, canon: 'debugger' } } } } } },
-          5: { 0: { 20: { 11: { 19: { hit: $ID_default, canon: 'default' } } } } },
-          11: { 4: { 19: { 4: { hit: $ID_delete, canon: 'delete' } } } } },
-      14: { hit: $ID_do, canon: 'do' } },
-  4:
-    { 11: { 18: { 4: { hit: $ID_else, canon: 'else' } } },
-      13: { 20: { 12: { hit: $ID_enum, canon: 'enum' } } },
-      21: { 0: { 11: { hit: $ID_eval, canon: 'eval' } } },
-      23:
-        { 15: { 14: { 17: { 19: { hit: $ID_export, canon: 'export' } } } },
-          19: { 4: { 13: { 3: { 18: { hit: $ID_extends, canon: 'extends' } } } } } } },
-  5:
-    { 0: { 11: { 18: { 4: { hit: $ID_false, canon: 'false' } } } },
-      8:
-        { 13: { 0: { 11: { 11: { 24: { hit: $ID_finally, canon: 'finally' } } } } } },
-      14: { 17: { hit: $ID_for, canon: 'for' } },
-      17: { 14: { 12: { hit: $ID_from, canon: 'from' } } },
-      20:
-        { 13:
-            { 2: { 19: { 8: { 14: { 13: { hit: $ID_function, canon: 'function' } } } } } } } },
-  6: { 4: { 19: { hit: $ID_get, canon: 'get' } } },
-  8:
-    {
-      5: { hit: $ID_if, canon: 'if' },
-      12:
-        { 15:
-            { 11:
-                { 4:
-                    { 12: { 4: { 13: { 19: { 18: { hit: $ID_implements, canon: 'implements' } } } } } } },
-              14: { 17: { 19: { hit: $ID_import, canon: 'import' } } } } },
-        13: {
-          18:
-            { 19:
-                { 0:
-                    { 13: { 2: { 4: { 14: { 5: { hit: $ID_instanceof, canon: 'instanceof' } } } } } } }
-          },
-          19: {
-            4: { 17: { 5: { 0: { 2: { 4: { hit: $ID_interface, canon: 'interface' } } } } } }
-          },
-          hit: $ID_in, canon: 'in'
-        }
-    },
-  11: { 4: { 19: { hit: $ID_let, canon: 'let' } } },
-  13:
-    { 4: { 22: { hit: $ID_new, canon: 'new' } },
-      20: { 11: { 11: { hit: $ID_null, canon: 'null' } } } },
-  14: { 5: { hit: $ID_of, canon: 'of' } },
-  15:
-    { 0:
-        { 2: { 10: { 0: { 6: { 4: { hit: $ID_package, canon: 'package' } } } } } },
-      17:
-        { 8: { 21: { 0: { 19: { 4: { hit: $ID_private, canon: 'private' } } } } },
-          14:
-            { 19:
-                { 4: { 2: { 19: { 4: { 3: { hit: $ID_protected, canon: 'protected' } } } } } } } },
-      20: { 1: { 11: { 8: { 2: { hit: $ID_public, canon: 'public' } } } } } },
-  17:
-    { 4: { 19: { 20: { 17: { 13: { hit: $ID_return, canon: 'return' } } } } } },
-  18:
-    { 4: { 19: { hit: $ID_set, canon: 'set' } },
-      19: { 0: { 19: { 8: { 2: { hit: $ID_static, canon: 'static' } } } } },
-      20: { 15: { 4: { 17: { hit: $ID_super, canon: 'super' } } } },
-      22: { 8: { 19: { 2: { 7: { hit: $ID_switch, canon: 'switch' } } } } } },
-  19:
-    { 0: { 17: { 6: { 4: { 19: { hit: $ID_target, canon: 'target' } } } } },
-      7:
-        { 8: { 18: { hit: $ID_this, canon: 'this' } },
-          17: { 14: { 22: { hit: $ID_throw, canon: 'throw' } } } },
-      17: {
-        20: { 4: { hit: $ID_true, canon: 'true' } },
-        24: { hit: $ID_try, canon: 'try' }
-      },
-      24: { 15: { 4: { 14: { 5: { hit: $ID_typeof, canon: 'typeof' } } } } } },
-  21:
-    { 0: { 17: { hit: $ID_var, canon: 'var' } },
-      14: { 8: { 3: { hit: $ID_void, canon: 'void' } } } },
-  22:
-    { 7: { 8: { 11: { 4: { hit: $ID_while, canon: 'while' } } } },
-      8: { 19: { 7: { hit: $ID_with, canon: 'with' } } } },
-  24: { 8: { 4: { 11: { 3: { hit: $ID_yield, canon: 'yield' } } } } } };
+let KEYWORD_MAP = new Map([
+  ['arguments', $ID_arguments],
+  ['async', $ID_async],
+  ['as', $ID_as],
+  ['await', $ID_await],
+  ['break', $ID_break],
+  ['case', $ID_case],
+  ['catch', $ID_catch],
+  ['class', $ID_class],
+  ['const', $ID_const],
+  ['continue', $ID_continue],
+  ['debugger', $ID_debugger],
+  ['default', $ID_default],
+  ['delete', $ID_delete],
+  ['do', $ID_do],
+  ['else', $ID_else],
+  ['enum', $ID_enum],
+  ['eval', $ID_eval],
+  ['export', $ID_export],
+  ['extends', $ID_extends],
+  ['false', $ID_false],
+  ['finally', $ID_finally],
+  ['for', $ID_for],
+  ['from', $ID_from],
+  ['function', $ID_function],
+  ['get', $ID_get],
+  ['if', $ID_if],
+  ['implements', $ID_implements],
+  ['import', $ID_import],
+  ['instanceof', $ID_instanceof],
+  ['interface', $ID_interface],
+  ['in', $ID_in],
+  ['let', $ID_let],
+  ['new', $ID_new],
+  ['null', $ID_null],
+  ['of', $ID_of],
+  ['package', $ID_package],
+  ['private', $ID_private],
+  ['protected', $ID_protected],
+  ['public', $ID_public],
+  ['return', $ID_return],
+  ['set', $ID_set],
+  ['static', $ID_static],
+  ['super', $ID_super],
+  ['switch', $ID_switch],
+  ['target', $ID_target],
+  ['this', $ID_this],
+  ['throw', $ID_throw],
+  ['true', $ID_true],
+  ['try', $ID_try],
+  ['typeof', $ID_typeof],
+  ['var', $ID_var],
+  ['void', $ID_void],
+  ['while', $ID_while],
+  ['with', $ID_with],
+  ['yield', $ID_yield],
+]);
 
 function isWhiteToken(type) {
   return (type & $G_WHITE) === $G_WHITE;
@@ -931,25 +886,25 @@ let tokenStartJumpTable = [
   START_KEY,               // 0x65   no*   e
   START_KEY,               // 0x66   no*   f
   START_KEY,               // 0x67   no*   g
-  START_KEY,               // 0x68   no*   h
+  START_ID,               // 0x68   no*   h
   START_KEY,               // 0x69   no*   i
-  START_KEY,               // 0x6A   no*   j
-  START_KEY,               // 0x6B   no*   k
+  START_ID,               // 0x6A   no*   j
+  START_ID,               // 0x6B   no*   k
   START_KEY,               // 0x6C   no*   l
-  START_KEY,               // 0x6D   no*   m
+  START_ID,               // 0x6D   no*   m
   START_KEY,               // 0x6E   no*   n
   START_KEY,               // 0x6F   no*   o
   START_KEY,               // 0x70   no*   p
-  START_KEY,               // 0x71   no*   q
+  START_ID,               // 0x71   no*   q
   START_KEY,               // 0x72   no*   r
   START_KEY,               // 0x73   no*   s
   START_KEY,               // 0x74   no*   t
-  START_KEY,               // 0x75   no*   u
+  START_ID,               // 0x75   no*   u
   START_KEY,               // 0x76   no*   v
   START_KEY,               // 0x77   no*   w
-  START_KEY,               // 0x78   no*   x
+  START_ID,               // 0x78   no*   x
   START_KEY,               // 0x79   no*   y
-  START_KEY,               // 0x7A   no*   z
+  START_ID,               // 0x7A   no*   z
   $PUNC_CURLY_OPEN,       // 0x7B   yes   {
   START_OR,               // 0x7C   no3   | :: | || |=
   START_CURLY_CLOSE,      // 0x7D   no3   } :: } }...` }...${
@@ -1000,7 +955,7 @@ export {
   toktypeToString,
   T,
 
-  KEYWORD_TRIE,
+  KEYWORD_MAP,
   MAX_START_VALUE,
 
   $G_WHITE,

@@ -158,7 +158,7 @@ import {
   toktypeToString,
   T,
 
-  KEYWORD_TRIE,
+  KEYWORD_MAP,
   MAX_START_VALUE,
 
   $UNTYPED, // 0
@@ -715,8 +715,7 @@ function Lexer(
       case START_ID:
         return parseIdentifierRest(String.fromCharCode(c), 1);
       case START_KEY:
-        if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c), 1);
-        return parsePotentialKeyword(c);
+        return parseIdSpecial(c, lexerFlags);
       case START_NL_SOLO:
         return parseNewlineSolo();
       case START_CR:
@@ -1804,6 +1803,53 @@ function Lexer(
     return $PUNC_STAR;
   }
 
+  function parseIdSpecial(c, lexerFlags) {
+    let start = pointer - 1; // c already skipped
+    let i = parseIdentifierRest(String.fromCharCode(c), 1);
+
+    if (i !== $IDENT) return i; // error
+    if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return $IDENT;
+    if (pointer - start !== lastCanonizedInputLen) return $IDENT; // ident has an escape of any kind (=> not keyword)
+
+    // Map with has/get
+    // {
+    //   if (KEYWORD_MAP.has(lastCanonizedInput)) return KEYWORD_MAP.get(lastCanonizedInput);
+    //   return $IDENT;
+    // }
+
+    // Map with immediate get
+    {
+      let t = KEYWORD_MAP.get(lastCanonizedInput);
+      if (t === undefined) return $IDENT;
+      return t;
+    }
+
+    // Map with |$ident hack
+    // {
+    //   return $IDENT | KEYWORD_MAP.get(lastCanonizedInput);
+    // }
+
+    // Plain object with direct access
+    // {
+    //   let t = KEYWORD_HASH[lastCanonizedInput];
+    //   if (typeof t === 'number') return t;
+    //   return $IDENT;
+    // }
+
+    // Map get > 0
+    // {
+    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
+    //   if (t > 0) return $IDENT;
+    //   return t;
+    // }
+
+    // Map get typeof number
+    // {
+    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
+    //   if (typeof t === 'number') return $IDENT;
+    //   return t;
+    // }
+  }
   function parseIdentifierRest(prevStr, prevLen) {
     // Returns a token type (!). See parseRegexIdentifierRest for regexes...
     ASSERT(parseIdentifierRest.length === arguments.length, 'arg count');
@@ -2000,114 +2046,6 @@ function Lexer(
     lastCanonizedInput = prevStr;
     lastCanonizedInputLen = prevStr.length;
     return uflagStatus;
-  }
-
-  function parsePotentialKeyword(c) {
-    ASSERT(parsePotentialKeyword.length === arguments.length, 'arg count');
-    ASSERT(pointer > 0 && c === input.charCodeAt(pointer - 1), 'c should have been peekSkipped');
-
-    // c = input[pointer-1]
-    // Keep reading chars until;
-    // - eof
-    // - next char is not a start_key
-    // - next char is not found in the trie
-
-    let trie = KEYWORD_TRIE[c - $$A_61];
-    let start = pointer - 1; // c was peekSkipped
-    let n = start + 1;
-    if (trie === undefined) return parseIdentifierRest(slice(start, n), n - start);
-    do {
-      if (n >= len) return eofAfterPotentialKeyword(trie, n, start);
-      let d = input.charCodeAt(n++);
-      ASSERT(typeof d === 'number' && d >= 0 && Number.isFinite(d), 'dont oob please');
-      if (d < $$A_61 || d > $$Z_7A) return endOfPotentialKeyword(trie, d, n, start);
-      // Next step in trie
-      trie = trie[d - $$A_61];
-      if (trie === undefined) return parseIdentRestNotKeyword(d, n, start);
-    } while (true);
-    ASSERT(false, 'unreachable');
-  }
-  function parseIdentRestNotKeyword(d, n, start) {
-      pointer = n - 1;
-      cache = d;
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-  }
-  function eofAfterPotentialKeyword(trie, n, start) {
-    // EOF
-    ASSERT(trie !== undefined, 'checked before and at end of loop');
-
-    pointer = n - 1;
-    skip();
-    lastCanonizedInputLen = n - start;
-
-    if (trie.hit !== undefined) {
-      ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
-      ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
-      ASSERT(typeof trie.canon === 'string');
-      ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
-
-      lastCanonizedInput = trie.canon;
-      return trie.hit;
-    }
-
-    lastCanonizedInput = slice(start, n);
-    return $IDENT;
-  }
-  function endOfPotentialKeyword(trie, d, n, start) {
-    let s = getTokenStart(d);
-    // Only valid "starts" for ident are id, key, numbers, and certain unicodes
-    if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
-      pointer = n - 1;
-      cache = d;
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-    if (s === START_UNICODE) {
-      // maybe rest id
-      pointer = n - 1;
-      cache = d;
-      // This is potentially double the work but I already consider this very much a cold path
-      let wide = isIdentRestChr(d, n - 1);
-      if (wide === INVALID_IDENT_CHAR) {
-        // This ends the ident and it is a keyword
-        lastCanonizedInputLen = (n - 1) - start;
-        if (trie.hit === undefined) {
-          lastCanonizedInput = slice(start, n - 1);
-          return $IDENT;
-        }
-        ASSERT(typeof trie.canon === 'string');
-        ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
-        lastCanonizedInput = trie.canon;
-        return trie.hit;
-      }
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-    if (s === START_BSLASH) {
-      pointer = n - 1;
-      cache = d;
-      // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-
-    // So this must be the end of the identifier. Either we found a keyword, or we didn't :)
-
-    if (trie.hit !== undefined) {
-      // End of id, this was a keyword
-      pointer = n - 1;
-      cache = d;
-      lastCanonizedInputLen = (n - 1) - start;
-      ASSERT(typeof trie.canon === 'string');
-      ASSERT(trie.canon.length === lastCanonizedInputLen, 'should be equal now', trie.canon);
-      lastCanonizedInput = trie.canon;
-      ASSERT(ALL_TOKEN_TYPES.includes(trie.hit), 'trie leafs should be valid types');
-      ASSERT(isIdentToken(trie.hit), 'trie leafs should contain ident types');
-      return trie.hit;
-    }
-
-    lastCanonizedInput = slice(start, n - 1);
-    lastCanonizedInputLen = (n - 1) - start;
-    pointer = n - 1;
-    cache = d;
-    return $IDENT;
   }
 
   function readNextCodepointAsStringExpensive(c, offset, forError) {
