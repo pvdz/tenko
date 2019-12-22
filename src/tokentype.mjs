@@ -779,6 +779,11 @@ ASSERT(ALL_GEES.every(type => type > __$flag_start), 'the G start at bit 7 or wh
 ASSERT(ALL_TOKEN_TYPES.every(type => type > __$flag_start), 'all tokens must be higher than the start numbers because they are all combinations with at least one G. this is important so we can distinguish them when reading the token start');
 // </SCRUB ASSERTS TO COMMENT>
 
+const IDENT_PART = 0;
+const IDENT_END = 1;
+const IDENT_BS = 2;
+const IDENT_UNICODE = 3;
+
 // Inspired by https://twitter.com/Ghost1240145716/status/1186595972232564736 / https://gist.github.com/KFlash/c53a2f0adb25e88ab7cdc3d77d295635
 let tokenStartJumpTable = [
   // val                     hex    end   desc
@@ -912,6 +917,138 @@ let tokenStartJumpTable = [
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
   // START_ERROR,            // 0x7F   yes   DEL
 ];
+let identScanTable = [
+  // val                     hex    end   desc
+  IDENT_END,              // 0x00   yes   NUL
+  IDENT_END,              // 0x01   yes   SOH
+  IDENT_END,              // 0x02   yes   STX
+  IDENT_END,              // 0x03   yes   ETX
+  IDENT_END,              // 0x04   yes   EOT
+  IDENT_END,              // 0x05   yes   ENQ
+  IDENT_END,              // 0x06   yes   ACK
+  IDENT_END,              // 0x07   yes   BEL
+  IDENT_END,              // 0x08   yes   BS
+  IDENT_END,              // 0x09   yes   HT
+  IDENT_END,              // 0x0A   yes   LF
+  IDENT_END,              // 0x0B   yes   VT
+  IDENT_END,              // 0x0C   yes   FF
+  IDENT_END,              // 0x0D   no2   CR :: CR CRLF
+  IDENT_END,              // 0x0E   yes   SO
+  IDENT_END,              // 0x0F   yes   SI
+  IDENT_END,              // 0x10   yes   DLE
+  IDENT_END,              // 0x11   yes   DC1
+  IDENT_END,              // 0x12   yes   DC2
+  IDENT_END,              // 0x13   yes   DC3
+  IDENT_END,              // 0x14   yes   DC4
+  IDENT_END,              // 0x15   yes   NAK
+  IDENT_END,              // 0x16   yes   SYN
+  IDENT_END,              // 0x17   yes   ETB
+  IDENT_END,              // 0x18   yes   CAN
+  IDENT_END,              // 0x19   yes   EM
+  IDENT_END,              // 0x1A   yes   SUB
+  IDENT_END,              // 0x1B   yes   ESC
+  IDENT_END,              // 0x1C   yes   FS
+  IDENT_END,              // 0x1D   yes   GS
+  IDENT_END,              // 0x1E   yes   RS
+  IDENT_END,              // 0x1F   yes   US
+  IDENT_END,              // 0x20   yes   space
+  IDENT_END,              // 0x21   no3   ! :: ! != !==
+  IDENT_END,              // 0x22   no*   "
+  IDENT_END,              // 0x23   yes   #
+  IDENT_PART,             // 0x24   no*   $
+  IDENT_END,              // 0x25   no2   % :: % %=
+  IDENT_END,              // 0x26   no3   & :: & && &=
+  IDENT_END,              // 0x27   no*   '
+  IDENT_END,              // 0x28   yes   (
+  IDENT_END,              // 0x29   yes   )
+  IDENT_END,              // 0x2A   no4   * :: * ** *= **=
+  IDENT_END,              // 0x2B   no3   + :: + ++ +=
+  IDENT_END,              // 0x2C   yes   ,
+  IDENT_END,              // 0x2D   no4   - :: - -- -= -->
+  IDENT_END,              // 0x2E   no3   . :: . ... number
+  IDENT_END,              // 0x2F   no*   / :: / regex
+  IDENT_PART,             // 0x30   no*   0
+  IDENT_PART,             // 0x31   no*   1
+  IDENT_PART,             // 0x32   no*   2
+  IDENT_PART,             // 0x33   no*   3
+  IDENT_PART,             // 0x34   no*   4
+  IDENT_PART,             // 0x35   no*   5
+  IDENT_PART,             // 0x36   no*   6
+  IDENT_PART,             // 0x37   no*   7
+  IDENT_PART,             // 0x38   no*   8
+  IDENT_PART,             // 0x39   no*   9
+  IDENT_END,              // 0x3A   yes   :
+  IDENT_END,              // 0x3B   yes   ;
+  IDENT_END,              // 0x3C   no4   < :: < << <= <<= <!--
+  IDENT_END,              // 0x3D   no4   = :: = == === =>
+  IDENT_END,              // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  IDENT_END,              // 0x3F   yes   ?
+  IDENT_END,              // 0x40   yes   @
+  IDENT_PART,             // 0x41   no*   A
+  IDENT_PART,             // 0x42   no*   B
+  IDENT_PART,             // 0x43   no*   C
+  IDENT_PART,             // 0x44   no*   D
+  IDENT_PART,             // 0x45   no*   E
+  IDENT_PART,             // 0x46   no*   F
+  IDENT_PART,             // 0x47   no*   G
+  IDENT_PART,             // 0x48   no*   H
+  IDENT_PART,             // 0x49   no*   I
+  IDENT_PART,             // 0x4A   no*   J
+  IDENT_PART,             // 0x4B   no*   K
+  IDENT_PART,             // 0x4C   no*   L
+  IDENT_PART,             // 0x4D   no*   M
+  IDENT_PART,             // 0x4E   no*   N
+  IDENT_PART,             // 0x4F   no*   O
+  IDENT_PART,             // 0x50   no*   P
+  IDENT_PART,             // 0x51   no*   Q
+  IDENT_PART,             // 0x52   no*   R
+  IDENT_PART,             // 0x53   no*   S
+  IDENT_PART,             // 0x54   no*   T
+  IDENT_PART,             // 0x55   no*   U
+  IDENT_PART,             // 0x56   no*   V
+  IDENT_PART,             // 0x57   no*   W
+  IDENT_PART,             // 0x58   no*   X
+  IDENT_PART,             // 0x59   no*   Y
+  IDENT_PART,             // 0x5A   no*   Z
+  IDENT_END,              // 0x5B   yes   [
+  IDENT_BS,               // 0x5C   no2   \ :: \uHHHH \u{H*}
+  IDENT_END,              // 0x5D   yes   ]
+  IDENT_END,              // 0x5E   no2   ^ :: ^ ^=
+  IDENT_PART,             // 0x5F   no*   _ (lodash)
+  IDENT_END,              // 0x60   no*   ` :: `...${ `...`
+  IDENT_PART,             // 0x61   no*   a
+  IDENT_PART,             // 0x62   no*   b
+  IDENT_PART,             // 0x63   no*   c
+  IDENT_PART,             // 0x64   no*   d
+  IDENT_PART,             // 0x65   no*   e
+  IDENT_PART,             // 0x66   no*   f
+  IDENT_PART,             // 0x67   no*   g
+  IDENT_PART,             // 0x68   no*   h
+  IDENT_PART,             // 0x69   no*   i
+  IDENT_PART,             // 0x6A   no*   j
+  IDENT_PART,             // 0x6B   no*   k
+  IDENT_PART,             // 0x6C   no*   l
+  IDENT_PART,             // 0x6D   no*   m
+  IDENT_PART,             // 0x6E   no*   n
+  IDENT_PART,             // 0x6F   no*   o
+  IDENT_PART,             // 0x70   no*   p
+  IDENT_PART,             // 0x71   no*   q
+  IDENT_PART,             // 0x72   no*   r
+  IDENT_PART,             // 0x73   no*   s
+  IDENT_PART,             // 0x74   no*   t
+  IDENT_PART,             // 0x75   no*   u
+  IDENT_PART,             // 0x76   no*   v
+  IDENT_PART,             // 0x77   no*   w
+  IDENT_PART,             // 0x78   no*   x
+  IDENT_PART,             // 0x79   no*   y
+  IDENT_PART,             // 0x7A   no*   z
+  IDENT_END,              // 0x7B   yes   {
+  IDENT_END,              // 0x7C   no3   | :: | || |=
+  IDENT_END,              // 0x7D   no3   } :: } }...` }...${
+  IDENT_END,              // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+  // START_ERROR,            // 0x7F   yes   DEL
+];
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
@@ -920,12 +1057,27 @@ ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, STAR
 
 function getTokenStart(c) {
   ASSERT(getTokenStart.length === arguments.length, 'arg count');
-  ASSERT(c >= 0, 'nothing generates negatives for chars');
+  ASSERT(typeof c === 'number' &&c >= 0, 'nothing generates negatives for chars');
   ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+
   if (c > 0x7e) return START_UNICODE;
   let s = tokenStartJumpTable[c];
+
   ASSERT(s <= __$flag_start ? ALL_START_TYPES.includes(s) : ALL_TOKEN_TYPES.includes(s), 'confirm the jump table is returning correct values');
   ASSERT(ALL_START_TYPES.includes(s) !== ALL_TOKEN_TYPES.includes(s), 'confirm the jump table returns either a start type or a token type (and that it cant be both nor neither)');
+
+  return s;
+}
+function getIdentPart(c) {
+  ASSERT(getIdentPart.length === arguments.length, 'arg count');
+  ASSERT(typeof c === 'number' && c >= 0, 'nothing generates negatives for chars');
+  ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+
+  if (c > 0x7e) return IDENT_UNICODE;
+  let s = identScanTable[c];
+
+  ASSERT(typeof s === 'number', 'should be an enum and not undefined (oob)', s);
+
   return s;
 }
 
@@ -937,6 +1089,7 @@ function T(type) {
 }
 
 export {
+  getIdentPart,
   getTokenStart,
   isWhiteToken,
   isNewlineToken,
@@ -1142,6 +1295,11 @@ export {
   START_UNICODE,
   START_BSLASH,
   START_ERROR,
+
+  IDENT_PART,
+  IDENT_END,
+  IDENT_BS,
+  IDENT_UNICODE,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,

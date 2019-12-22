@@ -140,6 +140,7 @@ import {
 } from './lexerflags.mjs';
 // Token type stuff is put in their own file
 import {
+  getIdentPart,
   getTokenStart,
   isWhiteToken,
   isNewlineToken,
@@ -330,6 +331,11 @@ import {
   START_UNICODE,
   START_BSLASH,
   START_ERROR,
+
+  IDENT_PART,
+  IDENT_END,
+  IDENT_BS,
+  IDENT_UNICODE,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,
@@ -1858,61 +1864,51 @@ function Lexer(
 
     let start = pointer;
 
-    let c = 0;
+    while (neof()) {
+      let c = peek();
+      let s = getIdentPart(c);
+      switch (s) {
+        case IDENT_PART:
+          ASSERT_skip(c);
+          break;
 
-    // Main scan loop, [a-zA-Z0-9$_]
-    while (neof() && isIdentRestCharAscii(c = peek())) {
-      ASSERT_skip(c);
-    }
+        case IDENT_END:
+          lastCanonizedInput = prevStr + slice(start, pointer);
+          lastCanonizedInputLen = prevLen + (pointer - start);
+          return $IDENT;
 
-    if (eof()) {
-      lastCanonizedInput = prevStr + slice(start, pointer);
-      lastCanonizedInputLen = prevLen + (pointer - start);
-      return $IDENT;
-    }
+        case IDENT_BS:
+          // `foo\u0030bar`  (is canonical ident `foo0bar`)
+          let x = prevStr + slice(start, pointer);
+          let xlen = prevLen + (pointer - start);
+          ASSERT_skip($$BACKSLASH_5C);
+          return parseIdentFromUnicodeEscape(NON_START, x, xlen);
 
-    // Confirm this is the end of the ident, or a special case
-    let s = getTokenStart(c);
-    ASSERT(eof() || s !== START_ID && s !== START_KEY && s !== START_DECIMAL && s !== START_ZERO, 'should already have checked these in the loop');
-    if (s === START_UNICODE) {
-      // Slow unicode check
-      let wide = isIdentRestChrUnicode(c, pointer);
+        case IDENT_UNICODE:
+          let wide = isIdentRestChrUnicode(c, pointer);
 
-      if (wide === INVALID_IDENT_CHAR) {
-        lastCanonizedInput = prevStr + slice(start, pointer);
-        lastCanonizedInputLen = prevLen + (pointer - start);
-        return $IDENT;
+          if (wide === INVALID_IDENT_CHAR) {
+            lastCanonizedInput = prevStr + slice(start, pointer);
+            lastCanonizedInputLen = prevLen + (pointer - start);
+            return $IDENT;
+          }
+
+          if (wide === VALID_DOUBLE_CHAR) {
+            skipFastWithoutUpdatingCache();
+          }
+          skip();
+          break;
+
+        // <SCRUB ASSERTS>
+        default:
+          ASSERT(false, 'unreachable', c);
+        // </SCRUB ASSERTS>
       }
-
-      if (wide === VALID_DOUBLE_CHAR) {
-        skipFastWithoutUpdatingCache();
-      }
-      skip();
-
-      // Recursion ... should be okay for idents even without tail recursion?
-      return parseIdentifierRest(prevStr + slice(start, pointer), prevLen + (pointer - start));
     }
 
-    if (s === START_BSLASH) {
-      // `foo\u0030bar`  (is canonical ident `foo0bar`)
-      let x = prevStr + slice(start, pointer);
-      let xlen = prevLen + (pointer - start);
-      ASSERT_skip($$BACKSLASH_5C);
-      return parseIdentFromUnicodeEscape(NON_START, x, xlen);
-    }
-
-    {
-      lastCanonizedInput = prevStr + slice(start, pointer);
-      lastCanonizedInputLen = prevLen + (pointer - start);
-      return $IDENT;
-    }
-  }
-  function isIdentRestCharAscii(c) {
-    if (c >= $$A_61 && c <= $$Z_7A) return true;
-    if (c >= $$A_UC_41 && c <= $$Z_UC_5A) return true;
-    if (c >= $$0_30 && c <= $$9_39) return true;
-    if (c === $$$_24 || c === $$LODASH_5F) return true;
-    return false;
+    lastCanonizedInput = prevStr + slice(start, pointer);
+    lastCanonizedInputLen = prevLen + (pointer - start);
+    return $IDENT;
   }
   function parseIdentFromUnicodeEscape(fromStart, prevStr, prevLen) {
     ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty');
