@@ -330,179 +330,6 @@ const $EOF = $L_EOF | $G_OTHER;
 const $ASI = $L_ASI | $G_OTHER;
 const $ERROR = $L_ERROR | $G_OTHER;
 
-let KEYWORD_HASH = {
-  arguments: $ID_arguments,
-  async: $ID_async,
-  as: $ID_as,
-  await: $ID_await,
-  break: $ID_break,
-  case: $ID_case,
-  catch: $ID_catch,
-  class: $ID_class,
-  const: $ID_const,
-  continue: $ID_continue,
-  debugger: $ID_debugger,
-  default: $ID_default,
-  delete: $ID_delete,
-  do: $ID_do,
-  else: $ID_else,
-  enum: $ID_enum,
-  eval: $ID_eval,
-  export: $ID_export,
-  extends: $ID_extends,
-  false: $ID_false,
-  finally: $ID_finally,
-  for: $ID_for,
-  from: $ID_from,
-  function: $ID_function,
-  get: $ID_get,
-  if: $ID_if,
-  implements: $ID_implements,
-  import: $ID_import,
-  instanceof: $ID_instanceof,
-  interface: $ID_interface,
-  in: $ID_in,
-  let: $ID_let,
-  new: $ID_new,
-  null: $ID_null,
-  of: $ID_of,
-  package: $ID_package,
-  private: $ID_private,
-  protected: $ID_protected,
-  public: $ID_public,
-  return: $ID_return,
-  set: $ID_set,
-  static: $ID_static,
-  super: $ID_super,
-  switch: $ID_switch,
-  target: $ID_target,
-  this: $ID_this,
-  throw: $ID_throw,
-  true: $ID_true,
-  try: $ID_try,
-  typeof: $ID_typeof,
-  var: $ID_var,
-  void: $ID_void,
-  while: $ID_while,
-  with: $ID_with,
-  yield: $ID_yield,
-}
-let KEYWORD_HASH_OC = Object.create(null, {
-  arguments: {value: $ID_arguments},
-  async: {value: $ID_async},
-  as: {value: $ID_as},
-  await: {value: $ID_await},
-  break: {value: $ID_break},
-  case: {value: $ID_case},
-  catch: {value: $ID_catch},
-  class: {value: $ID_class},
-  const: {value: $ID_const},
-  continue: {value: $ID_continue},
-  debugger: {value: $ID_debugger},
-  default: {value: $ID_default},
-  delete: {value: $ID_delete},
-  do: {value: $ID_do},
-  else: {value: $ID_else},
-  enum: {value: $ID_enum},
-  eval: {value: $ID_eval},
-  export: {value: $ID_export},
-  extends: {value: $ID_extends},
-  false: {value: $ID_false},
-  finally: {value: $ID_finally},
-  for: {value: $ID_for},
-  from: {value: $ID_from},
-  function: {value: $ID_function},
-  get: {value: $ID_get},
-  if: {value: $ID_if},
-  implements: {value: $ID_implements},
-  import: {value: $ID_import},
-  instanceof: {value: $ID_instanceof},
-  interface: {value: $ID_interface},
-  in: {value: $ID_in},
-  let: {value: $ID_let},
-  new: {value: $ID_new},
-  null: {value: $ID_null},
-  of: {value: $ID_of},
-  package: {value: $ID_package},
-  private: {value: $ID_private},
-  protected: {value: $ID_protected},
-  public: {value: $ID_public},
-  return: {value: $ID_return},
-  set: {value: $ID_set},
-  static: {value: $ID_static},
-  super: {value: $ID_super},
-  switch: {value: $ID_switch},
-  target: {value: $ID_target},
-  this: {value: $ID_this},
-  throw: {value: $ID_throw},
-  true: {value: $ID_true},
-  try: {value: $ID_try},
-  typeof: {value: $ID_typeof},
-  var: {value: $ID_var},
-  void: {value: $ID_void},
-  while: {value: $ID_while},
-  with: {value: $ID_with},
-  yield: {value: $ID_yield},
-});
-
-let KEYWORD_MAP = new Map([
-  ['arguments', $ID_arguments],
-  ['async', $ID_async],
-  ['as', $ID_as],
-  ['await', $ID_await],
-  ['break', $ID_break],
-  ['case', $ID_case],
-  ['catch', $ID_catch],
-  ['class', $ID_class],
-  ['const', $ID_const],
-  ['continue', $ID_continue],
-  ['debugger', $ID_debugger],
-  ['default', $ID_default],
-  ['delete', $ID_delete],
-  ['do', $ID_do],
-  ['else', $ID_else],
-  ['enum', $ID_enum],
-  ['eval', $ID_eval],
-  ['export', $ID_export],
-  ['extends', $ID_extends],
-  ['false', $ID_false],
-  ['finally', $ID_finally],
-  ['for', $ID_for],
-  ['from', $ID_from],
-  ['function', $ID_function],
-  ['get', $ID_get],
-  ['if', $ID_if],
-  ['implements', $ID_implements],
-  ['import', $ID_import],
-  ['instanceof', $ID_instanceof],
-  ['interface', $ID_interface],
-  ['in', $ID_in],
-  ['let', $ID_let],
-  ['new', $ID_new],
-  ['null', $ID_null],
-  ['of', $ID_of],
-  ['package', $ID_package],
-  ['private', $ID_private],
-  ['protected', $ID_protected],
-  ['public', $ID_public],
-  ['return', $ID_return],
-  ['set', $ID_set],
-  ['static', $ID_static],
-  ['super', $ID_super],
-  ['switch', $ID_switch],
-  ['target', $ID_target],
-  ['this', $ID_this],
-  ['throw', $ID_throw],
-  ['true', $ID_true],
-  ['try', $ID_try],
-  ['typeof', $ID_typeof],
-  ['var', $ID_var],
-  ['void', $ID_void],
-  ['while', $ID_while],
-  ['with', $ID_with],
-  ['yield', $ID_yield],
-]);
-
 // let KEYWORD_TRIE = {
 //   0: {
 //     17: { 6: { 20: { 12: { 4: { 13: { 19: { 18: { hit: $ID_arguments, canon: 'arguments' } } } } } } } },
@@ -604,7 +431,6 @@ let KEYWORD_MAP = new Map([
 //   },
 //   24: { 8: { 4: { 11: { 3: { hit: $ID_yield, canon: 'yield' } } } } }
 // };
-
 // let KEYWORD_TRIE_OC = Object.create(null, {
 //   0: {
 //     value: Object.create(null, {
@@ -1633,108 +1459,107 @@ let KEYWORD_MAP = new Map([
 //     })
 //   }
 // });
-
-// let KEYWORD_TRIE_MAP = new Map([
-//   [0, new Map([
-//     [17, new Map([[6, new Map([[20, new Map([[12, new Map([[4, new Map([[13, new Map([[19, new Map([[18, new Map([['hit', $ID_arguments], ['canon', 'arguments']])]])]])]])]])]])]])]])],
-//     [18, new Map([
-//       [24, new Map([[13, new Map([[2, new Map([['hit', $ID_async], ['canon', 'async']])]])]])],
-//       ['hit', $ID_as], ['canon', 'as'],
-//     ])],
-//     [22, new Map([[0, new Map([[8, new Map([[19, new Map([['hit', $ID_await], ['canon', 'await']])]])]])]])],
-//   ])],
-//   [1, new Map([[17, new Map([[4, new Map([[0, new Map([[10, new Map([['hit', $ID_break], ['canon', 'break']])]])]])]])]])],
-//   [2, new Map([
-//     [0,  new Map([
-//       [18,  new Map([[4, new Map([['hit', $ID_case], ['canon', 'case']])]])],
-//       [19,  new Map([[2, new Map([[7, new Map([['hit', $ID_catch], ['canon', 'catch']])]])]])]
-//     ])],
-//     [11,  new Map([[0, new Map([[18, new Map([[18, new Map([['hit', $ID_class], ['canon', 'class']])]])]])]])],
-//     [14,  new Map([[13,  new Map([
-//       [18,  new Map([[19, new Map([['hit', $ID_const], ['canon', 'const']])]])],
-//       [19,  new Map([[8, new Map([[13, new Map([[20, new Map([[4, new Map([['hit', $ID_continue], ['canon', 'continue']])]])]])]])]])]
-//     ])]])]
-//   ])],
-//   [3,  new Map([
-//     [4,  new Map([
-//       [1,  new Map([[20, new Map([[6, new Map([[6, new Map([[4, new Map([[17, new Map([['hit', $ID_debugger], ['canon', 'debugger']])]])]])]])]])]])],
-//       [5,  new Map([[0, new Map([[20, new Map([[11, new Map([[19, new Map([['hit', $ID_default], ['canon', 'default']])]])]])]])]])],
-//       [11,  new Map([[4, new Map([[19, new Map([[4, new Map([['hit', $ID_delete], ['canon', 'delete']])]])]])]])]
-//     ])],
-//     [14,  new Map([['hit', $ID_do], ['canon', 'do']])]
-//   ])],
-//   [4,  new Map([
-//     [11,  new Map([[18, new Map([[4, new Map([['hit', $ID_else], ['canon', 'else']])]])]])],
-//     [13,  new Map([[20, new Map([[12, new Map([['hit', $ID_enum], ['canon', 'enum']])]])]])],
-//     [21,  new Map([[0, new Map([[11, new Map([['hit', $ID_eval], ['canon', 'eval']])]])]])],
-//     [23,  new Map([
-//       [15,  new Map([[14, new Map([[17, new Map([[19, new Map([['hit', $ID_export], ['canon', 'export']])]])]])]])],
-//       [19,  new Map([[4, new Map([[13, new Map([[3, new Map([[18, new Map([['hit', $ID_extends], ['canon', 'extends']])]])]])]])]])]
-//     ])],
-//   ])],
-//   [5,  new Map([
-//     [0,  new Map([[11, new Map([[18, new Map([[4, new Map([['hit', $ID_false], ['canon', 'false']])]])]])]])],
-//     [8,  new Map([[13, new Map([[0, new Map([[11, new Map([[11, new Map([[24, new Map([['hit', $ID_finally], ['canon', 'finally']])]])]])]])]])]])],
-//     [14,  new Map([[17, new Map([['hit', $ID_for], ['canon', 'for']])]])],
-//     [17,  new Map([[14, new Map([[12, new Map([['hit', $ID_from], ['canon', 'from']])]])]])],
-//     [20,  new Map([[13, new Map([[2, new Map([[19, new Map([[8, new Map([[14, new Map([[13, new Map([['hit', $ID_function], ['canon', 'function']])]])]])]])]])]])]])]
-//   ])],
-//   [6,  new Map([[4, new Map([[19, new Map([['hit', $ID_get], ['canon', 'get']])]])]])],
-//   [8,  new Map([
-//     [5,  new Map([['hit', $ID_if], ['canon', 'if']])],
-//     [12,  new Map([[15,  new Map([
-//       [11,  new Map([[4, new Map([[12, new Map([[4, new Map([[13, new Map([[19, new Map([[18, new Map([['hit', $ID_implements], ['canon', 'implements']])]])]])]])]])]])]])],
-//       [14,  new Map([[17, new Map([[19, new Map([['hit', $ID_import], ['canon', 'import']])]])]])],
-//     ])]])],
-//     [13,  new Map([
-//       [18,  new Map([[19, new Map([[0, new Map([[13, new Map([[2, new Map([[4, new Map([[14, new Map([[5, new Map([['hit', $ID_instanceof], ['canon', 'instanceof']])]])]])]])]])]])]])]])],
-//       [19,  new Map([[4, new Map([[17, new Map([[5, new Map([[0, new Map([[2, new Map([[4, new Map([['hit', $ID_interface], ['canon', 'interface']])]])]])]])]])]])]])],
-//       ['hit', $ID_in], ['canon', 'in'],
-//     ])],
-//   ])],
-//   [11,  new Map([[4, new Map([[19, new Map([['hit', $ID_let], ['canon', 'let']])]])]])],
-//   [13,  new Map([
-//     [4,  new Map([[22, new Map([['hit', $ID_new], ['canon', 'new']])]])],
-//     [20,  new Map([[11, new Map([[11, new Map([['hit', $ID_null], ['canon', 'null']])]])]])]
-//   ])],
-//   [14,  new Map([[5, new Map([['hit', $ID_of], ['canon', 'of']])]])],
-//   [15,  new Map([
-//     [0,  new Map([[2, new Map([[10, new Map([[0, new Map([[6, new Map([[4, new Map([['hit', $ID_package], ['canon', 'package']])]])]])]])]])]])],
-//     [17,  new Map([
-//       [8,  new Map([[21, new Map([[0, new Map([[19, new Map([[4, new Map([['hit', $ID_private], ['canon', 'private']])]])]])]])]])],
-//       [14,  new Map([[19, new Map([[4, new Map([[2, new Map([[19, new Map([[4, new Map([[3, new Map([['hit', $ID_protected], ['canon', 'protected']])]])]])]])]])]])]])]
-//     ])],
-//     [20,  new Map([[1, new Map([[11, new Map([[8, new Map([[2, new Map([['hit', $ID_public], ['canon', 'public']])]])]])]])]])]
-//   ])],
-//   [17,  new Map([[4, new Map([[19, new Map([[20, new Map([[17, new Map([[13, new Map([['hit', $ID_return], ['canon', 'return']])]])]])]])]])]])],
-//   [18,  new Map([
-//     [4,  new Map([[19, new Map([['hit', $ID_set], ['canon', 'set']])]])],
-//     [19,  new Map([[0, new Map([[19, new Map([[8, new Map([[2, new Map([['hit', $ID_static], ['canon', 'static']])]])]])]])]])],
-//     [20,  new Map([[15, new Map([[4, new Map([[17, new Map([['hit', $ID_super], ['canon', 'super']])]])]])]])],
-//     [22,  new Map([[8, new Map([[19, new Map([[2, new Map([[7, new Map([['hit', $ID_switch], ['canon', 'switch']])]])]])]])]])]
-//   ])],
-//   [19,  new Map([
-//     [0,  new Map([[17, new Map([[6, new Map([[4, new Map([[19, new Map([['hit', $ID_target], ['canon', 'target']])]])]])]])]])],
-//     [7,  new Map([
-//       [8,  new Map([[18, new Map([['hit', $ID_this], ['canon', 'this']])]])],
-//       [17,  new Map([[14, new Map([[22, new Map([['hit', $ID_throw], ['canon', 'throw']])]])]])]
-//     ])],
-//     [17,  new Map([
-//       [20,  new Map([[4, new Map([['hit', $ID_true], ['canon', 'true']])]])],
-//       [24,  new Map([['hit', $ID_try], ['canon', 'try']])]
-//     ])],
-//     [24,  new Map([[15, new Map([[4, new Map([[14, new Map([[5, new Map([['hit', $ID_typeof], ['canon', 'typeof']])]])]])]])]])]
-//   ])],
-//   [21,  new Map([
-//     [0,  new Map([[17, new Map([['hit', $ID_var], ['canon', 'var']])]])],
-//     [14,  new Map([[8, new Map([[3, new Map([['hit', $ID_void], ['canon', 'void']])]])]])]
-//   ])],
-//   [22,  new Map([
-//     [7,  new Map([[8, new Map([[11, new Map([[4, new Map([['hit', $ID_while], ['canon', 'while']])]])]])]])],
-//     [8,  new Map([[19, new Map([[7, new Map([['hit', $ID_with], ['canon', 'with']])]])]])]
-//   ])],
-//   [24,  new Map([[8, new Map([[4, new Map([[11, new Map([[3, new Map([['hit', $ID_yield], ['canon', 'yield']])]])]])]])]])]
-// ]);
+let KEYWORD_TRIE_MAP = new Map([
+  [0, new Map([
+    [17, new Map([[6, new Map([[20, new Map([[12, new Map([[4, new Map([[13, new Map([[19, new Map([[18, new Map([['hit', $ID_arguments], ['canon', 'arguments']])]])]])]])]])]])]])]])],
+    [18, new Map([
+      [24, new Map([[13, new Map([[2, new Map([['hit', $ID_async], ['canon', 'async']])]])]])],
+      ['hit', $ID_as], ['canon', 'as'],
+    ])],
+    [22, new Map([[0, new Map([[8, new Map([[19, new Map([['hit', $ID_await], ['canon', 'await']])]])]])]])],
+  ])],
+  [1, new Map([[17, new Map([[4, new Map([[0, new Map([[10, new Map([['hit', $ID_break], ['canon', 'break']])]])]])]])]])],
+  [2, new Map([
+    [0,  new Map([
+      [18,  new Map([[4, new Map([['hit', $ID_case], ['canon', 'case']])]])],
+      [19,  new Map([[2, new Map([[7, new Map([['hit', $ID_catch], ['canon', 'catch']])]])]])]
+    ])],
+    [11,  new Map([[0, new Map([[18, new Map([[18, new Map([['hit', $ID_class], ['canon', 'class']])]])]])]])],
+    [14,  new Map([[13,  new Map([
+      [18,  new Map([[19, new Map([['hit', $ID_const], ['canon', 'const']])]])],
+      [19,  new Map([[8, new Map([[13, new Map([[20, new Map([[4, new Map([['hit', $ID_continue], ['canon', 'continue']])]])]])]])]])]
+    ])]])]
+  ])],
+  [3,  new Map([
+    [4,  new Map([
+      [1,  new Map([[20, new Map([[6, new Map([[6, new Map([[4, new Map([[17, new Map([['hit', $ID_debugger], ['canon', 'debugger']])]])]])]])]])]])],
+      [5,  new Map([[0, new Map([[20, new Map([[11, new Map([[19, new Map([['hit', $ID_default], ['canon', 'default']])]])]])]])]])],
+      [11,  new Map([[4, new Map([[19, new Map([[4, new Map([['hit', $ID_delete], ['canon', 'delete']])]])]])]])]
+    ])],
+    [14,  new Map([['hit', $ID_do], ['canon', 'do']])]
+  ])],
+  [4,  new Map([
+    [11,  new Map([[18, new Map([[4, new Map([['hit', $ID_else], ['canon', 'else']])]])]])],
+    [13,  new Map([[20, new Map([[12, new Map([['hit', $ID_enum], ['canon', 'enum']])]])]])],
+    [21,  new Map([[0, new Map([[11, new Map([['hit', $ID_eval], ['canon', 'eval']])]])]])],
+    [23,  new Map([
+      [15,  new Map([[14, new Map([[17, new Map([[19, new Map([['hit', $ID_export], ['canon', 'export']])]])]])]])],
+      [19,  new Map([[4, new Map([[13, new Map([[3, new Map([[18, new Map([['hit', $ID_extends], ['canon', 'extends']])]])]])]])]])]
+    ])],
+  ])],
+  [5,  new Map([
+    [0,  new Map([[11, new Map([[18, new Map([[4, new Map([['hit', $ID_false], ['canon', 'false']])]])]])]])],
+    [8,  new Map([[13, new Map([[0, new Map([[11, new Map([[11, new Map([[24, new Map([['hit', $ID_finally], ['canon', 'finally']])]])]])]])]])]])],
+    [14,  new Map([[17, new Map([['hit', $ID_for], ['canon', 'for']])]])],
+    [17,  new Map([[14, new Map([[12, new Map([['hit', $ID_from], ['canon', 'from']])]])]])],
+    [20,  new Map([[13, new Map([[2, new Map([[19, new Map([[8, new Map([[14, new Map([[13, new Map([['hit', $ID_function], ['canon', 'function']])]])]])]])]])]])]])]
+  ])],
+  [6,  new Map([[4, new Map([[19, new Map([['hit', $ID_get], ['canon', 'get']])]])]])],
+  [8,  new Map([
+    [5,  new Map([['hit', $ID_if], ['canon', 'if']])],
+    [12,  new Map([[15,  new Map([
+      [11,  new Map([[4, new Map([[12, new Map([[4, new Map([[13, new Map([[19, new Map([[18, new Map([['hit', $ID_implements], ['canon', 'implements']])]])]])]])]])]])]])],
+      [14,  new Map([[17, new Map([[19, new Map([['hit', $ID_import], ['canon', 'import']])]])]])],
+    ])]])],
+    [13,  new Map([
+      [18,  new Map([[19, new Map([[0, new Map([[13, new Map([[2, new Map([[4, new Map([[14, new Map([[5, new Map([['hit', $ID_instanceof], ['canon', 'instanceof']])]])]])]])]])]])]])]])],
+      [19,  new Map([[4, new Map([[17, new Map([[5, new Map([[0, new Map([[2, new Map([[4, new Map([['hit', $ID_interface], ['canon', 'interface']])]])]])]])]])]])]])],
+      ['hit', $ID_in], ['canon', 'in'],
+    ])],
+  ])],
+  [11,  new Map([[4, new Map([[19, new Map([['hit', $ID_let], ['canon', 'let']])]])]])],
+  [13,  new Map([
+    [4,  new Map([[22, new Map([['hit', $ID_new], ['canon', 'new']])]])],
+    [20,  new Map([[11, new Map([[11, new Map([['hit', $ID_null], ['canon', 'null']])]])]])]
+  ])],
+  [14,  new Map([[5, new Map([['hit', $ID_of], ['canon', 'of']])]])],
+  [15,  new Map([
+    [0,  new Map([[2, new Map([[10, new Map([[0, new Map([[6, new Map([[4, new Map([['hit', $ID_package], ['canon', 'package']])]])]])]])]])]])],
+    [17,  new Map([
+      [8,  new Map([[21, new Map([[0, new Map([[19, new Map([[4, new Map([['hit', $ID_private], ['canon', 'private']])]])]])]])]])],
+      [14,  new Map([[19, new Map([[4, new Map([[2, new Map([[19, new Map([[4, new Map([[3, new Map([['hit', $ID_protected], ['canon', 'protected']])]])]])]])]])]])]])]
+    ])],
+    [20,  new Map([[1, new Map([[11, new Map([[8, new Map([[2, new Map([['hit', $ID_public], ['canon', 'public']])]])]])]])]])]
+  ])],
+  [17,  new Map([[4, new Map([[19, new Map([[20, new Map([[17, new Map([[13, new Map([['hit', $ID_return], ['canon', 'return']])]])]])]])]])]])],
+  [18,  new Map([
+    [4,  new Map([[19, new Map([['hit', $ID_set], ['canon', 'set']])]])],
+    [19,  new Map([[0, new Map([[19, new Map([[8, new Map([[2, new Map([['hit', $ID_static], ['canon', 'static']])]])]])]])]])],
+    [20,  new Map([[15, new Map([[4, new Map([[17, new Map([['hit', $ID_super], ['canon', 'super']])]])]])]])],
+    [22,  new Map([[8, new Map([[19, new Map([[2, new Map([[7, new Map([['hit', $ID_switch], ['canon', 'switch']])]])]])]])]])]
+  ])],
+  [19,  new Map([
+    [0,  new Map([[17, new Map([[6, new Map([[4, new Map([[19, new Map([['hit', $ID_target], ['canon', 'target']])]])]])]])]])],
+    [7,  new Map([
+      [8,  new Map([[18, new Map([['hit', $ID_this], ['canon', 'this']])]])],
+      [17,  new Map([[14, new Map([[22, new Map([['hit', $ID_throw], ['canon', 'throw']])]])]])]
+    ])],
+    [17,  new Map([
+      [20,  new Map([[4, new Map([['hit', $ID_true], ['canon', 'true']])]])],
+      [24,  new Map([['hit', $ID_try], ['canon', 'try']])]
+    ])],
+    [24,  new Map([[15, new Map([[4, new Map([[14, new Map([[5, new Map([['hit', $ID_typeof], ['canon', 'typeof']])]])]])]])]])]
+  ])],
+  [21,  new Map([
+    [0,  new Map([[17, new Map([['hit', $ID_var], ['canon', 'var']])]])],
+    [14,  new Map([[8, new Map([[3, new Map([['hit', $ID_void], ['canon', 'void']])]])]])]
+  ])],
+  [22,  new Map([
+    [7,  new Map([[8, new Map([[11, new Map([[4, new Map([['hit', $ID_while], ['canon', 'while']])]])]])]])],
+    [8,  new Map([[19, new Map([[7, new Map([['hit', $ID_with], ['canon', 'with']])]])]])]
+  ])],
+  [24,  new Map([[8, new Map([[4, new Map([[11, new Map([[3, new Map([['hit', $ID_yield], ['canon', 'yield']])]])]])]])]])]
+]);
 
 function isWhiteToken(type) {
   return (type & $G_WHITE) === $G_WHITE;
@@ -2502,31 +2327,31 @@ let identScanTable = [
   IDENT_END,              // 0x5E   no2   ^ :: ^ ^=
   IDENT_PART,             // 0x5F   no*   _ (lodash)
   IDENT_END,              // 0x60   no*   ` :: `...${ `...`
-  IDENT_PART,             // 0x61   no*   a
-  IDENT_PART,             // 0x62   no*   b
-  IDENT_PART,             // 0x63   no*   c
-  IDENT_PART,             // 0x64   no*   d
-  IDENT_PART,             // 0x65   no*   e
-  IDENT_PART,             // 0x66   no*   f
-  IDENT_PART,             // 0x67   no*   g
+  START_KEY,             // 0x61   no*   a
+  START_KEY,             // 0x62   no*   b
+  START_KEY,             // 0x63   no*   c
+  START_KEY,             // 0x64   no*   d
+  START_KEY,             // 0x65   no*   e
+  START_KEY,             // 0x66   no*   f
+  START_KEY,             // 0x67   no*   g
   IDENT_PART,             // 0x68   no*   h
-  IDENT_PART,             // 0x69   no*   i
+  START_KEY,             // 0x69   no*   i
   IDENT_PART,             // 0x6A   no*   j
   IDENT_PART,             // 0x6B   no*   k
-  IDENT_PART,             // 0x6C   no*   l
+  START_KEY,             // 0x6C   no*   l
   IDENT_PART,             // 0x6D   no*   m
-  IDENT_PART,             // 0x6E   no*   n
-  IDENT_PART,             // 0x6F   no*   o
-  IDENT_PART,             // 0x70   no*   p
+  START_KEY,             // 0x6E   no*   n
+  START_KEY,             // 0x6F   no*   o
+  START_KEY,             // 0x70   no*   p
   IDENT_PART,             // 0x71   no*   q
-  IDENT_PART,             // 0x72   no*   r
-  IDENT_PART,             // 0x73   no*   s
-  IDENT_PART,             // 0x74   no*   t
+  START_KEY,             // 0x72   no*   r
+  START_KEY,             // 0x73   no*   s
+  START_KEY,             // 0x74   no*   t
   IDENT_PART,             // 0x75   no*   u
-  IDENT_PART,             // 0x76   no*   v
-  IDENT_PART,             // 0x77   no*   w
+  START_KEY,             // 0x76   no*   v
+  START_KEY,             // 0x77   no*   w
   IDENT_PART,             // 0x78   no*   x
-  IDENT_PART,             // 0x79   no*   y
+  START_KEY,             // 0x79   no*   y
   IDENT_PART,             // 0x7A   no*   z
   IDENT_END,              // 0x7B   yes   {
   IDENT_END,              // 0x7C   no3   | :: | || |=
@@ -2609,10 +2434,7 @@ export {
 
   // KEYWORD_TRIE,
   // KEYWORD_TRIE_OC,
-  // KEYWORD_TRIE_MAP,
-  KEYWORD_HASH,
-  KEYWORD_HASH_OC,
-  KEYWORD_MAP,
+  KEYWORD_TRIE_MAP,
   MAX_START_VALUE,
 
   $G_WHITE,
