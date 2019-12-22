@@ -779,6 +779,12 @@ ASSERT(ALL_GEES.every(type => type > __$flag_start), 'the G start at bit 7 or wh
 ASSERT(ALL_TOKEN_TYPES.every(type => type > __$flag_start), 'all tokens must be higher than the start numbers because they are all combinations with at least one G. this is important so we can distinguish them when reading the token start');
 // </SCRUB ASSERTS TO COMMENT>
 
+const STRING_PART = 0;
+const STRING_QUOTE = 1;
+const STRING_BS = 2;
+const STRING_UNICODE = 3;
+const STRING_NL = 4;
+
 const IDENT_PART = 0;
 const IDENT_END = 1;
 const IDENT_BS = 2;
@@ -914,6 +920,138 @@ let tokenStartJumpTable = [
   START_OR,               // 0x7C   no3   | :: | || |=
   START_CURLY_CLOSE,      // 0x7D   no3   } :: } }...` }...${
   $PUNC_TILDE,            // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+  // START_ERROR,            // 0x7F   yes   DEL
+];
+let stringScanTable = [
+  // val                     hex    end   desc
+  STRING_PART,            // 0x00   yes   NUL
+  STRING_PART,            // 0x01   yes   SOH
+  STRING_PART,            // 0x02   yes   STX
+  STRING_PART,            // 0x03   yes   ETX
+  STRING_PART,            // 0x04   yes   EOT
+  STRING_PART,            // 0x05   yes   ENQ
+  STRING_PART,            // 0x06   yes   ACK
+  STRING_PART,            // 0x07   yes   BEL
+  STRING_PART,            // 0x08   yes   BS
+  STRING_PART,            // 0x09   yes   HT
+  STRING_NL,              // 0x0A   yes   LF
+  STRING_PART,            // 0x0B   yes   VT
+  STRING_PART,            // 0x0C   yes   FF
+  STRING_NL,              // 0x0D   no2   CR :: CR CRLF
+  STRING_PART,            // 0x0E   yes   SO
+  STRING_PART,            // 0x0F   yes   SI
+  STRING_PART,            // 0x10   yes   DLE
+  STRING_PART,            // 0x11   yes   DC1
+  STRING_PART,            // 0x12   yes   DC2
+  STRING_PART,            // 0x13   yes   DC3
+  STRING_PART,            // 0x14   yes   DC4
+  STRING_PART,            // 0x15   yes   NAK
+  STRING_PART,            // 0x16   yes   SYN
+  STRING_PART,            // 0x17   yes   ETB
+  STRING_PART,            // 0x18   yes   CAN
+  STRING_PART,            // 0x19   yes   EM
+  STRING_PART,            // 0x1A   yes   SUB
+  STRING_PART,            // 0x1B   yes   ESC
+  STRING_PART,            // 0x1C   yes   FS
+  STRING_PART,            // 0x1D   yes   GS
+  STRING_PART,            // 0x1E   yes   RS
+  STRING_PART,            // 0x1F   yes   US
+  STRING_PART,            // 0x20   yes   space
+  STRING_PART,            // 0x21   no3   ! :: ! != !==
+  STRING_QUOTE,           // 0x22   no*   "
+  STRING_PART,            // 0x23   yes   #
+  STRING_PART,            // 0x24   no*   $
+  STRING_PART,            // 0x25   no2   % :: % %=
+  STRING_PART,            // 0x26   no3   & :: & && &=
+  STRING_QUOTE,           // 0x27   no*   '
+  STRING_PART,            // 0x28   yes   (
+  STRING_PART,            // 0x29   yes   )
+  STRING_PART,            // 0x2A   no4   * :: * ** *= **=
+  STRING_PART,            // 0x2B   no3   + :: + ++ +=
+  STRING_PART,            // 0x2C   yes   ,
+  STRING_PART,            // 0x2D   no4   - :: - -- -= -->
+  STRING_PART,            // 0x2E   no3   . :: . ... number
+  STRING_PART,            // 0x2F   no*   / :: / regex
+  STRING_PART,            // 0x30   no*   0
+  STRING_PART,            // 0x31   no*   1
+  STRING_PART,            // 0x32   no*   2
+  STRING_PART,            // 0x33   no*   3
+  STRING_PART,            // 0x34   no*   4
+  STRING_PART,            // 0x35   no*   5
+  STRING_PART,            // 0x36   no*   6
+  STRING_PART,            // 0x37   no*   7
+  STRING_PART,            // 0x38   no*   8
+  STRING_PART,            // 0x39   no*   9
+  STRING_PART,            // 0x3A   yes   :
+  STRING_PART,            // 0x3B   yes   ;
+  STRING_PART,            // 0x3C   no4   < :: < << <= <<= <!--
+  STRING_PART,            // 0x3D   no4   = :: = == === =>
+  STRING_PART,            // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  STRING_PART,            // 0x3F   yes   ?
+  STRING_PART,            // 0x40   yes   @
+  STRING_PART,            // 0x41   no*   A
+  STRING_PART,            // 0x42   no*   B
+  STRING_PART,            // 0x43   no*   C
+  STRING_PART,            // 0x44   no*   D
+  STRING_PART,            // 0x45   no*   E
+  STRING_PART,            // 0x46   no*   F
+  STRING_PART,            // 0x47   no*   G
+  STRING_PART,            // 0x48   no*   H
+  STRING_PART,            // 0x49   no*   I
+  STRING_PART,            // 0x4A   no*   J
+  STRING_PART,            // 0x4B   no*   K
+  STRING_PART,            // 0x4C   no*   L
+  STRING_PART,            // 0x4D   no*   M
+  STRING_PART,            // 0x4E   no*   N
+  STRING_PART,            // 0x4F   no*   O
+  STRING_PART,            // 0x50   no*   P
+  STRING_PART,            // 0x51   no*   Q
+  STRING_PART,            // 0x52   no*   R
+  STRING_PART,            // 0x53   no*   S
+  STRING_PART,            // 0x54   no*   T
+  STRING_PART,            // 0x55   no*   U
+  STRING_PART,            // 0x56   no*   V
+  STRING_PART,            // 0x57   no*   W
+  STRING_PART,            // 0x58   no*   X
+  STRING_PART,            // 0x59   no*   Y
+  STRING_PART,            // 0x5A   no*   Z
+  STRING_PART,            // 0x5B   yes   [
+  STRING_BS,              // 0x5C   no2   \ :: \uHHHH \u{H*}
+  STRING_PART,            // 0x5D   yes   ]
+  STRING_PART,            // 0x5E   no2   ^ :: ^ ^=
+  STRING_PART,            // 0x5F   no*   _ (lodash)
+  STRING_PART,            // 0x60   no*   ` :: `...${ `...`
+  STRING_PART,            // 0x61   no*   a
+  STRING_PART,            // 0x62   no*   b
+  STRING_PART,            // 0x63   no*   c
+  STRING_PART,            // 0x64   no*   d
+  STRING_PART,            // 0x65   no*   e
+  STRING_PART,            // 0x66   no*   f
+  STRING_PART,            // 0x67   no*   g
+  STRING_PART,            // 0x68   no*   h
+  STRING_PART,            // 0x69   no*   i
+  STRING_PART,            // 0x6A   no*   j
+  STRING_PART,            // 0x6B   no*   k
+  STRING_PART,            // 0x6C   no*   l
+  STRING_PART,            // 0x6D   no*   m
+  STRING_PART,            // 0x6E   no*   n
+  STRING_PART,            // 0x6F   no*   o
+  STRING_PART,            // 0x70   no*   p
+  STRING_PART,            // 0x71   no*   q
+  STRING_PART,            // 0x72   no*   r
+  STRING_PART,            // 0x73   no*   s
+  STRING_PART,            // 0x74   no*   t
+  STRING_PART,            // 0x75   no*   u
+  STRING_PART,            // 0x76   no*   v
+  STRING_PART,            // 0x77   no*   w
+  STRING_PART,            // 0x78   no*   x
+  STRING_PART,            // 0x79   no*   y
+  STRING_PART,            // 0x7A   no*   z
+  STRING_PART,            // 0x7B   yes   {
+  STRING_PART,            // 0x7C   no3   | :: | || |=
+  STRING_PART,            // 0x7D   no3   } :: } }...` }...${
+  STRING_PART,            // 0x7E   yes   ~
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
   // START_ERROR,            // 0x7F   yes   DEL
 ];
@@ -1068,6 +1206,18 @@ function getTokenStart(c) {
 
   return s;
 }
+function getStringPart(c) {
+  ASSERT(getStringPart.length === arguments.length, 'arg count');
+  ASSERT(typeof c === 'number' && c >= 0, 'nothing generates negatives for chars');
+  ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+
+  if (c > 0x7e) return STRING_UNICODE;
+  let s = stringScanTable[c];
+
+  ASSERT(typeof s === 'number', 'should be an enum and not undefined (oob)', s);
+
+  return s;
+}
 function getIdentPart(c) {
   ASSERT(getIdentPart.length === arguments.length, 'arg count');
   ASSERT(typeof c === 'number' && c >= 0, 'nothing generates negatives for chars');
@@ -1090,6 +1240,7 @@ function T(type) {
 
 export {
   getIdentPart,
+  getStringPart,
   getTokenStart,
   isWhiteToken,
   isNewlineToken,
@@ -1295,6 +1446,12 @@ export {
   START_UNICODE,
   START_BSLASH,
   START_ERROR,
+
+  STRING_PART,
+  STRING_QUOTE,
+  STRING_BS,
+  STRING_UNICODE,
+  STRING_NL,
 
   IDENT_PART,
   IDENT_END,

@@ -141,6 +141,7 @@ import {
 // Token type stuff is put in their own file
 import {
   getIdentPart,
+  getStringPart,
   getTokenStart,
   isWhiteToken,
   isNewlineToken,
@@ -331,6 +332,12 @@ import {
   START_UNICODE,
   START_BSLASH,
   START_ERROR,
+
+  STRING_PART,
+  STRING_QUOTE,
+  STRING_BS,
+  STRING_UNICODE,
+  STRING_NL,
 
   IDENT_PART,
   IDENT_END,
@@ -900,75 +907,76 @@ function Lexer(
     let pointerOffset = pointer;
     let badEscape = false;
     let hadNewline = false;
+
     while (neof()) {
-      // while we will want to consume at least one more byte for proper strings,
+
+      // Peek: while we will want to consume at least one more byte for proper strings,
       // there could be a malformed string and we wouldnt want to consume the newline
       let c = peek();
 
-      /*
-        There are a handful of chars that we must verify for strings;
-          - $$LF_0A                       1010    newline
-          - $$CR_0D                       1101    newline
-          - $$DQUOTE_22                 100010    end of double quoted strings
-          - $$SQUOTE_27                 100111    end of single quoted strings
-          - $$BACKSLASH_5C             1011100    starts an escape
-          - $$PS_2028           10000000101000    special edge case for locations
-          - $$LS_2029           10000000101001    special edge case for locations
-       */
+      let s = getStringPart(c);
+      if (s <= MAX_START_VALUE) {
+        // This means c must be a single char token, like `(` or `:`
 
-      // Break on the marker (we only need to check one of the quotes and the marker tells us which quote)
-      if (c <= marker) {
-        // This can catch characters; space, !, ", #, $, %, &, ' (and a bunch of non-printables)
-        // This range needs to (only) check for the marker (matches once) and the newlines \r and \n (matches never)
+        // Note: these cases should be ordered 0, 1, 2 ...
+        // TODO: we can skip() before the loop if we update the backslash consumer
+        switch (s) {
+          case STRING_PART:
+            ASSERT_skip(c);
+            break;
 
-        if (c === marker) {
-          ASSERT_skip(marker);
+          case STRING_QUOTE:
+            ASSERT_skip(c);
+            if (c === marker) {
+              if (badEscape) {
+                if (!lastReportableLexerError) lastReportableLexerError = 'String had an illegal escape';
+                return $ERROR;
+              }
 
-          if (badEscape) {
-            if (!lastReportableLexerError) lastReportableLexerError = 'String had an illegal escape';
-            return $ERROR;
-          }
+              // Note: LF and PS are newlines that are _explicitly_ allowed in a string, so only check for LF and CR here
+              if (hadNewline) {
+                if (!lastReportableLexerError) lastReportableLexerError = 'Encountered newline in string which is not allowed';
+                return $ERROR;
+              }
 
-          // Note: LF and PS are newlines that are _explicitly_ allowed in a string, so only check for LF and CR here
-          if (hadNewline) {
-            if (!lastReportableLexerError) lastReportableLexerError = 'Encountered newline in string which is not allowed';
-            return $ERROR;
-          }
+              lastCanonizedInput += slice(pointerOffset, pointer - 1);
+              lastCanonizedInputLen += (pointer - 1) - pointerOffset;
 
-          lastCanonizedInput += slice(pointerOffset, pointer - 1);
-          lastCanonizedInputLen += (pointer - 1) - pointerOffset;
+              return marker === $$DQUOTE_22 ? $STRING_DOUBLE : $STRING_SINGLE;
+            }
+            break;
 
-          return marker === $$DQUOTE_22 ? $STRING_DOUBLE : $STRING_SINGLE;
-        }
+          case STRING_BS:
+            lastCanonizedInput += slice(pointerOffset, pointer);
+            lastCanonizedInputLen += pointer - pointerOffset;
+            // The canonized value will be updated too
+            badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
+            pointerOffset = pointer;
 
-        hadNewline = hadNewline || c === $$LF_0A || c === $$CR_0D;
+            break;
 
-        ASSERT_skip(c);
-      } else if (c <= 0x7e) {
-        // This catches all the other ascii characters
-        // This range only needs to check the backslash, which unfortunately occurs in the middle of the range
+          case STRING_UNICODE:
+            ASSERT_skip(c);
+            if (c <= $$LS_2029 && c >= $$PS_2028) {
+              // (Increment after consumption as that's what incrementLine expects and asserts)
+              // Note: this is not an error but it does increase the line counter
+              incrementLine();
+            }
+            break;
 
-        if (c === $$BACKSLASH_5C) { // This seems to hit quite frequently, relative to this function
-          lastCanonizedInput += slice(pointerOffset, pointer);
-          lastCanonizedInputLen += pointer - pointerOffset;
-          // The canonized value will be updated too
-          badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
-          pointerOffset = pointer;
-        } else {
-          ASSERT_skip(c);
-        }
-      } else {
-        // This is anything non-ascii
-        // This range (which is fairly uncommon at time of writing) needs to check the 2028 and 2029 "newlines"
+          case STRING_NL:
+            ASSERT_skip(c);
+            hadNewline = true;
+            break;
 
-        ASSERT_skip(c);
-        if (isPsLs(c)) {
-          // This is a bit of a weird case for strings.
-          // (Increment after consumption as that's what incrementLine expects and asserts)
-          incrementLine();
+          // <SCRUB ASSERTS>
+          default:
+            ASSERT(false, 'unreachable', c);
+          // </SCRUB ASSERTS>
         }
       }
     }
+
     ASSERT(eof(), 'this is only reachable in the early EOF case');
     if (!lastReportableLexerError) lastReportableLexerError = 'Unclosed string at EOF';
     return $ERROR;
