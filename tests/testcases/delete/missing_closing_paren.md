@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expecting at least one more closing paren, found `is` instead
+  Expected the closing paren `)` for the group, found `is` instead
 
 delete ((false) > th is)
                      ^^------- error

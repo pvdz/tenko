@@ -1,0 +1,75 @@
+not sure if these are covered yet, but I think they are (some of these are duper even in this list, but I just copied out from comments from deleted code)
+
+-      // `delete (foo)`
+-      // `delete ((foo).x)`
+-      // `delete ((((foo))).x)`
+-      // `delete (a, b).c`
+-      // - `delete "x".y`
+-      // - `delete [].x`
+-      // - `delete yield x`     // error; arg must be "unaryexpression", which does not subset assignmentexpression
+-      // - `delete await x`     // ok? not sure if early error actually (TODO)
+-    // - `delete (foo)`
+-    // - `delete ((foo).x)`
+-    // - `delete ((((foo))).x)`
+-    // - `delete (a, b).c`
+-    // - `delete ((a)=>b)`
+-    // - `delete (((a)=>b).x)`
+-    // - `delete (((a)=b).x)`
+-    // - `delete ((true)=x)`               -- assignability of the ident is relevant
+-    // - `delete ((((true)))=x)`           -- consider that it may be a few recursive calls down
+-    // - `delete true.__proto__.foo`       -- and technically it could work so we can't just throw
+-    // - `delete (a[await x])`
+-    // - `delete ((((a)))[await x])`
+-    // - `delete (foo) => x`
+-    // - `delete ((foo) => x)`
+-        // `delete ((foo).bar)`      -- parse a tail then continue parsing parens
+-        // `delete ((foo)++)`
+-        // `delete ((true)++)`       -- (note that this is not `assignable`)
+-        // `delete ((await x))`      -- runtime error, exception: syntax error in func arg default
+-        // `delete ((a)) => b)`
+-        // `delete (((x)) => x)`
+-      // `delete (x) => b)`
+-      // `delete (0) => x)`
+-    // - `delete (foo).foo`
+-    // - `delete (foo)++`        -- wait is this even legal?
+-      // [x]: `delete (foo);`
+-      // [v]: `delete (null);`
+-      // [v]: `delete (true);`
+-      // [v]: `delete (false);`
+-      // [v]: `delete (this);`
+-      // [x]: `delete (yield);` // (yield expression is not allowed in this position and we're assuming strict mode so can't be a var)
+-      // [x]: `delete (await);` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==afterIdentToken)
+-      // [x]: `delete (super);` // super can't be referenced without a call or property so would be current token !== $tt_afterIdentToken
+-    // `delete foo.bar`
+-    // `delete foo[bar]`
+-    // `delete x`
+-    // `delete foo[await x]`
+-    // `delete foo[yield x]`
+-    // - `delete foo`
+-    //           ^
+-    // - `delete foo.bar`
+-    //           ^
+-    // - `delete /foo/.x`
+-    //           ^
+-    // - `delete new x`
+-    //           ^
+-      // [x]: `delete foo;`
+-      // [v]: `delete null;`
+-      // [v]: `delete true;`
+-      // [v]: `delete false;`
+-      // [v]: `delete this;`
+-      // [x]: `delete yield;` // (yield expression is not allowed in this position and we're assuming strict mode so can't be a var)
+-      // [x]: `delete await;` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==$tt_afterIdentToken)
+-      // [x]: `delete super;` // super can't be referenced without a call or property so would be curtok!==$tt_afterIdentToken
+-      // - `delete async \n (...) => x`
+-          // - `delete ("x"[(yield)])`
+-          // - `delete ("x"[(await)])`
+-          // - `async x => delete ("x"[(await x)])`
+-          // - `function *f(){ delete ("x"[(yield)]) }`
+-      // - `async function a(){     async ([y] = delete ((foo[await x]))) => {};     }`
+-      // - `delete (((((foo(await)))))).bar`
+-      // - `delete (((((foo(yield)))))).bar`
+-      // - `function *f(){ delete (((((foo(yield)))))).bar }`
+`delete (/x/.y)`
+`(delete (((x))) \n x)` can still not ASI
+

@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Arrow is illegal as arg of `delete`
+  Unable to ASI
 
 delete(0)=>x
          ^^------- error

@@ -236,6 +236,7 @@ The no-AST build can validate JS almost as perfect as the regular build except f
 - Binary op after arrow with block body (`()=>{}*x` is illegal)
 - Regular expression on new line after arrow with block body (`()=>{} \n /foo/g`, prohibited by ASI rules and can't be a division)
 - Update operator anything that's writable but not a valid var or member expression (`++[]`)
+- Delete with an ident that is wrapped in parenthesis (`delete (foo)` is illegal), trivial cases (`delete foo;`) should be fine
 
 # Testing
 

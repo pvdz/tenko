@@ -58,7 +58,14 @@ tokens (10x):
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot delete an identifier without tail, in strict mode (at EOF)
+
+delete (((await)))
+^^^^^^------- error
+`````
+
 
 ### Module goal
 

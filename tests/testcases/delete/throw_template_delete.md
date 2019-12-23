@@ -103,11 +103,11 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 
 `````
 throws: Parser error!
-  Bad delete case, can not delete an ident wrapped in parens
+  Cannot delete an identifier without tail, in strict mode
 
 function f() {
   throw `${delete(y)}`;
-                    ^^------- error
+           ^^^^^^------- error
 
 }
 `````

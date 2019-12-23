@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Arrow is illegal here
+  Unable to ASI
 
 delete ((a))=>b)
             ^^------- error
@@ -36,13 +36,20 @@ delete ((a))=>b)
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot delete an identifier without tail, in strict mode
+
+delete ((a))=>b)
+^^^^^^------- error
+`````
+
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+_Output same as strict mode._
 
 ### Web compat mode
 

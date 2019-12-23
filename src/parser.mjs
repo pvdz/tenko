@@ -426,10 +426,6 @@ import {
   ASSIGNABLE_UNDETERMINED,
   NOT_ASSIGNABLE,
   IS_ASSIGNABLE,
-  IS_SINGLE_IDENT_WRAP_A,
-  IS_SINGLE_IDENT_WRAP_NA,
-  NOT_SINGLE_IDENT_WRAP_A,
-  NOT_SINGLE_IDENT_WRAP_NA,
   PIGGY_BACK_SAW_AWAIT,
   PIGGY_BACK_SAW_YIELD,
   PIGGY_BACK_WAS_CONSTRUCTOR,
@@ -460,10 +456,6 @@ import {
   ASSIGN_EXPR_IS_ERROR,
   NO_ID_TO_VERIFY,
   NO_DUPE_PARAMS,
-  IS_DELETE_ARG,
-  NOT_DELETE_ARG,
-  FROM_CONTINUE,
-  FROM_BREAK,
   SCOPE_LAYER_GLOBAL,
   SCOPE_LAYER_FOR_HEADER,
   SCOPE_LAYER_BLOCK,
@@ -6525,282 +6517,6 @@ function Parser(code, options = {}) {
     parseSemiOrAsi(lexerFlags);
     AST_close('ExpressionStatement');
   }
-  function parseDeleteExpression(lexerFlags, $tp_deleteToken_start, $tp_deleteToken_line, $tp_deleteToken_column, inputAssignable, astProp) {
-    ASSERT(parseDeleteExpression.length === arguments.length, 'arg count');
-    AST_open(astProp, {
-      type: 'UnaryExpression',
-      loc: AST_getOpenLoc($tp_deleteToken_start, $tp_deleteToken_line, $tp_deleteToken_column),
-      operator: 'delete',
-      prefix: true,
-      argument: undefined,
-    });
-    let assignable = ASSIGNABLE_UNDETERMINED;
-    if (isIdentToken(tok_getType())) {
-      assignable = parseDeleteIdent(lexerFlags, astProp);
-    } else if (tok_getType() === $PUNC_PAREN_OPEN) {
-      // This case has to be confirmed not to just wrap an ident in parens
-      // `delete (foo)`
-      // `delete ((foo).x)`
-      // `delete ((((foo))).x)`
-      // `delete (a, b).c`
-      assignable = parseDeleteParenSpecialCase(lexerFlags, 'argument');
-    } else {
-      // - `delete "x".y`
-      // - `delete [].x`
-      // - `delete yield x`     // error; arg must be "unaryexpression", which does not subset assignmentexpression
-      // - `delete await x`     // ok? not sure if early error actually (TODO)
-      assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
-    }
-    AST_close('UnaryExpression');
-    if (tok_getType() === $PUNC_STAR_STAR) {
-      return THROW_RANGE('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)', tok_getStart(), tok_getStop());
-    }
-    ASSERT(assignable !== ASSIGNABLE_UNDETERMINED, 'every branch should update this');
-    // Make sure to propagate the input- and found await/yield flags
-    return setNotAssignable(assignable | inputAssignable);
-  }
-  function parseDeleteParenSpecialCase(lexerFlags, astProp){
-    // This parser has to confirm whether or not the `delete` is only on an ident wrapped with any number of parens.
-    // While still properly parsing the whole thing, of course.
-
-    // some cases to consider;
-    // - `delete (foo)`
-    // - `delete ((foo).x)`
-    // - `delete ((((foo))).x)`
-    // - `delete (a, b).c`
-    // - `delete ((a)=>b)`
-    // - `delete (((a)=>b).x)`
-    // - `delete (((a)=b).x)`
-    // - `delete ((true)=x)`               -- assignability of the ident is relevant
-    // - `delete ((((true)))=x)`           -- consider that it may be a few recursive calls down
-    // - `delete true.__proto__.foo`       -- and technically it could work so we can't just throw
-    // - `delete (a[await x])`
-    // - `delete ((((a)))[await x])`
-    // - `delete (foo) => x`
-    // - `delete ((foo) => x)`
-
-    ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'this is why we are here');
-
-    let $tp_outerParenToken_line = tok_getLine();
-    let $tp_outerParenToken_column = tok_getColumn();
-    let $tp_outerParenToken_start = tok_getStart();
-    let $tp_outerParenToken_stop = tok_getStop();
-
-    let outerLexerFlags = lexerFlags;
-
-    let parens = 1;
-    // rare use of arrays because we need to remember where it was opened for locs in ASTs (edge case path meh)
-    let pees = [
-      $tp_outerParenToken_start,
-      $tp_outerParenToken_stop,
-      $tp_outerParenToken_line,
-      $tp_outerParenToken_column,
-    ];
-
-    // Cannot asi inside `delete (...)`, the `in` restriction stuff does not apply inside the arg
-    lexerFlags = sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS);
-
-    let $tp_parenToken_type = tok_getType();
-    let $tp_parenToken_line = tok_getLine();
-    let $tp_parenToken_column = tok_getColumn();
-    let $tp_parenToken_start = tok_getStart();
-    let $tp_parenToken_stop = tok_getStop();
-
-    ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // `delete (/x/.y)`, for bonus points
-
-    while (tok_getType() === $PUNC_PAREN_OPEN) {
-      ++parens;
-
-      // $tt_parenToken = __oldtok;
-      $tp_parenToken_type = tok_getType();
-      $tp_parenToken_line = tok_getLine();
-      $tp_parenToken_column = tok_getColumn();
-      $tp_parenToken_start = tok_getStart();
-      $tp_parenToken_stop = tok_getStop();
-
-      pees.push(
-        // $tt_parenToken,
-        $tp_parenToken_start,
-        $tp_parenToken_stop,
-        $tp_parenToken_line,
-        $tp_parenToken_column
-      );
-
-      // Note: next is expression start or `)` in case of `delete (()=>{})`
-      ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // `delete (/x/.y)`, for bonus points
-    }
-
-    // Now parse a group and pass it a special flag that changes the semantics of the return value
-    // It's an ugly hack :( all caused by `delete ((((a, b) => c).d))` being hard to custom parse
-
-    // let $tt_possibleIdentToken = __oldtok;
-    let $tp_possibleIdentToken_type = tok_getType();
-
-    let assignableOrJustIdent = _parseGroupToplevels(
-      lexerFlags,
-      $tp_parenToken_start,
-      $tp_parenToken_line,
-      $tp_parenToken_column,
-      IS_EXPRESSION,
-      parens === 1 ? ASSIGN_EXPR_IS_ERROR : ASSIGN_EXPR_IS_OK,
-      IS_DELETE_ARG,
-      $UNTYPED,
-      0,
-      0,
-      0,
-      0,
-      '',
-      NOT_ASYNC_PREFIXED,
-      NOT_LHSE,
-      astProp
-    );
-
-    // "decode" the return value back into an assignable
-    let assignable = hasAnyFlag(assignableOrJustIdent, IS_SINGLE_IDENT_WRAP_A | NOT_SINGLE_IDENT_WRAP_A) ? initAssignable(): initNotAssignable();
-    assignable = copyPiggies(assignable, assignableOrJustIdent);
-
-    // the group parser parses one rhs paren so there may not be any parens left to consume here
-    let canBeErrorCase = hasAnyFlag(assignableOrJustIdent, IS_SINGLE_IDENT_WRAP_A | IS_SINGLE_IDENT_WRAP_NA);
-    while (--parens > 0) { // this only passes for inner parens
-      let $tp_openParenToken_column = pees.pop();
-      let $tp_openParenToken_line = pees.pop();
-      let $tp_openParenToken_stop = pees.pop();
-      let $tp_openParenToken_start = pees.pop();
-
-      // `delete ((foo).bar)`, parse a tail then continue parsing parens
-      if (tok_getType() !== $PUNC_PAREN_CLOSE) {
-
-        // After closing a paren, this is no longer an issue
-        assignable = sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
-
-        // (this is never toplevel)
-        // `delete ((foo).bar)`      -- parse a tail then continue parsing parens
-        // `delete ((foo)++)`
-        // `delete ((true)++)`       -- (note that this is not `assignable`)
-        // `delete ((await x))`      -- runtime error, exception: syntax error in func arg default
-        let nowAssignable = parseValueTail(lexerFlags, $tp_openParenToken_start, $tp_openParenToken_line, $tp_openParenToken_column, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
-        assignable = mergeAssignable(nowAssignable, assignable);
-        assignable = parseExpressionFromOp(lexerFlags, $tp_openParenToken_start, $tp_openParenToken_stop, $tp_openParenToken_line, $tp_openParenToken_column, assignable, astProp);
-        if (tok_getType() === $PUNC_COMMA) assignable = _parseExpressions(lexerFlags, $tp_openParenToken_start, $tp_openParenToken_line, $tp_openParenToken_column, assignable, astProp);
-        canBeErrorCase = false;
-        if (tok_getType() !== $PUNC_PAREN_CLOSE) {
-          return THROW_RANGE('Expecting at least one more closing paren, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-        }
-      }
-      // at least one rhs paren must appear now
-      ASSERT_skipDiv($PUNC_PAREN_CLOSE, outerLexerFlags);
-      if (tok_getType() === $PUNC_EQ_GT) {
-        // This means the code is deleting an arrow that is wrapped in parentheses
-        // The case for deleting an unwrapped arrow is handled elsewhere
-        // `delete ((a)) => b)`
-        // `delete (((x)) => x)`
-        return THROW_RANGE('Arrow is illegal here', tok_getStart(), tok_getStop());
-      }
-      if (babelCompat) AST_babelParenthesizesClosed($tp_outerParenToken_start, astProp);
-    }
-    if (babelCompat) AST_babelParenthesizesClosed($tp_outerParenToken_start, astProp);
-    ASSERT(hasAllFlags(lexerFlags, LF_NO_ASI), 'should not be allowed to parse asi inside a group');
-    lexerFlags = sansFlag(lexerFlags, LF_NO_ASI); // TODO: `(delete (((x))) \n x)` can still not ASI
-
-    ASSERT(parens === 0 && pees.length === 4, 'should unwind all the parens', parens, pees.length, pees);
-    if (tok_getType() === $PUNC_EQ_GT) {
-      // This means the code is deleting an arrow that is NOT wrapped in parentheses
-      // `delete (x) => b)`
-      // `delete (0) => x)`
-      return THROW_RANGE('Arrow is illegal as arg of `delete`', tok_getStart(), tok_getStop());
-    }
-
-    // this is after the outer most rhs paren. we still have to check whether we can parse a tail (but no op)
-    // - `delete (foo).foo`
-    // - `delete (foo)++`        -- wait is this even legal?
-
-    let $tp_prevtok_start = tok_getStart();
-
-    parseValueTail(lexerFlags, $tp_outerParenToken_start, $tp_outerParenToken_line, $tp_outerParenToken_column, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
-    if (tok_getStart() === $tp_prevtok_start && canBeErrorCase && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      ASSERT(isIdentToken($tp_possibleIdentToken_type), 'this state is verified through piggies and if it wasnt an ident then this should never be reached');
-      // https://tc39.github.io/ecma262/#sec-delete-operator-static-semantics-early-errors
-      // strict mode only
-      // This is the group-wrapped variant, which still holds the above rule
-      // [x]: `delete (foo);`
-      // [v]: `delete (null);`
-      // [v]: `delete (true);`
-      // [v]: `delete (false);`
-      // [v]: `delete (this);`
-      // [x]: `delete (yield);` // (yield expression is not allowed in this position and we're assuming strict mode so can't be a var)
-      // [x]: `delete (await);` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==afterIdentToken)
-      // [x]: `delete (super);` // super can't be referenced without a call or property so would be current token !== $tt_afterIdentToken
-      if ($tp_possibleIdentToken_type !== $ID_null && $tp_possibleIdentToken_type !== $ID_true && $tp_possibleIdentToken_type !== $ID_false && $tp_possibleIdentToken_type !== $ID_this && $tp_possibleIdentToken_type !== $ID_await) { // super edge case so dont care about the slowness
-        return THROW_RANGE('Bad delete case, can not delete an ident wrapped in parens', tok_getStart(), tok_getStop());
-      }
-    }
-
-    return assignable;
-  }
-  function parseDeleteIdent(lexerFlags) {
-    // `delete foo.bar`
-    // `delete foo[bar]`
-    // `delete x`
-    // `delete foo[await x]`
-    // `delete foo[yield x]`
-
-    let $tp_identToken_type = tok_getType();
-    let $tp_identToken_line = tok_getLine();
-    let $tp_identToken_column = tok_getColumn();
-    let $tp_identToken_start = tok_getStart();
-    let $tp_identToken_stop = tok_getStop();
-    let $tp_identToken_canon = tok_getCanoN();
-
-    // - `delete foo`
-    //           ^
-    // - `delete foo.bar`
-    //           ^
-    // - `delete /foo/.x`
-    //           ^
-    // - `delete new x`
-    //           ^
-    // This is the `delete` _arg_, which may be a keyword. If not, then the next token cannot be a regex.
-    skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE);
-
-    let $tp_afterIdentToken_type = tok_getType();
-    let $tp_afterIdentToken_start = tok_getStart();
-
-    // store to assert whether anything after the ident was parsed
-    let $tp_afterIdentTokenNlwas = tok_getNlwas();
-
-    // Note: assignable is relevant if it somehow contained an await or yield; TODO: citation needed
-    let assignable = parseValueAfterIdent(lexerFlags, $tp_identToken_type, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_ERROR, 'argument');
-
-    if (tok_getStart() === $tp_afterIdentToken_start && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      // https://tc39.github.io/ecma262/#sec-delete-operator-static-semantics-early-errors
-      // - It is a Syntax Error if the UnaryExpression is contained in strict mode code and the derived UnaryExpression is PrimaryExpression:IdentifierReference .
-      //   - Note that IdentifierReference does NOT includes keywords. In particular, that means `null`, `true`, and `false` do not trigger this error.
-      // - It is a Syntax Error if the derived UnaryExpression is PrimaryExpression: CoverParenthesizedExpressionAndArrowParameterList and CoverParenthesizedExpressionAndArrowParameterList ultimately derives a phrase that, if used in place of UnaryExpression, would produce a Syntax Error according to these rules. This rule is recursively applied.
-      // (So in strict mode you can't do `delete foo;` and `delete (foo);` and `delete (((foo)));` etc)
-
-      // Due to ASI this is a tad difficult to do without AST or even token stream but we can just confirm whether
-      // the object reference to curtok remains the same. In that case only $tt_identToken was parsed as the value.
-
-      // [x]: `delete foo;`
-      // [v]: `delete null;`
-      // [v]: `delete true;`
-      // [v]: `delete false;`
-      // [v]: `delete this;`
-      // [x]: `delete yield;` // (yield expression is not allowed in this position and we're assuming strict mode so can't be a var)
-      // [x]: `delete await;` // (only auto-keyword in module goal, and if it were a keyword and valid then it would have an argument so curtok!==$tt_afterIdentToken)
-      // [x]: `delete super;` // super can't be referenced without a call or property so would be curtok!==$tt_afterIdentToken
-      if ($tp_identToken_type !== $ID_null && $tp_identToken_type !== $ID_true && $tp_identToken_type !== $ID_false && $tp_identToken_type !== $ID_this && $tp_identToken_type !== $ID_await) { // super edge case so dont care about the slowness
-        return THROW_RANGE('Cannot delete an identifier without tail, in strict mode', $tp_identToken_start, $tp_identToken_stop);
-      }
-    }
-    else if ($tp_afterIdentTokenNlwas > 0 && $tp_afterIdentToken_type === $PUNC_PAREN_OPEN && $tp_identToken_type === $ID_async && tok_getType() === $PUNC_EQ_GT && hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-      // - `delete async \n (...) => x`
-      // which is effectively `delete async; () => x;`, which is still an error
-      return THROW_RANGE('Cannot delete an identifier without tail, in strict mode', $tp_identToken_start, $tp_identToken_stop);
-    }
-
-    return assignable;
-  }
 
   function parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tp_identToken_type, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, $tp_identToken_canon, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLabeledStatementInstead.length, 'arg count');
@@ -8170,10 +7886,7 @@ function Parser(code, options = {}) {
         return parseClassExpression(lexerFlags, $tp_identToken_start, $tp_identToken_line, $tp_identToken_column, astProp);
       case $ID_delete:
         ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
-        if (isNewArg === IS_NEW_ARG) {
-          return THROW_RANGE('Cannot delete inside `new`', $tp_identToken_start, $tp_identToken_stop);
-        }
-        return parseDeleteExpression(lexerFlags, $tp_identToken_start, $tp_identToken_line, $tp_identToken_column, assignable, astProp);
+        return _parseUnary(lexerFlags, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, 'delete', isNewArg, astProp);
       case $ID_eval:
         assignable = verifyEvalArgumentsVar(lexerFlags);
         if (tok_getType() === $PUNC_EQ_GT) {
@@ -8534,7 +8247,7 @@ function Parser(code, options = {}) {
   }
   function _parseUnary(lexerFlags, $tp_unaryToken_start, $tp_unaryToken_stop, $tp_unaryToken_line, $tp_unaryToken_column, opName, isNewArg, astProp) {
     ASSERT(_parseUnary.length === arguments.length, 'arg count');
-    ASSERT(['+', '-', '~', '!', 'void', 'typeof'].includes(opName), '++, --, delete, new, yield, and await have special parsers', opName);
+    ASSERT(['+', '-', '~', '!', 'void', 'typeof', 'delete'].includes(opName), '++, --, new, yield, and await have special parsers', opName);
     ASSERT(tok_sliceInput($tp_unaryToken_start, $tp_unaryToken_stop) === opName, 'should match');
     ASSERT(isNewArg === IS_NEW_ARG || isNewArg === NOT_NEW_ARG, 'enum isNewArg');
 
@@ -8556,6 +8269,15 @@ function Parser(code, options = {}) {
     });
     // dont parse just any standard expression. instead stop when you find any infix operator
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
+
+    // <SCRUB AST>
+    if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+      if (opName === 'delete' && _path[_path.length - 1].argument.type === 'Identifier') {
+        return THROW_RANGE('Cannot delete an identifier without tail, in strict mode', $tp_unaryToken_start, $tp_unaryToken_stop);
+      }
+    }
+    // </SCRUB AST>
+
     AST_close('UnaryExpression');
 
     if (tok_getType() === $PUNC_STAR_STAR) {
@@ -9386,21 +9108,18 @@ function Parser(code, options = {}) {
 
     return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW;
   }
-  function parseGroupToplevels(lexerFlags, asyncStmtOrExpr, allowAssignment, $tp_asyncToken_type, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_asyncToken_canon, newlineAfterAsync, leftHandSideExpression, astProp) {
+  function parseGroupToplevels(lexerFlagsBeforeParen, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, $tp_asyncToken_type, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_asyncToken_canon, newlineAfterAsync, leftHandSideExpression, astProp) {
     ASSERT(parseGroupToplevels.length === arguments.length, 'arg count');
     ASSERT($tp_asyncToken_type === $UNTYPED || $tp_asyncToken_type === $ID_async, 'async token');
     ASSERT(tok_getType() === $PUNC_PAREN_OPEN, 'should have thrown if not currently at paren open');
-    ASSERT_ASSIGN_EXPR(allowAssignment);
+    ASSERT_ASSIGN_EXPR(allowAssignmentForGroupToBeArrow);
 
     let $tp_parenToken_line = tok_getLine();
     let $tp_parenToken_column = tok_getColumn();
     let $tp_parenToken_start = tok_getStart();
 
-    ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags); // Patterns are subsumed by exprs when it comes to skip
-    return _parseGroupToplevels(lexerFlags, $tp_parenToken_start, $tp_parenToken_line, $tp_parenToken_column, asyncStmtOrExpr, allowAssignment, NOT_DELETE_ARG, $tp_asyncToken_type, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_asyncToken_canon, newlineAfterAsync, leftHandSideExpression, astProp);
-  }
-  function _parseGroupToplevels(lexerFlagsBeforeParen, $tp_parenToken_start, $tp_parenToken_line, $tp_parenToken_column, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, isDeleteArg, $tp_asyncToken_type, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_asyncToken_canon, newlineAfterAsync, leftHandSideExpression, astProp) {
-    ASSERT(_parseGroupToplevels.length === arguments.length, 'arg count');
+    ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlagsBeforeParen); // Patterns are subsumed by exprs when it comes to skip
+
     ASSERT(newlineAfterAsync === NOT_ASYNC_PREFIXED || newlineAfterAsync === IS_ASYNC_PREFIXED, 'enum');
     ASSERT(typeof astProp === 'string');
     ASSERT($tp_parenToken_start !== tok_getStart(), 'paren should be skipped');
@@ -9504,7 +9223,6 @@ function Parser(code, options = {}) {
       let assignable = parseArrowFromPunc(lexerFlags, paramScoop, $UNTYPED, allowAssignmentForGroupToBeArrow, PARAMS_ALL_SIMPLE);
       AST_close('ArrowFunctionExpression');
 
-      if (isDeleteArg === IS_DELETE_ARG) return NOT_SINGLE_IDENT_WRAP_NA | PIGGY_BACK_WAS_ARROW;
       return assignable;
     }
 
@@ -9749,14 +9467,6 @@ function Parser(code, options = {}) {
           AST_babelParenthesizesClosed($tp_parenToken_start, astProp);
         }
 
-        if (isDeleteArg === IS_DELETE_ARG) {
-          // We need to propagate the await/yield state as well so prepare that first
-          // - `delete ("x"[(yield)])`
-          // - `delete ("x"[(await)])`
-          // - `async x => delete ("x"[(await x)])`
-          // - `function *f(){ delete ("x"[(yield)]) }`
-          return copyPiggies(isAssignable(sansFlag(assignable, PIGGY_BACK_WAS_ARROW)) ? NOT_SINGLE_IDENT_WRAP_A : NOT_SINGLE_IDENT_WRAP_NA, assignable);
-        }
         // - `((a)) = b;`
         return sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
       }
@@ -10069,7 +9779,6 @@ function Parser(code, options = {}) {
       ASSERT($tp_asyncToken_type === $UNTYPED, 'checked above');
       parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, $UNTYPED, $tp_parenToken_start, $tp_parenToken_line, $tp_parenToken_column, allowAssignmentForGroupToBeArrow, rootAstProp);
       // we just parsed an arrow. Whatever the state of await/yield was we can ignore that here.
-      if (isDeleteArg === IS_DELETE_ARG) return NOT_SINGLE_IDENT_WRAP_NA;
       // Assignability resets after the arrow but an outer `async` could affect the inner arrow:
       // [v]: `(await) => {}`
       // [v]: `(x = (await) => {}) => {}`
@@ -10102,27 +9811,6 @@ function Parser(code, options = {}) {
     // - `(x = delete ((yield) = f)) => {}`
     // - `async (x = (await) = f) => {}`
 
-    if (isDeleteArg === IS_DELETE_ARG) {
-      // TODO: this is a non-bool value making the func poly :'( this case will never hit for the real
-      //       world where perf matters, though. So it's mostly compiler inference that crap out
-
-      // We need to propagate the await/yield state as well so prepare that first
-      // - `async function a(){     async ([y] = delete ((foo[await x]))) => {};     }`
-      // - `delete (((((foo(await)))))).bar`
-      // - `delete (((((foo(yield)))))).bar`
-      // - `function *f(){ delete (((((foo(yield)))))).bar }`
-      let extraFlags = copyPiggies(0, assignable);
-
-      if (foundSingleIdentWrap) {
-        ASSERT(!toplevelComma, 'sanity check; the main loop should break after this state was found');
-        if (isAssignable(assignable)) return IS_SINGLE_IDENT_WRAP_A | extraFlags;
-        return IS_SINGLE_IDENT_WRAP_NA | extraFlags;
-      }
-      else {
-        if (isAssignable(assignable)) return NOT_SINGLE_IDENT_WRAP_A | extraFlags;
-        return NOT_SINGLE_IDENT_WRAP_NA | extraFlags;
-      }
-    }
     // a group. those still exist?
     // - `((a)) = b;`
 

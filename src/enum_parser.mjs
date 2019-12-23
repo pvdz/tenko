@@ -69,17 +69,11 @@ const MUST_DESTRUCT = 1 << 2; // something that is an error if it doesnt lead to
 const ASSIGNABLE_UNDETERMINED = 1 << 3;
 const NOT_ASSIGNABLE = 1 << 4;
 const IS_ASSIGNABLE = 1 << 5;
-const IS_SINGLE_IDENT_WRAP_A = 1 << 6;   // "assignable"
-const IS_SINGLE_IDENT_WRAP_NA = 1 << 7;  // "not assignable"
-const NOT_SINGLE_IDENT_WRAP_A = 1 << 8;  // "assignable"
-const NOT_SINGLE_IDENT_WRAP_NA = 1 << 9; // "not assignable"
-const PIGGY_BACK_SAW_AWAIT = 1 << 10; // parsed an expression containing `await` as varname or keyword
-// 1 << 11 is unused atm
-const PIGGY_BACK_SAW_YIELD = 1 << 12; // parsed an expression containing `yield` as varname or keyword
-// 1 << 13 is unused atm
-const PIGGY_BACK_WAS_CONSTRUCTOR = 1 << 14; // signal having found a constructor (special case)
-const PIGGY_BACK_WAS_PROTO = 1 << 15; // signal that a `__proto__: x` was parsed (do detect double occurrence)
-const PIGGY_BACK_WAS_ARROW = 1 << 16; // signal that double proto was found on object; error in web compat outside of arrow headers
+const PIGGY_BACK_SAW_AWAIT = 1 << 6; // parsed an expression containing `await` as varname or keyword
+const PIGGY_BACK_SAW_YIELD = 1 << 7; // parsed an expression containing `yield` as varname or keyword
+const PIGGY_BACK_WAS_CONSTRUCTOR = 1 << 8; // signal having found a constructor (special case)
+const PIGGY_BACK_WAS_PROTO = 1 << 9; // signal that a `__proto__: x` was parsed (do detect double occurrence)
+const PIGGY_BACK_WAS_ARROW = 1 << 10; // signal that double proto was found on object; error in web compat outside of arrow headers
 const NO_SPREAD = DEVONLY() ? {NO_SPREAD: 1} : 0;
 const LAST_SPREAD = DEVONLY() ? {LAST_SPREAD: 1} : 1;
 const MID_SPREAD = DEVONLY() ? {MID_SPREAD: 1} : 2;
@@ -105,10 +99,6 @@ const ASSIGN_EXPR_IS_OK = DEVONLY() ? {ASSIGN_EXPR_IS_OK: 1} : true; // fine to 
 const ASSIGN_EXPR_IS_ERROR = DEVONLY() ? {ASSIGN_EXPR_IS_ERROR: 1} : false; // throw on actual assignments, but also arrows, yield, await, ternary
 const NO_ID_TO_VERIFY = DEVONLY() ? {NO_ID_TO_VERIFY: 1} : undefined;
 const NO_DUPE_PARAMS = DEVONLY() ? {NO_DUPE_PARAMS: 1} : 0;
-const IS_DELETE_ARG = DEVONLY() ? {IS_DELETE_ARG: 1} : true;
-const NOT_DELETE_ARG = DEVONLY() ? {NOT_DELETE_ARG: 1} : false;
-const FROM_CONTINUE = DEVONLY() ? {FROM_CONTINUE: 1} : true;
-const FROM_BREAK = DEVONLY() ? {FROM_BREAK: 1} : false;
 const SCOPE_LAYER_GLOBAL = DEVONLY() ? {SCOPE_LAYER_GLOBAL: 1} : 0;
 const SCOPE_LAYER_FOR_HEADER = DEVONLY() ? {SCOPE_LAYER_FOR_HEADER: 1} : 1;
 const SCOPE_LAYER_BLOCK = DEVONLY() ? {SCOPE_LAYER_BLOCK: 1} : 2;
@@ -245,10 +235,6 @@ export {
   ASSIGNABLE_UNDETERMINED,
   NOT_ASSIGNABLE,
   IS_ASSIGNABLE,
-  IS_SINGLE_IDENT_WRAP_A,
-  IS_SINGLE_IDENT_WRAP_NA,
-  NOT_SINGLE_IDENT_WRAP_A,
-  NOT_SINGLE_IDENT_WRAP_NA,
   PIGGY_BACK_SAW_AWAIT,
   PIGGY_BACK_SAW_YIELD,
   PIGGY_BACK_WAS_CONSTRUCTOR,
@@ -279,10 +265,6 @@ export {
   ASSIGN_EXPR_IS_ERROR,
   NO_ID_TO_VERIFY,
   NO_DUPE_PARAMS,
-  IS_DELETE_ARG,
-  NOT_DELETE_ARG,
-  FROM_CONTINUE,
-  FROM_BREAK,
   SCOPE_LAYER_GLOBAL,
   SCOPE_LAYER_FOR_HEADER,
   SCOPE_LAYER_BLOCK,
