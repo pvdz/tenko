@@ -160,7 +160,7 @@ import {
   toktypeToString,
   T,
 
-  KEYWORD_MAP,
+  KEYWORD_TRIE_OBJLIT,
   MAX_START_VALUE,
 
   $UNTYPED, // 0
@@ -728,7 +728,8 @@ function Lexer(
       case START_ID:
         return parseIdentifierRest(String.fromCharCode(c), 1);
       case START_KEY:
-        return parseIdSpecial(c, lexerFlags);
+        if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return parseIdentifierRest(String.fromCharCode(c), 1);
+        return parsePotentialKeywordTrieMap(c);
       case START_NL_SOLO:
         return parseNewlineSolo();
       case START_CR:
@@ -1817,52 +1818,124 @@ function Lexer(
     return $PUNC_STAR;
   }
 
-  function parseIdSpecial(c, lexerFlags) {
-    let start = pointer - 1; // c already skipped
-    let i = parseIdentifierRest(String.fromCharCode(c), 1);
+  function parseIdentRestNotKeywordObjTrie(d, n, start) {
+    pointer = n - 1;
+    cache = d;
+    return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+  }
+  function parsePotentialKeywordTrieMap(c) {
+    ASSERT(parsePotentialKeywordTrieMap.length === arguments.length, 'arg count');
+    ASSERT(pointer > 0 && c === input.charCodeAt(pointer - 1), 'c should have been peekSkipped');
 
-    if (i !== $IDENT) return i; // error
-    if ((lexerFlags & LF_NOT_KEYWORD) === LF_NOT_KEYWORD) return $IDENT;
-    if (pointer - start !== lastCanonizedInputLen) return $IDENT; // ident has an escape of any kind (=> not keyword)
+    // c = input[pointer-1]
+    // Keep reading chars until;
+    // - eof
+    // - next char is not a start_key
+    // - next char is not found in the trie
 
-    // Map with has/get
-    // {
-    //   if (KEYWORD_MAP.has(lastCanonizedInput)) return KEYWORD_MAP.get(lastCanonizedInput);
-    //   return $IDENT;
+    let trieObjlit = KEYWORD_TRIE_OBJLIT[c - $$A_61];
+    let start = pointer - 1; // c was peekSkipped
+    let n = start + 1;
+    if (trieObjlit === undefined) return parseIdentifierRest(slice(start, n), n - start);
+    do {
+      if (n >= len) return eofAfterPotentialKeywordTrieMap(trieObjlit, n, start);
+      let d = input.charCodeAt(n++);
+      ASSERT(typeof d === 'number' && d >= 0 && Number.isFinite(d), 'dont oob please');
+      if (d < $$A_61 || d > $$Z_7A) {
+        return endOfPotentialKeywordTrieMap(trieObjlit, d, n, start);
+      }
+      // Next step in trie
+      trieObjlit = trieObjlit[d - $$A_61];
+      if (trieObjlit === undefined) return parseIdentRestNotKeywordObjTrie(d, n, start);
+    } while (true);
+    ASSERT(false, 'unreachable');
     // }
+  }
+  function endOfPotentialKeywordTrieMap(trieObjlit, d, n, start) {
+    ASSERT(endOfPotentialKeywordTrieMap.length === arguments.length, 'arg count');
 
-    // Map with immediate get
-    {
-      let t = KEYWORD_MAP.get(lastCanonizedInput);
-      if (t === undefined) return $IDENT;
-      return t;
+    let s = getTokenStart(d);
+    // Only valid "starts" for ident are id, key, numbers, and certain unicodes
+    if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
+      pointer = n - 1;
+      cache = d;
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
     }
 
-    // Map with |$ident hack
-    // {
-    //   return $IDENT | KEYWORD_MAP.get(lastCanonizedInput);
-    // }
+    let hit = trieObjlit.hit;
+    if (s === START_UNICODE) {
+      // maybe rest id
+      pointer = n - 1;
+      cache = d;
+      // This is potentially double the work but I already consider this very much a cold path
+      let wide = isIdentRestChr(d, n - 1);
+      if (wide === INVALID_IDENT_CHAR) {
+        // This ends the ident and it is a keyword
+        lastCanonizedInputLen = (n - 1) - start;
+        if (hit === undefined) {
+          lastCanonizedInput = slice(start, n - 1);
+          return $IDENT;
+        }
+        let canon = trieObjlit.canon;
+        ASSERT(typeof canon === 'string');
+        ASSERT(canon.length === lastCanonizedInputLen, 'should be equal now', canon);
+        lastCanonizedInput = canon;
+        return hit;
+      }
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+    }
 
-    // Plain object with direct access
-    // {
-    //   let t = KEYWORD_HASH[lastCanonizedInput];
-    //   if (typeof t === 'number') return t;
-    //   return $IDENT;
-    // }
+    if (s === START_BSLASH) {
+      pointer = n - 1;
+      cache = d;
+      // A keyword followed by a backslash escape is either the end of a keyword (leading into an error) or not a keyword ident. Let's not worry about that here.
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+    }
 
-    // Map get > 0
-    // {
-    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
-    //   if (t > 0) return $IDENT;
-    //   return t;
-    // }
+    // So this must be the end of the identifier. Either we found a keyword, or we didn't :)
 
-    // Map get typeof number
-    // {
-    //   let t = KEYWORD_MAP.get(lastCanonizedInput);
-    //   if (typeof t === 'number') return $IDENT;
-    //   return t;
-    // }
+    if (hit !== undefined) {
+      // End of id, this was a keyword
+      pointer = n - 1;
+      cache = d;
+      lastCanonizedInputLen = (n - 1) - start;
+      let canon = trieObjlit.canon;
+      ASSERT(typeof canon === 'string');
+      ASSERT(canon.length === lastCanonizedInputLen, 'should be equal now', canon);
+      lastCanonizedInput = canon;
+      ASSERT(ALL_TOKEN_TYPES.includes(hit), 'trie leafs should be valid types');
+      ASSERT(isIdentToken(hit), 'trie leafs should contain ident types');
+      return hit;
+    }
+
+    lastCanonizedInput = slice(start, n - 1);
+    lastCanonizedInputLen = (n - 1) - start;
+    pointer = n - 1;
+    cache = d;
+    return $IDENT;
+  }
+  function eofAfterPotentialKeywordTrieMap(trieObjlit, n, start) {
+    // EOF
+    ASSERT(trieObjlit !== undefined, 'checked before and at end of loop');
+
+    pointer = n - 1;
+    skip();
+    lastCanonizedInputLen = n - start;
+
+    let hit = trieObjlit.hit;
+    if (hit !== undefined) {
+      ASSERT(ALL_TOKEN_TYPES.includes(hit), 'trie leafs should be valid types');
+      ASSERT(isIdentToken(hit), 'trie leafs should contain ident types');
+      let canon = trieObjlit.canon;
+      ASSERT(typeof canon === 'string');
+      ASSERT(canon.length === lastCanonizedInputLen, 'should be equal now', canon);
+
+      lastCanonizedInput = canon;
+      return hit;
+    }
+
+    lastCanonizedInput = slice(start, n);
+    return $IDENT;
   }
   function parseIdentifierRest(prevStr, prevLen) {
     // Returns a token type (!). See parseRegexIdentifierRest for regexes...
