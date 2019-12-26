@@ -208,10 +208,10 @@ function CallExpression(node) {
       return 'pointer >= len';
     }
 
-    // AST_close('BlockStatement') -> AST_close(), because the names are only used for assertions
+    // AST_close(start, line, col, 'BlockStatement') -> AST_close(start, line, col), because the names are only used for assertions
     if (node.callee.name === 'AST_close') {
-      assert(node.arguments.length, 1); // node name(s) to close
-      return 'AST_close()'; // basically drop the arg
+      assert(node.arguments.length, 4); // node name(s) to close
+      node.arguments.pop(); // Drop the name; it's for debugging only
     }
 
     if (node.callee.name === 'sansFlag') {
@@ -445,6 +445,10 @@ function FunctionDeclaration(node) {
     }
     if (NO_AST && (node.id.name.startsWith('AST_') || node.id.name.startsWith('_AST_'))) {
       return '0';
+    }
+    if (node.id.name === 'AST_close') {
+      assert(node.params.length, 4, 'ast_close has 4 params');
+      node.params.pop(); // drop the name; it is only used in ASSERTs
     }
   }
   let suffix = (NATIVE_SYMBOLS && node.id ? ';allFuncs.push('+node.id.name+');' : '');
