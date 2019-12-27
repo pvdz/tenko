@@ -1965,6 +1965,28 @@ const IDENT_END = 1;
 const IDENT_BS = 2;
 const IDENT_UNICODE = 3;
 
+const REGCLS_ESC_NSC = 0;
+const REGCLS_ESC_UNICODE = 1;
+const REGCLS_ESC_u = 2;
+const REGCLS_ESC_x = 3;
+const REGCLS_ESC_c = 4;
+const REGCLS_ESC_k = 5;
+const REGCLS_ESC_b = 6;
+const REGCLS_ESC_B = 7;
+const REGCLS_ESC_f = 8;
+const REGCLS_ESC_n = 9;
+const REGCLS_ESC_r = 10;
+const REGCLS_ESC_t = 11;
+const REGCLS_ESC_v = 12;
+const REGCLS_ESC_ERR = 13;
+const REGCLS_ESC_pP = 14;
+const REGCLS_ESC_0 = 15;
+const REGCLS_ESC_1234567 = 16;
+const REGCLS_ESC_89 = 17;
+const REGCLS_ESC_SYNTAX = 18;
+const REGCLS_ESC_DASH = 19;
+const REGCLS_ESC_NL = 20;
+
 // Inspired by https://twitter.com/Ghost1240145716/status/1186595972232564736 / https://gist.github.com/KFlash/c53a2f0adb25e88ab7cdc3d77d295635
 let tokenStartJumpTable = [
   // val                     hex    end   desc
@@ -2362,6 +2384,137 @@ let identScanTable = [
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
   // START_ERROR,            // 0x7F   yes   DEL
 ];
+let regexClassEscapeStartJumpTable = [
+  // val                     hex    end   desc
+  REGCLS_ESC_NSC,              // 0x00   yes   NUL
+  REGCLS_ESC_NSC,              // 0x01   yes   SOH
+  REGCLS_ESC_NSC,              // 0x02   yes   STX
+  REGCLS_ESC_NSC,              // 0x03   yes   ETX
+  REGCLS_ESC_NSC,              // 0x04   yes   EOT
+  REGCLS_ESC_NSC,              // 0x05   yes   ENQ
+  REGCLS_ESC_NSC,              // 0x06   yes   ACK
+  REGCLS_ESC_NSC,              // 0x07   yes   BEL
+  REGCLS_ESC_NSC,              // 0x08   yes   BS
+  REGCLS_ESC_NSC,              // 0x09   yes   HT
+  REGCLS_ESC_NL,               // 0x0A   yes   LF
+  REGCLS_ESC_NSC,              // 0x0B   yes   VT
+  REGCLS_ESC_NSC,              // 0x0C   yes   FF
+  REGCLS_ESC_NL,               // 0x0D   no2   CR :: CR CRLF
+  REGCLS_ESC_NSC,              // 0x0E   yes   SO
+  REGCLS_ESC_NSC,              // 0x0F   yes   SI
+  REGCLS_ESC_NSC,              // 0x10   yes   DLE
+  REGCLS_ESC_NSC,              // 0x11   yes   DC1
+  REGCLS_ESC_NSC,              // 0x12   yes   DC2
+  REGCLS_ESC_NSC,              // 0x13   yes   DC3
+  REGCLS_ESC_NSC,              // 0x14   yes   DC4
+  REGCLS_ESC_NSC,              // 0x15   yes   NAK
+  REGCLS_ESC_NSC,              // 0x16   yes   SYN
+  REGCLS_ESC_NSC,              // 0x17   yes   ETB
+  REGCLS_ESC_NSC,              // 0x18   yes   CAN
+  REGCLS_ESC_NSC,              // 0x19   yes   EM
+  REGCLS_ESC_NSC,              // 0x1A   yes   SUB
+  REGCLS_ESC_NSC,              // 0x1B   yes   ESC
+  REGCLS_ESC_NSC,              // 0x1C   yes   FS
+  REGCLS_ESC_NSC,              // 0x1D   yes   GS
+  REGCLS_ESC_NSC,              // 0x1E   yes   RS
+  REGCLS_ESC_NSC,              // 0x1F   yes   US
+  REGCLS_ESC_NSC,              // 0x20   yes   space
+  REGCLS_ESC_NSC,              // 0x21   no3   ! :: ! != !==
+  REGCLS_ESC_NSC,              // 0x22   no*   "
+  REGCLS_ESC_NSC,              // 0x23   yes   #
+  REGCLS_ESC_SYNTAX,           // 0x24   no*   $
+  REGCLS_ESC_NSC,              // 0x25   no2   % :: % %=
+  REGCLS_ESC_NSC,              // 0x26   no3   & :: & && &=
+  REGCLS_ESC_NSC,              // 0x27   no*   '
+  REGCLS_ESC_SYNTAX,           // 0x28   yes   (
+  REGCLS_ESC_SYNTAX,           // 0x29   yes   )
+  REGCLS_ESC_SYNTAX,           // 0x2A   no4   * :: * ** *= **=
+  REGCLS_ESC_SYNTAX,           // 0x2B   no3   + :: + ++ +=
+  REGCLS_ESC_NSC,              // 0x2C   yes   ,
+  REGCLS_ESC_DASH,             // 0x2D   no4   - :: - -- -= -->
+  REGCLS_ESC_SYNTAX,           // 0x2E   no3   . :: . ... number
+  REGCLS_ESC_SYNTAX,           // 0x2F   no*   / Note: the fwd slash is explicitly allowed to escape in a regex class
+  REGCLS_ESC_0,                // 0x30   no*   0
+  REGCLS_ESC_1234567,          // 0x31   no*   1
+  REGCLS_ESC_1234567,          // 0x32   no*   2
+  REGCLS_ESC_1234567,          // 0x33   no*   3
+  REGCLS_ESC_1234567,          // 0x34   no*   4
+  REGCLS_ESC_1234567,          // 0x35   no*   5
+  REGCLS_ESC_1234567,          // 0x36   no*   6
+  REGCLS_ESC_1234567,          // 0x37   no*   7
+  REGCLS_ESC_89,               // 0x38   no*   8
+  REGCLS_ESC_89,               // 0x39   no*   9
+  REGCLS_ESC_NSC,              // 0x3A   yes   :
+  REGCLS_ESC_NSC,              // 0x3B   yes   ;
+  REGCLS_ESC_NSC,              // 0x3C   no4   < :: < << <= <<= <!--
+  REGCLS_ESC_NSC,              // 0x3D   no4   = :: = == === =>
+  REGCLS_ESC_NSC,              // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  REGCLS_ESC_SYNTAX,           // 0x3F   yes   ?
+  REGCLS_ESC_NSC,              // 0x40   yes   @
+  REGCLS_ESC_NSC,              // 0x41   no*   A
+  REGCLS_ESC_B,                // 0x42   no*   B
+  REGCLS_ESC_NSC,              // 0x43   no*   C
+  REGCLS_ESC_ERR,              // 0x44   no*   D
+  REGCLS_ESC_NSC,              // 0x45   no*   E
+  REGCLS_ESC_NSC,              // 0x46   no*   F
+  REGCLS_ESC_NSC,              // 0x47   no*   G
+  REGCLS_ESC_NSC,              // 0x48   no*   H
+  REGCLS_ESC_NSC,              // 0x49   no*   I
+  REGCLS_ESC_NSC,              // 0x4A   no*   J
+  REGCLS_ESC_NSC,              // 0x4B   no*   K
+  REGCLS_ESC_NSC,              // 0x4C   no*   L
+  REGCLS_ESC_NSC,              // 0x4D   no*   M
+  REGCLS_ESC_NSC,              // 0x4E   no*   N
+  REGCLS_ESC_NSC,              // 0x4F   no*   O
+  REGCLS_ESC_pP,               // 0x50   no*   P
+  REGCLS_ESC_NSC,              // 0x51   no*   Q
+  REGCLS_ESC_NSC,              // 0x52   no*   R
+  REGCLS_ESC_ERR,              // 0x53   no*   S
+  REGCLS_ESC_NSC,              // 0x54   no*   T
+  REGCLS_ESC_NSC,              // 0x55   no*   U
+  REGCLS_ESC_NSC,              // 0x56   no*   V
+  REGCLS_ESC_ERR,              // 0x57   no*   W
+  REGCLS_ESC_NSC,              // 0x58   no*   X
+  REGCLS_ESC_NSC,              // 0x59   no*   Y
+  REGCLS_ESC_NSC,              // 0x5A   no*   Z
+  REGCLS_ESC_SYNTAX,           // 0x5B   yes   [
+  REGCLS_ESC_SYNTAX,           // 0x5C   no2   \ :: \uHHHH \u{H*}
+  REGCLS_ESC_SYNTAX,           // 0x5D   yes   ]
+  REGCLS_ESC_SYNTAX,           // 0x5E   no2   ^ :: ^ ^=
+  REGCLS_ESC_NSC,              // 0x5F   no*   _ (lodash)
+  REGCLS_ESC_NSC,              // 0x60   no*   ` :: `...${ `...`
+  REGCLS_ESC_NSC,              // 0x61   no*   a
+  REGCLS_ESC_b,                // 0x62   no*   b
+  REGCLS_ESC_c,                // 0x63   no*   c
+  REGCLS_ESC_ERR,              // 0x64   no*   d
+  REGCLS_ESC_NSC,              // 0x65   no*   e
+  REGCLS_ESC_f,                // 0x66   no*   f
+  REGCLS_ESC_NSC,              // 0x67   no*   g
+  REGCLS_ESC_NSC,              // 0x68   no*   h
+  REGCLS_ESC_NSC,              // 0x69   no*   i
+  REGCLS_ESC_NSC,              // 0x6A   no*   j
+  REGCLS_ESC_k,                // 0x6B   no*   k
+  REGCLS_ESC_NSC,              // 0x6C   no*   l
+  REGCLS_ESC_NSC,              // 0x6D   no*   m
+  REGCLS_ESC_n,                // 0x6E   no*   n
+  REGCLS_ESC_NSC,              // 0x6F   no*   o
+  REGCLS_ESC_pP,               // 0x70   no*   p
+  REGCLS_ESC_NSC,              // 0x71   no*   q
+  REGCLS_ESC_r,                // 0x72   no*   r
+  REGCLS_ESC_ERR,              // 0x73   no*   s
+  REGCLS_ESC_t,                // 0x74   no*   t
+  REGCLS_ESC_u,                // 0x75   no*   u
+  REGCLS_ESC_v,                // 0x76   no*   v
+  REGCLS_ESC_ERR,              // 0x77   no*   w
+  REGCLS_ESC_x,                // 0x78   no*   x
+  REGCLS_ESC_NSC,              // 0x79   no*   y
+  REGCLS_ESC_NSC,              // 0x7A   no*   z
+  REGCLS_ESC_SYNTAX,           // 0x7B   yes   {
+  REGCLS_ESC_SYNTAX,           // 0x7C   no3   | :: | || |=
+  REGCLS_ESC_SYNTAX,           // 0x7D   no3   } :: } }...` }...${
+  REGCLS_ESC_NSC,              // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+];
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
@@ -2632,6 +2785,29 @@ export {
   IDENT_END,
   IDENT_BS,
   IDENT_UNICODE,
+
+  regexClassEscapeStartJumpTable,
+  REGCLS_ESC_NSC,
+  REGCLS_ESC_UNICODE,
+  REGCLS_ESC_u,
+  REGCLS_ESC_x,
+  REGCLS_ESC_c,
+  REGCLS_ESC_k,
+  REGCLS_ESC_b,
+  REGCLS_ESC_B,
+  REGCLS_ESC_f,
+  REGCLS_ESC_n,
+  REGCLS_ESC_r,
+  REGCLS_ESC_t,
+  REGCLS_ESC_v,
+  REGCLS_ESC_ERR,
+  REGCLS_ESC_pP,
+  REGCLS_ESC_0,
+  REGCLS_ESC_1234567,
+  REGCLS_ESC_89,
+  REGCLS_ESC_SYNTAX,
+  REGCLS_ESC_DASH,
+  REGCLS_ESC_NL,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,

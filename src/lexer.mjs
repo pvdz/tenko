@@ -344,6 +344,29 @@ import {
   IDENT_BS,
   IDENT_UNICODE,
 
+  regexClassEscapeStartJumpTable,
+  REGCLS_ESC_NSC,
+  REGCLS_ESC_UNICODE,
+  REGCLS_ESC_u,
+  REGCLS_ESC_x,
+  REGCLS_ESC_c,
+  REGCLS_ESC_k,
+  REGCLS_ESC_b,
+  REGCLS_ESC_B,
+  REGCLS_ESC_f,
+  REGCLS_ESC_n,
+  REGCLS_ESC_r,
+  REGCLS_ESC_t,
+  REGCLS_ESC_v,
+  REGCLS_ESC_ERR,
+  REGCLS_ESC_pP,
+  REGCLS_ESC_0,
+  REGCLS_ESC_1234567,
+  REGCLS_ESC_89,
+  REGCLS_ESC_SYNTAX,
+  REGCLS_ESC_DASH,
+  REGCLS_ESC_NL,
+
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,
   ALL_GEES,
@@ -2481,7 +2504,8 @@ function Lexer(
     if (ustatusBody === REGEX_ALWAYS_BAD) {
       ASSERT(lastReportableLexerError, 'last error should be set', lastReportableLexerError, lastPotentialRegexError);
       return $ERROR;
-    } else if (ustatusBody !== REGEX_ALWAYS_GOOD) {
+    }
+    if (ustatusBody !== REGEX_ALWAYS_GOOD) {
       ASSERT(lastPotentialRegexError, 'last potential error should be set', lastReportableLexerError, lastPotentialRegexError);
     }
     if (nCapturingParens < largestBackReference) {
@@ -4022,15 +4046,94 @@ function Lexer(
       return REGEX_CHARCLASS_BAD;
     }
     let c = peek();
+    let s = c >= 0x7f ? REGCLS_ESC_UNICODE : regexClassEscapeStartJumpTable[c];
 
-    switch (c) {
-      // \u<????> and \u{<?..?>}
-      case $$U_75:
+    switch (s) {
+      case REGCLS_ESC_NSC: {
+        // Non special character
+        // IdentityEscape
+        // with u-flag: forward slash or syntax character (`^$\.*+?()[]{}|`) and these cases are already caught above
+        // without-u-flag: SourceCharacter but not UnicodeIDContinue
+        // without-u-flag in webcompat: SourceCharacter but not `c`, and not `k` iif there is a regex groupname
+        ASSERT(![$$BACKSLASH_5C, $$K_6B, $$C_63, $$XOR_5E, $$$_24, $$DOT_2E, $$STAR_2A, $$PLUS_2B, $$QMARK_3F, $$PAREN_L_28, $$PAREN_R_29, $$SQUARE_L_5B, $$SQUARE_R_5D, $$CURLY_L_7B, $$CURLY_R_7D, $$OR_7C].includes(c), 'all these u-flag chars should be checked above');
+        if (webCompat === WEB_COMPAT_ON) {
+          // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
+          ASSERT_skip(c);
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape ord=' + c + ' in a char class with uflag');
+          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+
+        // so we can already not be valid for u flag, we just need to check here whether we can be valid without u-flag
+        // (any unicode continue char would be a problem)
+        if (isIdentRestChr(c, pointer) === INVALID_IDENT_CHAR) {
+          // c is not unicode continue char
+          ASSERT_skip(c);
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class contained a "wide" codepoint that was not unicode ID_CONTINUE');
+          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+
+        ASSERT(isIdentRestChr(c, pointer) === VALID_SINGLE_CHAR, 'c is not unicode since that is caught elsewhere');
+
+        // Return bad char class because the escape is bad
+        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=' + isIdentRestChr(c, pointer) +')');
+        ASSERT_skip(c);
+        return REGEX_CHARCLASS_BAD;
+      }
+
+      case REGCLS_ESC_UNICODE: {
+        // c is >0xfe
+
+        if (c === $$PS_2028 || c === $$LS_2029) {
+          // Line continuation is not supported in regex char class and the escape is explicitly disallowed
+          // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+          ASSERT_skip(c);
+          regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
+          return REGEX_CHARCLASS_BAD;
+        }
+
+        if (webCompat === WEB_COMPAT_ON) {
+          // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
+          // Note: even if c is part of a surrogate pair, it will consume both parts of the pair here so no special handling is required
+          ASSERT_skip(c);
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape ord=' + c + ' in a char class with uflag');
+          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+
+        // so we can already not be valid for u flag, we just need to check here whether we can be valid without u-flag
+        // (any unicode continue char would be a problem)
+        let wide = isIdentRestChr(c, pointer); // c is peeked
+        if (wide === INVALID_IDENT_CHAR) {
+          // c is not unicode continue char
+
+          ASSERT_skip(c);
+
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class contained a "wide" codepoint that was not unicode ID_CONTINUE');
+          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+
+        // else return bad char class because the escape is bad
+        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=' + wide +')');
+        if (wide === VALID_SINGLE_CHAR) {
+          // bad escapes
+          ASSERT_skip(c);
+          return REGEX_CHARCLASS_BAD;
+        }
+
+        ASSERT(wide === VALID_DOUBLE_CHAR, 'wide enum');
+        ASSERT(peeky(c));
+        skipFastWithoutUpdatingCache();
+        skip();
+        return REGEX_CHARCLASS_BAD;
+
+      }
+
+      case REGCLS_ESC_u:
+        // \u<????> and \u{<?..?>}
         ASSERT_skip($$U_75);
         return parseRegexCharClassUnicodeEscape();
 
-      // \x<??>
-      case $$X_78:
+      case REGCLS_ESC_x:
+        // \x<??>
         ASSERT_skip($$X_78);
         if (eofd(1)) {
           regexSyntaxError('First character of hex escape was EOF');
@@ -4058,8 +4161,8 @@ function Lexer(
         ASSERT_skip(b);
         return (hexToNum(a) << 4) | hexToNum(b);
 
-      // char escapes \c<?>
-      case $$C_63: {
+      case REGCLS_ESC_c: {
+        // char escapes \c<?>
         ASSERT_skip($$C_63);
 
         if (eof()) {
@@ -4091,14 +4194,31 @@ function Lexer(
         return REGEX_CHARCLASS_BAD;
       }
 
-      // \b and \B
-      case $$B_62:
+      case REGCLS_ESC_k:
+        ASSERT_skip(c);
+        if (webCompat === WEB_COMPAT_ON) {
+          // A character class is not allowed to have `\k` back references.
+          // In webcompat mode without uflag, you can have `\k` appear as long as it has no `<name>` following it and
+          // as long as there is not an actual usage of named capturing groups in the same regex.
+          // We use globals to track that state because it applies retroactively for the whole regex.
+          kCharClassEscaped = true;
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Can only have `\\k` in a char class without uflag and in webcompat mode');
+          // Note: identity escapes have the escaped char as their "character value", so return `k`
+          return $$K_6B | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=-2)');
+        return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+
+      case REGCLS_ESC_b:
+        // \b
         ASSERT_skip($$B_62);
         // https://tc39.github.io/ecma262/#sec-patterns-static-semantics-character-value
         // ClassEscape :: b
         //   Return the code point value of U+0008 (BACKSPACE).
         return $$BACKSPACE_08;
-      case $$B_UC_42: {
+
+      case REGCLS_ESC_B: {
+        // \B
         // "A ClassAtom can use any of the escape sequences that are allowed in the rest of the regular expression
         // except for \b, \B, and backreferences. Inside a CharacterClass, \b means the backspace character, while
         // \B and backreferences raise errors. Using a backreference inside a ClassAtom causes an error."
@@ -4112,30 +4232,33 @@ function Lexer(
         return REGEX_CHARCLASS_ESCAPED_UC_B;
       }
 
-      // control escapes \f \n \r \t \v
-      case $$F_66:
+      case REGCLS_ESC_f:
+        // control escape \f
         ASSERT_skip($$F_66);
         return 0x000C;
-      case $$N_6E:
+
+      case REGCLS_ESC_n:
+        // control escape \n
         ASSERT_skip($$N_6E);
         return 0x000A;
-      case $$R_72:
+
+      case REGCLS_ESC_r:
+        // control escape \r
         ASSERT_skip($$R_72);
         return 0x000D;
-      case $$T_74:
+
+      case REGCLS_ESC_t:
+        // control escape \t
         ASSERT_skip($$T_74);
         return 0x0009;
-      case $$V_76:
+
+      case REGCLS_ESC_v:
+        // control escape \v
         ASSERT_skip($$V_76);
         return 0x000B;
 
-      // char class escapes \d \D \s \S \w \W
-      case $$D_64:
-      case $$D_UC_44:
-      case $$S_73:
-      case $$S_UC_53:
-      case $$W_77:
-      case $$W_UC_57:
+      case REGCLS_ESC_ERR:
+        // char class escapes \d \D \s \S \w \W
         // "an error occurs if either ClassAtom does not represent a single character (for example, if one is \w)
         // but this only applies to ranges... so we need to create a special token for this to make the distinction
         // because we dont know right now whether c is part of a range or not. in fact it may only be part of a
@@ -4151,9 +4274,8 @@ function Lexer(
 
         return REGEX_CHARCLASS_CLASS_ESCAPE;
 
-      // Unicode property escapes \p{<?...?>} \P{<?...?>}
-      case $$P_70:
-      case $$P_UC_50:
+      case REGCLS_ESC_pP:
+        // Unicode property escapes \p{<?...?>} \P{<?...?>}
         // With uflag, the \p is a unicode property escape and must look like \p{x} or \p{x=y} with x and y whitelisted
         // Without uflag, the \p it leads to IdentityEscape where it fails for any value that is in ID_CONTINUE, inc p
         // In webcompat mode, without uflag, it leads to SourceCharacterIdentityEscape and passes without "body"
@@ -4206,7 +4328,7 @@ function Lexer(
       //     https://tc39.github.io/ecma262/#prod-annexB-SourceCharacterIdentityEscape
       //     SourceCharacter but not one of c or k
       // so; try to parse an octal first. this should work unless it starts with 8 or 8, in that case parse IdentityEscape
-      case $$0_30: {
+      case REGCLS_ESC_0: {
         ASSERT_skip(c);
         // cannot be followed by another digit
         if (neof() && isAsciiNumber(peek())) {
@@ -4220,53 +4342,31 @@ function Lexer(
         }
         return $$NULL_00;
       }
-      case $$1_31:
-      case $$2_32:
-      case $$3_33:
-      case $$4_34:
-      case $$5_35:
-      case $$6_36:
-      case $$7_37: {
+
+      case REGCLS_ESC_1234567: {
         ASSERT_skip(c);
         let reason = 'Back reference is only one digit and cannot be followed by another digit';
         // Without web compat this is a back reference which is illegal in character classes
         if (webCompat === WEB_COMPAT_ON) {
           updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
           return parseOctalFromSecondDigit(c) | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-        } else {
-          regexSyntaxError(reason);
-          return REGEX_CHARCLASS_BAD;
         }
+
+        regexSyntaxError(reason);
+        return REGEX_CHARCLASS_BAD;
       }
-      case $$8_38:
-      case $$9_39:
+
+      case REGCLS_ESC_89:
         ASSERT_skip(c);
         return parseDecimalEscape(c);
 
-      // syntax chars
-      case $$XOR_5E:
-      case $$$_24:
-      case $$BACKSLASH_5C:
-      case $$DOT_2E:
-      case $$STAR_2A:
-      case $$PLUS_2B:
-      case $$QMARK_3F:
-      case $$PAREN_L_28:
-      case $$PAREN_R_29:
-      case $$SQUARE_L_5B:
-      case $$SQUARE_R_5D:
-      case $$CURLY_L_7B:
-      case $$CURLY_R_7D:
-      case $$OR_7C:
+      case REGCLS_ESC_SYNTAX:
+        // \$ \^ etc
         ASSERT_skip(c);
         return c;
 
-      case $$FWDSLASH_2F:
-        // explicitly allowed
-        ASSERT_skip($$FWDSLASH_2F);
-        return $$FWDSLASH_2F;
-
-      case $$DASH_2D: {
+      case REGCLS_ESC_DASH: {
+        // \-
         ASSERT_skip($$DASH_2D);
         if (webCompat === WEB_COMPAT_ON) {
           return $$DASH_2D;
@@ -4277,69 +4377,17 @@ function Lexer(
         }
       }
 
-      case $$CR_0D:
-      case $$LF_0A:
-      case $$PS_2028:
-      case $$LS_2029:
+      case REGCLS_ESC_NL:
         // Line continuation is not supported in regex char class and the escape is explicitly disallowed
         // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
         ASSERT_skip(c);
         regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
         return REGEX_CHARCLASS_BAD;
 
+      // <SCRUB ASSERTS>
       default:
-        // IdentityEscape
-        // with u-flag: forward slash or syntax character (`^$\.*+?()[]{}|`) and these cases are already caught above
-        // without-u-flag: SourceCharacter but not UnicodeIDContinue
-        // without-u-flag in webcompat: SourceCharacter but not `c`, and not `k` iif there is a regex groupname
-        ASSERT(![$$BACKSLASH_5C, $$XOR_5E, $$$_24, $$DOT_2E, $$STAR_2A, $$PLUS_2B, $$QMARK_3F, $$PAREN_L_28, $$PAREN_R_29, $$SQUARE_L_5B, $$SQUARE_R_5D, $$CURLY_L_7B, $$CURLY_R_7D, $$OR_7C].includes(c), 'all these u-flag chars should be checked above');
-        if (webCompat === WEB_COMPAT_ON) {
-          // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
-          if (c === $$C_63) {
-            regexSyntaxError('Cannot have `\\c` in a char class')
-            return REGEX_CHARCLASS_BAD;
-          } else if (c === $$K_6B) {
-            // A character class is not allowed to have `\k` back references.
-            // In webcompat mode without uflag, you can have `\k` appear as long as it has no `<name>` following it and
-            // as long as there is not an actual usage of named capturing groups in the same regex.
-            // We use globals to track that state because it applies retroactively for the whole regex.
-            let reason = 'Can only have `\\k` in a char class without uflag and in webcompat mode';
-            if (webCompat === WEB_COMPAT_ON) {
-              kCharClassEscaped = true;
-              updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-              // Note: identity escapes have the escaped char as their "character value", so return `k`
-              return $$K_6B | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-            } else {
-              regexSyntaxError(reason);
-              return REGEX_CHARCLASS_BAD;
-            }
-          } else {
-            ASSERT_skip(c);
-            updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape ord=' + c + ' in a char class with uflag');
-            return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-          }
-        }
-
-        // so we can already not be valid for u flag, we just need to check here whether we can be valid without u-flag
-        // (any unicode continue char would be a problem)
-        let wide = isIdentRestChr(c, pointer); // c is peeked
-        if (wide === INVALID_IDENT_CHAR) {
-          // c is not unicode continue char
-          ASSERT_skip(c);
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class contained a "wide" codepoint that was not unicode ID_CONTINUE');
-          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-        }
-        // else return bad char class because the escape is bad
-        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=' + wide +')');
-        if (wide === VALID_SINGLE_CHAR) {
-          // bad escapes
-          ASSERT_skip(c);
-        } else if (wide === VALID_DOUBLE_CHAR) {
-          ASSERT(peeky(c));
-          skipFastWithoutUpdatingCache();
-          skip();
-        }
-        return REGEX_CHARCLASS_BAD;
+        ASSERT(false, 'unreachable', c);
+      // </SCRUB ASSERTS>
     }
 
     ASSERT(false, 'unreachable');
@@ -4711,11 +4759,11 @@ function Lexer(
       // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
       updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
       return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-    } else {
-      // https://tc39.es/ecma262/#prod-IdentityEscape
-      regexSyntaxError(reason);
-      return REGEX_CHARCLASS_BAD;
     }
+
+    // https://tc39.es/ecma262/#prod-IdentityEscape
+    regexSyntaxError(reason);
+    return REGEX_CHARCLASS_BAD;
   }
   function parseOctalFromSecondDigit(firstChar) {
 
