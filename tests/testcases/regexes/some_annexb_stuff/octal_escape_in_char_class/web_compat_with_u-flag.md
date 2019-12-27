@@ -53,7 +53,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Back reference is only one digit and cannot be followed by another digit
+    Regex: A character class is not allowed to have numeric back-reference
 
 /[\12-\14]/u
 ^^^^^^^^^^^------- error
@@ -77,7 +77,7 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 
 `````
 throws: Lexer error!
-    Regex: Back reference is only one digit and cannot be followed by another digit; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
+    Regex: A character class is not allowed to have numeric back-reference; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /[\12-\14]/u
 ^^^^^^^^^^^^------- error

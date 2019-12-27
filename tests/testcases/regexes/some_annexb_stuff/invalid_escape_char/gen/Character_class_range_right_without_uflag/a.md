@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: the char class had an escape that would not be valid with and without u-flag (ord=-2)
+    Regex: Cannot escape `a` in a regex char class
 
 /[a-\a]/
 ^^^^^^^^------- error

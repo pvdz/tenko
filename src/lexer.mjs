@@ -4049,17 +4049,19 @@ function Lexer(
     let s = c >= 0x7f ? REGCLS_ESC_UNICODE : regexClassEscapeStartJumpTable[c];
 
     switch (s) {
-      case REGCLS_ESC_NSC: {
+      case REGCLS_ESC_NSC:
         // Non special character
         // IdentityEscape
         // with u-flag: forward slash or syntax character (`^$\.*+?()[]{}|`) and these cases are already caught above
         // without-u-flag: SourceCharacter but not UnicodeIDContinue
         // without-u-flag in webcompat: SourceCharacter but not `c`, and not `k` iif there is a regex groupname
+
+        ASSERT_skip(c);
+
         ASSERT(![$$BACKSLASH_5C, $$K_6B, $$C_63, $$XOR_5E, $$$_24, $$DOT_2E, $$STAR_2A, $$PLUS_2B, $$QMARK_3F, $$PAREN_L_28, $$PAREN_R_29, $$SQUARE_L_5B, $$SQUARE_R_5D, $$CURLY_L_7B, $$CURLY_R_7D, $$OR_7C].includes(c), 'all these u-flag chars should be checked above');
         if (webCompat === WEB_COMPAT_ON) {
           // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
-          ASSERT_skip(c);
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape ord=' + c + ' in a char class with uflag');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag');
           return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
 
@@ -4067,18 +4069,15 @@ function Lexer(
         // (any unicode continue char would be a problem)
         if (isIdentRestChr(c, pointer) === INVALID_IDENT_CHAR) {
           // c is not unicode continue char
-          ASSERT_skip(c);
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class contained a "wide" codepoint that was not unicode ID_CONTINUE');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag');
           return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
 
         ASSERT(isIdentRestChr(c, pointer) === VALID_SINGLE_CHAR, 'c is not unicode since that is caught elsewhere');
 
         // Return bad char class because the escape is bad
-        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=' + isIdentRestChr(c, pointer) +')');
-        ASSERT_skip(c);
+        regexSyntaxError('Cannot escape `' + String.fromCharCode(c) + '` in a regex char class');
         return REGEX_CHARCLASS_BAD;
-      }
 
       case REGCLS_ESC_UNICODE: {
         // c is >0xfe
@@ -4087,7 +4086,7 @@ function Lexer(
           // Line continuation is not supported in regex char class and the escape is explicitly disallowed
           // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
           ASSERT_skip(c);
-          regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
+          regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
           return REGEX_CHARCLASS_BAD;
         }
 
@@ -4095,7 +4094,7 @@ function Lexer(
           // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
           // Note: even if c is part of a surrogate pair, it will consume both parts of the pair here so no special handling is required
           ASSERT_skip(c);
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape ord=' + c + ' in a char class with uflag');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCodePoint(c) + '` in a char class with the u-flag');
           return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
 
@@ -4107,12 +4106,12 @@ function Lexer(
 
           ASSERT_skip(c);
 
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class contained a "wide" codepoint that was not unicode ID_CONTINUE');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCodePoint(c) + '` in a char class with the u-flag');
           return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
 
         // else return bad char class because the escape is bad
-        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=' + wide +')');
+        updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCodePoint(c) + '` in a char class');
         if (wide === VALID_SINGLE_CHAR) {
           // bad escapes
           ASSERT_skip(c);
@@ -4136,7 +4135,9 @@ function Lexer(
         // \x<??>
         ASSERT_skip($$X_78);
         if (eofd(1)) {
-          regexSyntaxError('First character of hex escape was EOF');
+          // Since we are in a class, the regex must have at least two more characters at all, not to crash
+          // so something like `/[\x]/` would not be prevented by this check
+          regexSyntaxError('Found EOF before completely parsing a hex escape (in a char class of a regex)');
           return REGEX_CHARCLASS_BAD;
         }
         let a = peek();
@@ -4182,7 +4183,7 @@ function Lexer(
           // Basically \c is a way to encode the first 26 ascii characters safely, A=1, Z=26, a=1, z=26
           return d % 32;
         }
-        let reason = 'The `\\c` escape is only legal in a char class without uflag and in webcompat mode';
+        let reason = 'The `\\c` escape is only legal in a char class without u-flag and in webcompat mode';
         if (webCompat === WEB_COMPAT_ON) {
           updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
           // This is now an `IdentityEscape` and just parses the `c` itself
@@ -4202,11 +4203,11 @@ function Lexer(
           // as long as there is not an actual usage of named capturing groups in the same regex.
           // We use globals to track that state because it applies retroactively for the whole regex.
           kCharClassEscaped = true;
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Can only have `\\k` in a char class without uflag and in webcompat mode');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Can only have `\\k` in a char class without u-flag and in webcompat mode');
           // Note: identity escapes have the escaped char as their "character value", so return `k`
           return $$K_6B | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
-        regexSyntaxError('the char class had an escape that would not be valid with and without u-flag (ord=-2)');
+        regexSyntaxError('A character class is not allowed to have `\\k` back-reference');
         return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
 
       case REGCLS_ESC_b:
@@ -4345,7 +4346,8 @@ function Lexer(
 
       case REGCLS_ESC_1234567: {
         ASSERT_skip(c);
-        let reason = 'Back reference is only one digit and cannot be followed by another digit';
+        let reason = 'A character class is not allowed to have numeric back-reference';
+
         // Without web compat this is a back reference which is illegal in character classes
         if (webCompat === WEB_COMPAT_ON) {
           updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
