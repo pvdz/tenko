@@ -4,6 +4,9 @@
 import {
   ASSERT,
 } from './utils.mjs';
+import {
+  $$F_66,
+} from "./charcodes.mjs"
 
 // First LEAF_BITS bits are not flags (!), they are "leaf" token types (decimal number, template tail).
 // Other bits are flags, used to augment for super groups (string, number, template)
@@ -1987,6 +1990,8 @@ const REGCLS_ESC_SYNTAX = 18;
 const REGCLS_ESC_DASH = 19;
 const REGCLS_ESC_NL = 20;
 
+const HEX_OOB = 16;
+
 // Inspired by https://twitter.com/Ghost1240145716/status/1186595972232564736 / https://gist.github.com/KFlash/c53a2f0adb25e88ab7cdc3d77d295635
 let tokenStartJumpTable = [
   // val                     hex    end   desc
@@ -2515,6 +2520,137 @@ let regexClassEscapeStartJumpTable = [
   REGCLS_ESC_NSC,              // 0x7E   yes   ~
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
 ];
+let hexValueJumpTable = [
+  // val                     hex    end   desc
+  HEX_OOB,                // 0x00   yes   NUL
+  HEX_OOB,                // 0x01   yes   SOH
+  HEX_OOB,                // 0x02   yes   STX
+  HEX_OOB,                // 0x03   yes   ETX
+  HEX_OOB,                // 0x04   yes   EOT
+  HEX_OOB,                // 0x05   yes   ENQ
+  HEX_OOB,                // 0x06   yes   ACK
+  HEX_OOB,                // 0x07   yes   BEL
+  HEX_OOB,                // 0x08   yes   BS
+  HEX_OOB,                // 0x09   yes   HT
+  HEX_OOB,                // 0x0A   yes   LF
+  HEX_OOB,                // 0x0B   yes   VT
+  HEX_OOB,                // 0x0C   yes   FF
+  HEX_OOB,                // 0x0D   no2   CR :: CR CRLF
+  HEX_OOB,                // 0x0E   yes   SO
+  HEX_OOB,                // 0x0F   yes   SI
+  HEX_OOB,                // 0x10   yes   DLE
+  HEX_OOB,                // 0x11   yes   DC1
+  HEX_OOB,                // 0x12   yes   DC2
+  HEX_OOB,                // 0x13   yes   DC3
+  HEX_OOB,                // 0x14   yes   DC4
+  HEX_OOB,                // 0x15   yes   NAK
+  HEX_OOB,                // 0x16   yes   SYN
+  HEX_OOB,                // 0x17   yes   ETB
+  HEX_OOB,                // 0x18   yes   CAN
+  HEX_OOB,                // 0x19   yes   EM
+  HEX_OOB,                // 0x1A   yes   SUB
+  HEX_OOB,                // 0x1B   yes   ESC
+  HEX_OOB,                // 0x1C   yes   FS
+  HEX_OOB,                // 0x1D   yes   GS
+  HEX_OOB,                // 0x1E   yes   RS
+  HEX_OOB,                // 0x1F   yes   US
+  HEX_OOB,                // 0x20   yes   space
+  HEX_OOB,                // 0x21   no3   ! :: ! != !==
+  HEX_OOB,                // 0x22   no*   "
+  HEX_OOB,                // 0x23   yes   #
+  HEX_OOB,                // 0x24   no*   $
+  HEX_OOB,                // 0x25   no2   % :: % %=
+  HEX_OOB,                // 0x26   no3   & :: & && &=
+  HEX_OOB,                // 0x27   no*   '
+  HEX_OOB,                // 0x28   yes   (
+  HEX_OOB,                // 0x29   yes   )
+  HEX_OOB,                // 0x2A   no4   * :: * ** *= **=
+  HEX_OOB,                // 0x2B   no3   + :: + ++ +=
+  HEX_OOB,                // 0x2C   yes   ,
+  HEX_OOB,                // 0x2D   no4   - :: - -- -= -->
+  HEX_OOB,                // 0x2E   no3   . :: . ... number
+  HEX_OOB,                // 0x2F   no*   / Note: the fwd slash is explicitly allowed to escape in a regex class
+  0,                      // 0x30   no*   0
+  1,                      // 0x31   no*   1
+  2,                      // 0x32   no*   2
+  3,                      // 0x33   no*   3
+  4,                      // 0x34   no*   4
+  5,                      // 0x35   no*   5
+  6,                      // 0x36   no*   6
+  7,                      // 0x37   no*   7
+  8,                      // 0x38   no*   8
+  9,                      // 0x39   no*   9
+  HEX_OOB,                // 0x3A   yes   :
+  HEX_OOB,                // 0x3B   yes   ;
+  HEX_OOB,                // 0x3C   no4   < :: < << <= <<= <!--
+  HEX_OOB,                // 0x3D   no4   = :: = == === =>
+  HEX_OOB,                // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  HEX_OOB,                // 0x3F   yes   ?
+  HEX_OOB,                // 0x40   yes   @
+  10,                     // 0x41   no*   A
+  11,                     // 0x42   no*   B
+  12,                     // 0x43   no*   C
+  13,                     // 0x44   no*   D
+  14,                     // 0x45   no*   E
+  15,                     // 0x46   no*   F
+  HEX_OOB,                // 0x47   no*   G
+  HEX_OOB,                // 0x48   no*   H
+  HEX_OOB,                // 0x49   no*   I
+  HEX_OOB,                // 0x4A   no*   J
+  HEX_OOB,                // 0x4B   no*   K
+  HEX_OOB,                // 0x4C   no*   L
+  HEX_OOB,                // 0x4D   no*   M
+  HEX_OOB,                // 0x4E   no*   N
+  HEX_OOB,                // 0x4F   no*   O
+  HEX_OOB,                // 0x50   no*   P
+  HEX_OOB,                // 0x51   no*   Q
+  HEX_OOB,                // 0x52   no*   R
+  HEX_OOB,                // 0x53   no*   S
+  HEX_OOB,                // 0x54   no*   T
+  HEX_OOB,                // 0x55   no*   U
+  HEX_OOB,                // 0x56   no*   V
+  HEX_OOB,                // 0x57   no*   W
+  HEX_OOB,                // 0x58   no*   X
+  HEX_OOB,                // 0x59   no*   Y
+  HEX_OOB,                // 0x5A   no*   Z
+  HEX_OOB,                // 0x5B   yes   [
+  HEX_OOB,                // 0x5C   no2   \ :: \uHHHH \u{H*}
+  HEX_OOB,                // 0x5D   yes   ]
+  HEX_OOB,                // 0x5E   no2   ^ :: ^ ^=
+  HEX_OOB,                // 0x5F   no*   _ (lodash)
+  HEX_OOB,                // 0x60   no*   ` :: `...${ `...`
+  10,                // 0x61   no*   a
+  11,                // 0x62   no*   b
+  12,                // 0x63   no*   c
+  13,                // 0x64   no*   d
+  14,                // 0x65   no*   e
+  15,                // 0x66   no*   f
+  // Duncare about th rest of the table; the code will shortcircuit that
+  // HEX_OOB,                // 0x67   no*   g
+  // HEX_OOB,                // 0x68   no*   h
+  // HEX_OOB,                // 0x69   no*   i
+  // HEX_OOB,                // 0x6A   no*   j
+  // HEX_OOB,                // 0x6B   no*   k
+  // HEX_OOB,                // 0x6C   no*   l
+  // HEX_OOB,                // 0x6D   no*   m
+  // HEX_OOB,                // 0x6E   no*   n
+  // HEX_OOB,                // 0x6F   no*   o
+  // HEX_OOB,                // 0x70   no*   p
+  // HEX_OOB,                // 0x71   no*   q
+  // HEX_OOB,                // 0x72   no*   r
+  // HEX_OOB,                // 0x73   no*   s
+  // HEX_OOB,                // 0x74   no*   t
+  // HEX_OOB,                // 0x75   no*   u
+  // HEX_OOB,                // 0x76   no*   v
+  // HEX_OOB,                // 0x77   no*   w
+  // HEX_OOB,                // 0x78   no*   x
+  // HEX_OOB,                // 0x79   no*   y
+  // HEX_OOB,                // 0x7A   no*   z
+  // HEX_OOB,                // 0x7B   yes   {
+  // HEX_OOB,                // 0x7C   no3   | :: | || |=
+  // HEX_OOB,                // 0x7D   no3   } :: } }...` }...${
+  // HEX_OOB,                // 0x7E   yes   ~
+];
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
@@ -2558,6 +2694,15 @@ function getIdentPart(c) {
 
   return s;
 }
+function getHexValue(c) {
+  ASSERT(getHexValue.length === arguments.length, 'arg count');
+  ASSERT(typeof c === 'number' && c >= 0, 'c charcode');
+
+  if (c > $$F_66) return HEX_OOB;
+  let v = hexValueJumpTable[c];
+  ASSERT(typeof v === 'number' && v >= 0 && v <= 16, 'hex value or HEX_OOB');
+  return v;
+}
 
 function T(type) {
   ASSERT(typeof type === 'number', 'expecting valid type', type);
@@ -2583,6 +2728,7 @@ export {
   isBadTickToken,
   isNumberStringToken,
   isNumberStringRegex,
+  getHexValue,
 
   toktypeToString,
   T,
@@ -2808,6 +2954,8 @@ export {
   REGCLS_ESC_SYNTAX,
   REGCLS_ESC_DASH,
   REGCLS_ESC_NL,
+
+  HEX_OOB,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,

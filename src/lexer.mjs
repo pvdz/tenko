@@ -156,6 +156,7 @@ import {
   isBadTickToken,
   isNumberStringToken,
   isNumberStringRegex,
+  getHexValue,
 
   toktypeToString,
   T,
@@ -366,6 +367,8 @@ import {
   REGCLS_ESC_SYNTAX,
   REGCLS_ESC_DASH,
   REGCLS_ESC_NL,
+
+  HEX_OOB,
 
   // <SCRUB ASSERTS TO COMMENT>
   ALL_START_TYPES,
@@ -1121,24 +1124,30 @@ function Lexer(
     let c = peekd(2);
     let d = peekd(3);
 
-    // if this is a bad escape then dont consume the chars. one of them could be a closing quote
-    if (isHex(a) && isHex(b) && isHex(c) && isHex(d)) {
-      // okay, _now_ consume them
-      ASSERT(ASSERT_peekUncached() === a);
-      skipFastWithoutUpdatingCache();
-      ASSERT(ASSERT_peekUncached() === b);
-      skipFastWithoutUpdatingCache();
-      ASSERT(ASSERT_peekUncached() === c);
-      skipFastWithoutUpdatingCache();
-      ASSERT(ASSERT_peekUncached() === d);
-      skip();
-      lastCanonizedInput += String.fromCharCode(parseInt(String.fromCharCode(a, b, c, d), 16));
-      ++lastCanonizedInputLen; // Always 1 char
-      return GOOD_ESCAPE;
-    } else {
+    let va = getHexValue(a);
+    let vb = getHexValue(b);
+    let vc = getHexValue(c);
+    let vd = getHexValue(d);
+
+    if ((va | vb | vc | vd) > 15) {
+      // if this is a bad escape then dont consume the chars. one of them could be a closing quote
       if (!lastReportableLexerError) lastReportableLexerError = 'At least one character of the unicode escape was not a valid hex (0-9a-f) character';
       return BAD_ESCAPE;
     }
+
+    ASSERT(ASSERT_peekUncached() === a);
+    skipFastWithoutUpdatingCache();
+    ASSERT(ASSERT_peekUncached() === b);
+    skipFastWithoutUpdatingCache();
+    ASSERT(ASSERT_peekUncached() === c);
+    skipFastWithoutUpdatingCache();
+    ASSERT(ASSERT_peekUncached() === d);
+    skip();
+
+    ASSERT(parseInt(String.fromCharCode(a, b, c, d), 16) === ((va << 12) | (vb << 8) | (vc << 4) | vd), 'confirm manual conversion works');
+    lastCanonizedInput += String.fromCharCode((va << 12) | (vb << 8) | (vc << 4) | vd);
+    ++lastCanonizedInputLen; // Always 1 char
+    return GOOD_ESCAPE;
   }
   function parseStringEscapeUnicodeVary() {
     // "It is a Syntax Error if the MV of HexDigits > 1114111."
@@ -1267,6 +1276,17 @@ function Lexer(
     }
     return c;
   }
+  function skipZeroesIntoHex() {
+    ASSERT(neof(), 'should already been checked');
+
+    let c = peek();
+    while (c === $$0_30) {
+      ASSERT_skip($$0_30);
+      if (eof()) return 0;
+      c = peek();
+    }
+    return getHexValue(c);
+  }
   function parseStringEscapeHex() {
     if (eofd(1)) {
       if (eof()) return GOOD_ESCAPE; // Let it error somewhere else
@@ -1275,21 +1295,25 @@ function Lexer(
     }
     let a = peek();
     let b = peekd(1);
+
+    let va = getHexValue(a);
+    let vb = getHexValue(b);
+
     // confirm they are both hex digits
-    if (isHex(a) && isHex(b)) {
-      // okay, _now_ consume them
-      ASSERT_skip(a);
-      ASSERT_skip(b);
-      lastCanonizedInput += String.fromCharCode(parseInt(String.fromCharCode(a, b), 16));
-      ++lastCanonizedInputLen; // Always 1 char
-      return GOOD_ESCAPE;
-    } else {
+    if ((va | vb) >= HEX_OOB) {
       // '\xz' should have 'xz' as canonized value
       lastCanonizedInput += 'x';
       ++lastCanonizedInputLen;
       if (!lastReportableLexerError) lastReportableLexerError = 'At least one of the two hex characters were not hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
+
+    // okay, _now_ consume them
+    ASSERT_skip(a);
+    ASSERT_skip(b);
+    lastCanonizedInput += String.fromCharCode((va << 4) | vb);
+    ++lastCanonizedInputLen; // Always 1 char
+    return GOOD_ESCAPE;
   }
   function parseStringEscapeOctalOrDigit(a, forTemplate, lexerFlags) {
     ASSERT(arguments.length === parseStringEscapeOctalOrDigit.length, 'need args');
@@ -1703,16 +1727,24 @@ function Lexer(
 
     // at least one digit is required
     let c = peek();
-    if (!isHex(c)) {
+    let cv = getHexValue(c);
+
+    if (cv === HEX_OOB) {
       if (!lastReportableLexerError) lastReportableLexerError = '`0x` is illegal without a digit';
       return $ERROR;
     }
+
     ASSERT_skip(c);
 
     do {
       if (eof()) return $NUMBER_HEX;
+
       c = peek();
-      if (!isHex(c)) break;
+      cv = getHexValue(c);
+
+      if (cv === HEX_OOB) {
+        break;
+      }
       ASSERT_skip(c);
     } while (true);
 
@@ -1726,6 +1758,7 @@ function Lexer(
       return $NUMBER_BIG_HEX;
     }
 
+    // TODO: we could fairly easily/cheaply get the value here...
     return $NUMBER_HEX;
   }
   function isHex(ord) {
@@ -3231,26 +3264,32 @@ function Lexer(
       // hex
       case $$X_78:
         ASSERT_skip(c);
-        if (eof()) return regexSyntaxError('Encountered early EOF while parsing hex escape (1)');
+        if (eof()) { // Can't scan for `eofd(1)` here because `/\x/` can be valid in webcompat mode
+          return regexSyntaxError('Encountered early EOF while parsing hex escape');
+        }
+
         let a = peek();
-        if (!isHex(a)) {
+        let va = getHexValue(a);
+        if (va === HEX_OOB) {
           let reason = 'First char of hex escape not a valid digit';
           if (webCompat === WEB_COMPAT_ON) {
             return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-          } else {
-            return regexSyntaxError(reason);
           }
+          return regexSyntaxError(reason);
         }
         ASSERT_skip(a);
-        if (eof()) return regexSyntaxError('Encountered early EOF while parsing hex escape (2)');
+        if (eof()) {
+          return regexSyntaxError('Encountered early EOF while parsing hex escape');
+        }
+
         let b = peek();
-        if (!isHex(b)) {
+        let vb = getHexValue(b);
+        if (vb === HEX_OOB) {
           let reason = 'Second char of hex escape not a valid digit';
           if (webCompat === WEB_COMPAT_ON) {
             return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-          } else {
-            return regexSyntaxError(reason);
           }
+          return regexSyntaxError(reason);
         }
         ASSERT_skip(b);
         return REGEX_ALWAYS_GOOD;
@@ -3521,8 +3560,13 @@ function Lexer(
     let c = peekd(2);
     let d = peekd(3);
 
+    let va = getHexValue(a);
+    let vb = getHexValue(b);
+    let vc = getHexValue(c);
+    let vd = getHexValue(d);
+
     // if this is a bad escape then dont consume the chars. one of them could be a closing quote
-    if (isHex(a) && isHex(b) && isHex(c) && isHex(d)) {
+    if ((va | vb | vc | vd) < HEX_OOB) {
       // okay, _now_ consume them
       ASSERT(ASSERT_peekUncached() === a);
       skipFastWithoutUpdatingCache();
@@ -3532,19 +3576,26 @@ function Lexer(
       skipFastWithoutUpdatingCache();
       ASSERT(ASSERT_peekUncached() === d);
       skip();
-      let firstPart = hexToNum(a) << 12 | hexToNum(b) << 8 | hexToNum(c) << 4 | hexToNum(d);
+
+      let firstPart = (va << 12) | (vb << 8) | (vc << 4) | vd;
 
       // Is this a surrogate high byte? then we'll try another one
       if (firstPart >= 0xD800 && firstPart <= 0xDBFF) {
         // pretty slow path but we're constructing a low+hi surrogate pair together here
-        if (!eofd(5) && peek() === $$BACKSLASH_5C && peekd(1) === $$U_75 && isHex(peekd(2)) && isHex(peekd(3)) && isHex(peekd(4)) && isHex(peekd(5))) {
+        if (!eofd(5) && peek() === $$BACKSLASH_5C && peekd(1) === $$U_75) {
           let a = peekd(2);
           let b = peekd(3);
           let c = peekd(4);
           let d = peekd(5);
-          let secondPart = hexToNum(a) << 12 | hexToNum(b) << 8 | hexToNum(c) << 4 | hexToNum(d);
 
-          if (secondPart >= 0xDC00 && secondPart <= 0xDFFF) {
+          let va = getHexValue(a);
+          let vb = getHexValue(b);
+          let vc = getHexValue(c);
+          let vd = getHexValue(d);
+
+          let secondPart = va << 12 | vb << 8 | vc << 4 | vd;
+
+          if (((va | vb | vc | vd) < HEX_OOB) && secondPart >= 0xDC00 && secondPart <= 0xDFFF) {
             /*
               https://en.wikipedia.org/wiki/UTF-16
               To decode U+10437 (𐐷) from UTF-16:
@@ -3597,21 +3648,23 @@ function Lexer(
     // must at least parse one hex digit (but it may be invalid so we can't read())
     if (eof()) return GOOD_ESCAPE;  // first one is mandatory
     let a = peek();
-    if (!isHex(a)) {
+    let va = getHexValue(a);
+    if (a === HEX_OOB) {
       // First one is mandatory
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape started with non-hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
     ASSERT_skip(a);
 
-    return _parseRegexUnicodeEscapeVary(a);
+    return _parseRegexUnicodeEscapeVary(va);
   }
-  function _parseRegexUnicodeEscapeVary(a) {
+  function _parseRegexUnicodeEscapeVary(v) {
     // skip leading zeroes if there are any
-    if (a === $$0_30) {
+    if (v === 0) {
       if (eof()) return GOOD_ESCAPE;
-      a = skipZeroes();
-      if (!isHex(a)) {
+      let a = skipZeroes();
+      v = getHexValue(a);
+      if (v === HEX_OOB) {
         // note: we already asserted a zero
         if (a === $$CURLY_R_7D) {
           lastRegexUnicodeEscapeOrd = 0;
@@ -3622,83 +3675,87 @@ function Lexer(
       }
       ASSERT_skip(a);
     }
-    return ___parseRegexUnicodeEscapeVary(a);
+    return ___parseRegexUnicodeEscapeVary(v);
   }
-  function ___parseRegexUnicodeEscapeVary(a) {
+  function ___parseRegexUnicodeEscapeVary(v) {
     if (eof()) return GOOD_ESCAPE;
     let b = peek();
-    if (!isHex(b)) {
+    let vb = getHexValue(b);
+    if (vb === HEX_OOB) {
       if (b === $$CURLY_R_7D) {
-        lastRegexUnicodeEscapeOrd = hexToNum(a);
+        lastRegexUnicodeEscapeOrd = v;
         return GOOD_ESCAPE
       }
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape contained at least one non-hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
     ASSERT_skip(b);
-    return ____parseRegexUnicodeEscapeVary(a, b);
+    return ____parseRegexUnicodeEscapeVary((v << 4) | vb);
   }
-  function ____parseRegexUnicodeEscapeVary(a, b) {
+  function ____parseRegexUnicodeEscapeVary(v) {
     if (eof()) return GOOD_ESCAPE;
     let c = peek();
-    if (!isHex(c)) {
+    let vc = getHexValue(c);
+    if (vc === HEX_OOB) {
       if (c === $$CURLY_R_7D) {
-        lastRegexUnicodeEscapeOrd = hexToNum(a) << 4 | hexToNum(b);
+        lastRegexUnicodeEscapeOrd = v;
         return GOOD_ESCAPE
       }
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape contained at least one non-hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
     ASSERT_skip(c);
-    return _____parseRegexUnicodeEscapeVary(a, b, c);
+    return _____parseRegexUnicodeEscapeVary((v << 4) | vc);
   }
-  function _____parseRegexUnicodeEscapeVary(a, b, c) {
+  function _____parseRegexUnicodeEscapeVary(v) {
     if (eof()) return GOOD_ESCAPE;
     let d = peek();
-    if (!isHex(d)) {
+    let vd = getHexValue(d);
+    if (vd === HEX_OOB) {
       if (d === $$CURLY_R_7D) {
-        lastRegexUnicodeEscapeOrd = hexToNum(a) << 8 | hexToNum(b) << 4 | hexToNum(c);
+        lastRegexUnicodeEscapeOrd = v;
         return GOOD_ESCAPE
       }
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape contained at least one non-hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
     ASSERT_skip(d);
-    return ______parseRegexUnicodeEscapeVary(a, b, c, d);
+    return ______parseRegexUnicodeEscapeVary((v << 4) | vd);
   }
-  function ______parseRegexUnicodeEscapeVary(a, b, c, d) {
+  function ______parseRegexUnicodeEscapeVary(v) {
     if (eof()) return GOOD_ESCAPE;
     let e = peek();
-    if (!isHex(e)) {
+    let ve = getHexValue(e);
+    if (ve === HEX_OOB) {
       if (e === $$CURLY_R_7D) {
-        lastRegexUnicodeEscapeOrd = hexToNum(a) << 12 | hexToNum(b) << 8 | hexToNum(c) << 4 | hexToNum(d);
+        lastRegexUnicodeEscapeOrd = v;
         return GOOD_ESCAPE
       }
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape contained at least one non-hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
     ASSERT_skip(e);
-    return _______parseRegexUnicodeEscapeVary(a, b, c, d, e);
+    return _______parseRegexUnicodeEscapeVary((v << 4) | ve);
   }
-  function _______parseRegexUnicodeEscapeVary(a, b, c, d, e) {
+  function _______parseRegexUnicodeEscapeVary(v) {
     if (eof()) return GOOD_ESCAPE;
     let f = peek();
-    if (!isHex(f)) {
+    let vf = getHexValue(f);
+    if (vf === HEX_OOB) {
       if (f === $$CURLY_R_7D) {
-        lastRegexUnicodeEscapeOrd = hexToNum(a) << 16 | hexToNum(b) << 12 | hexToNum(c) << 8 | hexToNum(d) << 4 | hexToNum(e);
+        lastRegexUnicodeEscapeOrd = v;
         return GOOD_ESCAPE
       }
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape contained at least one non-hex character (0-9a-f)';
       return BAD_ESCAPE;
     }
     ASSERT_skip(f);
-    return ________parseRegexUnicodeEscapeVary(a, b, c, d, e, f);
+    return ________parseRegexUnicodeEscapeVary((v << 4) | vf);
   }
-  function ________parseRegexUnicodeEscapeVary(a, b, c, d, e, f) {
-    let codePoint = hexToNum(a) << 20 | hexToNum(b) << 16 | hexToNum(c) << 12 | hexToNum(d) << 8 | hexToNum(e) << 4 | hexToNum(f);
+  function ________parseRegexUnicodeEscapeVary(v) {
     // the total may not exceed 0x10ffff
-    if (codePoint > 0x10ffff) {
-      if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape escaped a code point that was out of bounds (>0x10ffff)';
+    if (v > 0x10ffff) {
+      if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape escaped a code point that was out of bounds (' + v + ' > 0x10ffff)';
       return BAD_ESCAPE;
     }
     if (eof()) return GOOD_ESCAPE;
@@ -3706,7 +3763,7 @@ function Lexer(
       if (!lastReportableLexerError) lastReportableLexerError = 'Variable unicode escape was not closed after finding the max allowed hex digits';
       return BAD_ESCAPE;
     }
-    lastRegexUnicodeEscapeOrd = codePoint;
+    lastRegexUnicodeEscapeOrd = v;
     return GOOD_ESCAPE;
   }
 
@@ -4140,8 +4197,10 @@ function Lexer(
           regexSyntaxError('Found EOF before completely parsing a hex escape (in a char class of a regex)');
           return REGEX_CHARCLASS_BAD;
         }
+
         let a = peek();
-        if (!isHex(a)) {
+        let va = getHexValue(a);
+        if (va === HEX_OOB) {
           let reason = 'First character of hex escape was invalid';
           // I think the \x should be accepted as SourceCharacterIdentityEscape now...?
           if (webCompat === WEB_COMPAT_ON) {
@@ -4154,13 +4213,17 @@ function Lexer(
           }
         }
         ASSERT_skip(a);
+
         let b = peek();
-        if (!isHex(b)) {
+        let vb = getHexValue(b);
+        if (vb === HEX_OOB) {
+          // TODO: is this valid in webcompat?
           regexSyntaxError('Second character of hex escape was invalid');
           return REGEX_CHARCLASS_BAD;
         }
         ASSERT_skip(b);
-        return (hexToNum(a) << 4) | hexToNum(b);
+
+        return (va << 4) | vb;
 
       case REGCLS_ESC_c: {
         // char escapes \c<?>
@@ -4372,11 +4435,10 @@ function Lexer(
         ASSERT_skip($$DASH_2D);
         if (webCompat === WEB_COMPAT_ON) {
           return $$DASH_2D;
-        } else {
-          // only valid with u-flag!
-          updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Escaping a dash in a char class is not allowed');
-          return $$DASH_2D | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
         }
+        // only valid with u-flag!
+        updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Escaping a dash in a char class is not allowed');
+        return $$DASH_2D | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
       }
 
       case REGCLS_ESC_NL:
@@ -4575,12 +4637,6 @@ function Lexer(
     } else {
       return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag, or as a webcompat edge case');
     }
-  }
-  function hexToNum(c) {
-    ASSERT(isHex(c), 'hexToNum c should be verified hex');
-    if (c <= $$9_39) return c - $$0_30;
-    if (c <= $$Z_UC_5A) return (c - $$A_UC_41) + 10;
-    return (c - $$A_61) + 10;
   }
   function parseRegexFlags() {
     // there are 5 valid flags and in unicode mode each flag may only occur once
@@ -4851,28 +4907,33 @@ function Lexer(
       regexSyntaxError('Early EOF while parsing character class escape');
       return REGEX_CHARCLASS_BAD;
     }
+
     let c = peek(); // dont read. we dont want to consume a bad \n here
     if (c === $$CURLY_L_7B) {
       ASSERT_skip($$CURLY_L_7B);
       let r = parseRegexCharClassUnicodeEscapeVary();
+
       if (r === REGEX_CHARCLASS_BAD) {
         regexSyntaxError('Missing curly of unicode long escape in a regex');
         return REGEX_CHARCLASS_BAD;
       }
+
       if (eof()) {
         regexSyntaxError('Early EOF while parsing variable unicode escape in regex character class');
         return REGEX_CHARCLASS_BAD;
       }
+
       if (!peeky($$CURLY_R_7D)) {
         regexSyntaxError('Missing curly of unicode long escape in a regex');
         return REGEX_CHARCLASS_BAD;
       }
+
       ASSERT_skip($$CURLY_R_7D);
       updateRegexPotentialError('The es6 long unicode escape is only valid with u-flag');
       return r | REGEX_CHARCLASS_BAD_SANS_U_FLAG; // `\u{}` in regexes is restricted to +u flag
-    } else {
-      return parseRegexCharClassUnicodeEscapeQuad(c);
     }
+
+    return parseRegexCharClassUnicodeEscapeQuad(c);
   }
   function parseRegexCharClassUnicodeEscapeQuad(a) {
     // This returns the code point, if valid, possibly together with REGEX_CHARCLASS_BAD_SANS_U_FLAG
@@ -4887,75 +4948,89 @@ function Lexer(
       updateRegexPotentialError('Unexpected EOF while parsing unicode escape');
       return REGEX_CHARCLASS_BAD;
     }
+
     let b = peekd(1);
     let c = peekd(2);
     let d = peekd(3);
-    // if this is a bad escape then dont consume the chars. one of them could be a closing quote
-    if (isHex(a) && isHex(b) && isHex(c) && isHex(d)) {
-      // okay, _now_ consume them
-      ASSERT_skip(a);
-      ASSERT_skip(b);
-      ASSERT_skip(c);
-      ASSERT_skip(d);
 
-      let firstPart = (hexToNum(a) << 12) | (hexToNum(b) << 8) | (hexToNum(c) << 4) | hexToNum(d);
+    let va = getHexValue(a);
+    let vb = getHexValue(b);
+    let vc = getHexValue(c);
+    let vd = getHexValue(d);
 
-      // Is this a surrogate high byte? then we'll try another one
-      if (firstPart >= 0xD800 && firstPart <= 0xDBFF) {
-        // `\uxxxx\uxxxx`         (we've verified the first quad is a valid surrogate head)
-        //        ^
-
-        // pretty slow path but we're constructing a low+hi surrogate pair together here
-        if (
-          !eofd(5) &&
-          peek() === $$BACKSLASH_5C &&
-          peekd(1) === $$U_75 &&
-          isHex(peekd(2)) &&
-          isHex(peekd(3)) &&
-          isHex(peekd(4)) &&
-          isHex(peekd(5))
-        ) {
-          let a = peekd(2);
-          let b = peekd(3);
-          let c = peekd(4);
-          let d = peekd(5);
-          let secondPart = hexToNum(a) << 12 | hexToNum(b) << 8 | hexToNum(c) << 4 | hexToNum(d);
-
-          if (secondPart >= 0xDC00 && secondPart <= 0xDFFF) {
-            /*
-              https://en.wikipedia.org/wiki/UTF-16
-              To decode U+10437 (𐐷) from UTF-16:
-              Take the high surrogate (0xD801) and subtract 0xD800, then multiply by 0x400, resulting in 0x0001 * 0x400 = 0x0400.
-              Take the low surrogate (0xDC37) and subtract 0xDC00, resulting in 0x37.
-              Add these two results together (0x0437), and finally add 0x10000 to get the final decoded UTF-32 code point, 0x10437.
-             */
-            // firstPart = 0xD801;
-            // secondPart = 0xDC37;
-            // let expected = 0x10437;
-
-            // now skip `\uxxxx` (6)
-            ASSERT_skip($$BACKSLASH_5C);
-            ASSERT_skip($$U_75);
-            ASSERT_skip(a);
-            ASSERT_skip(b);
-            ASSERT_skip(c);
-            ASSERT_skip(d);
-
-            let codepoint = surrogateToCodepoint(firstPart, secondPart);
-
-            updateRegexPotentialError('A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag');
-
-            // We have a matching low+hi, combine them
-            // Without u-flag the surrogate tail is just a separate character
-            return codepoint | REGEX_CHARCLASS_DOUBLE_QUAD;
-          }
-        }
-      }
-      return firstPart;
-    } else {
+    if ((va | vb | vc | vd) > 15) {
+      // if this is a bad escape then dont consume the chars. one of them could be a closing quote
       updateRegexPotentialError('Attempted to parse a unicode quad escape but at least one digit was not a hex');
       return REGEX_CHARCLASS_BAD;
     }
+
+    // Okay, _now_ consume them
+    ASSERT_skip(a);
+    ASSERT_skip(b);
+    ASSERT_skip(c);
+    ASSERT_skip(d);
+
+    let firstPart = (va << 12) | (vb << 8) | (vc << 4) | vd;
+    ASSERT(parseInt(String.fromCharCode(a, b, c, d), 16) === firstPart, 'confirm manual conversion works');
+
+    // Pretty slow path but we're constructing a low+hi surrogate pair together here
+    if (
+      eofd(5) || // we need at least a couple more bytes for this to work at all
+      firstPart < 0xD800 || firstPart > 0xDBFF || // "Is this a surrogate high byte?"
+
+      // `\uxxxx\uxxxx`         (we've verified the first quad is a valid surrogate head)
+      //        ^
+      peek() !== $$BACKSLASH_5C ||
+      peekd(1) !== $$U_75
+    ) {
+      return firstPart;
+    }
+
+    // `\uxxxx\uxxxx`         (we've verified the first quad is a valid surrogate head and the `\u` of the second)
+    //        ^
+    let e = peekd(2);
+    let f = peekd(3);
+    let g = peekd(4);
+    let h = peekd(5);
+
+    let ve = getHexValue(e);
+    let vf = getHexValue(f);
+    let vg = getHexValue(g);
+    let vh = getHexValue(h);
+
+    let secondPart = (ve << 12) | (vf << 8) | (vg << 4) | vh;
+    ASSERT(parseInt(String.fromCharCode(e, f, g, h), 16) === secondPart, 'confirm manual conversion works');
+
+    if (secondPart < 0xDC00 || secondPart > 0xDFFF) {
+      return firstPart;
+    }
+
+    /*
+      https://en.wikipedia.org/wiki/UTF-16
+      To decode U+10437 (𐐷) from UTF-16:
+      Take the high surrogate (0xD801) and subtract 0xD800, then multiply by 0x400, resulting in 0x0001 * 0x400 = 0x0400.
+      Take the low surrogate (0xDC37) and subtract 0xDC00, resulting in 0x37.
+      Add these two results together (0x0437), and finally add 0x10000 to get the final decoded UTF-32 code point, 0x10437.
+     */
+    // firstPart = 0xD801;
+    // secondPart = 0xDC37;
+    // let expected = 0x10437;
+
+    // now skip `\uxxxx` (6)
+    ASSERT_skip($$BACKSLASH_5C);
+    ASSERT_skip($$U_75);
+    ASSERT_skip(e);
+    ASSERT_skip(f);
+    ASSERT_skip(g);
+    ASSERT_skip(h);
+
+    let codepoint = surrogateToCodepoint(firstPart, secondPart);
+
+    updateRegexPotentialError('A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag');
+
+    // We have a matching low+hi, combine them
+    // Without u-flag the surrogate tail is just a separate character
+    return codepoint | REGEX_CHARCLASS_DOUBLE_QUAD;
   }
   function parseRegexCharClassUnicodeEscapeVary() {
     // "It is a Syntax Error if the MV of HexDigits > 1114111."
@@ -4963,81 +5038,89 @@ function Lexer(
     // it can have any number of leading zeroes so we still need to loop
 
     // must at least parse one hex digit (but it may be invalid so we can't read())
-    if (eof()) return REGEX_CHARCLASS_BAD;  // first one is mandatory
+    if (eof()) return REGEX_CHARCLASS_BAD; // first one is mandatory
+
     let a = peek();
-    if (!isHex(a)) return REGEX_CHARCLASS_BAD; // first one is mandatory
+    let va = getHexValue(a);
+    if (va === HEX_OOB) return REGEX_CHARCLASS_BAD; // first one is mandatory
     ASSERT_skip(a);
 
-    let c = _parseRegexUnicodeEscapeVary2(a);
+    let c = _parseRegexUnicodeEscapeVary2(va);
     if (c === REGEX_CHARCLASS_BAD) {
       updateRegexPotentialError('Encountered early EOF while parsing a unicode long escape in a regex');
       return REGEX_CHARCLASS_BAD;
     }
     return c;
   }
-  function _parseRegexUnicodeEscapeVary2(a) {
+  function _parseRegexUnicodeEscapeVary2(v) {
     // skip leading zeroes if there are any
-    if (a === $$0_30) {
+    if (v === 0) {
       if (eof()) return REGEX_CHARCLASS_BAD;
-      a = skipZeroes();
-      if (!isHex(a)) {
+      let c = skipZeroes();
+      v = getHexValue(c);
+      if (v === HEX_OOB) {
         // note: we already asserted a zero
         return 0;
       }
-      ASSERT_skip(a);
+      ASSERT_skip(c);
     }
 
-    return __parseRegexUnicodeEscapeVary2(a);
+    return __parseRegexUnicodeEscapeVary2(v);
   }
-  function __parseRegexUnicodeEscapeVary2(a) {
+  function __parseRegexUnicodeEscapeVary2(v) {
     if (eof()) return REGEX_CHARCLASS_BAD;
     let b = peek();
-    if (!isHex(b)) {
-      return hexToNum(a);
+    let vb = getHexValue(b);
+    if (vb === HEX_OOB) {
+      return v;
     }
     ASSERT_skip(b);
 
-    return ___parseRegexUnicodeEscapeVary2(a, b);
+    return ___parseRegexUnicodeEscapeVary2((v << 4) + vb);
   }
-  function ___parseRegexUnicodeEscapeVary2(a, b) {
+  function ___parseRegexUnicodeEscapeVary2(v) {
     if (eof()) return REGEX_CHARCLASS_BAD;
     let c = peek();
-    if (!isHex(c)) {
-      return (hexToNum(a) << 4) | hexToNum(b);
+    let vc = getHexValue(c);
+    if (vc === HEX_OOB) {
+      return v;
     }
     ASSERT_skip(c);
 
-    return ____parseRegexUnicodeEscapeVary2(a, b, c);
+    return ____parseRegexUnicodeEscapeVary2((v << 4) + vc);
   }
-  function ____parseRegexUnicodeEscapeVary2(a, b, c) {
+  function ____parseRegexUnicodeEscapeVary2(v) {
     if (eof()) return REGEX_CHARCLASS_BAD;
     let d = peek();
-    if (!isHex(d)) {
-      return (hexToNum(a) << 8) | (hexToNum(b) << 4) | hexToNum(c);
+    let vd = getHexValue(d);
+    if (vd === HEX_OOB) {
+      return v;
     }
     ASSERT_skip(d);
 
-    return _____parseRegexUnicodeEscapeVary2(a, b, c, d);
+    return _____parseRegexUnicodeEscapeVary2((v << 4) + vd);
   }
-  function _____parseRegexUnicodeEscapeVary2(a, b, c, d) {
+  function _____parseRegexUnicodeEscapeVary2(v) {
     if (eof()) return REGEX_CHARCLASS_BAD;
     let e = peek();
-    if (!isHex(e)) {
-      return (hexToNum(a) << 12) | (hexToNum(b) << 8) | (hexToNum(c) << 4) | hexToNum(d);
+    let ve = getHexValue(e);
+    if (ve === HEX_OOB) {
+      return v;
     }
     ASSERT_skip(e);
 
-    return ______parseRegexUnicodeEscapeVary2(a, b, c, d, e);
+    return ______parseRegexUnicodeEscapeVary2((v << 4) + ve);
   }
-  function ______parseRegexUnicodeEscapeVary2(a, b, c, d, e) {
+  function ______parseRegexUnicodeEscapeVary2(v) {
     if (eof()) return REGEX_CHARCLASS_BAD;
     let f = peek();
-    if (!isHex(f)) {
-      return (hexToNum(a) << 16) | (hexToNum(b) << 12) | (hexToNum(c) << 8) | (hexToNum(d) << 4) | hexToNum(e);
+    let vf = getHexValue(f);
+    if (vf === HEX_OOB) {
+      return v;
     }
     ASSERT_skip(f);
 
-    let r = (hexToNum(a) << 20) | (hexToNum(b) << 16) | (hexToNum(c) << 12) | (hexToNum(d) << 8) | (hexToNum(e) << 4) | hexToNum(f);
+    let r = (v << 4) + vf;
     return Math.min(0x110000, r);
   }
 
