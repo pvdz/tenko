@@ -345,6 +345,20 @@ import {
   IDENT_BS,
   IDENT_UNICODE,
 
+  regexAtomEscapeStartJumpTable,
+  REGATOM_ESC_NONU,
+  REGATOM_ESC_OK,
+  REGATOM_ESC_u,
+  REGATOM_ESC_x,
+  REGATOM_ESC_UNICODE,
+  REGATOM_ESC_c,
+  REGATOM_ESC_pP,
+  REGATOM_ESC_0,
+  REGATOM_ESC_123456789,
+  REGATOM_ESC_k,
+  REGATOM_ESC_NL,
+  REGATOM_ESC_WC,
+
   regexClassEscapeStartJumpTable,
   REGCLS_ESC_NSC,
   REGCLS_ESC_UNICODE,
@@ -3140,13 +3154,24 @@ function Lexer(
     // -- \u{...} only allowed with u flag
     // -- unicode, digit, char, hex escapes
 
-    switch (c) {
-      case $$U_75:
+    let s = c > 0x7e ? REGATOM_ESC_UNICODE : regexAtomEscapeStartJumpTable[c];
+
+    switch (s) { // Keep cases in same order as enum value
+      case REGATOM_ESC_OK:
+        // control escapes (f, n, r, t, v)
+        // char class escapes (d, D, s, S, w, W)
+        // forward slash (/)
+        // syntax chars (^, $, \, ., *, +, ?, (, ), [, ], {, }, |)
+        // and any ascii char that doesn't fit other cases
+        ASSERT_skip(c);
+        return REGEX_ALWAYS_GOOD;
+
+      case REGATOM_ESC_u:
         ASSERT_skip($$U_75);
         return parseRegexAtomUnicodeEscape();
 
-      // hex
-      case $$X_78:
+      case REGATOM_ESC_x:
+        // hex
         ASSERT_skip(c);
         if (eof()) { // Can't scan for `eofd(1)` here because `/\x/` can be valid in webcompat mode
           return regexSyntaxError('Encountered early EOF while parsing hex escape');
@@ -3178,151 +3203,13 @@ function Lexer(
         ASSERT_skip(b);
         return REGEX_ALWAYS_GOOD;
 
-      // char escapes
-      case $$C_63:
-        ASSERT_skip($$C_63);
-        if (eof()) return regexSyntaxError('Encountered early EOF while parsing char escape');
-        let d = peek();
-        if (isAsciiLetter(d)) {
-          ASSERT_skip(d);
-          return REGEX_ALWAYS_GOOD;
-        }
-        let reason = 'Illegal char escape char (ord=' + d + ')';
-        if (webCompat === WEB_COMPAT_ON) {
-          // this is now an `IdentityEscape` and just parses the `c` itself
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-        }
-        return regexSyntaxError(reason);
-
-      // control escapes
-      case $$F_66:
+      case REGATOM_ESC_NONU:
+        // Non-special non-id chars can only be escaped if there is no u-flag
         ASSERT_skip(c);
-        return REGEX_ALWAYS_GOOD;
+        // Atom escape was acceptable but only without u-flag
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atoms can only escape certain non-special chars without u-flag');
 
-      case $$N_6E:
-      case $$R_72:
-      case $$T_74:
-      case $$V_76:
-
-      // char class escapes
-      case $$D_64:
-      case $$D_UC_44:
-      case $$S_73:
-      case $$S_UC_53:
-      case $$W_77:
-      case $$W_UC_57:
-        // "an error occurs if either ClassAtom does not represent a single character (for example, if one is \w)"
-        ASSERT_skip(c);
-        return REGEX_ALWAYS_GOOD;
-
-      // Unicode property escapes \p{<?...?>} \P{<?...?>}
-      case $$P_70:
-      case $$P_UC_50:
-        const NOT_FROM_CHAR_CLASS = false;
-        let regexPropState = parseRegexPropertyEscape(c, NOT_FROM_CHAR_CLASS);
-        if (regexPropState === REGEX_ALWAYS_BAD) {
-          ASSERT(regexPropState !== REGEX_ALWAYS_BAD || lastReportableLexerError, 'if not good then error should be set');
-          return REGEX_ALWAYS_BAD;
-        } else if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
-          ASSERT(lastPotentialRegexError, 'potential error should have been processed by now');
-          // semantically ignored without u-flag, syntactically only okay in web-compat / Annex B mode
-          if (webCompat === WEB_COMPAT_ON) return regexPropState;
-          return regexSyntaxError('(assertion fail)');
-        } else if (regexPropState !== REGEX_ALWAYS_GOOD) {
-          ASSERT(regexPropState === REGEX_GOOD_WITH_U_FLAG, 'regexPropState enum');
-          if (webCompat === WEB_COMPAT_ON) return TODO,REGEX_ALWAYS_GOOD; // confirm when a with-uflag is overturned by webcompat
-          return REGEX_GOOD_WITH_U_FLAG;
-        } else {
-          return REGEX_ALWAYS_GOOD;
-        }
-
-      // syntax chars
-      case $$XOR_5E:
-      case $$$_24:
-      case $$BACKSLASH_5C:
-      case $$DOT_2E:
-      case $$STAR_2A:
-      case $$PLUS_2B:
-      case $$QMARK_3F:
-      case $$PAREN_L_28:
-      case $$PAREN_R_29:
-      case $$SQUARE_L_5B:
-      case $$SQUARE_R_5D:
-      case $$CURLY_L_7B:
-      case $$CURLY_R_7D:
-      case $$OR_7C:
-        ASSERT_skip(c);
-        return REGEX_ALWAYS_GOOD;
-
-      // digits
-      case $$0_30:
-        ASSERT_skip($$0_30);
-        // cannot be followed by another digit unless webcompat
-        if (eof()) return REGEX_ALWAYS_GOOD; // let error happen elsewhere
-        if (isAsciiNumber(peek())) {
-          let reason = 'Back references can not have more two or more consecutive numbers';
-          if (webCompat === WEB_COMPAT_ON) {
-            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-          } else {
-            return regexSyntaxError(reason);
-          }
-        }
-        return REGEX_ALWAYS_GOOD;
-
-      case $$1_31:
-      case $$2_32:
-      case $$3_33:
-      case $$4_34:
-      case $$5_35:
-      case $$6_36:
-      case $$7_37:
-      case $$8_38:
-      case $$9_39:
-        return parseRegexDecimalEscape(c);
-
-      case $$K_6B: {
-        // named backreference
-
-        let uflagStatus = REGEX_ALWAYS_GOOD;
-
-        ASSERT_skip($$K_6B);
-        if (eof()) return regexSyntaxError('Early EOF while parsing `\\k` escape in regex character class');
-        c = peek();
-        if (c !== $$LT_3C) {
-          let reason = 'Named back reference \\k; missing group name';
-          if (webCompat === WEB_COMPAT_OFF) {
-            return regexSyntaxError(reason, c);
-          }
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-        }
-        ASSERT_skip($$LT_3C);
-        if (eof()) return regexSyntaxError('Early EOF while parsing `\\k` escape in regex character class');
-        c = peek();
-
-        const FOR_K_ESCAPE = false;
-        uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_K_ESCAPE);
-        ASSERT(lastCanonizedInputLen === lastCanonizedInput.length, 'should always be in sync');
-        if (lastCanonizedInputLen > 0) namedBackRefs.push(lastCanonizedInput); // we can only validate ths after completely parsing the regex body
-
-        // If the group name contained a `\u{..}` escape then the u-flag must be valid for this regex to be valid
-        return uflagStatus;
-      }
-
-      case $$FWDSLASH_2F:
-        // explicitly allowed
-        ASSERT_skip($$FWDSLASH_2F);
-        return REGEX_ALWAYS_GOOD;
-
-      case $$CR_0D:
-      case $$LF_0A:
-      case $$PS_2028:
-      case $$LS_2029:
-        // Line continuation is not supported in regex and the escape is explicitly disallowed
-        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
-        ASSERT_skip(c);
-        return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
-
-      default:
+      case REGATOM_ESC_UNICODE:
         // this is, probably;
         //
         // IdentityEscape [U] ::
@@ -3331,6 +3218,13 @@ function Lexer(
         //   [~U] SourceCharacter but not UnicodeIDContinue
         //
         // Note: SyntaxCharacter and `/` is already checked in the switch above, so we focus on the ~U step
+
+        if (c === $$PS_2028 || c === $$LS_2029) {
+          // Line continuation is not supported in regex and the escape is explicitly disallowed
+          // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+          ASSERT_skip(c);
+          return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
+        }
 
         let wide = isIdentRestChr(c, pointer);
         if (wide === VALID_DOUBLE_CHAR) {
@@ -3358,6 +3252,107 @@ function Lexer(
 
         // Ok, atom escape was acceptable but only without u-flag
         return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
+
+      case REGATOM_ESC_c:
+        // char escapes
+        ASSERT_skip($$C_63);
+        if (eof()) return regexSyntaxError('Encountered early EOF while parsing char escape');
+        let d = peek();
+        if (isAsciiLetter(d)) {
+          ASSERT_skip(d);
+          return REGEX_ALWAYS_GOOD;
+        }
+        let reason = 'Illegal char escape char (ord=' + d + ')';
+        if (webCompat === WEB_COMPAT_ON) {
+          // this is now an `IdentityEscape` and just parses the `c` itself
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+        }
+        return regexSyntaxError(reason);
+
+      case REGATOM_ESC_pP:
+        // Unicode property escapes \p{<?...?>} \P{<?...?>}
+        const NOT_FROM_CHAR_CLASS = false;
+        let regexPropState = parseRegexPropertyEscape(c, NOT_FROM_CHAR_CLASS);
+        if (regexPropState === REGEX_ALWAYS_BAD) {
+          ASSERT(regexPropState !== REGEX_ALWAYS_BAD || lastReportableLexerError, 'if not good then error should be set');
+          return REGEX_ALWAYS_BAD;
+        } else if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
+          ASSERT(lastPotentialRegexError, 'potential error should have been processed by now');
+          // semantically ignored without u-flag, syntactically only okay in web-compat / Annex B mode
+          if (webCompat === WEB_COMPAT_ON) return regexPropState;
+          return regexSyntaxError('(assertion fail)');
+        } else if (regexPropState !== REGEX_ALWAYS_GOOD) {
+          ASSERT(regexPropState === REGEX_GOOD_WITH_U_FLAG, 'regexPropState enum');
+          if (webCompat === WEB_COMPAT_ON) return TODO,REGEX_ALWAYS_GOOD; // confirm when a with-uflag is overturned by webcompat
+          return REGEX_GOOD_WITH_U_FLAG;
+        } else {
+          return REGEX_ALWAYS_GOOD;
+        }
+
+      case REGATOM_ESC_0:
+        ASSERT_skip($$0_30);
+        // cannot be followed by another digit unless webcompat
+        if (eof()) return REGEX_ALWAYS_GOOD; // let error happen elsewhere
+        if (isAsciiNumber(peek())) {
+          let reason = 'Back references can not have more two or more consecutive numbers';
+          if (webCompat === WEB_COMPAT_ON) {
+            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+          } else {
+            return regexSyntaxError(reason);
+          }
+        }
+        return REGEX_ALWAYS_GOOD;
+
+      case REGATOM_ESC_123456789:
+        return parseRegexDecimalEscape(c);
+
+      case REGATOM_ESC_k: {
+        // named backreference
+
+        let uflagStatus = REGEX_ALWAYS_GOOD;
+
+        ASSERT_skip($$K_6B);
+        if (eof()) return regexSyntaxError('Early EOF while parsing `\\k` escape in regex character class');
+        c = peek();
+        if (c !== $$LT_3C) {
+          let reason = 'Named back reference \\k; missing group name';
+          if (webCompat === WEB_COMPAT_OFF) {
+            return regexSyntaxError(reason, c);
+          }
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+        }
+        ASSERT_skip($$LT_3C);
+        if (eof()) return regexSyntaxError('Early EOF while parsing `\\k` escape in regex character class');
+        c = peek();
+
+        const FOR_K_ESCAPE = false;
+        uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_K_ESCAPE);
+        ASSERT(lastCanonizedInputLen === lastCanonizedInput.length, 'should always be in sync');
+        if (lastCanonizedInputLen > 0) namedBackRefs.push(lastCanonizedInput); // we can only validate ths after completely parsing the regex body
+
+        // If the group name contained a `\u{..}` escape then the u-flag must be valid for this regex to be valid
+        return uflagStatus;
+      }
+
+      case REGATOM_ESC_NL:
+        // Line continuation is not supported in regex and the escape is explicitly disallowed
+        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+        ASSERT_skip(c);
+        return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
+
+      case REGATOM_ESC_WC:
+        // Non-special letters can only be escaped in webcompat mode and without u-flag
+        ASSERT_skip(c);
+        if (webCompat === WEB_COMPAT_ON) {
+          // Atom escape was acceptable but only without u-flag
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag');
+        }
+        return regexSyntaxError('Cannot escape this letter [' + String.fromCharCode(c) + ']');
+
+      // <SCRUB ASSERTS>
+      default:
+        ASSERT(false, 'unreachable', c);
+      // </SCRUB ASSERTS>
     }
     THROW('dis be dead code', pointer, pointer);
   }

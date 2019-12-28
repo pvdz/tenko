@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Atom escape can only escape certain syntax chars with u-flag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
+    Regex: Atoms can only escape certain non-special chars without u-flag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
 /\ /u
 ^^^^^------- error

@@ -1968,6 +1968,19 @@ const IDENT_END = 1;
 const IDENT_BS = 2;
 const IDENT_UNICODE = 3;
 
+const REGATOM_ESC_OK = 0; // Chars without special processing that are always allowed to be escaped
+const REGATOM_ESC_u = 2;
+const REGATOM_ESC_x = 3;
+const REGATOM_ESC_NONU = 1; // Non-special characters are only allowed to be escaped without u-flag
+const REGATOM_ESC_UNICODE = 4;
+const REGATOM_ESC_c = 5;
+const REGATOM_ESC_pP = 6;
+const REGATOM_ESC_0 = 7;
+const REGATOM_ESC_123456789 = 8;
+const REGATOM_ESC_k = 9;
+const REGATOM_ESC_NL = 10;
+const REGATOM_ESC_WC = 11; // Letters which are not special to escape can only be escaped in webcompat mode
+
 const REGCLS_ESC_NSC = 0;
 const REGCLS_ESC_UNICODE = 1;
 const REGCLS_ESC_u = 2;
@@ -2388,6 +2401,137 @@ let identScanTable = [
   IDENT_END,              // 0x7E   yes   ~
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
   // START_ERROR,            // 0x7F   yes   DEL
+];
+let regexAtomEscapeStartJumpTable = [
+  // val                      hex    end   desc
+  REGATOM_ESC_NONU,        // 0x00   yes   NUL
+  REGATOM_ESC_NONU,        // 0x01   yes   SOH
+  REGATOM_ESC_NONU,        // 0x02   yes   STX
+  REGATOM_ESC_NONU,        // 0x03   yes   ETX
+  REGATOM_ESC_NONU,        // 0x04   yes   EOT
+  REGATOM_ESC_NONU,        // 0x05   yes   ENQ
+  REGATOM_ESC_NONU,        // 0x06   yes   ACK
+  REGATOM_ESC_NONU,        // 0x07   yes   BEL
+  REGATOM_ESC_NONU,        // 0x08   yes   BS
+  REGATOM_ESC_NONU,        // 0x09   yes   HT
+  REGATOM_ESC_NL,          // 0x0A   yes   LF
+  REGATOM_ESC_NONU,        // 0x0B   yes   VT
+  REGATOM_ESC_NONU,        // 0x0C   yes   FF
+  REGATOM_ESC_NL,          // 0x0D   no2   CR :: CR CRLF
+  REGATOM_ESC_NONU,        // 0x0E   yes   SO
+  REGATOM_ESC_NONU,        // 0x0F   yes   SI
+  REGATOM_ESC_NONU,        // 0x10   yes   DLE
+  REGATOM_ESC_NONU,        // 0x11   yes   DC1
+  REGATOM_ESC_NONU,        // 0x12   yes   DC2
+  REGATOM_ESC_NONU,        // 0x13   yes   DC3
+  REGATOM_ESC_NONU,        // 0x14   yes   DC4
+  REGATOM_ESC_NONU,        // 0x15   yes   NAK
+  REGATOM_ESC_NONU,        // 0x16   yes   SYN
+  REGATOM_ESC_NONU,        // 0x17   yes   ETB
+  REGATOM_ESC_NONU,        // 0x18   yes   CAN
+  REGATOM_ESC_NONU,        // 0x19   yes   EM
+  REGATOM_ESC_NONU,        // 0x1A   yes   SUB
+  REGATOM_ESC_NONU,        // 0x1B   yes   ESC
+  REGATOM_ESC_NONU,        // 0x1C   yes   FS
+  REGATOM_ESC_NONU,        // 0x1D   yes   GS
+  REGATOM_ESC_NONU,        // 0x1E   yes   RS
+  REGATOM_ESC_NONU,        // 0x1F   yes   US
+  REGATOM_ESC_NONU,        // 0x20   yes   space
+  REGATOM_ESC_NONU,        // 0x21   no3   ! :: ! != !==
+  REGATOM_ESC_NONU,        // 0x22   no*   "
+  REGATOM_ESC_NONU,        // 0x23   yes   #
+  REGATOM_ESC_OK,          // 0x24   no*   $
+  REGATOM_ESC_NONU,        // 0x25   no2   % :: % %=
+  REGATOM_ESC_NONU,        // 0x26   no3   & :: & && &=
+  REGATOM_ESC_NONU,        // 0x27   no*   '
+  REGATOM_ESC_OK,          // 0x28   yes   (
+  REGATOM_ESC_OK,          // 0x29   yes   )
+  REGATOM_ESC_OK,          // 0x2A   no4   * :: * ** *= **=
+  REGATOM_ESC_OK,          // 0x2B   no3   + :: + ++ +=
+  REGATOM_ESC_NONU,        // 0x2C   yes   ,
+  REGATOM_ESC_NONU,        // 0x2D   no4   - :: - -- -= -->
+  REGATOM_ESC_OK,          // 0x2E   no3   . :: . ... number
+  REGATOM_ESC_OK,          // 0x2F   no*   / Note: the fwd slash is explicitly allowed to escape as atom
+  REGATOM_ESC_0,           // 0x30   no*   0
+  REGATOM_ESC_123456789,   // 0x31   no*   1
+  REGATOM_ESC_123456789,   // 0x32   no*   2
+  REGATOM_ESC_123456789,   // 0x33   no*   3
+  REGATOM_ESC_123456789,   // 0x34   no*   4
+  REGATOM_ESC_123456789,   // 0x35   no*   5
+  REGATOM_ESC_123456789,   // 0x36   no*   6
+  REGATOM_ESC_123456789,   // 0x37   no*   7
+  REGATOM_ESC_123456789,   // 0x38   no*   8
+  REGATOM_ESC_123456789,   // 0x39   no*   9
+  REGATOM_ESC_NONU,        // 0x3A   yes   :
+  REGATOM_ESC_NONU,        // 0x3B   yes   ;
+  REGATOM_ESC_NONU,        // 0x3C   no4   < :: < << <= <<= <!--
+  REGATOM_ESC_NONU,        // 0x3D   no4   = :: = == === =>
+  REGATOM_ESC_NONU,        // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  REGATOM_ESC_OK,          // 0x3F   yes   ?
+  REGATOM_ESC_NONU,        // 0x40   yes   @
+  REGATOM_ESC_WC,          // 0x41   no*   A
+  REGATOM_ESC_WC,          // 0x42   no*   B
+  REGATOM_ESC_WC,          // 0x43   no*   C
+  REGATOM_ESC_OK,          // 0x44   no*   D
+  REGATOM_ESC_WC,          // 0x45   no*   E
+  REGATOM_ESC_WC,          // 0x46   no*   F
+  REGATOM_ESC_WC,          // 0x47   no*   G
+  REGATOM_ESC_WC,          // 0x48   no*   H
+  REGATOM_ESC_WC,          // 0x49   no*   I
+  REGATOM_ESC_WC,          // 0x4A   no*   J
+  REGATOM_ESC_WC,          // 0x4B   no*   K
+  REGATOM_ESC_WC,          // 0x4C   no*   L
+  REGATOM_ESC_WC,          // 0x4D   no*   M
+  REGATOM_ESC_WC,          // 0x4E   no*   N
+  REGATOM_ESC_WC,          // 0x4F   no*   O
+  REGATOM_ESC_pP,          // 0x50   no*   P
+  REGATOM_ESC_WC,          // 0x51   no*   Q
+  REGATOM_ESC_WC,          // 0x52   no*   R
+  REGATOM_ESC_OK,          // 0x53   no*   S
+  REGATOM_ESC_WC,          // 0x54   no*   T
+  REGATOM_ESC_WC,          // 0x55   no*   U
+  REGATOM_ESC_WC,          // 0x56   no*   V
+  REGATOM_ESC_OK,          // 0x57   no*   W
+  REGATOM_ESC_WC,          // 0x58   no*   X
+  REGATOM_ESC_WC,          // 0x59   no*   Y
+  REGATOM_ESC_WC,          // 0x5A   no*   Z
+  REGATOM_ESC_OK,          // 0x5B   yes   [
+  REGATOM_ESC_OK,          // 0x5C   no2   \ :: \uHHHH \u{H*}
+  REGATOM_ESC_OK,          // 0x5D   yes   ]
+  REGATOM_ESC_OK,          // 0x5E   no2   ^ :: ^ ^=
+  REGATOM_ESC_WC,          // 0x5F   no*   _ (lodash) Note: this is an ID_CONTINUE https://codepoints.net/U+005F
+  REGATOM_ESC_NONU,        // 0x60   no*   ` :: `...${ `...`
+  REGATOM_ESC_WC,          // 0x61   no*   a
+  REGATOM_ESC_WC,          // 0x62   no*   b
+  REGATOM_ESC_c,           // 0x63   no*   c
+  REGATOM_ESC_OK,          // 0x64   no*   d
+  REGATOM_ESC_WC,          // 0x65   no*   e
+  REGATOM_ESC_OK,          // 0x66   no*   f
+  REGATOM_ESC_WC,          // 0x67   no*   g
+  REGATOM_ESC_WC,          // 0x68   no*   h
+  REGATOM_ESC_WC,          // 0x69   no*   i
+  REGATOM_ESC_WC,          // 0x6A   no*   j
+  REGATOM_ESC_k,           // 0x6B   no*   k
+  REGATOM_ESC_WC,          // 0x6C   no*   l
+  REGATOM_ESC_WC,          // 0x6D   no*   m
+  REGATOM_ESC_OK,          // 0x6E   no*   n
+  REGATOM_ESC_WC,          // 0x6F   no*   o
+  REGATOM_ESC_pP,          // 0x70   no*   p
+  REGATOM_ESC_WC,          // 0x71   no*   q
+  REGATOM_ESC_OK,          // 0x72   no*   r
+  REGATOM_ESC_OK,          // 0x73   no*   s
+  REGATOM_ESC_OK,          // 0x74   no*   t
+  REGATOM_ESC_u,           // 0x75   no*   u
+  REGATOM_ESC_OK,          // 0x76   no*   v
+  REGATOM_ESC_OK,          // 0x77   no*   w
+  REGATOM_ESC_x,           // 0x78   no*   x
+  REGATOM_ESC_WC,          // 0x79   no*   y
+  REGATOM_ESC_WC,          // 0x7A   no*   z
+  REGATOM_ESC_OK,          // 0x7B   yes   {
+  REGATOM_ESC_OK,          // 0x7C   no3   | :: | || |=
+  REGATOM_ESC_OK,          // 0x7D   no3   } :: } }...` }...${
+  REGATOM_ESC_NONU,        // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
 ];
 let regexClassEscapeStartJumpTable = [
   // val                     hex    end   desc
@@ -2931,6 +3075,20 @@ export {
   IDENT_END,
   IDENT_BS,
   IDENT_UNICODE,
+
+  regexAtomEscapeStartJumpTable,
+  REGATOM_ESC_OK,
+  REGATOM_ESC_NONU,
+  REGATOM_ESC_u,
+  REGATOM_ESC_x,
+  REGATOM_ESC_UNICODE,
+  REGATOM_ESC_c,
+  REGATOM_ESC_pP,
+  REGATOM_ESC_0,
+  REGATOM_ESC_123456789,
+  REGATOM_ESC_k,
+  REGATOM_ESC_NL,
+  REGATOM_ESC_WC,
 
   regexClassEscapeStartJumpTable,
   REGCLS_ESC_NSC,
