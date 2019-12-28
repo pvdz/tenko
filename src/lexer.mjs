@@ -3047,29 +3047,8 @@ function Lexer(
         //           ^
         // [x]: `/(?<輸>foo)met\k<�>/u`
         //                        ^
-        if (webCompat === WEB_COMPAT_ON) {
-          // Ignore this error
-          foundInvalidGroupName = true;
-          thisNameInvalid = true;
-          // Figure out how many chars to skip (slow path)
-          let len = codepointLen(c, pointer);
-          ASSERT(len === 1 || len === 2, 'codepoints are 1 or 2?', [len, c, pointer]);
-          if (len === 1) {
-            // [x]: `/(?<>a)/`
-            //           ^
-            wide = VALID_SINGLE_CHAR;
-            ASSERT_skip(c);
-          } else {
-            // [v]: `/(?<𝟐rest>fxoo)/`
-            //           ^
-            // Do we need to throw without u-flag? Is it relevant to only skip one character without u-flag? I don't think so because I don't think a valid surrogate tail can lead to a significant syntax character
-            wide = VALID_DOUBLE_CHAR;
-            ASSERT(peeky(c));
-            skipFastWithoutUpdatingCache();
-            skip();
-          }
-        }
-        else {
+
+        if (webCompat !== WEB_COMPAT_ON) {
           // (The name must be valid ident so non-ident chars will end the parse prematurely)
           // if (webCompat === WEB_COMPAT_OFF) {
           // [x]: `/(?<x>foo)met\k<#/`
@@ -3079,6 +3058,27 @@ function Lexer(
           // [x]: `/(?<x>foo)met\k<5/`
           //                       ^
           return regexSyntaxError('Wanted to parse an unescaped group name specifier but it had a bad start', '`' + String.fromCharCode(c) + '`', c);
+        }
+
+        // Ignore this error
+        foundInvalidGroupName = true;
+        thisNameInvalid = true;
+        // Figure out how many chars to skip (slow path)
+        let len = codepointLen(c, pointer);
+        ASSERT(len === 1 || len === 2, 'codepoints are 1 or 2?', [len, c, pointer]);
+        if (len === 1) {
+          // [x]: `/(?<>a)/`
+          //           ^
+          wide = VALID_SINGLE_CHAR;
+          ASSERT_skip(c);
+        } else {
+          // [v]: `/(?<𝟐rest>fxoo)/`
+          //           ^
+          // Do we need to throw without u-flag? Is it relevant to only skip one character without u-flag? I don't think so because I don't think a valid surrogate tail can lead to a significant syntax character
+          wide = VALID_DOUBLE_CHAR;
+          ASSERT(peeky(c));
+          skipFastWithoutUpdatingCache();
+          skip();
         }
       }
 
@@ -3105,14 +3105,14 @@ function Lexer(
     if (eof()) {
       return regexSyntaxError('Missing closing angle bracket of name of capturing group', eof() || ('`' + readNextCodepointAsStringExpensive(peek(), pointer, true) + '`'), eof() || peek());
     }
+
     if (!peeky($$GT_3E)) {
       // I think this error should not be recoverable in web compat mode but tests seem to disagree
       let reason = 'Missing closing angle bracket of name of capturing group';
       if (webCompat === WEB_COMPAT_OFF) {
         return regexSyntaxError(reason);
-      } else {
-        return updateRegexUflagIsIllegal(uflagStatus, reason);
       }
+      return updateRegexUflagIsIllegal(uflagStatus, reason);
     }
 
     ASSERT_skip($$GT_3E);
@@ -3191,9 +3191,8 @@ function Lexer(
         if (webCompat === WEB_COMPAT_ON) {
           // this is now an `IdentityEscape` and just parses the `c` itself
           return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-        } else {
-          return regexSyntaxError(reason);
         }
+        return regexSyntaxError(reason);
 
       // control escapes
       case $$F_66:
