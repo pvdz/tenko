@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Total of long unicode escape would exceed 0x10ffff, which is not allowed
+    String had an illegal escape
 
 "oops \u{110001}"
 ^^^^^^^^^^^^^^^^^------- error

@@ -16,6 +16,8 @@ const REGEX_ALWAYS_BAD = 4;
 const FIRST_CHAR = true;
 const NON_START = false;
 
+const ILLEGAL_UNICODE_ESCAPE = 0x110000;
+
 const REGEX_CHARCLASS_BAD = 0x110000; // Note: max valid unicode value is <0x110000 so we can use high flags as side channels!
 const REGEX_CHARCLASS_ESCAPED_UC_B = 0x110001;
 const REGEX_CHARCLASS_ESCAPED_C = 0x110002;
@@ -64,6 +66,7 @@ export {
   REGEX_GOOD_SANS_U_FLAG,
   REGEX_ALWAYS_BAD,
   FIRST_CHAR,
+  ILLEGAL_UNICODE_ESCAPE,
   NON_START,
   REGEX_CHARCLASS_BAD,
   REGEX_CHARCLASS_ESCAPED_UC_B,
