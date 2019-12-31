@@ -382,6 +382,24 @@ import {
   REGCLS_ESC_DASH,
   REGCLS_ESC_NL,
 
+  regexAtomJumpTable,
+  REGEX_ATOM_OTHER,
+  REGEX_ATOM_DOT,
+  REGEX_ATOM_QUANT,
+  REGEX_ATOM_PARENL,
+  REGEX_ATOM_PARENR,
+  REGEX_ATOM_SQUAREL,
+  REGEX_ATOM_SQUARER,
+  REGEX_ATOM_BSLASH,
+  REGEX_ATOM_FSLASH,
+  REGEX_ATOM_XOR,
+  REGEX_ATOM_DOLLAR,
+  REGEX_ATOM_UNICODE,
+  REGEX_ATOM_CURLYL,
+  REGEX_ATOM_CURLYR,
+  REGEX_ATOM_OR,
+  REGEX_ATOM_NL,
+
   HEX_OOB,
 
   // <SCRUB ASSERTS TO COMMENT>
@@ -2539,12 +2557,198 @@ function Lexer(
     // dont start with a quantifier
     uflagStatus = cannotBeQuantifier(c, uflagStatus, c === $$CURLY_L_7B, 'Started with a quantifier but that is not allowed');
 
-    let groupNames = {};
+    let groupNames = {}; // TODO: lazy instantiation
     let namedBackRefs = [];
 
     do {
-      switch (c) {
-        case $$FWDSLASH_2F:
+      let s = c > 0x7e ? REGEX_ATOM_UNICODE : regexAtomJumpTable[c];
+
+      switch (s) {
+        case REGEX_ATOM_OTHER:
+          ASSERT_skip(c); // this ought to be a valid regex source character
+          afterAtom = true;
+          break;
+
+        case REGEX_ATOM_DOT:
+          // atom; match one character
+          ASSERT_skip($$DOT_2E);
+          afterAtom = true;
+          break;
+
+        case REGEX_ATOM_QUANT:
+          // doesnt matter to us which quantifier we find here
+          ASSERT_skip(c);
+          if (afterAtom) {
+            afterAtom = false;
+            if (neof()) {
+              if (peeky($$QMARK_3F)) {
+                ASSERT_skip($$QMARK_3F);
+              }
+            }
+          } else {
+            uflagStatus = regexSyntaxError('Encountered unescaped quantifier (ord=' + c + ') without a value to quantify');
+          }
+          break;
+
+        case REGEX_ATOM_PARENL:
+          // Assertions `(?=` and `(?!` can not have quantifiers (`?`,`*`,etc) except without u-flag and in web-compat mode
+          // Since this can also be a non-capturing group `(?:` we need to track that bit.
+          let wasFixableAssertion = false;
+          // lookbehind `(?<=` and `(?<!` can not get quantified even under webcompat flag (too new)
+          let wasUnfixableAssertion = false;
+
+          // parse group (?: (!: (
+          ASSERT_skip($$PAREN_L_28);
+          afterAtom = false; // useless. just in case
+          if (eof()) {
+            return regexSyntaxError('Encountered early EOF');
+          }
+          c = peek();
+          if (c === $$QMARK_3F) {
+            // (?
+            ASSERT_skip($$QMARK_3F);
+            if (eof()) {
+              return regexSyntaxError('Encountered early EOF');
+            }
+            c = peek();
+            if (c === $$COLON_3A || c === $$IS_3D || c === $$EXCL_21 || c === $$LT_3C) {
+              // non capturing group or named capturing group
+              // (?: (?= (?! (?<= (?<! (?<abc>
+              if (c === $$LT_3C) {
+                // (?<
+                ASSERT_skip($$LT_3C);
+
+                if (eof()) {
+                  return regexSyntaxError('Encountered early EOF');
+                }
+                c = peek();
+                if (c === $$IS_3D || c === $$EXCL_21) {
+                  if (!supportRegexLookbehinds) {
+                    return THROW('Lookbehinds in regular expressions are not supported in the currently targeted language version', startForError, pointer + 1);
+                  }
+                  // (?<= (?<!
+                  ASSERT_skip(c);
+                  wasUnfixableAssertion = true;
+                } else if (!supportRegexNamedGroups) {
+                  ASSERT_skip(c);
+                  return regexSyntaxError('The lookbehind group `(?<` must be followed by `=` or `!` but wasnt [ord=' + c + ']');
+                } else {
+                  // parseRegexNamedGroup, parseNamedCapturingGroup
+                  // [v]: `/(?<name>content)/`
+                  // [v]: `/(?<\u0065bc>content)/`
+
+                  const FOR_NAMED_GROUP = true;
+                  uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_NAMED_GROUP);
+
+                  let name = lastCanonizedInput;
+                  if (groupNames['#' + name]) {
+                    return regexSyntaxError('Each group name can only be declared once: `' + name + '`');
+                  }
+                  groupNames['#' + name] = true;
+
+                  // named capturing group
+                  ++nCapturingParens;
+                }
+              } else if (c === $$IS_3D || c === $$EXCL_21) {
+                // (?= (?!
+                ASSERT_skip(c);
+                wasFixableAssertion = true; // lookahead assertion might only be quantified without u-flag and in webcompat mode
+              }
+
+              if (eof()) {
+                return regexSyntaxError('Encountered early EOF');
+              }
+              c = peek();
+            } else {
+              return regexSyntaxError('Illegal character after pseudo group marker `(?` [ord=' + c + ']');
+            }
+          } else {
+            // anonymous capturing group
+            ++nCapturingParens;
+          }
+
+          let subbad = _parseRegexBody(c, groupLevel + 1, REGEX_ALWAYS_GOOD);
+
+          if (eof()) {
+            return regexSyntaxError('Encountered early EOF');
+          }
+
+          c = peek();
+
+          if (wasFixableAssertion || wasUnfixableAssertion) {
+            // Only `(?=` and `(?!` can be legal in web compat mode and without the u-flag. Anything else is always bad.
+            uflagStatus = cannotBeQuantifier(c, uflagStatus, !wasUnfixableAssertion, 'Regex A-ssertion "atoms" can not be quantified (so things like `^`, `$`, and `(?=` can not have `*`, `+`, `?`, or `{` following it)');
+          }
+
+          afterAtom = true;
+          if (subbad === REGEX_ALWAYS_BAD) {
+            uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
+          } else if (subbad === REGEX_GOOD_SANS_U_FLAG) {
+            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
+          } else if (subbad === REGEX_GOOD_WITH_U_FLAG) {
+            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
+          }
+
+          break;
+
+        case REGEX_ATOM_PARENR:
+          // a paren might be found in a sub-parse. the outer parse may be recursively parsing a group
+          ASSERT_skip($$PAREN_R_29);
+          if (groupLevel > 0) return uflagStatus;
+          return regexSyntaxError('Found unescaped closing paren `)` without a group being open');
+
+        case REGEX_ATOM_SQUAREL:
+          // CharacterClass
+          let charClassEscapeStatus = parseRegexCharClass();
+          if (charClassEscapeStatus === REGEX_ALWAYS_BAD) {
+            uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
+          } else if (charClassEscapeStatus === REGEX_GOOD_SANS_U_FLAG) {
+            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
+          } else if (charClassEscapeStatus === REGEX_GOOD_WITH_U_FLAG) {
+            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
+          }
+          afterAtom = true;
+          break;
+
+        case REGEX_ATOM_SQUARER: {
+          ASSERT_skip($$SQUARE_R_5D);
+          let reason = 'Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag';
+          if (webCompat === WEB_COMPAT_OFF) {
+            return regexSyntaxError(reason);
+          }
+          uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
+          afterAtom = true;
+          break;
+        }
+
+        case REGEX_ATOM_BSLASH: {
+          // atom escape is different from charclass escape
+          ASSERT_skip($$BACKSLASH_5C);
+          afterAtom = true; // except in certain cases...
+
+          if (eof()) {
+            return regexSyntaxError('Early EOF');
+          }
+          let d = peek();
+          // \b \B cannot have quantifiers
+          if (d === $$B_62 || d === $$B_UC_42) {
+            ASSERT_skip(d);
+            afterAtom = false; // this Assertion can never have a Quantifier
+          } else {
+            let escapeStatus = parseRegexAtomEscape(d, namedBackRefs);
+            ASSERT(escapeStatus === REGEX_ALWAYS_GOOD || lastPotentialRegexError || lastReportableLexerError, 'if not good then error should be set');
+            if (escapeStatus === REGEX_ALWAYS_BAD) {
+              uflagStatus = REGEX_ALWAYS_BAD;
+            } else if (escapeStatus === REGEX_GOOD_SANS_U_FLAG) {
+              uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
+            } else if (escapeStatus === REGEX_GOOD_WITH_U_FLAG) {
+              uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
+            }
+          }
+        }
+        break;
+
+        case REGEX_ATOM_FSLASH:
           // end of regex body
 
           if (groupLevel !== 0) {
@@ -2565,25 +2769,13 @@ function Lexer(
           ASSERT_skip($$FWDSLASH_2F);
           return uflagStatus;
 
-        case $$OR_7C:
-          // left and/or right side of the pipe can be empty. weird but syntactically valid
-          ASSERT_skip($$OR_7C);
-          afterAtom = false;
-          break;
-
-        case $$XOR_5E:
+        case REGEX_ATOM_XOR:
           // atom; match start of a line/file
           ASSERT_skip($$XOR_5E);
           afterAtom = false; // this Assertion can never have a Quantifier
           break;
 
-        case $$DOT_2E:
-          // atom; match one character
-          ASSERT_skip($$DOT_2E);
-          afterAtom = true;
-          break;
-
-        case $$$_24:
+        case REGEX_ATOM_DOLLAR:
           // atom; match the end of a file/line
           ASSERT_skip($$$_24);
           if (neof()) {
@@ -2593,190 +2785,16 @@ function Lexer(
           afterAtom = false; // this Assertion can never have a Quantifier
           break;
 
-        case $$BACKSLASH_5C:
-          // atom escape is different from charclass escape
-          ASSERT_skip($$BACKSLASH_5C);
-          afterAtom = true; // except in certain cases...
-
-          if (eof()) {
-            uflagStatus = regexSyntaxError('Early EOF');
-          } else {
-            let d = peek();
-            // \b \B cannot have quantifiers
-            if (d === $$B_62 || d === $$B_UC_42) {
-              ASSERT_skip(d);
-              afterAtom = false; // this Assertion can never have a Quantifier
-            } else {
-              let escapeStatus = parseRegexAtomEscape(d, namedBackRefs);
-              ASSERT(escapeStatus === REGEX_ALWAYS_GOOD || lastPotentialRegexError || lastReportableLexerError, 'if not good then error should be set');
-              if (escapeStatus === REGEX_ALWAYS_BAD) {
-                uflagStatus = REGEX_ALWAYS_BAD;
-              } else if (escapeStatus === REGEX_GOOD_SANS_U_FLAG) {
-                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
-              } else if (escapeStatus === REGEX_GOOD_WITH_U_FLAG) {
-                uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
-              }
-            }
+        case REGEX_ATOM_UNICODE:
+          if (c === $$PS_2028 || c === $$LS_2029) {
+            return regexSyntaxError('Encountered early EOF'); // same as end of input
           }
-          break;
-
-        case $$PAREN_L_28:
-          // Assertions `(?=` and `(?!` can not have quantifiers (`?`,`*`,etc) except without u-flag and in web-compat mode
-          // Since this can also be a non-capturing group `(?:` we need to track that bit.
-          let wasFixableAssertion = false;
-          // lookbehind `(?<=` and `(?<!` can not get quantified even under webcompat flag (too new)
-          let wasUnfixableAssertion = false;
-
-          // parse group (?: (!: (
-          ASSERT_skip($$PAREN_L_28);
-          afterAtom = false; // useless. just in case
-          if (eof()) {
-            uflagStatus = regexSyntaxError('Encountered early EOF');
-            break;
-          }
-          c = peek();
-          if (c === $$QMARK_3F) {
-            // (?
-            ASSERT_skip($$QMARK_3F);
-            if (eof()) {
-              uflagStatus = regexSyntaxError('Encountered early EOF');
-              break;
-            }
-            c = peek();
-            if (c === $$COLON_3A || c === $$IS_3D || c === $$EXCL_21 || c === $$LT_3C) {
-              // non capturing group or named capturing group
-              // (?: (?= (?! (?<= (?<! (?<abc>
-              if (c === $$LT_3C) {
-                // (?<
-                ASSERT_skip($$LT_3C);
-
-                if (eof()) {
-                  uflagStatus = regexSyntaxError('Encountered early EOF');
-                  break;
-                }
-                c = peek();
-                if (c === $$IS_3D || c === $$EXCL_21) {
-                  if (!supportRegexLookbehinds) {
-                    return THROW('Lookbehinds in regular expressions are not supported in the currently targeted language version', startForError, pointer + 1);
-                  }
-                  // (?<= (?<!
-                  ASSERT_skip(c);
-                  wasUnfixableAssertion = true;
-                } else if (!supportRegexNamedGroups) {
-                  ASSERT_skip(c);
-                  uflagStatus = regexSyntaxError('The lookbehind group `(?<` must be followed by `=` or `!` but wasnt [ord=' + c + ']');
-                  break;
-                } else {
-                  // parseRegexNamedGroup, parseNamedCapturingGroup
-                  // [v]: `/(?<name>content)/`
-                  // [v]: `/(?<\u0065bc>content)/`
-
-                  const FOR_NAMED_GROUP = true;
-                  uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_NAMED_GROUP);
-
-                  let name = lastCanonizedInput;
-                  if (groupNames['#' + name]) {
-                    uflagStatus = regexSyntaxError('Each group name can only be declared once: `' + name + '`');
-                    return uflagStatus;
-                  }
-                  groupNames['#' + name] = true;
-
-                  // named capturing group
-                  ++nCapturingParens;
-                }
-              } else if (c === $$IS_3D || c === $$EXCL_21) {
-                // (?= (?!
-                ASSERT_skip(c);
-                wasFixableAssertion = true; // lookahead assertion might only be quantified without u-flag and in webcompat mode
-              }
-
-              if (eof()) {
-                uflagStatus = regexSyntaxError('Encountered early EOF');
-                break;
-              }
-              c = peek();
-            } else {
-              uflagStatus = regexSyntaxError('Illegal character after pseudo group marker `(?` [ord=' + c + ']');
-            }
-          } else {
-            // anonymous capturing group
-            ++nCapturingParens;
-          }
-
-          let subbad = _parseRegexBody(c, groupLevel + 1, REGEX_ALWAYS_GOOD);
-
-          if (eof()) {
-            uflagStatus = regexSyntaxError('Encountered early EOF');
-            break;
-          }
-
-          c = peek();
-
-          if (wasFixableAssertion || wasUnfixableAssertion) {
-            // Only `(?=` and `(?!` can be legal in web compat mode and without the u-flag. Anything else is always bad.
-            uflagStatus = cannotBeQuantifier(c, uflagStatus, !wasUnfixableAssertion, 'Regex A-ssertion "atoms" can not be quantified (so things like `^`, `$`, and `(?=` can not have `*`, `+`, `?`, or `{` following it)');
-          }
-
-          afterAtom = true;
-          if (subbad === REGEX_ALWAYS_BAD) {
-            uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
-          } else if (subbad === REGEX_GOOD_SANS_U_FLAG) {
-            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
-          } else if (subbad === REGEX_GOOD_WITH_U_FLAG) {
-            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
-          }
-
-          break;
-        case $$PAREN_R_29:
-          // a paren might be found in a sub-parse. the outer parse may be recursively parsing a group
-          ASSERT_skip($$PAREN_R_29);
-          if (groupLevel > 0) return uflagStatus;
-          uflagStatus = regexSyntaxError('Found unescaped closing paren `)` without a group being open');
-          afterAtom = true; // meh
-          break;
-
-        case $$SQUARE_L_5B:
-          // CharacterClass
-          let charClassEscapeStatus = parseRegexCharClass();
-          if (charClassEscapeStatus === REGEX_ALWAYS_BAD) {
-            uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
-          } else if (charClassEscapeStatus === REGEX_GOOD_SANS_U_FLAG) {
-            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
-          } else if (charClassEscapeStatus === REGEX_GOOD_WITH_U_FLAG) {
-            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
-          }
+          // atom; match one character. Beyond 2028 2029, atoms with non-ascii chars are not special
+          ASSERT_skip(c); // this ought to be a valid regex source character, even if just half a surrogate pair
           afterAtom = true;
           break;
-        case $$SQUARE_R_5D: {
-          ASSERT_skip($$SQUARE_R_5D);
-          let reason = 'Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag';
-          if (webCompat === WEB_COMPAT_ON) {
-            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-          } else {
-            uflagStatus = regexSyntaxError(reason);
-          }
-          afterAtom = true;
-          break;
-        }
 
-        case $$STAR_2A:
-        case $$PLUS_2B:
-        case $$QMARK_3F:
-          // doesnt matter to us which quantifier we find here
-          ASSERT_skip(c);
-          if (afterAtom) {
-            afterAtom = false;
-            if (neof()) {
-              if (peeky($$QMARK_3F)) {
-                ASSERT_skip($$QMARK_3F);
-              }
-            }
-          } else {
-            uflagStatus = regexSyntaxError('Encountered unescaped quantifier (ord=' + c + ') without a value to quantify');
-          }
-          break;
-
-        case $$CURLY_L_7B:
+        case REGEX_ATOM_CURLYL:
           // explicit quantifier
           // This is valid if we just parsed an atom, or in webcompat mode without the u-flag
           ASSERT_skip($$CURLY_L_7B);
@@ -2789,34 +2807,33 @@ function Lexer(
               if (!isAsciiNumber(c)) {
                 if (webCompat === WEB_COMPAT_OFF) {
                   if (peeky($$COMMA_2C)) {
-                    uflagStatus = regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
+                    return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
                   }
-                  else if (peeky($$CURLY_R_7D)) {
-                    uflagStatus = regexSyntaxError('A regex curly quantifier had no content');
+
+                  if (peeky($$CURLY_R_7D)) {
+                    return regexSyntaxError('A regex curly quantifier had no content');
                   }
-                  else {
-                    uflagStatus = regexSyntaxError('Found invalid regex curly quantifier');
-                  }
-                } else {
-                  afterAtom = true; // in webcompat the InvalidBracedQuantifier is an atom
-                  if (peeky($$COMMA_2C)) {
-                    uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'The first digit of a regex curly quantifier is mandatory');
-                  }
-                  else if (peeky($$CURLY_R_7D)) {
-                    uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'A regex curly quantifier had no content');
-                  }
-                  else {
-                    uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found invalid regex curly quantifier');
-                  }
+
+                  return regexSyntaxError('Found invalid regex curly quantifier');
+                }
+
+                afterAtom = true; // in webcompat the InvalidBracedQuantifier is an atom
+                if (peeky($$COMMA_2C)) {
+                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'The first digit of a regex curly quantifier is mandatory');
+                }
+                else if (peeky($$CURLY_R_7D)) {
+                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'A regex curly quantifier had no content');
+                }
+                else {
+                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found invalid regex curly quantifier');
                 }
               }
               else if (!parseRegexCurlyQuantifier(c)) {
                 let reason = 'Encountered unescaped closing curly `}` while not parsing a quantifier';
                 if (webCompat === WEB_COMPAT_OFF) {
-                  uflagStatus = regexSyntaxError(reason);
-                } else {
-                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
+                  return regexSyntaxError(reason);
                 }
+                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
               }
             }
             if (neof() && peeky($$QMARK_3F)) {
@@ -2825,90 +2842,90 @@ function Lexer(
             afterAtom = false;
           } else {
             let reason = 'Encountered illegal curly quantifier without anything to quantify. This is `InvalidBracedQuantifier` and explicitly a syntax error';
-            if (webCompat === WEB_COMPAT_ON) {
-              // web compat only:
-              // [v]: `/f{/`
-              // [x]: `/f{1}/`
-              // [x]: `/f{1}?/`
-              // [v]: `/f{?/`
-              // [v]: `/f{/`
-              // [v]: `/f{?/`
-              // [v]: `/f{/`u
-              // [v]: `/f{?/u`
-              // [v]: `/f{/u`
-              // [v]: `/f{?/u`
-              // IF we can parse a curly quantifier, THEN we throw a syntax error. Otherwise we just parse a `{`
-              if (eof()) {
-                uflagStatus = regexSyntaxError('Early EOF at the start of a regex quantifier');
+            if (webCompat === WEB_COMPAT_OFF) {
+              return regexSyntaxError('Encountered unescaped opening curly `{` and the previous character was not part of something quantifiable');
+            }
+
+            // web compat only:
+            // [v]: `/f{/`
+            // [x]: `/f{1}/`
+            // [x]: `/f{1}?/`
+            // [v]: `/f{?/`
+            // [v]: `/f{/`
+            // [v]: `/f{?/`
+            // [v]: `/f{/`u
+            // [v]: `/f{?/u`
+            // [v]: `/f{/u`
+            // [v]: `/f{?/u`
+            // IF we can parse a curly quantifier, THEN we throw a syntax error. Otherwise we just parse a `{`
+            if (eof()) {
+              return regexSyntaxError('Early EOF at the start of a regex quantifier');
+            }
+            let c = peek();
+            if (!isAsciiNumber(c)) {
+              if (webCompat === WEB_COMPAT_OFF) {
+                if (peeky($$COMMA_2C)) {
+                  return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
+                }
+
+                if (peeky($$CURLY_R_7D)) {
+                  return regexSyntaxError('A regex curly quantifier had no content');
+                }
+
+                return regexSyntaxError('Found invalid regex curly quantifier');
+              }
+
+              afterAtom = true; // in webcompat the InvalidBracedQuantifier is an atom
+              if (peeky($$COMMA_2C)) {
+                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'The first digit of a regex curly quantifier is mandatory');
+              }
+              else if (peeky($$CURLY_R_7D)) {
+                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'A regex curly quantifier had no content');
               }
               else {
-                let c = peek();
-                if (!isAsciiNumber(c)) {
-                  if (webCompat === WEB_COMPAT_OFF) {
-                    if (peeky($$COMMA_2C)) {
-                      uflagStatus = regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
-                    }
-                    else if (peeky($$CURLY_R_7D)) {
-                      uflagStatus = regexSyntaxError('A regex curly quantifier had no content');
-                    }
-                    else {
-                      uflagStatus = regexSyntaxError('Found invalid regex curly quantifier');
-                    }
-                  } else {
-                    afterAtom = true; // in webcompat the InvalidBracedQuantifier is an atom
-                    if (peeky($$COMMA_2C)) {
-                      uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'The first digit of a regex curly quantifier is mandatory');
-                    }
-                    else if (peeky($$CURLY_R_7D)) {
-                      uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'A regex curly quantifier had no content');
-                    }
-                    else {
-                      uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found invalid regex curly quantifier');
-                    }
-                  }
-                }
-                else if (parseRegexCurlyQuantifier(c)) {
-                  uflagStatus = regexSyntaxError(reason);
-                }
-                else {
-                  // This in webcompat is `{` as `ExtendedAtom` is a `ExtendedPatternCharacter`, which does not disallow the curly
-                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-                  // in web compat mode this case is treated as an extended atom
-                  afterAtom = true;
-                }
+                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found invalid regex curly quantifier');
               }
-            } else {
-              uflagStatus = regexSyntaxError('Encountered unescaped opening curly `{` and the previous character was not part of something quantifiable');
+            }
+            else if (parseRegexCurlyQuantifier(c)) {
+              return regexSyntaxError(reason);
+            }
+            else {
+              // This in webcompat is `{` as `ExtendedAtom` is a `ExtendedPatternCharacter`, which does not disallow the curly
+              uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
+              // in web compat mode this case is treated as an extended atom
+              afterAtom = true;
             }
           }
           break;
-        case $$CURLY_R_7D: {
+
+        case REGEX_ATOM_CURLYR: {
           ASSERT_skip($$CURLY_R_7D);
           let reason = 'Encountered unescaped closing curly `}` while not parsing a quantifier';
           if (webCompat === WEB_COMPAT_OFF) {
             // this is always bad since we have a quantifier parser that consumes valid curly pairs
-            uflagStatus = regexSyntaxError(reason);
-            afterAtom = false;
-          } else {
-            // in web compat mode you're allowed to have an unescaped curly as atom
-            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-            // in web compat mode this case is treated as an extended atom
-            afterAtom = true;
+            return regexSyntaxError(reason);
           }
+          // in web compat mode you're allowed to have an unescaped curly as atom
+          uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
+          // in web compat mode this case is treated as an extended atom
+          afterAtom = true;
           break;
         }
 
-        case $$CR_0D:
-        case $$LF_0A:
-        case $$PS_2028:
-        case $$LS_2029:
+        case REGEX_ATOM_OR:
+          // left and/or right side of the pipe can be empty. weird but syntactically valid
+          ASSERT_skip($$OR_7C);
+          afterAtom = false;
+          break;
+
+        case REGEX_ATOM_NL:
           return regexSyntaxError('Encountered early EOF'); // same as end of input
 
+        // <SCRUB ASSERTS>
         default:
-          ASSERT_skip(c); // this ought to be a valid regex source character
-          afterAtom = true;
+          ASSERT(false, 'unreachable', c);
+        // </SCRUB ASSERTS>
       }
-      //ASSERT(afterAtom !== 1, 'making sure afterAtom is set everywhere (will break tests but shouldnt throw at all)'); //[' + c + ', x' + c.toString(16) + ')]');
 
       if (eof()) break;
       c = peek();

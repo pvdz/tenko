@@ -30,7 +30,7 @@ throws: Lexer error!
     Regex: Encountered unescaped closing curly `}` while not parsing a quantifier
 
 function *f(){   s = {foo: yield / x}   }
-                                 ^^^^^^^^------- error
+                                 ^^^^------- error
 `````
 
 ### Strict mode

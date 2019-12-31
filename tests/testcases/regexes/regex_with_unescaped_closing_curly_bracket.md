@@ -29,7 +29,7 @@ throws: Lexer error!
     Regex: Encountered unescaped closing curly `}` while not parsing a quantifier
 
 /}/
-^^^------- error
+^^------- error
 `````
 
 ### Strict mode

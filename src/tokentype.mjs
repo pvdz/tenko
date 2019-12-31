@@ -2003,6 +2003,23 @@ const REGCLS_ESC_SYNTAX = 18;
 const REGCLS_ESC_DASH = 19;
 const REGCLS_ESC_NL = 20;
 
+const REGEX_ATOM_OTHER = 0;
+const REGEX_ATOM_DOT = 1;
+const REGEX_ATOM_QUANT = 2;
+const REGEX_ATOM_PARENL = 3;
+const REGEX_ATOM_PARENR = 4;
+const REGEX_ATOM_SQUAREL = 5;
+const REGEX_ATOM_SQUARER = 6;
+const REGEX_ATOM_BSLASH = 7;
+const REGEX_ATOM_FSLASH = 8;
+const REGEX_ATOM_XOR = 9;
+const REGEX_ATOM_DOLLAR = 10;
+const REGEX_ATOM_UNICODE = 11;
+const REGEX_ATOM_CURLYL = 12;
+const REGEX_ATOM_CURLYR = 13;
+const REGEX_ATOM_OR = 14;
+const REGEX_ATOM_NL = 15;
+
 const HEX_OOB = 16;
 
 // Inspired by https://twitter.com/Ghost1240145716/status/1186595972232564736 / https://gist.github.com/KFlash/c53a2f0adb25e88ab7cdc3d77d295635
@@ -2795,6 +2812,137 @@ let hexValueJumpTable = [
   // HEX_OOB,                // 0x7D   no3   } :: } }...` }...${
   // HEX_OOB,                // 0x7E   yes   ~
 ];
+let regexAtomJumpTable = [
+  // val                     hex    end   desc
+  REGEX_ATOM_OTHER,       // 0x00   yes   NUL
+  REGEX_ATOM_OTHER,       // 0x01   yes   SOH
+  REGEX_ATOM_OTHER,       // 0x02   yes   STX
+  REGEX_ATOM_OTHER,       // 0x03   yes   ETX
+  REGEX_ATOM_OTHER,       // 0x04   yes   EOT
+  REGEX_ATOM_OTHER,       // 0x05   yes   ENQ
+  REGEX_ATOM_OTHER,       // 0x06   yes   ACK
+  REGEX_ATOM_OTHER,       // 0x07   yes   BEL
+  REGEX_ATOM_OTHER,       // 0x08   yes   BS
+  REGEX_ATOM_OTHER,       // 0x09   yes   HT
+  REGEX_ATOM_NL,       // 0x0A   yes   LF
+  REGEX_ATOM_OTHER,       // 0x0B   yes   VT
+  REGEX_ATOM_OTHER,       // 0x0C   yes   FF
+  REGEX_ATOM_NL,       // 0x0D   no2   CR :: CR CRLF
+  REGEX_ATOM_OTHER,       // 0x0E   yes   SO
+  REGEX_ATOM_OTHER,       // 0x0F   yes   SI
+  REGEX_ATOM_OTHER,       // 0x10   yes   DLE
+  REGEX_ATOM_OTHER,       // 0x11   yes   DC1
+  REGEX_ATOM_OTHER,       // 0x12   yes   DC2
+  REGEX_ATOM_OTHER,       // 0x13   yes   DC3
+  REGEX_ATOM_OTHER,       // 0x14   yes   DC4
+  REGEX_ATOM_OTHER,       // 0x15   yes   NAK
+  REGEX_ATOM_OTHER,       // 0x16   yes   SYN
+  REGEX_ATOM_OTHER,       // 0x17   yes   ETB
+  REGEX_ATOM_OTHER,       // 0x18   yes   CAN
+  REGEX_ATOM_OTHER,       // 0x19   yes   EM
+  REGEX_ATOM_OTHER,       // 0x1A   yes   SUB
+  REGEX_ATOM_OTHER,       // 0x1B   yes   ESC
+  REGEX_ATOM_OTHER,       // 0x1C   yes   FS
+  REGEX_ATOM_OTHER,       // 0x1D   yes   GS
+  REGEX_ATOM_OTHER,       // 0x1E   yes   RS
+  REGEX_ATOM_OTHER,       // 0x1F   yes   US
+  REGEX_ATOM_OTHER,       // 0x20   yes   space
+  REGEX_ATOM_OTHER,       // 0x21   no3   ! :: ! != !==
+  REGEX_ATOM_OTHER,       // 0x22   no*   "
+  REGEX_ATOM_OTHER,       // 0x23   yes   #
+  REGEX_ATOM_DOLLAR,       // 0x24   no*   $
+  REGEX_ATOM_OTHER,       // 0x25   no2   % :: % %=
+  REGEX_ATOM_OTHER,       // 0x26   no3   & :: & && &=
+  REGEX_ATOM_OTHER,       // 0x27   no*   '
+  REGEX_ATOM_PARENL,       // 0x28   yes   (
+  REGEX_ATOM_PARENR,       // 0x29   yes   )
+  REGEX_ATOM_QUANT,       // 0x2A   no4   * :: * ** *= **=
+  REGEX_ATOM_QUANT,       // 0x2B   no3   + :: + ++ +=
+  REGEX_ATOM_OTHER,       // 0x2C   yes   ,
+  REGEX_ATOM_OTHER,       // 0x2D   no4   - :: - -- -= -->
+  REGEX_ATOM_DOT,       // 0x2E   no3   . :: . ... number
+  REGEX_ATOM_FSLASH,       // 0x2F   no*   / Note: the fwd slash is explicitly allowed to escape in a regex class
+  REGEX_ATOM_OTHER,       // 0x30   no*   0
+  REGEX_ATOM_OTHER,       // 0x31   no*   1
+  REGEX_ATOM_OTHER,       // 0x32   no*   2
+  REGEX_ATOM_OTHER,       // 0x33   no*   3
+  REGEX_ATOM_OTHER,       // 0x34   no*   4
+  REGEX_ATOM_OTHER,       // 0x35   no*   5
+  REGEX_ATOM_OTHER,       // 0x36   no*   6
+  REGEX_ATOM_OTHER,       // 0x37   no*   7
+  REGEX_ATOM_OTHER,       // 0x38   no*   8
+  REGEX_ATOM_OTHER,       // 0x39   no*   9
+  REGEX_ATOM_OTHER,       // 0x3A   yes   :
+  REGEX_ATOM_OTHER,       // 0x3B   yes   ;
+  REGEX_ATOM_OTHER,       // 0x3C   no4   < :: < << <= <<= <!--
+  REGEX_ATOM_OTHER,       // 0x3D   no4   = :: = == === =>
+  REGEX_ATOM_OTHER,       // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  REGEX_ATOM_QUANT,       // 0x3F   yes   ?
+  REGEX_ATOM_OTHER,       // 0x40   yes   @
+  REGEX_ATOM_OTHER,       // 0x41   no*   A
+  REGEX_ATOM_OTHER,       // 0x42   no*   B
+  REGEX_ATOM_OTHER,       // 0x43   no*   C
+  REGEX_ATOM_OTHER,       // 0x44   no*   D
+  REGEX_ATOM_OTHER,       // 0x45   no*   E
+  REGEX_ATOM_OTHER,       // 0x46   no*   F
+  REGEX_ATOM_OTHER,       // 0x47   no*   G
+  REGEX_ATOM_OTHER,       // 0x48   no*   H
+  REGEX_ATOM_OTHER,       // 0x49   no*   I
+  REGEX_ATOM_OTHER,       // 0x4A   no*   J
+  REGEX_ATOM_OTHER,       // 0x4B   no*   K
+  REGEX_ATOM_OTHER,       // 0x4C   no*   L
+  REGEX_ATOM_OTHER,       // 0x4D   no*   M
+  REGEX_ATOM_OTHER,       // 0x4E   no*   N
+  REGEX_ATOM_OTHER,       // 0x4F   no*   O
+  REGEX_ATOM_OTHER,       // 0x50   no*   P
+  REGEX_ATOM_OTHER,       // 0x51   no*   Q
+  REGEX_ATOM_OTHER,       // 0x52   no*   R
+  REGEX_ATOM_OTHER,       // 0x53   no*   S
+  REGEX_ATOM_OTHER,       // 0x54   no*   T
+  REGEX_ATOM_OTHER,       // 0x55   no*   U
+  REGEX_ATOM_OTHER,       // 0x56   no*   V
+  REGEX_ATOM_OTHER,       // 0x57   no*   W
+  REGEX_ATOM_OTHER,       // 0x58   no*   X
+  REGEX_ATOM_OTHER,       // 0x59   no*   Y
+  REGEX_ATOM_OTHER,       // 0x5A   no*   Z
+  REGEX_ATOM_SQUAREL,       // 0x5B   yes   [
+  REGEX_ATOM_BSLASH,       // 0x5C   no2   \ :: \uHHHH \u{H*}
+  REGEX_ATOM_SQUARER,       // 0x5D   yes   ]
+  REGEX_ATOM_XOR,       // 0x5E   no2   ^ :: ^ ^=
+  REGEX_ATOM_OTHER,       // 0x5F   no*   _ (lodash)
+  REGEX_ATOM_OTHER,       // 0x60   no*   ` :: `...${ `...`
+  REGEX_ATOM_OTHER,       // 0x61   no*   a
+  REGEX_ATOM_OTHER,       // 0x62   no*   b
+  REGEX_ATOM_OTHER,       // 0x63   no*   c
+  REGEX_ATOM_OTHER,       // 0x64   no*   d
+  REGEX_ATOM_OTHER,       // 0x65   no*   e
+  REGEX_ATOM_OTHER,       // 0x66   no*   f
+  REGEX_ATOM_OTHER,       // 0x67   no*   g
+  REGEX_ATOM_OTHER,       // 0x68   no*   h
+  REGEX_ATOM_OTHER,       // 0x69   no*   i
+  REGEX_ATOM_OTHER,       // 0x6A   no*   j
+  REGEX_ATOM_OTHER,       // 0x6B   no*   k
+  REGEX_ATOM_OTHER,       // 0x6C   no*   l
+  REGEX_ATOM_OTHER,       // 0x6D   no*   m
+  REGEX_ATOM_OTHER,       // 0x6E   no*   n
+  REGEX_ATOM_OTHER,       // 0x6F   no*   o
+  REGEX_ATOM_OTHER,       // 0x70   no*   p
+  REGEX_ATOM_OTHER,       // 0x71   no*   q
+  REGEX_ATOM_OTHER,       // 0x72   no*   r
+  REGEX_ATOM_OTHER,       // 0x73   no*   s
+  REGEX_ATOM_OTHER,       // 0x74   no*   t
+  REGEX_ATOM_OTHER,       // 0x75   no*   u
+  REGEX_ATOM_OTHER,       // 0x76   no*   v
+  REGEX_ATOM_OTHER,       // 0x77   no*   w
+  REGEX_ATOM_OTHER,       // 0x78   no*   x
+  REGEX_ATOM_OTHER,       // 0x79   no*   y
+  REGEX_ATOM_OTHER,       // 0x7A   no*   z
+  REGEX_ATOM_CURLYL,       // 0x7B   yes   {
+  REGEX_ATOM_OR,       // 0x7C   no3   | :: | || |=
+  REGEX_ATOM_CURLYR,       // 0x7D   no3   } :: } }...` }...${
+  REGEX_ATOM_OTHER,       // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+];
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
@@ -3112,6 +3260,24 @@ export {
   REGCLS_ESC_SYNTAX,
   REGCLS_ESC_DASH,
   REGCLS_ESC_NL,
+
+  regexAtomJumpTable,
+  REGEX_ATOM_OTHER,
+  REGEX_ATOM_DOT,
+  REGEX_ATOM_QUANT,
+  REGEX_ATOM_PARENL,
+  REGEX_ATOM_PARENR,
+  REGEX_ATOM_SQUAREL,
+  REGEX_ATOM_SQUARER,
+  REGEX_ATOM_BSLASH,
+  REGEX_ATOM_FSLASH,
+  REGEX_ATOM_XOR,
+  REGEX_ATOM_DOLLAR,
+  REGEX_ATOM_UNICODE,
+  REGEX_ATOM_CURLYL,
+  REGEX_ATOM_CURLYR,
+  REGEX_ATOM_OR,
+  REGEX_ATOM_NL,
 
   HEX_OOB,
 
