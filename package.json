@@ -6,10 +6,11 @@
   "main": "build/tenko.prod.js",
   "module": "build/tenko.prod.mjs",
   "devDependencies": {
-    "@babel/parser": "7.6.4",
+    "@babel/parser": "7.7.7",
     "acorn": "7.1.0",
     "deoptigate": "0.5.0",
     "eslump": "2.0.0",
+    "meriyah": "1.9.4",
     "prettier": "1.18.2",
     "terser": "4.3.3"
   },

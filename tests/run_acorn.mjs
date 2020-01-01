@@ -1,6 +1,6 @@
 import acorn from 'acorn';
 
-export function runAcorn(code, mode, version) {
+function runAcorn(code, mode, version) {
   if (mode === 'strict' || mode === 'sloppy') return false;
   // The Acorn parser seems to apply AnnexB by default with no opt-out so we can't test strict/sloppy directly
   return acorn.parse(code, {
@@ -18,3 +18,8 @@ export function runAcorn(code, mode, version) {
     allowHashBang: false,
   });
 }
+
+export {
+  runAcorn,
+  runAcorn as parse,
+};

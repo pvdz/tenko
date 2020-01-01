@@ -1,5 +1,7 @@
-function testTenko(tenko, code, testVariant, enableAnnexb) {
-  return tenko(
+import {Tenko} from '../build/tenko.prod.mjs';
+
+function runTenkoBuild(code, testVariant, enableAnnexb) {
+  return Tenko(
     code,
     {
       goalMode: testVariant === 'module',
@@ -18,5 +20,6 @@ function testTenko(tenko, code, testVariant, enableAnnexb) {
 }
 
 export {
-  testTenko,
+  runTenkoBuild,
+  runTenkoBuild as parse,
 };

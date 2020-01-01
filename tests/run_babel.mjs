@@ -1,6 +1,6 @@
 import babel from '@babel/parser';
 
-export function runBabel(code, mode) {
+function runBabel(code, mode) {
   if (mode === 'strict' || mode === 'sloppy') return false;
   // The Babel parser seems to apply AnnexB by default with no opt-out so we can't test strict/sloppy directly
   return babel.parse(code, {
@@ -11,3 +11,8 @@ export function runBabel(code, mode) {
     plugins: ['dynamicImport', 'bigInt', 'exportNamespaceFrom'],
   });
 }
+
+export {
+  runBabel,
+  runBabel as parse,
+};

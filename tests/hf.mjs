@@ -45,8 +45,16 @@ const RESET = '\x1b[0m';
     // await read({path: 'ignore/perf/es5.moment-with-locales.js', mode: 'web'}),
     // await read({path: 'ignore/perf/es6.mljs.js', mode: 'module'}),
     //
-    // // old... 20mb
+    // // Specific regex test case
+    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes.js', mode: 'module'}),
+    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-noclass.js', mode: 'module'}), // (same except all `[` are removed which promotes all escapes to atoms)
+    // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes.js', mode: 'module'}), // (same except replaced unicode quad with unicode variables)
+    //
+    // old... 20mb
+    // await read({path: 'ignore/perf/es5-8mb-bench.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5-16mb-bench.js', mode: 'web'}),
     // await read({path: 'ignore/perf/es5.webkit.npm.1.0.0.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5-35mb-kate.js.jo.js', mode: 'web'}),
   ].filter(Boolean);
 
   files.forEach(({path, code, mode}) => {

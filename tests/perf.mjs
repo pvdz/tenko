@@ -42,11 +42,19 @@ let getParser = async (name) => {
   switch (name) {
     case 'acorn':
       let {runAcorn} = await import('./run_acorn.mjs');
-      parser = (code, testVariant) => runAcorn(code, testVariant, undefined);
+      parser = runAcorn;
       break;
     case 'babel':
-      let {runBabel} = await import('./parse_babel.mjs');
-      parser = (code, testVariant) => runBabel(code, testVariant);
+      let {runBabel} = await import('./run_babel.mjs');
+      parser = runBabel;
+      break;
+    case 'meriy':
+      let {runMeriyah} = await import('./run_meriyah.mjs');
+      parser = runMeriyah;
+      break;
+    case 'ghost':
+      let {runGhost} = await import('./run_ghost.mjs');
+      parser = runGhost;
       break;
     case 'tenko':
     case 'tenk2':
@@ -54,7 +62,7 @@ let getParser = async (name) => {
       let {testTenko} = await import('./parse_tenko.mjs')
       parser = (code, testVariant) => testTenko(Tenko, code, testVariant, true);
       break;
-    default: throw '?';
+    default: throw 'unknown parser? [' + name + ']';
   }
   parserCache.set(name, parser);
   return parser;
@@ -64,6 +72,8 @@ let parsers = [
   'tenko',
   'babel',
   'acorn',
+  'meriy',
+  'ghost',
   'tenk2'
 ];
 
@@ -101,24 +111,20 @@ let cols = {
   btd: 10,
   time: 20,
   td: 17,
-  bd: 15,
-  ad: 10,
   dprev: 25,
 };
 function print(name, baseline, time, lastTtime) {
   let base = baseline[name];
-  let tbase = baseline.tenko;
+  let tbase = baseline.tenko | 0;
   let btd = tbase - base;
   let ftime = Math.floor(time);
   let td = ftime - base;
-  let tdta = ftime - baseline.acorn;
-  let tdtb = ftime - baseline.babel;
   let ltd = Math.floor(time - (lastTtime|0));
 
   console.log(
     // Title
     N >= 0 ? DIM + 'n=' + String(Nstart).padStart(2, '0') + RESET : '',
-    ('Parse time for ' + name + ': ').padEnd(cols.parser, ' '),
+    ('Parse time for ' + (name === 'tenk2' ? 'tenko' : name) + ': ').padEnd(cols.parser, ' '),
     // Basline for this parser
     DIM + (''+(name === 'tenko' ? lastTtime : '')).padStart(cols.prev, ' ') + RESET,
     DIM + (''+base).padStart(cols.base, ' ') + RESET,
@@ -129,11 +135,7 @@ function print(name, baseline, time, lastTtime) {
     // Delta between current result and baseline result (of current parser)
     (td < 0 ? (name === 'tenko' ? BOLD_GREEN : DIM_GREEN) : name === 'tenko' ? BOLD : DIM) + (' (b ' + (td > 0 ? '+' : '-') + ' ' + Math.abs(td) + ' ms)').padStart(cols.td, ' ') + RESET,
     '       ',
-    // Delta between current result of Tenko and baseline of acorn/babel
-    DIM + (name === 'tenko' ? (tdtb <= 0 ? DIM_GREEN : DIM_RED) + ('bb ' + (tdtb < 0 ? '-' : '+') + ' ' + Math.abs(tdtb) + 'ms').padEnd(cols.bd, ' ') : ''.padEnd(cols.bd, ' ')) + RESET,
-    DIM + (name === 'tenko' ? (tdta <= 0 ? DIM_GREEN : DIM_RED) + ('aa ' + (tdta < 0 ? '-' : '+') + ' ' + Math.abs(tdta) + 'ms').padEnd(cols.ad, ' ') : ''.padEnd(cols.ad, ' ')) + RESET,
-
-    name === 'tenko' ? '' : '  ' + DIM + ((name.startsWith('tenk') ? '' : ltd >= 0 ? DIM_GREEN : DIM_RED) + ('tprev = ' + lastTtime + ' ' + (ltd > 0 ? '+' : '-') + ' ' + Math.abs(ltd) + 'ms').padEnd(cols.dprev, ' ')) + RESET,
+    DIM + (name === 'tenko' ? '  ' +  Math.floor(time) + 'ms' : ('  ' + (lastTtime + ' ' + (ltd > 0 ? '+' : '-')) + ' ' + (name.startsWith('tenk') ? '' : ltd >= 0 ? DIM_GREEN : DIM_RED) + Math.abs(ltd) + 'ms').padEnd(cols.dprev, ' ')) + RESET,
     ''
   );
 }
@@ -148,8 +150,6 @@ if (!NO_HEADER && N <= 1 && N != -2) {
     'btd'.padStart(cols.btd, ' '),
     'time'.padStart(cols.time, ' '),
     'td'.padStart(cols.td, ' '),
-    'ad'.padStart(cols.ad, ' '),
-    'bd'.padStart(cols.bd, ' '),
     'dprev'.padStart(cols.dprev-10, ' '),
     '\n'
   );
@@ -174,7 +174,12 @@ if (!NO_HEADER && N <= 1 && N != -2) {
       let {path, mode, baseline, last} = obj;
       let t1 = performance.now();
 
-      parser(getcode(path), mode);
+      try {
+        parser(getcode(path), mode);
+      } catch (e) {
+        console.error(RED + pname + ' crashed :( ' + DIM + String(e.message).slice(0, 200) + RESET);
+        if (N >= 0) process.exit(0);
+      }
 
       let t2 = performance.now();
       let time = t2 - t1;
@@ -206,6 +211,6 @@ if (!NO_HEADER && N <= 1 && N != -2) {
     process.exit(1);
   }
 
-})().catch((e) => console.log('error:', e)).then(() => {
+})().catch((e) => console.log('perf.mjs main promise threw an error:', e)).then(() => {
   process.exit(0);
 });
