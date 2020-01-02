@@ -3544,7 +3544,7 @@ function Parser(code, options = {}) {
         return;
 
       case $ID_import:
-        parseImportDeclaration(lexerFlags, scoop, isGlobalToplevel, fdState, astProp);
+        parseImportDeclaration(lexerFlags, scoop, isGlobalToplevel, astProp);
         return;
 
       case $ID_let:
@@ -4385,7 +4385,7 @@ function Parser(code, options = {}) {
     AST_close($tp_doToken_start, $tp_doToken_line, $tp_doToken_column, 'DoWhileStatement');
   }
 
-  function parseExportDefaultAsync(lexerFlags, scoop, exportedNames, exportedBindings) {
+  function parseExportDefaultAsync(lexerFlags, scoop, exportedBindings) {
     ASSERT(parseExportDefaultAsync.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $ID_async, 'expicitly checked at call site')
 
@@ -4477,7 +4477,7 @@ function Parser(code, options = {}) {
       // no semi
     }
     else if (tok_getType() === $ID_async) {
-      parseExportDefaultAsync(lexerFlags, scoop, exportedNames, exportedBindings);
+      parseExportDefaultAsync(lexerFlags, scoop, exportedBindings);
     }
     else {
       // - `export default 15`
@@ -5672,7 +5672,7 @@ function Parser(code, options = {}) {
     AST_close($tp_ifToken_start, $tp_ifToken_line, $tp_ifToken_column, 'IfStatement');
   }
 
-  function parseImportDeclaration(lexerFlags, scoop, isGlobalToplevel, fdState, astProp) {
+  function parseImportDeclaration(lexerFlags, scoop, isGlobalToplevel, astProp) {
     ASSERT(parseImportDeclaration.length === arguments.length, 'arg count');
     // https://tc39.github.io/ecma262/#sec-imports
     // import 'x'
@@ -10829,7 +10829,7 @@ function Parser(code, options = {}) {
         }
 
         ASSERT_skipToExpressionStart(':', lexerFlags); // skip after so the end-column is correct
-        destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $UNTYPED, bindingType, IS_ASSIGNABLE, destructible, scoop, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+        destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $UNTYPED, bindingType, IS_ASSIGNABLE, destructible, scoop, UNDEF_EXPORTS, UNDEF_EXPORTS);
         AST_close($tp_startOfKeyToken_start, $tp_startOfKeyToken_line, $tp_startOfKeyToken_column, NODE_NAME_PROPERTY);
       }
       else if (tok_getType() === $PUNC_PAREN_OPEN) {
@@ -11076,13 +11076,13 @@ function Parser(code, options = {}) {
     }
     ASSERT_skipToExpressionStart(':', lexerFlags);
 
-    destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $tp_keyToken_type, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp);
+    destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $tp_keyToken_type, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings);
 
     AST_close($tp_startOfKeyToken_start, $tp_startOfKeyToken_line, $tp_startOfKeyToken_column, NODE_NAME_PROPERTY);
 
     return destructible;
   }
-  function _parseObjectPropertyValueAfterColon(lexerFlags, $tp_keyToken_type, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop, exportedNames, exportedBindings, astProp) {
+  function _parseObjectPropertyValueAfterColon(lexerFlags, $tp_keyToken_type, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop, exportedNames, exportedBindings) {
     ASSERT(_parseObjectPropertyValueAfterColon.length === arguments.length, 'arg count');
 
     let $tp_valueFirstToken_line = tok_getLine();
@@ -12002,7 +12002,7 @@ function Parser(code, options = {}) {
     let $tp_nameToken_canon = parseClassId(lexerFlags, optionalIdent, scoop);
 
     // TODO: I'm pretty sure scoop should be DO_NOT_BIND here (and can be folded inward)
-    _parseClass(lexerFlags, originalOuterLexerFlags, scoop, IS_STATEMENT);
+    _parseClass(lexerFlags, originalOuterLexerFlags, IS_STATEMENT);
 
     AST_close($tp_classToken_start, $tp_classToken_line, $tp_classToken_column, 'ClassDeclaration');
 
@@ -12034,7 +12034,7 @@ function Parser(code, options = {}) {
     // TODO: can extends and computed prop keys access the class id? is there any way that is relevant for parsers?
     parseClassId(lexerFlags, IDENT_OPTIONAL, DO_NOT_BIND);
 
-    let assignable = _parseClass(lexerFlags, originalOuterLexerFlags, DO_NOT_BIND, IS_EXPRESSION);
+    let assignable = _parseClass(lexerFlags, originalOuterLexerFlags, IS_EXPRESSION);
     AST_close($tp_classToken_start, $tp_classToken_line, $tp_classToken_column, 'ClassExpression');
 
     // The `await/yield` flags only describe the `extends` part. Additionally the class as a whole is not assignable.
@@ -12091,7 +12091,7 @@ function Parser(code, options = {}) {
 
     return $tp_bindingNameToken_canon;
   }
-  function _parseClass(outerLexerFlags, originalOuterLexerFlags, scoop, isExpression) {
+  function _parseClass(outerLexerFlags, originalOuterLexerFlags, isExpression) {
     ASSERT(arguments.length === _parseClass.length, 'expecting all args');
     ASSERT(hasAllFlags(outerLexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(typeof originalOuterLexerFlags === 'number', 'originalOuterLexerFlags number');
@@ -12140,11 +12140,11 @@ function Parser(code, options = {}) {
 
     // note: generator and async state is not reset because computed method names still use the outer state
     // Note: this `assignable` is relevant for passing back await/yield flags
-    assignable |= parseClassBody(innerLexerFlags, outerLexerFlags, originalOuterLexerFlags, scoop, BINDING_TYPE_NONE, isExpression, 'body');
+    assignable |= parseClassBody(innerLexerFlags, outerLexerFlags, originalOuterLexerFlags, BINDING_TYPE_NONE, isExpression, 'body');
 
     return assignable;
   }
-  function parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, scoop, bindingType, isExpression, astProp) {
+  function parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, bindingType, isExpression, astProp) {
     ASSERT(parseClassBody.length === arguments.length, 'expecting all args');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
@@ -12161,12 +12161,12 @@ function Parser(code, options = {}) {
       loc: undefined,
       body: [],
     });
-    let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, scoop, bindingType, isExpression, UNDEF_EXPORTS, UNDEF_EXPORTS, 'body');
+    let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, bindingType, isExpression, 'body');
     AST_close($tp_curlyToken_start, $tp_curlyToken_line, $tp_curlyToken_column, 'ClassBody');
     // Note: returning `assignable` is relevant for passing back await/yield flags that could occur in computed key exprs
     return assignable;
   }
-  function _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, scoop, bindingType, isExpression, exportedNames, exportedBindings, astProp) {
+  function _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, bindingType, isExpression, astProp) {
     ASSERT(_parseClassBody.length === arguments.length, 'arg count');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
@@ -12196,7 +12196,7 @@ function Parser(code, options = {}) {
       let $tp_memberStartToken_start = tok_getStart();
       let $tp_memberStartToken_stop = tok_getStop();
 
-      let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
+      let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, bindingType, astProp);
       if (hasAnyFlag(destructNow, PIGGY_BACK_WAS_CONSTRUCTOR)) {
         if (hasConstructor) {
           // TODO: we can juggle this "has constructor" state into the class parsers and throw there with a better loc
@@ -12234,7 +12234,7 @@ function Parser(code, options = {}) {
 
     return destructibleForPiggies;
   }
-  function parseClassMethod(lexerFlags, outerLexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp) {
+  function parseClassMethod(lexerFlags, outerLexerFlags, bindingType, astProp) {
     // parseProperty parseMethod
     ASSERT(parseClassMethod.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
@@ -12320,7 +12320,7 @@ function Parser(code, options = {}) {
 
     if (isIdentToken(tok_getType())) {
       ASSERT(tok_getType() !== $ID_static || $tp_staticToken_type === $ID_static, 'methods named "static" are caught elsewhere');
-      destructible = parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, $tp_staticToken_type, $tp_staticToken_start, $tp_staticToken_line, $tp_staticToken_column, exportedNames, exportedBindings, astProp);
+      destructible = parseClassMethodFromIdent(lexerFlags, outerLexerFlags, $tp_staticToken_type, $tp_staticToken_start, $tp_staticToken_line, $tp_staticToken_column, astProp);
     }
     else if (isNumberStringToken(tok_getType())) {
       // property names can also be strings and numbers but these cannot be shorthanded
@@ -12433,7 +12433,7 @@ function Parser(code, options = {}) {
     // - `s = {"foo": await = x} = x`
     return copyPiggies(destructible, assignable);
   }
-  function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, scoop, bindingType, $tp_staticToken_type, $tp_staticToken_start, $tp_staticToken_line, $tp_staticToken_column, exportedNames, exportedBindings, astProp) {
+  function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, $tp_staticToken_type, $tp_staticToken_start, $tp_staticToken_line, $tp_staticToken_column, astProp) {
     ASSERT(parseClassMethodFromIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
     ASSERT($tp_staticToken_type === $UNTYPED || $tp_staticToken_type === $ID_static, 'static token');
