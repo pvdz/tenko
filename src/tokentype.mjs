@@ -2020,6 +2020,23 @@ const REGEX_ATOM_CURLYR = 13;
 const REGEX_ATOM_OR = 14;
 const REGEX_ATOM_NL = 15;
 
+const STRING_ESC_OK = 0;
+const STRING_ESC_N = 1;
+const STRING_ESC_SQ = 2;
+const STRING_ESC_DQ = 3;
+const STRING_ESC_U = 4;
+const STRING_ESC_X = 5;
+const STRING_ESC_UNICODE = 6;
+const STRING_ESC_T = 7;
+const STRING_ESC_R = 8;
+const STRING_ESC_CR = 9;
+const STRING_ESC_LF = 10;
+const STRING_ESC_0 = 11;
+const STRING_ESC_123456789 = 12;
+const STRING_ESC_B = 13;
+const STRING_ESC_F = 14;
+const STRING_ESC_V = 15;
+
 const HEX_OOB = 16;
 
 // Inspired by https://twitter.com/Ghost1240145716/status/1186595972232564736 / https://gist.github.com/KFlash/c53a2f0adb25e88ab7cdc3d77d295635
@@ -2943,6 +2960,137 @@ let regexAtomJumpTable = [
   REGEX_ATOM_OTHER,       // 0x7E   yes   ~
   // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
 ];
+let stringEscapeStartJumpTable = [
+  // val                      hex    end   desc
+  STRING_ESC_OK,          // 0x00   yes   NUL
+  STRING_ESC_OK,          // 0x01   yes   SOH
+  STRING_ESC_OK,          // 0x02   yes   STX
+  STRING_ESC_OK,          // 0x03   yes   ETX
+  STRING_ESC_OK,          // 0x04   yes   EOT
+  STRING_ESC_OK,          // 0x05   yes   ENQ
+  STRING_ESC_OK,          // 0x06   yes   ACK
+  STRING_ESC_OK,          // 0x07   yes   BEL
+  STRING_ESC_OK,          // 0x08   yes   BS
+  STRING_ESC_OK,          // 0x09   yes   HT
+  STRING_ESC_LF,          // 0x0A   yes   LF
+  STRING_ESC_OK,          // 0x0B   yes   VT
+  STRING_ESC_OK,          // 0x0C   yes   FF
+  STRING_ESC_CR,          // 0x0D   no2   CR :: CR CRLF
+  STRING_ESC_OK,          // 0x0E   yes   SO
+  STRING_ESC_OK,          // 0x0F   yes   SI
+  STRING_ESC_OK,          // 0x10   yes   DLE
+  STRING_ESC_OK,          // 0x11   yes   DC1
+  STRING_ESC_OK,          // 0x12   yes   DC2
+  STRING_ESC_OK,          // 0x13   yes   DC3
+  STRING_ESC_OK,          // 0x14   yes   DC4
+  STRING_ESC_OK,          // 0x15   yes   NAK
+  STRING_ESC_OK,          // 0x16   yes   SYN
+  STRING_ESC_OK,          // 0x17   yes   ETB
+  STRING_ESC_OK,          // 0x18   yes   CAN
+  STRING_ESC_OK,          // 0x19   yes   EM
+  STRING_ESC_OK,          // 0x1A   yes   SUB
+  STRING_ESC_OK,          // 0x1B   yes   ESC
+  STRING_ESC_OK,          // 0x1C   yes   FS
+  STRING_ESC_OK,          // 0x1D   yes   GS
+  STRING_ESC_OK,          // 0x1E   yes   RS
+  STRING_ESC_OK,          // 0x1F   yes   US
+  STRING_ESC_OK,          // 0x20   yes   space
+  STRING_ESC_OK,          // 0x21   no3   ! :: ! != !==
+  STRING_ESC_DQ,          // 0x22   no*   "
+  STRING_ESC_OK,          // 0x23   yes   #
+  STRING_ESC_OK,          // 0x24   no*   $
+  STRING_ESC_OK,          // 0x25   no2   % :: % %=
+  STRING_ESC_OK,          // 0x26   no3   & :: & && &=
+  STRING_ESC_SQ,          // 0x27   no*   '
+  STRING_ESC_OK,          // 0x28   yes   (
+  STRING_ESC_OK,          // 0x29   yes   )
+  STRING_ESC_OK,          // 0x2A   no4   * :: * ** *= **=
+  STRING_ESC_OK,          // 0x2B   no3   + :: + ++ +=
+  STRING_ESC_OK,          // 0x2C   yes   ,
+  STRING_ESC_OK,          // 0x2D   no4   - :: - -- -= -->
+  STRING_ESC_OK,          // 0x2E   no3   . :: . ... number
+  STRING_ESC_OK,          // 0x2F   no*   /
+  STRING_ESC_0,           // 0x30   no*   0
+  STRING_ESC_123456789,   // 0x31   no*   1
+  STRING_ESC_123456789,   // 0x32   no*   2
+  STRING_ESC_123456789,   // 0x33   no*   3
+  STRING_ESC_123456789,   // 0x34   no*   4
+  STRING_ESC_123456789,   // 0x35   no*   5
+  STRING_ESC_123456789,   // 0x36   no*   6
+  STRING_ESC_123456789,   // 0x37   no*   7
+  STRING_ESC_123456789,   // 0x38   no*   8
+  STRING_ESC_123456789,   // 0x39   no*   9
+  STRING_ESC_OK,          // 0x3A   yes   :
+  STRING_ESC_OK,          // 0x3B   yes   ;
+  STRING_ESC_OK,          // 0x3C   no4   < :: < << <= <<= <!--
+  STRING_ESC_OK,          // 0x3D   no4   = :: = == === =>
+  STRING_ESC_OK,          // 0x3E   no7   > :: > >= >> >>= >>> >>>=
+  STRING_ESC_OK,          // 0x3F   yes   ?
+  STRING_ESC_OK,          // 0x40   yes   @
+  STRING_ESC_OK,          // 0x41   no*   A
+  STRING_ESC_OK,          // 0x42   no*   B
+  STRING_ESC_OK,          // 0x43   no*   C
+  STRING_ESC_OK,          // 0x44   no*   D
+  STRING_ESC_OK,          // 0x45   no*   E
+  STRING_ESC_OK,          // 0x46   no*   F
+  STRING_ESC_OK,          // 0x47   no*   G
+  STRING_ESC_OK,          // 0x48   no*   H
+  STRING_ESC_OK,          // 0x49   no*   I
+  STRING_ESC_OK,          // 0x4A   no*   J
+  STRING_ESC_OK,          // 0x4B   no*   K
+  STRING_ESC_OK,          // 0x4C   no*   L
+  STRING_ESC_OK,          // 0x4D   no*   M
+  STRING_ESC_OK,          // 0x4E   no*   N
+  STRING_ESC_OK,          // 0x4F   no*   O
+  STRING_ESC_OK,          // 0x50   no*   P
+  STRING_ESC_OK,          // 0x51   no*   Q
+  STRING_ESC_OK,          // 0x52   no*   R
+  STRING_ESC_OK,          // 0x53   no*   S
+  STRING_ESC_OK,          // 0x54   no*   T
+  STRING_ESC_OK,          // 0x55   no*   U
+  STRING_ESC_OK,          // 0x56   no*   V
+  STRING_ESC_OK,          // 0x57   no*   W
+  STRING_ESC_OK,          // 0x58   no*   X
+  STRING_ESC_OK,          // 0x59   no*   Y
+  STRING_ESC_OK,          // 0x5A   no*   Z
+  STRING_ESC_OK,          // 0x5B   yes   [
+  STRING_ESC_OK,          // 0x5C   no2   \ :: \uHHHH \u{H*}
+  STRING_ESC_OK,          // 0x5D   yes   ]
+  STRING_ESC_OK,          // 0x5E   no2   ^ :: ^ ^=
+  STRING_ESC_OK,          // 0x5F   no*   _ (lodash) Note: this is an ID_CONTINUE https://codepoints.net/U+005F
+  STRING_ESC_OK,          // 0x60   no*   ` :: `...${ `...`
+  STRING_ESC_OK,          // 0x61   no*   a
+  STRING_ESC_B,           // 0x62   no*   b
+  STRING_ESC_OK,          // 0x63   no*   c
+  STRING_ESC_OK,          // 0x64   no*   d
+  STRING_ESC_OK,          // 0x65   no*   e
+  STRING_ESC_F,           // 0x66   no*   f
+  STRING_ESC_OK,          // 0x67   no*   g
+  STRING_ESC_OK,          // 0x68   no*   h
+  STRING_ESC_OK,          // 0x69   no*   i
+  STRING_ESC_OK,          // 0x6A   no*   j
+  STRING_ESC_OK,          // 0x6B   no*   k
+  STRING_ESC_OK,          // 0x6C   no*   l
+  STRING_ESC_OK,          // 0x6D   no*   m
+  STRING_ESC_N,           // 0x6E   no*   n
+  STRING_ESC_OK,          // 0x6F   no*   o
+  STRING_ESC_OK,          // 0x70   no*   p
+  STRING_ESC_OK,          // 0x71   no*   q
+  STRING_ESC_R,           // 0x72   no*   r
+  STRING_ESC_OK,          // 0x73   no*   s
+  STRING_ESC_T,           // 0x74   no*   t
+  STRING_ESC_U,           // 0x75   no*   u
+  STRING_ESC_V,           // 0x76   no*   v
+  STRING_ESC_OK,          // 0x77   no*   w
+  STRING_ESC_X,           // 0x78   no*   x
+  STRING_ESC_OK,          // 0x79   no*   y
+  STRING_ESC_OK,          // 0x7A   no*   z
+  STRING_ESC_OK,          // 0x7B   yes   {
+  STRING_ESC_OK,          // 0x7C   no3   | :: | || |=
+  STRING_ESC_OK,          // 0x7D   no3   } :: } }...` }...${
+  STRING_ESC_OK,          // 0x7E   yes   ~
+  // TODO: is it more efficient to fill the table with 0x7f to align it with a power of 2? It's unlikely to prevent a miss so that's not a reason but I recall po2 to be a reason
+];
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
@@ -3278,6 +3426,24 @@ export {
   REGEX_ATOM_CURLYR,
   REGEX_ATOM_OR,
   REGEX_ATOM_NL,
+
+  stringEscapeStartJumpTable,
+  STRING_ESC_OK,
+  STRING_ESC_N,
+  STRING_ESC_SQ,
+  STRING_ESC_DQ,
+  STRING_ESC_U,
+  STRING_ESC_UNICODE,
+  STRING_ESC_LF,
+  STRING_ESC_CR,
+  STRING_ESC_0,
+  STRING_ESC_123456789,
+  STRING_ESC_B,
+  STRING_ESC_F,
+  STRING_ESC_R,
+  STRING_ESC_T,
+  STRING_ESC_V,
+  STRING_ESC_X,
 
   HEX_OOB,
 

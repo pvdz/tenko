@@ -400,6 +400,24 @@ import {
   REGEX_ATOM_OR,
   REGEX_ATOM_NL,
 
+  stringEscapeStartJumpTable,
+  STRING_ESC_OK,
+  STRING_ESC_N,
+  STRING_ESC_SQ,
+  STRING_ESC_DQ,
+  STRING_ESC_U,
+  STRING_ESC_UNICODE,
+  STRING_ESC_LF,
+  STRING_ESC_CR,
+  STRING_ESC_0,
+  STRING_ESC_123456789,
+  STRING_ESC_B,
+  STRING_ESC_F,
+  STRING_ESC_R,
+  STRING_ESC_T,
+  STRING_ESC_V,
+  STRING_ESC_X,
+
   HEX_OOB,
 
   // <SCRUB ASSERTS TO COMMENT>
@@ -1052,92 +1070,102 @@ function Lexer(
       return BAD_ESCAPE;
     }
 
-    // read() because we need to consume at least one char here
+    // we need to consume at least one char here
     let c = peek();
     skip();
+
+    let s = c > 0x7e ? STRING_ESC_UNICODE : stringEscapeStartJumpTable[c];
+
     // note: the parser only really cares about \u and \x. it needs no extra work for \t \n etc
     // note: it _does_ need to take care of escaped digits
-    switch(c) {
-      case $$U_75: {
+    switch(s) {
+      case STRING_ESC_OK:
+        // we can ignore this escape. treat it as a single char escape.
+        lastCanonizedInput += String.fromCharCode(c);
+        ++lastCanonizedInputLen; // Always 1 char
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_N:
+        lastCanonizedInput += '\n';
+        ++lastCanonizedInputLen;
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_SQ:
+        lastCanonizedInput += '\'';
+        ++lastCanonizedInputLen;
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_DQ:
+        lastCanonizedInput += '"';
+        ++lastCanonizedInputLen;
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_U: {
         let r = parseIdentOrStringEscapeUnicode();
         if (r === ILLEGAL_UNICODE_ESCAPE) return BAD_ESCAPE;
         lastCanonizedInput += r > 0xffff ? String.fromCodePoint(r) : String.fromCharCode(r);
         lastCanonizedInputLen += r > 0xffff ? 2 : 1;
-        return r;
+        return GOOD_ESCAPE;
       }
 
-      case $$X_78:
+      case STRING_ESC_X:
         return parseStringEscapeHex();
 
-      case $$0_30:
-      case $$1_31:
-      case $$2_32:
-      case $$3_33:
-      case $$4_34:
-      case $$5_35:
-      case $$6_36:
-      case $$7_37:
-      case $$8_38:
-      case $$9_39:
-        return parseStringEscapeOctalOrDigit(c, forTemplate, lexerFlags);
+      case STRING_ESC_UNICODE:
+        if (c === $$PS_2028 || c === $$LS_2029) {
+          incrementLine();
+          return GOOD_ESCAPE;
+        }
+        lastCanonizedInput += String.fromCharCode(c);
+        ++lastCanonizedInputLen; // Always 1 char
+        return GOOD_ESCAPE;
 
-      case $$T_74:
+      case STRING_ESC_T:
         lastCanonizedInput += '\t';
         ++lastCanonizedInputLen;
         return GOOD_ESCAPE;
-      case $$N_6E:
-        lastCanonizedInput += '\n';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      case $$R_72:
+
+      case STRING_ESC_R:
         lastCanonizedInput += '\r';
         ++lastCanonizedInputLen;
         return GOOD_ESCAPE;
-      case $$B_62:
-        lastCanonizedInput += '\b';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      case $$F_66:
-        lastCanonizedInput += '\f';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      case $$V_76:
-        lastCanonizedInput += '\v';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      case $$SQUOTE_27:
-        lastCanonizedInput += '\'';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      case $$DQUOTE_22:
-        lastCanonizedInput += '"';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      case $$BACKSLASH_5C:
-        lastCanonizedInput += '\\';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
 
-      case $$LF_0A:
-      case $$PS_2028:
-      case $$LS_2029:
-        incrementLine();
-        return GOOD_ESCAPE;
-      case $$CR_0D:
-        // Does not add anything to `lastCanonizedInput`
+      case STRING_ESC_CR:
+        // Line continuation. Does not add anything to `lastCanonizedInput`
         // Edge case: `\crlf` is a valid line continuation
         if (neof() && peeky($$LF_0A)) ASSERT_skip($$LF_0A);
         incrementLine();
         return GOOD_ESCAPE;
 
+      case STRING_ESC_LF:
+        // Line continuation. Does not add anything to `lastCanonizedInput`
+        incrementLine();
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_0:
+      case STRING_ESC_123456789:
+        return parseStringEscapeOctalOrDigit(c, forTemplate, lexerFlags);
+
+      case STRING_ESC_B:
+        lastCanonizedInput += '\b';
+        ++lastCanonizedInputLen;
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_F:
+        lastCanonizedInput += '\f';
+        ++lastCanonizedInputLen;
+        return GOOD_ESCAPE;
+
+      case STRING_ESC_V:
+        lastCanonizedInput += '\v';
+        ++lastCanonizedInputLen;
+        return GOOD_ESCAPE;
+
+      // <SCRUB ASSERTS>
       default:
-        lastCanonizedInput += String.fromCharCode(c);
-        ++lastCanonizedInputLen; // Always 1 char
+        return ASSERT(false, 'unreachable', c);
+      // </SCRUB ASSERTS>
     }
-
-
-    // we can ignore this escape. treat it as a single char escape.
-    return GOOD_ESCAPE;
   }
   function parseIdentOrStringEscapeUnicode() {
     ASSERT(parseIdentOrStringEscapeUnicode.length === arguments.length, 'arg count');
