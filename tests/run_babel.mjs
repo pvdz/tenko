@@ -1,6 +1,6 @@
 import babel from '@babel/parser';
 
-function runBabel(code, mode) {
+function runBabel(code, mode, annexb, version) {
   if (mode === 'strict' || mode === 'sloppy') return false;
   // The Babel parser seems to apply AnnexB by default with no opt-out so we can't test strict/sloppy directly
   return babel.parse(code, {

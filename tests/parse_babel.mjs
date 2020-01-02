@@ -18,7 +18,7 @@ function compareBabel(code, tenkoPassed, testVariant, enableAnnexb, file, timePe
   let babelOk, babelFail, tasb;
   if (timePerf) console.time('Pure Babel parse time');
   try {
-    babelOk = runBabel(code, testVariant);
+    babelOk = runBabel(code, testVariant, enableAnnexb);
   } catch (e) {
     babelFail = e;
   }

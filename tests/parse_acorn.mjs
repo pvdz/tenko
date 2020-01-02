@@ -19,7 +19,7 @@ function compareAcorn(code, tenkoPassed, testVariant, enableAnnexb, file, versio
   let acornOk, acornFail, tasa;
   if (timePerf) console.time('Pure Acorn parse time');
   try {
-    acornOk = runAcorn(code, testVariant, version);
+    acornOk = runAcorn(code, testVariant, enableAnnexb, version);
   } catch (e) {
     acornFail = e;
   }

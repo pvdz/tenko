@@ -38,7 +38,7 @@ const RESET = '\x1b[0m';
     // await read({path: 'ignore/perf/es3.fb.newsfeed.min.js', mode: 'web'}),
     //
     // // From babel repo
-    await read({path: 'ignore/perf/es6.material-ui-core.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es6.material-ui-core.js', mode: 'web'}),
     // await read({path: 'ignore/perf/es6.angular-compiler.js', mode: 'module'}),
     //
     // // Random
@@ -49,6 +49,8 @@ const RESET = '\x1b[0m';
     // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes.js', mode: 'module'}),
     // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-noclass.js', mode: 'module'}), // (same except all `[` are removed which promotes all escapes to atoms)
     // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes.js', mode: 'module'}), // (same except replaced unicode quad with unicode variables)
+    await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-strings.js', mode: 'web'}), // (same except regexes replaced with strings)
+    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-templates.js', mode: 'web'}), // (same except regexes replaced with templates)
     //
     // old... 20mb
     // await read({path: 'ignore/perf/es5-8mb-bench.js', mode: 'web'}),

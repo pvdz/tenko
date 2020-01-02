@@ -60,7 +60,7 @@ let getParser = async (name) => {
     case 'tenk2':
       let {Tenko} = await import(TENKO_PROD_FILE);
       let {testTenko} = await import('./parse_tenko.mjs')
-      parser = (code, testVariant) => testTenko(Tenko, code, testVariant, true);
+      parser = (code, testVariant, annexb, version) => testTenko(Tenko, code, testVariant, annexb, version);
       break;
     default: throw 'unknown parser? [' + name + ']';
   }
@@ -175,7 +175,7 @@ if (!NO_HEADER && N <= 1 && N != -2) {
       let t1 = performance.now();
 
       try {
-        parser(getcode(path), mode);
+        parser(getcode(path), mode, true, 11); // enable webcompat by default
       } catch (e) {
         console.error(RED + pname + ' crashed :( ' + DIM + String(e.message).slice(0, 200) + RESET);
         if (N >= 0) process.exit(0);

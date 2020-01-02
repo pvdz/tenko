@@ -1,14 +1,15 @@
 import {Tenko} from '../build/tenko.prod.mjs';
 
-function runTenkoBuild(code, testVariant, enableAnnexb) {
+function runTenkoBuild(code, testVariant, annexb, version) {
   return Tenko(
     code,
     {
       goalMode: testVariant === 'module',
       collectTokens: 0,
       strictMode: testVariant === 'strict',
-      webCompat: enableAnnexb || testVariant === 'web',
-      // targetEsVersion: tob.inputOptions.es,
+      webCompat: annexb || testVariant === 'web',
+      targetEsVersion: Number.isFinite(version) ? version : 11,
+
       babelCompat: false,
       acornCompat: false,
 

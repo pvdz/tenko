@@ -1,4 +1,4 @@
-function testTenko(tenko, code, testVariant, enableAnnexb) {
+function testTenko(tenko, code, testVariant, enableAnnexb, version) {
   return tenko(
     code,
     {
@@ -6,7 +6,7 @@ function testTenko(tenko, code, testVariant, enableAnnexb) {
       collectTokens: 0,
       strictMode: testVariant === 'strict',
       webCompat: enableAnnexb || testVariant === 'web',
-      // targetEsVersion: tob.inputOptions.es,
+      // targetEsVersion: version,
       babelCompat: false,
       acornCompat: false,
 

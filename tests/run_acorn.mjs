@@ -1,6 +1,6 @@
 import acorn from 'acorn';
 
-function runAcorn(code, mode, version) {
+function runAcorn(code, mode, annexb, version) {
   if (mode === 'strict' || mode === 'sloppy') return false;
   // The Acorn parser seems to apply AnnexB by default with no opt-out so we can't test strict/sloppy directly
   return acorn.parse(code, {

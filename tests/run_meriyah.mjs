@@ -4,7 +4,7 @@ import meriyah from 'meriyah';
 
 const {parseScript} = meriyah;
 
-function runMeriyah(code, mode, version) {
+function runMeriyah(code, mode, annexb, version) {
   if (mode === 'strict' || mode === 'sloppy') return false;
 
   return parseScript(code, {
@@ -18,7 +18,7 @@ function runMeriyah(code, mode, version) {
     // ranges: false,
 
     // Enable web compability
-    webcompat: true, // Since other parsers don't support this we assume this enabled by default
+    webcompat: !!annexb, // Since other parsers don't support this we assume this enabled by default
 
     // The flag to enable line/column location information to each node
     loc: true,

@@ -27,7 +27,7 @@ let start = 0;
 let parseTime = 0;
 try {
   start = performance.now();
-  parse(code, TARGET_MODE);
+  parse(code, TARGET_MODE, true, 11); // Enable annexb by default for parsers that support the distinction. We'll need to update this once we find a benchmark that requires annexb disabled
   parseTime = performance.now() - start;
   console.log(parseTime);
   process.exit(0);

@@ -35,7 +35,7 @@ PERFONE=''
 RESET=''
 RECORD=''
 NATIVESYMBOLS=''
-MAX_ARG=-1
+MAX_ARG=''
 NODE_PROF=''            # For --node-prof, generates a flame chart using nodejs builtins
 ORG_ARGS="${@}"         # This is used to restart this process with cset for cpu shielding and at RT priority (=> sudo)
 STABLE=''               # Used with `./t stable`, `./t ??? --stable`, and `./t ??? --stabled`
@@ -43,6 +43,7 @@ STABLE_ONLY_SETUP=''    # Used with `./t stable` (so not as flag)
 STABLE_NO_SETUP=''      # Used with `./t ??? --stabled`, which skips the setup (still need to restart in `cset` and `crt`)
 
 BOLD="\e[;1;1m";
+BOLD_RED="\e[1;31m";
 BOLD_GREEN="\e[1;32m";
 DIM="\e[30;1m";
 RED="\e[31m";
@@ -85,7 +86,7 @@ Tenko test runner help:
  --sloppy      Enable sloppy script mode, do not auto-enable other modes
  --strict      Enable strict script mode, do not auto-enable other modes
  --module      Enable module goal mode, do not auto-enable other modes
- --annexb      Enable the syntax extensions under Annex B
+ --annexb      Enable the syntax extensions under Annex B, regardless of mode
  --web         Alias for --sloppy and --web
  --min         Only for f and i, for invalid input; minify the test case while keeping same error
  --min-printer Only for f and i, for inputs that cause bad printer behavior; minify the test case while keeping same error
@@ -237,6 +238,7 @@ Tenko test runner help:
     --strict)       MODE='--strict'       ;;
     --module)       MODE='--module'       ;;
     --annexb)       ANNEXB='--annexb'     ;;
+    --force-web)    ANNEXB='--annexb'     ;; # Already added this new before realizing the functionality already existed
     --web)          MODE='--web'          ;;
     --acorn)        ACORN='--acorn'       ;;
     --test-acorn)   ACORN='--test-acorn'  ;;
@@ -607,7 +609,7 @@ case "${ACTION}" in
       if [[ -z "${NO_BUILDING}" ]]; then
         ./t z --node-bin ${NODE_BIN} ${MINIFY} ${NO_MANGLE}
       fi
-      ${NODE_BIN} --experimental-modules --max-old-space-size=8192 tests/build.mjs
+      ${NODE_BIN} --experimental-modules --max-old-space-size=8192 tests/build.mjs ${ANNEXB}
       ;;
 
     perf6)
@@ -620,11 +622,15 @@ case "${ACTION}" in
       # That's not a big deal as I'm assuming p6 runs on a dedicated machine with dedicated cores.
       # You can control the parser, input file/mode, output file, and loop counter through `./t` flags.
 
+      set +x;
+
       if [[ -z "${NO_BUILDING}" && "${PARSER_NAME}" = "tenko" ]]; then
         ./t z --node-bin ${NODE_BIN} --no-compat ${MINIFY} ${NO_MANGLE}
       fi
 
-      set +x;
+      # Setup for if we want to compare a build of Tenko to the current build
+      # (The idea is that you build master, supply it as a param, and take the current build in /build
+      # and start benchmarking one after the other in repeat while tracking and comparing the results)
 
       # Note: paths are relative to tenko/ignore/ because the generated template is written and run from there
       declare -A PARSERS # This required for associative arrays in bash (otherwise it won't do what you expect it to)
@@ -636,14 +642,27 @@ case "${ACTION}" in
         [meriy]='../tests/run_meriyah.mjs'
       )
 
+      COMPARE_MODE=''
+
       if [[ "${PARSER_NAME}" == "all" ]]; then
         echo -e "Using ${BOLD}all${NOCOLOR} parsers"
+      elif [[ "${PARSER_NAME}" == ignore/* ]]; then
+        BACKUP_NAME_FOR_PRINT=$PARSER_NAME
+        # Assuming this is a build of Tenko that we want to compare against the build in the regular build/ location
+        TENKO=${PARSERS[tenko]}
+        PARSERS=(
+          [custom]="./${PARSER_NAME:7}" # slice off the `ignore/` prefix because the generated script imports from that folder
+          [tenko]=${TENKO}
+        )
+        COMPARE_MODE='1'
+        OUTPUT_FILE_COMPARE="/tmp/tenko.p6.compare.log"
+        echo "Start" > ${OUTPUT_FILE_COMPARE}
+        echo "Comparing a custom build of Tenko (presumably) in ${PARSERS[custom]} to the current build in ${PARSERS[tenko]}";
       else
         echo "Checking for parser=${PARSER_NAME}"
         PARSER_PATH=${PARSERS[$PARSER_NAME]}
         if [[ -z "${PARSERS[$PARSER_NAME]}" ]]; then
-          # TODO: support generic way to run on arbitrary build of tenko speicfied by file path
-        # TODO: auto build Tenko from commit hash
+          # TODO: auto build Tenko from commit hash
           echo "Unknown parser: ${PARSER_NAME}. Known parsers: ${!PARSERS[@]}"
           exit 1
         fi
@@ -653,267 +672,332 @@ case "${ACTION}" in
         )
       fi
 
+      INPUT_PATHS=()
+      INPUT_MODES=()
+
+      # Sanity test and quick overhead baseline check.
+      INPUT_PATHS+=( 'ignore/perf/es6.tiny.js' )
+      INPUT_MODES+=( 'module' )
+
+      # Large js file rom fb (es3, public minified build output, 3+ y/o)
+      INPUT_PATHS+=( 'ignore/perf/es3.fb.newsfeed.min.js' )
+      INPUT_MODES+=( 'web' )
+
+      # All js1k demos dumped into one file. This might actually contain some es6 ...
+      INPUT_PATHS+=( 'ignore/perf/es5.js1k.js' )
+      INPUT_MODES+=( 'web' )
+
+      # From babel repo
+      INPUT_PATHS+=( 'ignore/perf/es6.material-ui-core.js' )
+      INPUT_MODES+=( 'web' )
+      INPUT_PATHS+=( 'ignore/perf/es6.angular-compiler.js' )
+      INPUT_MODES+=( 'module' )
+
+      # Random
+      INPUT_PATHS+=( 'ignore/perf/es5.moment-with-locales.js' )
+      INPUT_MODES+=( 'web' )
+      INPUT_PATHS+=( 'ignore/perf/es6.mljs.js' )
+      INPUT_MODES+=( 'module' )
+
+      # Specific regex test case (testing unicode escapes in regex)
+      INPUT_PATHS+=( 'ignore/perf/es5.5mb.node-unicode-data-regexes.js' )            # (concat of all regexes generated by node-unicode-data)
+      INPUT_MODES+=( 'module' )
+      INPUT_PATHS+=( 'ignore/perf/es5.5mb.node-unicode-data-regexes-noclass.js' )    # (same except all `[` are removed which promotes all escapes to atoms)
+      INPUT_MODES+=( 'module' )
+      INPUT_PATHS+=( 'ignore/perf/es6.5mb.node-unicode-data-regexes.js' )            # (same except replaced unicode quad with unicode variables)
+      INPUT_MODES+=( 'module' )
+      INPUT_PATHS+=( 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-strings.js' ) # (same except replaced regexes with strings)
+      INPUT_MODES+=( 'web' )
+      INPUT_PATHS+=( 'ignore/perf/es6.5mb.node-unicode-data-regexes-as-templates.js' ) # (same except replaced regexes with templates)
+      INPUT_MODES+=( 'web' )
+
+      # Old huge zeparser2 benchmarks
+      INPUT_PATHS+=( 'ignore/perf/es5.8mb-bench.js' )
+      INPUT_MODES+=( 'web' )
+      INPUT_PATHS+=( 'ignore/perf/es5.16mb-bench.js' )
+      INPUT_MODES+=( 'web' )
+      INPUT_PATHS+=( 'ignore/perf/es5.webkit.npm.1.0.0.js' )
+      INPUT_MODES+=( 'web' )
+#      INPUT_PATHS+=( 'ignore/perf/es5.35mb-kate.js.jo.js' )
+#      INPUT_MODES+=( 'web' )
+
+      REPORT_INTERVAL=100
+
+      # Or just use the arg supplied name
+      if [[ ! -z "${INPUT_FILE_ARG}" ]]; then
+        INPUT_PATHS=( ${INPUT_FILE_ARG} )
+        INPUT_MODES=( ${INPUT_MODE_ARG} )
+      fi
+
       for PARSER_NAME in "${!PARSERS[@]}" ; do
-        PARSER_PATH=${PARSERS[$PARSER_NAME]}
         OUTPUT_FILE="/tmp/tenko.p6.${PARSER_NAME}.log"
         if [[ ! -z "${OUTPUT_FILE_OVERRIDE}" ]]; then
           OUTPUT_FILE=${OUTPUT_FILE_OVERRIDE}
         fi
-
-        echo -e "Using ${BOLD}${PARSER_PATH}${NOCOLOR} as the parser"
-        echo -e "Writing results to ${BOLD}${OUTPUT_FILE}${NOCOLOR}"
-
-        # Generate the script we'll use (this circumvents the requirement of using async to import a parser by param)
-        # Note: sed doesn ot support non-greedy so we use perl directly
-        TPL_START='s|/\* <TPL PARSER_PATH>.*?</TPL> \*/' # Store here so we don't have to escape twice
-        perl -pe "${TPL_START}|'${PARSER_PATH}'|" ./tests/p6.tpl.mjs > ignore/p6.generated.mjs
-
-        INPUT_PATHS=()
-        INPUT_MODES=()
-
-        # Sanity test and quick overhead baseline check.
-        INPUT_PATHS+=( 'ignore/perf/es6.tiny.js' )
-        INPUT_MODES+=( 'module' )
-
-        # Large js file rom fb (es3, public minified build output, 3+ y/o)
-        INPUT_PATHS+=( 'ignore/perf/es3.fb.newsfeed.min.js' )
-        INPUT_MODES+=( 'web' )
-
-        # All js1k demos dumped into one file. This might actually contain some es6 ...
-        INPUT_PATHS+=( 'ignore/perf/es5.js1k.js' )
-        INPUT_MODES+=( 'web' )
-
-        # From babel repo
-        INPUT_PATHS+=( 'ignore/perf/es6.material-ui-core.js' )
-        INPUT_MODES+=( 'web' )
-        INPUT_PATHS+=( 'ignore/perf/es6.angular-compiler.js' )
-        INPUT_MODES+=( 'module' )
-
-        # Random
-        INPUT_PATHS+=( 'ignore/perf/es5.moment-with-locales.js' )
-        INPUT_MODES+=( 'web' )
-        INPUT_PATHS+=( 'ignore/perf/es6.mljs.js' )
-        INPUT_MODES+=( 'module' )
-
-        # Specific regex test case (testing unicode escapes in regex)
-        INPUT_PATHS+=( 'ignore/perf/es5.5mb.node-unicode-data-regexes.js' )         # (concat of all regexes generated by node-unicode-data)
-        INPUT_MODES+=( 'module' )
-        INPUT_PATHS+=( 'ignore/perf/es5.5mb.node-unicode-data-regexes-noclass.js' ) # (same except all `[` are removed which promotes all escapes to atoms)
-        INPUT_MODES+=( 'module' )
-        INPUT_PATHS+=( 'ignore/perf/es6.5mb.node-unicode-data-regexes.js' )         # (same except replaced unicode quad with unicode variables)
-        INPUT_MODES+=( 'module' )
-
-        # Old huge zeparser2 benchmarks
-        INPUT_PATHS+=( 'ignore/perf/es5.8mb-bench.js' )
-        INPUT_MODES+=( 'web' )
-        INPUT_PATHS+=( 'ignore/perf/es5.16mb-bench.js' )
-        INPUT_MODES+=( 'web' )
-        INPUT_PATHS+=( 'ignore/perf/es5.webkit.npm.1.0.0.js' )
-        INPUT_MODES+=( 'web' )
-  #      INPUT_PATHS+=( 'ignore/perf/es5.35mb-kate.js.jo.js' )
-  #      INPUT_MODES+=( 'web' )
-
-        # Or just use the arg supplied name
-        if [[ ! -z "${INPUT_FILE_ARG}" ]]; then
-          INPUT_PATHS=( ${INPUT_FILE_ARG} )
-          INPUT_MODES=( ${INPUT_MODE_ARG} )
-        fi
-
-        # Clear log
+        # Clear logs
         echo -e "Start of log\n" > ${OUTPUT_FILE}
+      done
 
-        for INPUT_I in ${!INPUT_PATHS[@]} ; do
-          echo "Input ${INPUT_I} is ${INPUT_PATHS[$INPUT_I]}"
+      # Note: we loop files first so we can easily loop the parsers on the same file and print comparisons per file
+      # This has the downside of having to write out the template every time again but that's no big deal
 
-          INPUT_FILE=${INPUT_PATHS[$INPUT_I]}
-          INPUT_MODE=${INPUT_MODES[$INPUT_I]}
+      for INPUT_I in ${!INPUT_PATHS[@]} ; do
+        INPUT_FILE=${INPUT_PATHS[$INPUT_I]}
+        INPUT_MODE=${INPUT_MODES[$INPUT_I]}
 
-          MAX=100
-          if [[ ! -z "${MAX_ARG}" ]]; then
-            MAX=${MAX_ARG}
-            if [[ "${MAX}" == "0" ]]; then
-              MAX="-1" # Infinite loop
-            fi
-          fi
-          REPORT_INTERVAL=100
+        # If we're comparing builds then we need to track the metrics for each parser individually. Since Bash has
+        # severe struct limits we'll just store the last N100 stats for one file for two parsers to compare them.
+        AB_MIN_A=1000000
+        AB_MIN_B=1000000
+        AB_MEAN_A=0
+        AB_MEAN_B=0
+        AB_MEDIAN_A=0
+        AB_MEDIAN_B=0
+        AB_SD_A=0
+        AB_SD_B=0
 
-          echo -e "\n# Input file: ${INPUT_FILE}" >> ${OUTPUT_FILE}
-          echo -e "To repeat this run: ${BOLD}\`./t p6 --stabled --input-file ${INPUT_FILE} --input-mode ${INPUT_MODE} --parser ${PARSER_NAME} --output-file ${OUTPUT_FILE} --max ${MAX}\`${NOCOLOR}"
+        MEH=''
+        while [[ $MEH == '' || $MAX_ARG == 0 ]]; do # This only passes more than once when comparing two parsers at max=0
+          MEH='1'
+          for PARSER_NAME in "${!PARSERS[@]}" ; do
 
-          # Now run the benchmark in an infinite loop
-          # Stats are tracked in this shell script. It's proven to destabilize nodejs to track and report on a large number of runs.
-          # So instead p6.mjs will print the time taken (or crash) and this script will collect them and tdo the reporting
-
-          COUNT=${MAX};
-          RUNS=0
-          NUMBAS=()
-          NUMBAS100=()
-          SUM=0.0
-          PREVMEAN="0"
-          PREVMEDIAN="0"
-          LAST_LINE=''
-          LAST_LINE100=100
-          while [ $COUNT != 0 ]; do
-
-            # ignore/p6.generated.mjs is generated in an earlier step above
-            PARSE_TIME=$( NODE_NO_WARNINGS=1 ${NODE_BIN} --experimental-modules --max-old-space-size=8192 ignore/p6.generated.mjs --target-file ${INPUT_FILE} --target-mode ${INPUT_MODE} ) || true
-
-            set +x; # Just in case
-
-            IS_NUM='^[0-9.]+$' # Over-accepts for dots. Do. Not. Care.
-            if [[ ! ${PARSE_TIME} =~ ${IS_NUM} ]] ; then
-              # Assuming we won't have negative parse times this means the command failed
-              # We expect stable parses so this should happen ever parse attempt so so we will continue with next file
-              echo $PARSE_TIME
-              echo "Parser crashed. Skipping this file."
-              NUMBAS=(1)
-              NUMBAS100=(1)
-              LAST_LINE="Error: ${PARSE_TIME}"
-              LAST_LINE100="Error: ${PARSE_TIME}"
-              break
+            PARSER_PATH=${PARSERS[$PARSER_NAME]}
+            OUTPUT_FILE="/tmp/tenko.p6.${PARSER_NAME}.log"
+            if [[ ! -z "${OUTPUT_FILE_OVERRIDE}" ]]; then
+              OUTPUT_FILE=${OUTPUT_FILE_OVERRIDE}
             fi
 
-            COUNT=$(( $COUNT - 1 ));
-            RUNS=$(( $RUNS + 1 ));
+            # Generate the script we'll use (this circumvents the requirement of using async to import a parser by param)
+            # Note: sed doesn ot support non-greedy so we use perl directly
+            TPL_START='s|/\* <TPL PARSER_PATH>.*?</TPL> \*/' # Store here so we don't have to escape twice
+            perl -pe "${TPL_START}|'${PARSER_PATH}'|" ./tests/p6.tpl.mjs > ignore/p6.generated.mjs
 
-            printf -v PARSE_TIME_FLOORED "%01d" ${PARSE_TIME/.*} # Flooring in bash seems unnecessarily hard otherwise :'( Using printif in the unlikely event of a sub-ms event
-            NUMBAS+=( ${PARSE_TIME_FLOORED} ) # Store the floored numbers. We use a different var for calculating avg and there's no other need for the fraction
-            NUMBAS100+=( ${PARSE_TIME_FLOORED} )
-
-            # https://stackoverflow.com/questions/7442417/how-to-sort-an-array-in-bash
-            readarray -t NUMBAS < <(printf '%s\n' "${NUMBAS[@]}" | sort -n)
-
-            # No need to min/max since I order the array so I can just take the first and last element
-            MIN=${NUMBAS[0]}   # This is an int
-            MAX=${NUMBAS[-1]}  # This is an int
-            test ${MIN} -eq ${MAX} || test ${MIN} -lt ${MAX} || { echo "fail: array= ${NUMBAS[@]}"; exit 1; } # Assetion: Array be sorted and contain ints.
-
-            # Using bc for the maths since bash does not do floats
-            SUM=$( echo "${SUM} + ${PARSE_TIME}" | bc -l )
-            MEAN_FLOORED=$( echo "${SUM} / ${RUNS}" | bc -l )
-            printf -v MEAN_FLOORED "%01d" ${MEAN_FLOORED/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
-
-            # Bash does integer logic and the number of elements in NUMBAS should equal that of RUNS so RUNS/2 should be Math.floor(NUMBAS.length/2)
-            MEDIAN="${NUMBAS[ $(( ${RUNS} / 2 )) ]}";
-
-            # Note: Back to bc for determining the int % delta between the current time and the lowest time for graph plots
-            LOWDIST=$( echo "((${PARSE_TIME} / ${MIN})) * 100 - 100" | bc -l )
-            # Ok bc actually doesn't floor so we abuse printf for that :(
-            printf -v LOWDIST "%01d" ${LOWDIST/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
-
-            # Create a small plot ranging 0 to 9% to indicate how many % the current time is from the lowest measured time so far
-            # This creates a visual aid to see how stable the generated numbers are, roughly
-            PERCPLOT=(. . . . . . . . . .)
-            PERCPLOT_INDEX=LOWDIST
-            test $LOWDIST -gt 9 && PERCPLOT_INDEX=10 # We will smash PERCPLOT[10] explicitly later so trunc it to there
-            PERCPLOT[PERCPLOT_INDEX]=$LOWDIST
-            PERCPLOT[10]='%'
-            test $LOWDIST -lt 2 && PERCPLOT[10]="${GREEN}%"
-            test $LOWDIST -gt 5 && PERCPLOT[10]="${RED}%"
-            printf -v PERCPLOT '%s' "${PERCPLOT[@]}" # https://stackoverflow.com/questions/13470413/converting-a-bash-array-into-a-delimited-string
-
-            # Plot of 50 dots between low and high to indicate where the current hit lies
-            # While a little misleading due to a moving center, the median is plotted as | and current is o
-            # Build up the plot similar to the percentage plot; start with an array of dots then overwrite steps
-            MEDPLOT=(. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .)
-            # Figure out where the median is on this scale. If it exceeds the scale then it becomes the end.
-            test $MIN -lt $MAX && MEDPLOT_MEDIAN=$( echo "((${MEDIAN} - ${MIN}) / (${MAX} - ${MIN})) * 50" | bc -l ) || MEDPLOT_MEDIAN=24
-            printf -v MEDPLOT_MEDIAN "%01d" ${MEDPLOT_MEDIAN/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
-            test ${MEDPLOT_MEDIAN} -gt 49 && MEDPLOT_MEDIAN=49
-            MEDPLOT[${MEDPLOT_MEDIAN}]='|'
-            test $MIN -lt $MAX && MEDPLOT_NOW=$( echo "(((${PARSE_TIME} - ${MIN}) / (${MAX} - ${MIN}))) * 50" | bc -l ) || MEDPLOT_NOW=0
-            printf -v MEDPLOT_NOW "%01d" ${MEDPLOT_NOW/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
-            test ${MEDPLOT_NOW} -gt 49 && MEDPLOT_NOW=49
-            MEDPLOT[${MEDPLOT_NOW}]='o'
-            printf -v MEDPLOT '%s' "${MEDPLOT[@]}" # https://stackoverflow.com/questions/13470413/converting-a-bash-array-into-a-delimited-string
-            # Dim the dots, they should not add too much to the noise
-            MEDPLOT=$( echo ${MEDPLOT} | sed 's/\(\.\+\)/\\e[30;1m\1\\e[0m/g' )
-
-            # Print delta indicators when mean or median changes (animation wooo!)
-            ARROW_MEDIAN=' '
-            test ${PREVMEDIAN} -gt 0 && test ${PREVMEDIAN} -lt ${MEDIAN} && ARROW_MEDIAN="${RED}${ARROW_UP}${DIM}"
-            test ${PREVMEDIAN} -gt 0 && test ${PREVMEDIAN} -gt ${MEDIAN} && ARROW_MEDIAN="${GREEN}${ARROW_DOWN}${DIM}"
-            PREVMEDIAN=${MEDIAN}
-            ARROW_MEAN=' '
-            test ${PREVMEAN} -gt 0 && test ${PREVMEAN} -lt ${MEAN_FLOORED} && ARROW_MEAN="${RED}${ARROW_UP}${DIM}"
-            test ${PREVMEAN} -gt 0 && test ${PREVMEAN} -gt ${MEAN_FLOORED} && ARROW_MEAN="${GREEN}${ARROW_DOWN}${DIM}"
-            PREVMEAN=${MEAN_FLOORED}
-
-            # Pad the timestamps for nice lineups. Use MAX to pad to prevent pingpongs when benchmarks twiddle around 100 or 1000
-            printf -v PAD_RUNS "%*s" 3 ${RUNS} # Prevent jumping within 1000 iterations. Allow for a jump beyond that.
-            printf -v PAD_PT "%${#MAX}g" ${PARSE_TIME_FLOORED}
-            printf -v PAD_MEAN "%${#MAX}.0f" ${MEAN_FLOORED}
-            printf -v PAD_MEDIAN "%${#MAX}.0f" ${MEDIAN}
-
-            TIMECOLOR=${BOLD_GREEN}
-            PRINT_MIN="${GREEN}${MIN}${NOCOLOR}"
-            if [ ${PARSE_TIME_FLOORED} -gt ${MIN} ]; then
-              TIMECOLOR=${NOCOLOR}
-              PRINT_MIN=${MIN}
-            fi
-            PRINT_MAX="${RED}${MAX}${NOCOLOR}"
-            if [ ${PARSE_TIME_FLOORED} -lt ${MAX} ]; then
-              PRINT_MAX=${MAX}
+            MAX=100
+            if [[ ! -z "${MAX_ARG}" ]]; then
+              MAX=${MAX_ARG}
+              if [[ "${MAX}" == "0" ]]; then
+                MAX="-1" # Infinite loop
+              fi
             fi
 
-            # Compute the delta of the mean and each value
-            SD=0
-            for N in "${NUMBAS[@]}"; do
-              T=$(( (N - MEAN_FLOORED) * (N - MEAN_FLOORED) ))
-              SD=$(( SD + T ))
-            done
-            SD=$( echo "scale=3; sqrt(${SD}) / ${#NUMBAS[@]}" | bc )
+            echo -e "\n# Input file: ${INPUT_FILE}" >> ${OUTPUT_FILE}
 
-            # The padding is dropped in LAST_LINE somehow ... probably a weird rule I don't know
-            LAST_LINE="${PERCPLOT}${DIM} ${PAD_RUNS}:${TIMECOLOR} ${PAD_PT} ${DIM}ms${NOCOLOR}   ${DIM}(median${ARROW_MEDIAN}${BOLD}${MEDIAN}${DIM} mean${ARROW_MEAN}${PAD_MEAN})${NOCOLOR} ${DIM}[${NOCOLOR}${PRINT_MIN} ${MEDPLOT} ${PRINT_MAX}${DIM}]${NOCOLOR}   ${DIM}<$(( $MEDIAN - $MIN ))>${NOCOLOR} sd=${SD}"
-            echo -e "${PERCPLOT}${DIM} ${PAD_RUNS}:${TIMECOLOR} ${PAD_PT} ${DIM}ms${NOCOLOR}   ${DIM}(median${ARROW_MEDIAN}${BOLD}${MEDIAN}${DIM} mean${ARROW_MEAN}${PAD_MEAN})${NOCOLOR} ${DIM}[${NOCOLOR}${PRINT_MIN} ${MEDPLOT} ${PRINT_MAX}${DIM}]${NOCOLOR}   ${DIM}<$(( $MEDIAN - $MIN ))>${NOCOLOR} sd=${SD}"
+            echo "#################################"
+            echo -e "### Parsing file # ${INPUT_I}: ${INPUT_FILE} with mode ${INPUT_MODE}"
+            echo -e "### Using ${BOLD}${PARSER_PATH}${NOCOLOR} as the parser"
+            echo -e "### Writing results to ${BOLD}${OUTPUT_FILE}${NOCOLOR}"
+            echo -e "### To repeat this run: ${BOLD}\`./t p6 --stabled --input-file ${INPUT_FILE} --input-mode ${INPUT_MODE} --parser $([[ ${PARSER_NAME} == "custom" ]] && echo ${BACKUP_NAME_FOR_PRINT} || echo ${PARSER_NAME}) --output-file ${OUTPUT_FILE} --max ${MAX}\`${NOCOLOR}"
+            echo "###########"
 
-            N100=${#NUMBAS100[@]}
-            if [ "${N100}" = "${REPORT_INTERVAL}" ]; then
+            # Now run the benchmark in an infinite loop
+            # Stats are tracked in this shell script. It's proven to destabilize nodejs to track and report on a large number of runs.
+            # So instead p6.mjs will print the time taken (or crash) and this script will collect them and tdo the reporting
 
-              TOTAL100=0
-              MIN100=10000000
-              for N in "${NUMBAS100[@]}"; do
-                TOTAL100=$(( TOTAL100 + N ))
-                test $N -lt $MIN100 && MIN100=$N
-              done
+            COUNT=${MAX};
+            RUNS=0
+            NUMBAS=()
+            NUMBAS100=()
+            SUM=0.0
+            PREVMEAN="0"
+            PREVMEDIAN="0"
+            LAST_LINE=''
+            LAST_LINE100=100
+            while [ $COUNT != 0 ]; do
+
+              # ignore/p6.generated.mjs is generated in an earlier step above
+              PARSE_TIME=$( NODE_NO_WARNINGS=1 ${NODE_BIN} --experimental-modules --max-old-space-size=8192 ignore/p6.generated.mjs --target-file ${INPUT_FILE} --target-mode ${INPUT_MODE} ) || true
+
+              set +x; # Just in case
+
+              IS_NUM='^[0-9.]+$' # Over-accepts for dots. Do. Not. Care.
+              if [[ ! ${PARSE_TIME} =~ ${IS_NUM} ]] ; then
+                # Assuming we won't have negative parse times this means the command failed
+                # We expect stable parses so this should happen ever parse attempt so so we will continue with next file
+                echo $PARSE_TIME
+                echo "Parser crashed. Skipping this file."
+                NUMBAS=(1)
+                NUMBAS100=(1)
+                LAST_LINE="Error: ${PARSE_TIME}"
+                LAST_LINE100="Error: ${PARSE_TIME}"
+                break
+              fi
+
+              COUNT=$(( $COUNT - 1 ));
+              RUNS=$(( $RUNS + 1 ));
+
+              printf -v PARSE_TIME_FLOORED "%01d" ${PARSE_TIME/.*} # Flooring in bash seems unnecessarily hard otherwise :'( Using printif in the unlikely event of a sub-ms event
+              NUMBAS+=( ${PARSE_TIME_FLOORED} ) # Store the floored numbers. We use a different var for calculating avg and there's no other need for the fraction
+              NUMBAS100+=( ${PARSE_TIME_FLOORED} )
 
               # https://stackoverflow.com/questions/7442417/how-to-sort-an-array-in-bash
-              readarray -t NUMBAS100 < <(printf '%s\n' "${NUMBAS100[@]}" | sort -n)
+              readarray -t NUMBAS < <(printf '%s\n' "${NUMBAS[@]}" | sort -n)
 
-              MEAN100=$( echo "scale=0; ${TOTAL100} / ${N100}" | bc -l )
-              MEDIAN100=$(( ${NUMBAS100[ $(( ${N100} / 2 )) ]} ))
+              # No need to min/max since I order the array so I can just take the first and last element
+              MIN=${NUMBAS[0]}   # This is an int
+              MAX=${NUMBAS[-1]}  # This is an int
+              test ${MIN} -eq ${MAX} || test ${MIN} -lt ${MAX} || { echo "fail: array= ${NUMBAS[@]}"; exit 1; } # Assetion: Array be sorted and contain ints.
 
-              SD100=0
-              for N in "${NUMBAS100[@]}"; do
-                T100=$(( (N - MEAN100) * (N - MEAN100) ))
-                SD100=$(( SD100 + T100 ))
+              # Using bc for the maths since bash does not do floats
+              SUM=$( echo "${SUM} + ${PARSE_TIME}" | bc -l )
+              MEAN_FLOORED=$( echo "${SUM} / ${RUNS}" | bc -l )
+              printf -v MEAN_FLOORED "%01d" ${MEAN_FLOORED/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
+
+              # Bash does integer logic and the number of elements in NUMBAS should equal that of RUNS so RUNS/2 should be Math.floor(NUMBAS.length/2)
+              MEDIAN="${NUMBAS[ $(( ${RUNS} / 2 )) ]}";
+
+              # Note: Back to bc for determining the int % delta between the current time and the lowest time for graph plots
+              LOWDIST=$( echo "((${PARSE_TIME} / ${MIN})) * 100 - 100" | bc -l )
+              # Ok bc actually doesn't floor so we abuse printf for that :(
+              printf -v LOWDIST "%01d" ${LOWDIST/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
+
+              # Create a small plot ranging 0 to 9% to indicate how many % the current time is from the lowest measured time so far
+              # This creates a visual aid to see how stable the generated numbers are, roughly
+              PERCPLOT=(. . . . . . . . . .)
+              PERCPLOT_INDEX=LOWDIST
+              test $LOWDIST -gt 9 && PERCPLOT_INDEX=10 # We will smash PERCPLOT[10] explicitly later so trunc it to there
+              PERCPLOT[PERCPLOT_INDEX]=$LOWDIST
+              PERCPLOT[10]='%'
+              test $LOWDIST -lt 2 && PERCPLOT[10]="${GREEN}%"
+              test $LOWDIST -gt 5 && PERCPLOT[10]="${RED}%"
+              printf -v PERCPLOT '%s' "${PERCPLOT[@]}" # https://stackoverflow.com/questions/13470413/converting-a-bash-array-into-a-delimited-string
+
+              # Plot of 50 dots between low and high to indicate where the current hit lies
+              # While a little misleading due to a moving center, the median is plotted as | and current is o
+              # Build up the plot similar to the percentage plot; start with an array of dots then overwrite steps
+              MEDPLOT=(. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .)
+              # Figure out where the median is on this scale. If it exceeds the scale then it becomes the end.
+              test $MIN -lt $MAX && MEDPLOT_MEDIAN=$( echo "((${MEDIAN} - ${MIN}) / (${MAX} - ${MIN})) * 50" | bc -l ) || MEDPLOT_MEDIAN=24
+              printf -v MEDPLOT_MEDIAN "%01d" ${MEDPLOT_MEDIAN/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
+              test ${MEDPLOT_MEDIAN} -gt 49 && MEDPLOT_MEDIAN=49
+              MEDPLOT[${MEDPLOT_MEDIAN}]='|'
+              test $MIN -lt $MAX && MEDPLOT_NOW=$( echo "(((${PARSE_TIME} - ${MIN}) / (${MAX} - ${MIN}))) * 50" | bc -l ) || MEDPLOT_NOW=0
+              printf -v MEDPLOT_NOW "%01d" ${MEDPLOT_NOW/.*} # Note: the value may be a fraction without leading zero, if we didnt printf here it would lead to an empty var
+              test ${MEDPLOT_NOW} -gt 49 && MEDPLOT_NOW=49
+              MEDPLOT[${MEDPLOT_NOW}]='o'
+              printf -v MEDPLOT '%s' "${MEDPLOT[@]}" # https://stackoverflow.com/questions/13470413/converting-a-bash-array-into-a-delimited-string
+              # Dim the dots, they should not add too much to the noise
+              MEDPLOT=$( echo ${MEDPLOT} | sed 's/\(\.\+\)/\\e[30;1m\1\\e[0m/g' )
+
+              # Print delta indicators when mean or median changes (animation wooo!)
+              ARROW_MEDIAN=' '
+              test ${PREVMEDIAN} -gt 0 && test ${PREVMEDIAN} -lt ${MEDIAN} && ARROW_MEDIAN="${RED}${ARROW_UP}${DIM}"
+              test ${PREVMEDIAN} -gt 0 && test ${PREVMEDIAN} -gt ${MEDIAN} && ARROW_MEDIAN="${GREEN}${ARROW_DOWN}${DIM}"
+              PREVMEDIAN=${MEDIAN}
+              ARROW_MEAN=' '
+              test ${PREVMEAN} -gt 0 && test ${PREVMEAN} -lt ${MEAN_FLOORED} && ARROW_MEAN="${RED}${ARROW_UP}${DIM}"
+              test ${PREVMEAN} -gt 0 && test ${PREVMEAN} -gt ${MEAN_FLOORED} && ARROW_MEAN="${GREEN}${ARROW_DOWN}${DIM}"
+              PREVMEAN=${MEAN_FLOORED}
+
+              # Pad the timestamps for nice lineups. Use MAX to pad to prevent pingpongs when benchmarks twiddle around 100 or 1000
+              printf -v PAD_RUNS "%*s" 3 ${RUNS} # Prevent jumping within 1000 iterations. Allow for a jump beyond that.
+              printf -v PAD_PT "%${#MAX}g" ${PARSE_TIME_FLOORED}
+              printf -v PAD_MEAN "%${#MAX}.0f" ${MEAN_FLOORED}
+              printf -v PAD_MEDIAN "%${#MAX}.0f" ${MEDIAN}
+
+              TIMECOLOR=${BOLD_GREEN}
+              PRINT_MIN="${GREEN}${MIN}${NOCOLOR}"
+              if [ ${PARSE_TIME_FLOORED} -gt ${MIN} ]; then
+                TIMECOLOR=${NOCOLOR}
+                PRINT_MIN=${MIN}
+              fi
+              PRINT_MAX="${RED}${MAX}${NOCOLOR}"
+              if [ ${PARSE_TIME_FLOORED} -lt ${MAX} ]; then
+                PRINT_MAX=${MAX}
+              fi
+
+              # Compute the delta of the mean and each value
+              SD=0
+              for N in "${NUMBAS[@]}"; do
+                T=$(( (N - MEAN_FLOORED) * (N - MEAN_FLOORED) ))
+                SD=$(( SD + T ))
               done
-              SD100=$( echo "scale=3; sqrt(${SD100}) / ${N100}" | bc )
+              SD=$( echo "scale=3; sqrt(${SD}) / ${#NUMBAS[@]}" | bc )
 
-              LAST_LINE100="### Last ${N100} iterations (only):${BOLD}
-  Mean = ${MEAN100}
-  Median = ${MEDIAN100}
-  SD = ${SD100}, Lowest = ${MIN100}
-${NOCOLOR}###"
-              echo -e "${LAST_LINE100}"
+              # The padding is dropped in LAST_LINE somehow ... probably a weird rule I don't know
+              LAST_LINE="${PERCPLOT}${DIM} ${PAD_RUNS}:${TIMECOLOR} ${PAD_PT} ${DIM}ms${NOCOLOR}   ${DIM}(median${ARROW_MEDIAN}${BOLD}${MEDIAN}${DIM} mean${ARROW_MEAN}${PAD_MEAN})${NOCOLOR} ${DIM}[${NOCOLOR}${PRINT_MIN} ${MEDPLOT} ${PRINT_MAX}${DIM}]${NOCOLOR}   ${DIM}<$(( $MEDIAN - $MIN ))>${NOCOLOR} sd=${SD}"
+              echo -e "${PERCPLOT}${DIM} ${PAD_RUNS}:${TIMECOLOR} ${PAD_PT} ${DIM}ms${NOCOLOR}   ${DIM}(median${ARROW_MEDIAN}${BOLD}${MEDIAN}${DIM} mean${ARROW_MEAN}${PAD_MEAN})${NOCOLOR} ${DIM}[${NOCOLOR}${PRINT_MIN} ${MEDPLOT} ${PRINT_MAX}${DIM}]${NOCOLOR}   ${DIM}<$(( $MEDIAN - $MIN ))>${NOCOLOR} sd=${SD}"
 
-              NUMBAS100=()
-            fi
-          done
-          echo "### This was ${INPUT_FILE} for ${PARSER_PATH} ###"
+              N100=${#NUMBAS100[@]}
+              if [[ "${N100}" = "${REPORT_INTERVAL}" || $COUNT == 0 ]]; then
+                TOTAL100=0
+                MIN100=10000000
+                for N in "${NUMBAS100[@]}"; do
+                  TOTAL100=$(( TOTAL100 + N ))
+                  test $N -lt $MIN100 && MIN100=$N
+                done
 
-          # Only dump the last printed line to the log. It should contain all the data we need.
-          # If need be we can later also dump the individual data points ... not sure we need this.
-          echo -e "${LAST_LINE}" >> ${OUTPUT_FILE}
-          echo -e "${LAST_LINE100}" >> ${OUTPUT_FILE}
-        done # End of input file loop
+                # https://stackoverflow.com/questions/7442417/how-to-sort-an-array-in-bash
+                readarray -t NUMBAS100 < <(printf '%s\n' "${NUMBAS100[@]}" | sort -n)
 
-      done # End of parser loop
+                MEAN100=$( echo "scale=0; ${TOTAL100} / ${N100}" | bc -l )
+                MEDIAN100=$(( ${NUMBAS100[ $(( ${N100} / 2 )) ]} ))
+
+                SD100=0
+                for N in "${NUMBAS100[@]}"; do
+                  T100=$(( (N - MEAN100) * (N - MEAN100) ))
+                  SD100=$(( SD100 + T100 ))
+                done
+                SD100=$( echo "scale=3; sqrt(${SD100}) / ${N100}" | bc )
+
+                LAST_LINE100="### Last ${N100} iterations (only):${BOLD}
+    Mean = ${MEAN100}
+    Median = ${MEDIAN100}
+    SD = ${SD100}, Lowest = ${MIN100}
+  ${NOCOLOR}###"
+                echo -e "${LAST_LINE100}"
+
+                if [[ ! -z "${COMPARE_MODE}" ]]; then
+                  if [[ "${PARSER_NAME}" == "custom" ]]; then
+                    test $MIN100 -lt $AB_MIN_A && AB_MIN_A=$MIN100
+                    AB_MEAN_A=$MEAN100
+                    AB_MEDIAN_A=$MEDIAN100
+                    AB_SD_A=$SD100
+                  else
+                    test $MIN100 -lt $AB_MIN_B && AB_MIN_B=$MIN100
+                    AB_MEAN_B=$MEAN100
+                    AB_MEDIAN_B=$MEDIAN100
+                    AB_SD_B=$SD100
+                  fi
+                  # Start printing deltas after at least one full cycle of the same file
+                  if [[ ${AB_MEAN_B} -gt 0 ]]; then
+                    DUMP="
+  Delta, new (${PARSERS[tenko]}) minus old (${PARSERS[custom]}) for ${INPUT_FILE} (negative means the new is faster):
+  Minimum: $(printf "%20s" "${AB_MIN_B} - ${AB_MIN_A} = ")$( [[ $AB_MIN_B > $AB_MIN_A ]] && echo ${BOLD_RED} || echo ${BOLD_GREEN} )$(printf "%10s" "$(( $AB_MIN_B - $AB_MIN_A ))")${NOCOLOR} ${DIM}($(printf "%7s" "$(echo "scale=3; (${AB_MIN_A} / ${AB_MIN_B} * 100) - 100" | bc)")%)${NOCOLOR}
+  Mean:    $(printf "%20s" "${AB_MEAN_B} - ${AB_MEAN_A} = ")${BOLD}$(printf "%10s" "$(( $AB_MEAN_B - $AB_MEAN_A ))")${NOCOLOR} ${DIM}($(printf "%7s" "$(echo "scale=3; (${AB_MEAN_A} / ${AB_MEAN_B} * 100) - 100" | bc)")%)${NOCOLOR}
+  Median:  $(printf "%20s" "${AB_MEDIAN_B} - ${AB_MEDIAN_A} = ")$( [[ $AB_MEDIAN_B > $AB_MEDIAN_A ]] && echo ${BOLD_RED} || echo ${BOLD_GREEN} )$(printf "%10s" "$(( $AB_MEDIAN_B - $AB_MEDIAN_A ))")${NOCOLOR} ${DIM}($(printf "%7s" "$(echo "scale=3; (${AB_MEDIAN_A} / ${AB_MEDIAN_B} * 100) - 100" | bc)")%)${NOCOLOR}
+  SD:      $(printf "%20s" "${AB_SD_B} vs ${AB_SD_A}")
+                    "
+                    echo -e "${DUMP}"
+                    echo -e "${DUMP}" >> ${OUTPUT_FILE_COMPARE}
+                  fi
+                fi
+
+                NUMBAS100=()
+
+                if [[ ! -z "${COMPARE_MODE}" ]]; then
+                  # Stop this loop and switch to the other parser
+                  COUNT=0
+                fi
+              fi
+            done
+            echo "### This was ${INPUT_FILE} for ${PARSER_PATH} ###"
+
+            # Only dump the last printed line to the log. It should contain all the data we need.
+            # If need be we can later also dump the individual data points ... not sure we need this.
+            echo -e "${LAST_LINE}" >> ${OUTPUT_FILE}
+            echo -e "${LAST_LINE100}" >> ${OUTPUT_FILE}
+
+          done # End of parser loop
+        done # End of infinite parser switching loop (when comparing and max=0)
+
+      done # End of input file loop
 
       # TODO: print final report
 
       echo "End of run. Find stats in ${OUTPUT_FILE}"
+      if [[ ! -z "${OUTPUT_FILE_COMPARE}" ]]; then
+        echo "Comparison stats in ${OUTPUT_FILE_COMPARE}}"
+      fi
 
       ;;
 
@@ -953,7 +1037,7 @@ ${NOCOLOR}###"
     ;;
 
     hf)
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${NO_BUILDING} ${INSPECT_ZEPAR}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${NO_BUILDING} ${INSPECT_ZEPAR} ${ANNEXB}
     ;;
 
     doptigate)
