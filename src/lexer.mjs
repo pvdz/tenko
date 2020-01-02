@@ -4970,29 +4970,32 @@ function Lexer(
 
     let inputOffset = 0;
     if (!fullErrorContext && tokenStart > 100) inputOffset = tokenStart - 100;
-    let inputLen = input.length;
-    if (!fullErrorContext && tokenStart + 200 < input.length) inputLen = tokenStart + 200;
+    let inputLen = input.length - inputOffset;
+    if (!fullErrorContext && tokenStop + 100 < input.length) inputLen = (tokenStop + 100) - inputOffset;
+
     let usedInput = input.slice(inputOffset, inputOffset + inputLen);
+    // .log('\n\nused input: [' + usedInput +' ]')
     let tokenOffset = tokenStart - inputOffset; // Where is tokenStart relative to usedInput?
+    // .log('\n\nstart of token: [' + usedInput.slice(0, tokenOffset) + '#' + usedInput.slice(tokenOffset) +' ]')
 
     // nl1 is the last newline before the point of error, or SOF, relative to usedInput
     // nl2 is the first newline to the right of nl1, or EOF, relative to usedInput
     // We need nl1 to determine the offset and indentation of the error pointer
     // We need nl2 because that's where we'll make the cut to inject the error pointer
     let nl1 = usedInput.lastIndexOf('\n', tokenOffset);
+    // .log('\n\nnl1 ('+nl1+'): [' + usedInput.slice(0, nl1) + '#' + usedInput.slice(nl1) +' ]')
     let nl2 = usedInput.indexOf('\n', nl1 + 1);
     if (nl2 < 0) nl2 = usedInput.length;
+    // .log('\n\nnl2 ('+nl2+'): [' + usedInput.slice(0, nl2) + '#' + usedInput.slice(nl2) +' ]')
     let arrowCount = (tokenStop - tokenStart) || 1;
     let indentCount = tokenOffset - (nl1 + 1);
 
-    let pre = usedInput.slice(inputOffset, nl2).trimEnd(); // Trailing whitespaces are very unlikely to be relevant and annoying in diffs
-    let post = usedInput.slice(nl2, inputOffset + inputLen).trimEnd();
+    let pre = usedInput.slice(0, nl2);
+    // .log('\n\nPre: [' + pre + ']')
+    let post = usedInput.slice(nl2, inputLen);
+    // .log('\n\nPost: [' + pre + ']')
 
-    pre = pre.split('\n').map(s => s.trimRight()).join('\n')
-    post = post.split('\n').map(s => s.trimRight()).join('\n')
-
-    return (
-      (inputOffset > 0 ? '...\n' : '') +
+    let returnValue = (
       pre + '\n' +
       ' '.repeat(Math.max(0, indentCount)) +
       '^'.repeat(Math.max(0, arrowCount)) +
@@ -5001,6 +5004,9 @@ function Lexer(
       (usedInput.length > inputLen ? '\n...' : '') +
       ''
     );
+
+    // Drop trailing whitespace per line. Not likely to make a difference and annoying in git diffs.
+    return returnValue.split('\n').map(s => s.trimRight()).join('\n')
   }
 
   return {
