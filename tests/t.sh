@@ -489,7 +489,7 @@ if [[ ! -z "${STABLE}" && -z "${STABLE_NO_SETUP}" ]]; then
     sudo sh -c "echo 0 > $x" || true;
   done
   sudo service irqbalance stop
-  sudo source /etc/default/irqbalance
+  source /etc/default/irqbalance
   sudo service irqbalance start
   # Get a quick overview through: `find /proc/irq/ -name smp_affinity | xargs cat`
   # See up-to-date (cummulative) irq stats: `watch -n1 -d "cat /proc/interrupts"`
