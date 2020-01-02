@@ -878,6 +878,9 @@ case "${ACTION}" in
                 test $N -lt $MIN100 && MIN100=$N
               done
 
+              # https://stackoverflow.com/questions/7442417/how-to-sort-an-array-in-bash
+              readarray -t NUMBAS100 < <(printf '%s\n' "${NUMBAS100[@]}" | sort -n)
+
               MEAN100=$( echo "scale=0; ${TOTAL100} / ${N100}" | bc -l )
               MEDIAN100=$(( ${NUMBAS100[ $(( ${N100} / 2 )) ]} ))
 
