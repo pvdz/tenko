@@ -671,7 +671,7 @@ function Lexer(
       nlwas = consumedNewlinesBeforeSolid; // Do not include the newlines for the token itself unless whitespace (ex: `` throw `\n` ``)
 
       if (eof()) {
-        createToken($EOF, pointer, pointer, startCol, startRow, false);
+        createToken($EOF, pointer, pointer, startCol, startRow);
         finished = true;
         return returnSolidToken($EOF);
       }
@@ -684,26 +684,26 @@ function Lexer(
 
       // Non-whitespace tokens always get returned
       if (!isWhiteToken(consumedTokenType)) {
-        createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+        createToken(consumedTokenType, start, pointer, startCol, startRow);
         return returnSolidToken(consumedTokenType);
       }
 
       // Babel parity demands comments to be returned... Not sure whether the complexity (over checking $white) is worth
       if (isCommentToken(consumedTokenType)) {
         if (returnTokens === RETURN_COMMENT_TOKENS) {
-          createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+          createToken(consumedTokenType, start, pointer, startCol, startRow);
           return returnCommentToken(consumedTokenType);
         }
       }
 
       // This is a whitespace token (which may be a comment) that is not yet collected.
       if (collectTokens === COLLECT_TOKENS_ALL) {
-        createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+        createToken(consumedTokenType, start, pointer, startCol, startRow);
         tokenStorage.push(consumedTokenType);
       }
 
       if (returnTokens === RETURN_ANY_TOKENS) {
-        return createToken(consumedTokenType, start, pointer, startCol, startRow, false);
+        return createToken(consumedTokenType, start, pointer, startCol, startRow);
       }
 
       // At this point it has to be some form of whitespace and we're clearly not returning it so we can
@@ -819,7 +819,7 @@ function Lexer(
       case START_PERCENT:
         return parseCompoundAssignment($$PERCENT_25); // % %=
       case START_AND:
-        return parseSameOrCompound(c); // & && &=
+        return parseSameOrCompound($$AND_26); // & && &=
       case START_STAR:
         return parseStar(); // * *= ** **=
       case START_CARET:
@@ -829,7 +829,7 @@ function Lexer(
       case START_GT:
         return parseGtPunctuator(); // > >> >>> >= >>= >>>=
       case START_OR:
-        return parseSameOrCompound(c); // | || |=
+        return parseSameOrCompound($$OR_7C); // | || |=
       case START_UNICODE:
         return parseOtherUnicode(c);
       case START_BSLASH:
@@ -854,7 +854,7 @@ function Lexer(
     // are asi's whitespace? i dunno. they're kinda special so maybe.
     // put it _before_ the current token (that should be the "offending" token)
     if (collectTokens !== COLLECT_TOKENS_NONE) {
-      // createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine, true);
+      // createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine);
       tokenStorage.push($ASI, tokenStorage.pop());
     }
     ++anyTokenCount;
@@ -862,7 +862,7 @@ function Lexer(
     prevTokenSolid = true;
   }
 
-  function createToken(type, start, stop, column, line, asi) {
+  function createToken(type, start, stop, column, line) {
     ASSERT(createToken.length === arguments.length, 'arg count');
     ASSERT(ALL_TOKEN_TYPES.includes(type) || console.log('####\n' + getErrorContext(start, stop)), 'the set of generated token types is fixed. New ones combinations should be part of this set');
     ASSERT(Number.isFinite(start), 'start finite');
@@ -1385,8 +1385,11 @@ function Lexer(
             return $PUNC_AND_AND;
           case $$OR_7C:
             return $PUNC_OR_OR;
+          // <SCRUB ASSERTS>
+          default:
+            return ASSERT(false, 'unreachable, c is one of four enum', c);
+          // </SCRUB ASSERTS>
         }
-        return ASSERT(false, 'unreachable'), $ERROR;
       }
       if (d === $$IS_3D) {
         ASSERT_skip($$IS_3D); // @=
@@ -1399,8 +1402,11 @@ function Lexer(
             return $PUNC_AND_EQ;
           case $$OR_7C:
             return $PUNC_OR_EQ;
+          // <SCRUB ASSERTS>
+          default:
+            return ASSERT(false, 'unreachable, c is one of four enum', c);
+          // </SCRUB ASSERTS>
         }
-        return ASSERT(false, 'unreachable'), $ERROR;
       }
     }
     switch (c) {
@@ -1412,8 +1418,11 @@ function Lexer(
         return $PUNC_AND;
       case $$OR_7C:
         return $PUNC_OR;
+      // <SCRUB ASSERTS>
+      default:
+        return ASSERT(false, 'unreachable, c is one of four enum', c);
+      // </SCRUB ASSERTS>
     }
-    return ASSERT(false, 'unreachable'), $ERROR;
   }
 
   function parseTemplateString(lexerFlags, fromTick) {
@@ -2097,7 +2106,7 @@ function Lexer(
     return uflagStatus;
   }
 
-  function readNextCodepointAsStringExpensive(c, offset, forError) {
+  function readNextCodepointAsStringExpensive(c, offset) {
     ASSERT(readNextCodepointAsStringExpensive.length === arguments.length, 'arg count');
     ASSERT(typeof c === 'number', 'cnum', c);
     // 0xDC00–0xDFFF is the surrogate pair range and means the next character is required to form the full unicode
@@ -3028,10 +3037,10 @@ function Lexer(
         //                 ^
         // [x]: `/(?<x>foo)\k<\u0020ame>xyz/``
         //                          ^
-        return regexSyntaxError('Named capturing group named contained an invalid unicode escaped char', '`' + readNextCodepointAsStringExpensive(c, CODEPOINT_FROM_ESCAPE, true) + '`', c);
+        return regexSyntaxError('Named capturing group named contained an invalid unicode escaped char', '`' + readNextCodepointAsStringExpensive(c, CODEPOINT_FROM_ESCAPE) + '`', c);
       }
 
-      let firstCharStr = readNextCodepointAsStringExpensive(c, CODEPOINT_FROM_ESCAPE, false);
+      let firstCharStr = readNextCodepointAsStringExpensive(c, CODEPOINT_FROM_ESCAPE);
       ASSERT(typeof firstCharStr === 'string', 'readNextCodepointAsStringExpensive should return a string', firstCharStr, c, CODEPOINT_FROM_ESCAPE, false);
 
       if (peeky($$GT_3E)) {
@@ -3134,7 +3143,7 @@ function Lexer(
     }
 
     if (eof()) {
-      return regexSyntaxError('Missing closing angle bracket of name of capturing group', eof() || ('`' + readNextCodepointAsStringExpensive(peek(), pointer, true) + '`'), eof() || peek());
+      return regexSyntaxError('Missing closing angle bracket of name of capturing group', eof() || ('`' + readNextCodepointAsStringExpensive(peek(), pointer) + '`'), eof() || peek());
     }
 
     if (!peeky($$GT_3E)) {
@@ -4114,11 +4123,14 @@ function Lexer(
         // In webcompat mode, without uflag, it leads to SourceCharacterIdentityEscape and passes without "body"
         const FROM_CHARCLASS = true;
         let regexPropState = parseRegexPropertyEscape(c, FROM_CHARCLASS);
+
         if (regexPropState === REGEX_ALWAYS_BAD) {
           ASSERT(lastPotentialRegexError, 'should be set');
           ASSERT(lastReportableLexerError, 'should be set');
           return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD;
-        } else if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
+        }
+
+        if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
           ASSERT(lastPotentialRegexError, 'should be set');
           // semantically ignored without u-flag, syntactically only okay in web-compat / Annex B mode
           if (webCompat === WEB_COMPAT_ON) {
@@ -4128,7 +4140,9 @@ function Lexer(
             ASSERT(lastReportableLexerError, 'should be set');
             return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD;
           }
-        } else if (regexPropState === REGEX_GOOD_WITH_U_FLAG) {
+        }
+
+        if (regexPropState === REGEX_GOOD_WITH_U_FLAG) {
           ASSERT(lastPotentialRegexError, 'should be set');
           // webcompat mode has no effect to the u-flag...
           // if (webCompat === WEB_COMPAT_ON) {
@@ -4136,13 +4150,12 @@ function Lexer(
           // } else {
             return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
           // }
-        } else {
-          ASSERT(regexPropState === REGEX_ALWAYS_GOOD, 'parseRegexPropertyEscape should return enum');
-          ASSERT(webCompat === WEB_COMPAT_ON, 'can only be always good in webcompat?');
-          // https://tc39.es/ecma262/#sec-patterns-static-semantics-character-value
-          return REGEX_CHARCLASS_CLASS_ESCAPE;
         }
-        return ASSERT(false, 'unreachable');
+
+        ASSERT(regexPropState === REGEX_ALWAYS_GOOD, 'parseRegexPropertyEscape should return enum');
+        ASSERT(webCompat === WEB_COMPAT_ON, 'can only be always good in webcompat?');
+        // https://tc39.es/ecma262/#sec-patterns-static-semantics-character-value
+        return REGEX_CHARCLASS_CLASS_ESCAPE;
 
       // digits
       // https://tc39.github.io/ecma262/#prod-CharacterClass
