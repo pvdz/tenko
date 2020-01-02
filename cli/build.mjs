@@ -13,7 +13,7 @@ let dirname = path.dirname(filePath);
 
 const SCRUB_OTHERS = process.argv.includes('--no-compat'); // force all occurrences of compatAcorn and compatBabel to false
 const NATIVE_SYMBOLS = process.argv.includes('--native-symbols'); // Replace `PERF_$` with `%`?
-const NO_MIN = NATIVE_SYMBOLS || process.argv.includes('--no-min'); // skip minifier (cant use minifier with native symbols regardless)
+const MIN = NATIVE_SYMBOLS || process.argv.includes('--min'); // skip minifier (cant use minifier with native symbols regardless)
 const NO_MANGLE = NATIVE_SYMBOLS || process.argv.includes('--no-mangle'); // tell Terser not to mangle the names. Usually used combined with Prettier to clearly see minifier output.
 const NO_AST = process.argv.includes('--no-ast'); // drop ast related code from the parser (`AST_*`)
 
@@ -190,9 +190,7 @@ ${forEsm ? '};' : '});'}
   }
 
   let sizeBefore = build.length;
-  if (NO_MIN) {
-    console.log('Skipping minification step');
-  } else {
+  if (MIN) {
     console.time('Terser time');
     console.log('Minification through Terser...');
     let t = Terser.minify(build, {

@@ -26,7 +26,8 @@ PSFIX=''
 HF=''
 NOCOMP=''
 NOAST=''
-NOMIN=''
+MINIFY=''
+NO_MANGLE=''
 INSPECT=''
 DEVTOOLS=''
 PRETTIER=''
@@ -101,9 +102,9 @@ Tenko test runner help:
  --nb          Don't actually create a build for cases where this otherwise would happen (prevents sudo trouble :)
  --no-compat   For \`z\`; Replace the compat flags for Acorn and Babel to \`false\` so the minifier eliminates the dead code
  --no-ast      For \`z\`; Strip all AST code when creating a build
- --no-min      For \`z\`; Do not run Terser (minifier) on build output
+ --min         For \`z\`; Run Terser (minifier) on build output (warning: this can significantly degrade performance)
  --no-mangle   For \`z\`; Run Terser but tell it not to mangle identifiers (use together with \`--pretty\`)
- --pretty      For \`z\`; Run prettier on the build afterwards (useful with \`--no-min\`)
+ --pretty      For \`z\`; Run prettier on the build afterwards
  --native-symbols For \`z\`; Special build step turns \`PERF_\$\` prefixed functions into \`%\` to enable v8 internal functions.
  --inspect     Run with \`node --inspect-brk\` to debug node in the chrome devtools. Use \`--devtools\` to auto-profile.
  --devtools    Call \`console.profile()\` before and after the core parse step (not all actions support this)
@@ -252,8 +253,8 @@ Tenko test runner help:
     --nb)           NO_BUILDING='--nb'    ;;
     --no-compat)    NOCOMP='--no-compat'  ;;
     --no-ast)       NOAST='--no-ast'      ;;
-    --no-min)       NOMIN='--no-min'      ;;
-    --no-mangle)    NOMIN='--no-mangle'   ;;
+    --min)          MINIFY='--min'        ;;
+    --no-mangle)    NO_MANGLE='--no-mangle' ;;
     --pretty)       PRETTIER='yes'        ;;
     --prettier)     PRETTIER='yes'        ;;
     --native-symbols) NATIVESYMBOLS='--native-symbols' ;;
@@ -549,7 +550,7 @@ if [[ "${HF}" = "yes" ]]; then
 
       if [[ -z "${NO_BUILDING}" ]]; then
         echo "Creating pretty build without compat code and without minification"
-        ./t z --no-compat --no-min --pretty ${NATIVESYMBOLS} ${NOAST} --node-bin ${NODE_BIN}
+        ./t z --no-compat --pretty ${NATIVESYMBOLS} ${NOAST} ${MINIFY} ${NO_MANGLE} --node-bin ${NODE_BIN}
       fi
 
       # Transform the build file inline
@@ -595,7 +596,7 @@ case "${ACTION}" in
 
     build)
       mkdir -p build
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules cli/build.mjs ${NOCOMP} ${NOAST} ${NOMIN} ${INSPECT_ZEPAR} ${NATIVESYMBOLS}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules cli/build.mjs ${NOCOMP} ${NOAST} ${MINIFY} ${INSPECT_ZEPAR} ${NATIVESYMBOLS}
       if [[ ! -z "${PRETTIER}" ]]; then
           node_modules/.bin/prettier build/tenko.prod.mjs --write
           node_modules/.bin/prettier build/tenko.prod.js --write
@@ -604,7 +605,7 @@ case "${ACTION}" in
 
     test-build)
       if [[ -z "${NO_BUILDING}" ]]; then
-        ./t z --node-bin ${NODE_BIN}
+        ./t z --node-bin ${NODE_BIN} ${MINIFY} ${NO_MANGLE}
       fi
       ${NODE_BIN} --experimental-modules --max-old-space-size=8192 tests/build.mjs
       ;;
@@ -620,7 +621,7 @@ case "${ACTION}" in
       # You can control the parser, input file/mode, output file, and loop counter through `./t` flags.
 
       if [[ -z "${NO_BUILDING}" && "${PARSER_NAME}" = "tenko" ]]; then
-        ./t z --node-bin ${NODE_BIN} --no-compat --no-min;
+        ./t z --node-bin ${NODE_BIN} --no-compat ${MINIFY} ${NO_MANGLE}
       fi
 
       set +x;
@@ -919,7 +920,7 @@ ${NOCOLOR}###"
 
       if [[ -z "${NO_BUILDING}" ]]; then
         echo "Creating build without compat for perf"
-        ./t z --no-compat ${NATIVESYMBOLS} ${NOAST} --node-bin ${NODE_BIN}
+        ./t z --no-compat ${NATIVESYMBOLS} ${NOAST} ${MINIFY} ${NO_MANGLE} --node-bin ${NODE_BIN}
       fi
 
       # Infinite loop through all benchmarks. Once the end is reached, start over.
@@ -954,7 +955,7 @@ ${NOCOLOR}###"
 
     doptigate)
       if [[ -z "${NO_BUILDING}" ]]; then
-        ./t z --no-compat --no-min --pretty ${NATIVESYMBOLS} ${NOAST} --node-bin ${NODE_BIN}
+        ./t z --no-compat --pretty ${NATIVESYMBOLS} ${NOAST} ${MINIFY} ${NO_MANGLE} --node-bin ${NODE_BIN}
       fi
       set -x
       # First generate the v8 log
