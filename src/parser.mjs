@@ -765,8 +765,10 @@ function Parser(code, options = {}) {
 
     AST_set('loc', AST_getCloseLoc($tp_openToken_start, $tp_openToken_line, $tp_openToken_column, tok_prevEndPointer(), tok_prevEndLine(), tok_prevEndColumn()))
 
-    let was;
-    ASSERT(was = _path.pop());
+    // <SCRUB ASSERTS>
+    let was =
+    // </SCRUB ASSERTS>
+      _path.pop();
 
     ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start (1)', was.loc);
     ASSERT(was.loc.start.line < was.loc.end.line || was.loc.start.column <= was.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', was.loc);
@@ -795,8 +797,10 @@ function Parser(code, options = {}) {
 
     AST_set('loc', AST_getCloseLoc($tp_tickToken_start, $tp_tickToken_line, $tp_tickToken_column, pointerEnd, tok_prevEndLine(), colEnd))
 
-    let was;
-    ASSERT(was = _path.pop());
+    // <SCRUB ASSERTS>
+    let was =
+    // </SCRUB ASSERTS>
+      _path.pop();
 
     ASSERT(was.loc.start.line <= was.loc.end.line, 'end line should be same or later than start (2)', was.loc);
     ASSERT(was.loc.start.line < was.loc.end.line || was.loc.start.column <= was.loc.end.column, 'if the node does not span multiple lines then the start column should come before the end column', was.loc);
