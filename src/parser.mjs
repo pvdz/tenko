@@ -5616,7 +5616,7 @@ function Parser(code, options = {}) {
     // assignment, so all we have to do now is continue parsing a regular value and assert that this must be a
     // regular for-loop, so the value must be followed by a semi. Hence, we don't care about assignability here.
     // We also don't care about the yield/await piggies because we are in a for-header, never a function header.
-    parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_patternStartToken_start, $tp_patternStartToken_stop, $tp_patternStartToken_line, $tp_patternStartToken_column, BINDING_TYPE_NONE, assignable, destructible, closingPuncType, astProp);
+    parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_patternStartToken_start, $tp_patternStartToken_stop, $tp_patternStartToken_line, $tp_patternStartToken_column, assignable, destructible, closingPuncType, astProp);
 
     // [v]: `for ([] + x;;);`
     //                  ^
@@ -10271,7 +10271,7 @@ function Parser(code, options = {}) {
 
           // This value is not destructible on its own as there is no ident+more value body that is destructible
           // The optional tail may change this if it is a member expression
-          let nowDestruct = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, bindingType, leftAssignable, CANT_DESTRUCT, $PUNC_BRACKET_CLOSE, astProp);
+          let nowDestruct = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_identToken_start, $tp_identToken_stop, $tp_identToken_line, $tp_identToken_column, leftAssignable, CANT_DESTRUCT, $PUNC_BRACKET_CLOSE, astProp);
           // We can ignore assignability here because the await/yield flags from the last call will be inside the destruct
           destructible |= nowDestruct;
         }
@@ -10296,7 +10296,7 @@ function Parser(code, options = {}) {
         let $tp_objOpenToken_stop = tok_getStop();
 
         let objDestructible = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, astProp);
-        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_objOpenToken_start, $tp_objOpenToken_stop, $tp_objOpenToken_line, $tp_objOpenToken_column, bindingType, hasAllFlags(objDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, objDestructible, $PUNC_BRACKET_CLOSE, astProp);
+        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_objOpenToken_start, $tp_objOpenToken_stop, $tp_objOpenToken_line, $tp_objOpenToken_column, hasAllFlags(objDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, objDestructible, $PUNC_BRACKET_CLOSE, astProp);
       }
       else if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // - [[]]
@@ -10319,7 +10319,7 @@ function Parser(code, options = {}) {
         let $tp_arrOpenToken_stop = tok_getStop();
 
         let arrDestructible = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, astProp);
-        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_arrOpenToken_start, $tp_arrOpenToken_stop, $tp_arrOpenToken_line, $tp_arrOpenToken_column, bindingType, hasAllFlags(arrDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, arrDestructible, $PUNC_BRACKET_CLOSE, astProp);
+        destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_arrOpenToken_start, $tp_arrOpenToken_stop, $tp_arrOpenToken_line, $tp_arrOpenToken_column, hasAllFlags(arrDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, arrDestructible, $PUNC_BRACKET_CLOSE, astProp);
       }
       else if (tok_getType() === $PUNC_DOT_DOT_DOT) {
         // TODO: > It is a Syntax Error if DestructuringAssignmentTarget is an ArrayLiteral or an ObjectLiteral.
@@ -11282,7 +11282,7 @@ function Parser(code, options = {}) {
       let $tp_arrStartToken_stop = tok_getStop();
 
       let nowDestruct = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_arrStartToken_start, $tp_arrStartToken_stop, $tp_arrStartToken_line, $tp_arrStartToken_column, bindingType, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
+      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_arrStartToken_start, $tp_arrStartToken_stop, $tp_arrStartToken_line, $tp_arrStartToken_column, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
     }
     else if (tok_getType() === $PUNC_CURLY_OPEN) {
       // - `({ident: {})`
@@ -11304,7 +11304,7 @@ function Parser(code, options = {}) {
       let $tp_objStartToken_stop = tok_getStop();
 
       let nowDestruct = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_objStartToken_start, $tp_objStartToken_stop, $tp_objStartToken_line, $tp_objStartToken_column, bindingType, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
+      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_objStartToken_start, $tp_objStartToken_stop, $tp_objStartToken_line, $tp_objStartToken_column, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
     }
     else {
       // - `{x: 15}`
@@ -11332,7 +11332,7 @@ function Parser(code, options = {}) {
       } else {
         destructible |= CANT_DESTRUCT;
       }
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_valueFirstToken_start, $tp_valueFirstToken_stop, $tp_valueFirstToken_line, $tp_valueFirstToken_column, bindingType, nowAssignable, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
+      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_valueFirstToken_start, $tp_valueFirstToken_stop, $tp_valueFirstToken_line, $tp_valueFirstToken_column, nowAssignable, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
     }
 
     ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
@@ -12998,13 +12998,12 @@ function Parser(code, options = {}) {
       return THROW_RANGE('This binding can not be used in function parameters because it is not destructible', tok_getStart(), tok_getStop());
     }
   }
-  function parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_valueStartToken_start, $tp_valueStartToken_stop, $tp_valueStartToken_line, $tp_valueStartToken_column, bindingType, assignable, destructible, closingPuncType, astProp) {
+  function parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_valueStartToken_start, $tp_valueStartToken_stop, $tp_valueStartToken_line, $tp_valueStartToken_column, assignable, destructible, closingPuncType, astProp) {
     ASSERT(parseOptionalDestructibleRestOfExpression.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astProp str', astProp);
     ASSERT(typeof assignable === 'number', 'assignable num', assignable);
     ASSERT(typeof destructible === 'number', 'destructible num', destructible);
     ASSERT([$PUNC_PAREN_CLOSE, $PUNC_CURLY_CLOSE, $PUNC_BRACKET_CLOSE].includes(closingPuncType), 'closingPuncType enum', closingPuncType);
-    ASSERT_BINDING_TYPE(bindingType);
 
     if (tok_getType() === $PUNC_COMMA || tok_getType() === closingPuncType) {
       // this means that the value itself had no tail and is destructible as long as it is assignable
@@ -13289,7 +13288,7 @@ function Parser(code, options = {}) {
       ASSERT(tok_getType() !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
       if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         // - `({...[].x} = x);`
-        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_argStartToken_start, $tp_argStartToken_stop, $tp_argStartToken_line, $tp_argStartToken_column, bindingType, assignable, nowDestruct, closingPuncType, astProp);
+        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_argStartToken_start, $tp_argStartToken_stop, $tp_argStartToken_line, $tp_argStartToken_column, assignable, nowDestruct, closingPuncType, astProp);
       } else {
         // The rest arg of an _object_ pattern can only be a simple assignment target. The rest of an array pattern
         // has more freedom. If there is no tail for obj rest then this not destructible.
@@ -13346,7 +13345,7 @@ function Parser(code, options = {}) {
       if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         // - `({ ...{}.x } = x);`
         //          ^
-        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_curlyToken_start, $tp_curlyToken_stop, $tp_curlyToken_line, $tp_curlyToken_column, bindingType, assignable, nowDestruct, closingPuncType, astProp);
+        destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_curlyToken_start, $tp_curlyToken_stop, $tp_curlyToken_line, $tp_curlyToken_column, assignable, nowDestruct, closingPuncType, astProp);
       } else {
         // The rest arg of an _object_ pattern can only be a simple assignment target. The rest of an array pattern
         // has more freedom. If there is no tail for obj rest then this not destructible.
