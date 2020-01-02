@@ -49,23 +49,23 @@ const RESET = '\x1b[0m';
     // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes.js', mode: 'module'}),
     // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-noclass.js', mode: 'module'}), // (same except all `[` are removed which promotes all escapes to atoms)
     // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes.js', mode: 'module'}), // (same except replaced unicode quad with unicode variables)
-    await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-strings.js', mode: 'web'}), // (same except regexes replaced with strings)
-    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-templates.js', mode: 'web'}), // (same except regexes replaced with templates)
+    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-strings.js', mode: 'web'}), // (same except regexes replaced with strings)
+    // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes-as-templates.js', mode: 'web'}), // (same except regexes replaced with templates)
     //
     // old... 20mb
-    // await read({path: 'ignore/perf/es5-8mb-bench.js', mode: 'web'}),
-    // await read({path: 'ignore/perf/es5-16mb-bench.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5.8mb-bench.js', mode: 'web'}),
+    await read({path: 'ignore/perf/es5.16mb-bench.js', mode: 'web'}),
     // await read({path: 'ignore/perf/es5.webkit.npm.1.0.0.js', mode: 'web'}),
-    // await read({path: 'ignore/perf/es5-35mb-kate.js.jo.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5.35mb-kate.js.jo.js', mode: 'web'}),
   ].filter(Boolean);
 
   files.forEach(({path, code, mode}) => {
     console.group('File:', code.length, 'bytes:', path);
     console.time('Parse time');
     try {
-      if (USE_DEVTOOLS) console.profile();
+      if (USE_DEVTOOLS) console.profile('hf');
       parse(code, mode);
-      if (USE_DEVTOOLS) console.profileEnd();
+      if (USE_DEVTOOLS) console.profileEnd('hf');
     } catch (e) {
       console.log('Failed! ->', path, '::', e.message);
     }

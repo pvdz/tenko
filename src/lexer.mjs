@@ -755,12 +755,8 @@ function Lexer(
   function skipSpacesWithoutTokens() {
     while (neof()) {
       let c = peek();
-      if (c === $$SPACE_20 || c === $$TAB_09) {
-        skip();
-        // parseSpace();
-      } else {
-        return;
-      }
+      if (c !== $$SPACE_20 && c !== $$TAB_09) return;
+      skip();
     }
   }
   function skipNewlinesWithoutTokens() {

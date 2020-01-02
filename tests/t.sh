@@ -1032,7 +1032,7 @@ case "${ACTION}" in
         done
         set +x
       else
-        ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${INSPECT_ZEPAR} ${DEVTOOLS}
+        NODE_NO_WARNINGS=1 ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${INSPECT_ZEPAR} ${DEVTOOLS}
       fi
     ;;
 
