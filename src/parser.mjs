@@ -12704,6 +12704,8 @@ function Parser(code, options = {}) {
     // skip computed key part first because we need to figure out whether we're parsing a method
     ASSERT(parseClassMethodComputedKey.length === arguments.length, 'arg count');
 
+    // - `class {[foo](){}}`
+    //           ^
     let $tp_bracketOpenToken_line = tok_getLine();
     let $tp_bracketOpenToken_column = tok_getColumn();
     let $tp_bracketOpenToken_start = tok_getStart();
@@ -12711,7 +12713,8 @@ function Parser(code, options = {}) {
     ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
 
     // Note: the expression of computed keys of class methods are parsed with the context before the class
-    // So the context is not guaranteed to be strict.
+    // So the context is not guaranteed to be strict, async, or anything else.
+    // We have to propagate the piggies in case the parent turns out to be a function param / default.
     let nowAssignable = parseExpression(outerLexerFlags, astProp);
 
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
@@ -12724,10 +12727,13 @@ function Parser(code, options = {}) {
 
     ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
 
+    // The piggies for parsing the function after the key are not relevant (constructor / arrowness / await / yield)
     // - `{[foo](){}}`
+    //          ^
     // - `class {[foo](){}}`
     // - `class x {[x]z){}}`
-    let destructPiggies = parseClassMethodAfterKey(
+    // - `async function f(){  (fail = class A {[x](y=await z){}}) => {}  }`        (throws inside the next call)
+    parseClassMethodAfterKey(
       lexerFlags,
       $tp_staticToken_type, $tp_staticToken_start, $tp_staticToken_line, $tp_staticToken_column,
       $tp_asyncToken_type, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column,
@@ -12738,12 +12744,13 @@ function Parser(code, options = {}) {
       $tp_bracketOpenToken_start, $tp_bracketOpenToken_line, $tp_bracketOpenToken_column,
       astProp
     );
-    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
-    ASSERT(destructPiggies === CANT_DESTRUCT, 'no piggies');
 
-    // Note: example case where copying the piggies matters
-    // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
-    return copyPiggies(CANT_DESTRUCT, nowAssignable);
+    // Note: we don't care about piggies here. `yield` is always illegal due to class auto-strict-mode, `await` is
+    // The `nowAssignable` piggies matter for the case where await is used as part of a computed method key when the
+    // class is the default value of an arrow parameter (I know):
+    // - `async function f(){ class c { [await x](){} } }`                                 // This is fine
+    // - `async function f(){ let arrow = (param = class { [await x](){} }) => param; }`   // This is error
+    return copyPiggies(CANT_DESTRUCT | nowAssignable);
   }
   function parseClassMethodAfterKey(lexerFlags, $tp_staticToken_type, $tp_staticToken_start, $tp_staticToken_line, $tp_staticToken_column, $tp_asyncToken_type, $tp_asyncToken_start, $tp_asyncToken_stop, $tp_asyncToken_line, $tp_asyncToken_column, $tp_starToken_type, $tp_starToken_start, $tp_starToken_stop, $tp_starToken_line, $tp_starToken_column, $tp_getToken_type, $tp_getToken_start, $tp_getToken_line, $tp_getToken_column, $tp_setToken_type, $tp_setToken_start, $tp_setToken_line, $tp_setToken_column, $tp_keyToken_type, $tp_keyToken_start, $tp_keyToken_stop, $tp_keyToken_line, $tp_keyToken_column, $tp_keyToken_canon, $tp_bracketOpenToken_start, $tp_bracketOpenToken_line, $tp_bracketOpenToken_column, astProp) {
     ASSERT(parseClassMethodAfterKey.length === arguments.length, 'arg count');

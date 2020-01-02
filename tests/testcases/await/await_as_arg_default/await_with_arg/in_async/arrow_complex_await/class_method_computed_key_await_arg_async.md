@@ -1,23 +1,25 @@
 # Tenko parser test case
 
-- Path: tests/testcases/await/await_as_arg_default/await_with_arg/in_async/arrow_complex_await/class_with_computed_method_containing_await_keyword_followed_by_a_simple_ident_method_that_should_not_clobber_the_state.md
+- Path: tests/testcases/await/await_as_arg_default/await_with_arg/in_async/arrow_complex_await/class_method_computed_key_await_arg_async.md
 
 > :: await : await as arg default : await with arg : in async : arrow complex await
 >
-> ::> class with computed method containing await keyword followed by a simple ident method that should not clobber the state
+> ::> class method computed key await arg async
 >
-> This should fail because the method name definition of the class runs in the context of the arg default.
+> The `await x` runs in the context of the parent function (async code), is not the name or default of a param, and should be fine.
 >
-> As such it's violating the rule of no await/yield in arg defaults and should reject.
+> However. This class is the default value of an arrow param where the await is illegal and so it throws.
 >
-> There was a bug where a regular method after such violation would plainly clobber the state flags that track this
+> The "x" method asserts the state of having parsed an await is not clobbered when returning the state
 
 ## FAIL
 
 ## Input
 
 `````js
-async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }
+async function f(){
+  (fail = class A {[await x](){}; "x"(){}}) => {}
+}
 `````
 
 ## Output
@@ -36,8 +38,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword
 
-async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }
-                                                                   ^^------- error
+async function f(){
+  (fail = class A {[await x](){}; "x"(){}}) => {}
+                                            ^^------- error
+
+}
 `````
 
 ### Strict mode

@@ -1,12 +1,12 @@
 # Tenko parser test case
 
-- Path: tests/testcases/await/await_as_arg_default/await_with_arg/in_async/arrow_complex_await/class_with_computed_method_containing_await_expr_followed_by_a_simple_ident_method_that_should_not_clobber_the_state.md
+- Path: tests/testcases/await/await_as_arg_default/await_with_arg/in_async/arrow_complex_await/class_method_computed_key_await_not_async.md
 
 > :: await : await as arg default : await with arg : in async : arrow complex await
 >
-> ::> class with computed method containing await expr followed by a simple ident method that should not clobber the state
+> ::> class method computed key await not async
 >
-> there was a bug where a regular method would plainly clobber the state flags
+> This only fails in module goal because `await` is only considered a keyword in an async context or the module goal
 
 ## Input
 
