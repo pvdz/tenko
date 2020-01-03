@@ -112,8 +112,12 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid
 
-({__proto__: a, __proto__: b});
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ ({__proto__: a, __proto__: b});
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

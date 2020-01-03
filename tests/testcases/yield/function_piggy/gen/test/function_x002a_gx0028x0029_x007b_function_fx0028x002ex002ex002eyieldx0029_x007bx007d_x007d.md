@@ -98,11 +98,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-function * g() {
-  function f(...yield) {}
-                ^^^^^------- error
+start@1:0, error@2:16
+╔══╦═════════════════
+ 1 ║ function * g() {
+ 2 ║   function f(...yield) {}
+   ║                 ^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

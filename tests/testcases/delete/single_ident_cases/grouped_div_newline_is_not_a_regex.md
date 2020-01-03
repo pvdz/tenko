@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-delete (x)
-/f/
-   ^------- error at EOF
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ delete (x)
+ 2 ║ /f/
+   ║    ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,10 +46,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
-delete (x)
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ delete (x)
+   ║ ^^^^^^------- error
+ 2 ║ /f/
+╚══╩════════════════
 
-/f/
 `````
 
 

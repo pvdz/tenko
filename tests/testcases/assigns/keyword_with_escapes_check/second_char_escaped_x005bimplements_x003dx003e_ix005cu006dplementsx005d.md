@@ -65,8 +65,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`i\u006dplements`) as a variable name because: Keywords may not have escapes in their name and this resolves to `implements`
 
-(i\u006dplements = "sentinal 6543322")
- ^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (i\u006dplements = "sentinal 6543322")
+   ║  ^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

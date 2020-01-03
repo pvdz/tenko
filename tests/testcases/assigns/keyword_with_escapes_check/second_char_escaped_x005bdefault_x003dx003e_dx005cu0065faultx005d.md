@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`d\u0065fault`) as a variable name because: Keywords may not have escapes in their name and this resolves to `default`
 
-(d\u0065fault = "sentinal 1564646")
- ^^^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (d\u0065fault = "sentinal 1564646")
+   ║  ^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

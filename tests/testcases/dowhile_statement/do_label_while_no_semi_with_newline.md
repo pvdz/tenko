@@ -38,10 +38,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
-do x: function s(){}
-      ^^^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ do x: function s(){}
+   ║       ^^^^^^^^------- error
+ 2 ║ while(y)
+╚══╩════════════════
 
-while(y)
 `````
 
 ### Strict mode

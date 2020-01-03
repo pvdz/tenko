@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
 
-/[a-\d]+/
-^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[a-\d]+/
+   ║ ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

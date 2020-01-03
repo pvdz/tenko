@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not use `let` as variable name in strict mode
 
-"use strict"; (let = x);
-               ^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ "use strict"; (let = x);
+   ║                ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

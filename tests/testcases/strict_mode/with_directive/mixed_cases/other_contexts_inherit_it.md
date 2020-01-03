@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-"use strict"; function f(){ with (x) y; }
-                            ^^^^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ "use strict"; function f(){ with (x) y; }
+   ║                             ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

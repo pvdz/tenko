@@ -37,12 +37,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A newline after `yield` is illegal for `yield *`
 
-function *f() {
-  yield
-  ^^^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   yield
+   ║   ^^^^^^^^------- error
+ 3 ║   *
+ 4 ║ }
+╚══╩════════════════
 
-  *
-}
 `````
 
 ### Strict mode

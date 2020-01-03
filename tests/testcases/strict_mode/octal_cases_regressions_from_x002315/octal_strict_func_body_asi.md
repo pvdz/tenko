@@ -39,12 +39,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Illegal legacy octal literal in strict mode
 
-function f() {
-  "use strict"
-  0777
-  ^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict"
+ 3 ║   0777
+   ║   ^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode
@@ -55,12 +58,15 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-function f() {
-  "use strict"
-  0777
-  ^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict"
+ 3 ║   0777
+   ║   ^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

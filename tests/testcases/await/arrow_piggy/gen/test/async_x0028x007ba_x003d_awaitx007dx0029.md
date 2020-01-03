@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid (at EOF)
 
-async ({a = await})
-      ^^^^^^^^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ async ({a = await})
+   ║       ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async ({a = await})
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ async ({a = await})
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not create a binding for `e` because was already bound as a catch clause binding
 
-try {} catch (e) { for (var e = 1;;) {} }
-                            ^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ try {} catch (e) { for (var e = 1;;) {} }
+   ║                             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

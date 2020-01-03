@@ -89,8 +89,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Function had duplicate params
 
-function f(b, a, b, a) {}
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ function f(b, a, b, a) {}
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 

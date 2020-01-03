@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-function *f(){
-  import = 1;
-  ^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   import = 1;
+   ║   ^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode
@@ -53,11 +56,14 @@ Parsed with the module goal.
 throws: Parser error!
   The `import` keyword is only supported at the top level
 
-function *f(){
-  import = 1;
-  ^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   import = 1;
+   ║   ^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

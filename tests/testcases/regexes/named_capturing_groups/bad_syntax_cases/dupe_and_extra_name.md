@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Each group name can only be declared once: `a`
 
-/(?<a>a)(?<b>b)(?<a>a)/
-^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>a)(?<b>b)(?<a>a)/
+   ║ ^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

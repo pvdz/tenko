@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-034.1
-   ^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ 034.1
+   ║    ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -44,8 +48,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-034.1
-^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ 034.1
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-async function f(){  async (await) => x  }
-                                 ^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ async function f(){  async (await) => x  }
+   ║                                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

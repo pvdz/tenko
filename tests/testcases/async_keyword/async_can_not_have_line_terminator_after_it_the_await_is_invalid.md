@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-async
-function f(){await x}
-                   ^------- error
+start@1:0, error@2:19
+╔══╦═════════════════
+ 1 ║ async
+ 2 ║ function f(){await x}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,9 +52,13 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async
-function f(){await x}
-                   ^------- error
+start@1:0, error@2:19
+╔══╦═════════════════
+ 1 ║ async
+ 2 ║ function f(){await x}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 

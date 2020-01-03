@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`yield`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-function *as(){ class A {async f(yield) {}} }
-                                 ^^^^^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ function *as(){ class A {async f(yield) {}} }
+   ║                                  ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

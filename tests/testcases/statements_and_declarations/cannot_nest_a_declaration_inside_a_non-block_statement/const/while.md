@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-while (;;) const y = x
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ while (;;) const y = x
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

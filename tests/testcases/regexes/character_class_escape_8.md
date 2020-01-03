@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Cannot escape \8 or \9 in a regex char class with u-flag
 
-/[\8]/
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\8]/
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

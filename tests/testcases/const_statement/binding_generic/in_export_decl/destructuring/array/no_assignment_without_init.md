@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export const [foo];
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export const [foo];
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Declaration destructuring must have init
 
-export const [foo];
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ export const [foo];
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 

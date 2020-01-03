@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
 
-/[\p{Bidi_Mirrored}-\p{Hex}]/g
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\p{Bidi_Mirrored}-\p{Hex}]/g
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

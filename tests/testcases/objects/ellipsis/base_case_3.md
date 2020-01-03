@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Object spread/rest requires the requested version to be ES9+
 
-x = {...y}
-     ^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ x = {...y}
+   ║      ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

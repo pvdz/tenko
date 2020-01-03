@@ -33,8 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Function had duplicate params
 
-function f(a, a) {"use strict"}
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ function f(a, a) {"use strict"}
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

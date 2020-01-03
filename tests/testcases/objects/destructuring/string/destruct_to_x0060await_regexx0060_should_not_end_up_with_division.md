@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign a value to non-assignable value
 
-s = {"foo": await /fail/g = x} = x
-                          ^------- error
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ s = {"foo": await /fail/g = x} = x
+   ║                           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -47,8 +51,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-s = {"foo": await /fail/g = x} = x
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ s = {"foo": await /fail/g = x} = x
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 

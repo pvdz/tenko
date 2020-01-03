@@ -82,8 +82,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
-f = function f(eval){ }
-               ^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ f = function f(eval){ }
+   ║                ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

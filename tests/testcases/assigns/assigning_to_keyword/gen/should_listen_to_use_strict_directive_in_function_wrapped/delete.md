@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-function f() {
-  "use strict";
-  (delete = x);
-          ^------- error
+start@1:0, error@3:10
+╔══╦═════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   (delete = x);
+   ║           ^------- error
+ 4 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

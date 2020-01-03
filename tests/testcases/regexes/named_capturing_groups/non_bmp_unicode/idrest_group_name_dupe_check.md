@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: name contained a character that is only a valid identifier with u-flag; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
-/(?<abc@{x1d7d0}@def>foo\k<abc@{x1d7d0}@def>)/
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<abc@{x1d7d0}@def>foo\k<abc@{x1d7d0}@def>)/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

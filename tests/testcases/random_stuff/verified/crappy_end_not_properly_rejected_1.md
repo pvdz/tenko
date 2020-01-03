@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected further input
 
-if (x) {}}dsadsa
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ if (x) {}}dsadsa
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

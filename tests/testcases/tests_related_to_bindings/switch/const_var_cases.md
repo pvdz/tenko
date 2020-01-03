@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-switch (x) { case a: const foo = x; break; case b: var foo = x; break; }
-                                                       ^^^------- error
+start@1:0, error@1:55
+╔══╦═════════════════
+ 1 ║ switch (x) { case a: const foo = x; break; case b: var foo = x; break; }
+   ║                                                        ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

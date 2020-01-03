@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Encountered unescaped closing curly `}` while not parsing a quantifier
 
-function *f(){   s = {foo: yield / x}   }
-                                 ^^^^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ function *f(){   s = {foo: yield / x}   }
+   ║                                  ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -53,7 +57,11 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: Encountered unescaped closing curly `}` while not parsing a quantifier; Found EOF before regex was closed
 
-function *f(){   s = {foo: yield / x}   }
-                                 ^^^^^^^^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ function *f(){   s = {foo: yield / x}   }
+   ║                                  ^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 

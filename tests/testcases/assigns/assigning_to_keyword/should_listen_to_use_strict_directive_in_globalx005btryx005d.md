@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`try`) as a variable name because: Cannot never use this reserved word as a variable name
 
-"use strict"; (try = "sentinal 48945666");
-               ^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ "use strict"; (try = "sentinal 48945666");
+   ║                ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

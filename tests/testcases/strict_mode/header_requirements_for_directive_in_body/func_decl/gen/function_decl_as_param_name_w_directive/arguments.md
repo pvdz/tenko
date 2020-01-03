@@ -32,10 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-function d(arguments){
-  "use strict";
-}
-^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ function d(arguments){
+ 2 ║   "use strict";
+ 3 ║ }
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,11 +50,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`arguments`) as a variable name because: Cannot create a binding named `arguments` in strict mode
 
-function d(arguments){
-           ^^^^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ function d(arguments){
+   ║            ^^^^^^^^^------- error
+ 2 ║   "use strict";
+ 3 ║ }
+╚══╩═════════════════
 
-  "use strict";
-}
 `````
 
 

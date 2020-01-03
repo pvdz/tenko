@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-(super = "sentinal 453543")
- ^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (super = "sentinal 453543")
+   ║  ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

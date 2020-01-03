@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
-class x extends y { [super()](){} }
-                     ^^^^^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ class x extends y { [super()](){} }
+   ║                      ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

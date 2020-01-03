@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-function f([void]) {}
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ function f([void]) {}
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag
 
-/]/
-^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /]/
+   ║ ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

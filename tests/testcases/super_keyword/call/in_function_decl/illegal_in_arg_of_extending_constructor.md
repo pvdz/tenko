@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
-class x extends y { constructor(){ function g(a=super()) { a }; }}
-                                                ^^^^^^------- error
+start@1:0, error@1:48
+╔══╦═════════════════
+ 1 ║ class x extends y { constructor(){ function g(a=super()) { a }; }}
+   ║                                                 ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

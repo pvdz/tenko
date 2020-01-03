@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The first token after the template expression should be a continuation of the template
 
-x = `1 ${ yield x } 2 ${ 3 } 4`
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ x = `1 ${ yield x } 2 ${ 3 } 4`
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -41,8 +45,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-x = `1 ${ yield x } 2 ${ 3 } 4`
-          ^^^^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ x = `1 ${ yield x } 2 ${ 3 } 4`
+   ║           ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

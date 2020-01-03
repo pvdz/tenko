@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Encountered unescaped quantifier (ord=63) without a value to quantify
 
-/a\B?b/
-^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /a\B?b/
+   ║ ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

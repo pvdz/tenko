@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
-let f = (a=super()) => a;
-           ^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ let f = (a=super()) => a;
+   ║            ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

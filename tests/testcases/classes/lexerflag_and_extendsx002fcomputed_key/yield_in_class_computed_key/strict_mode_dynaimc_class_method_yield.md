@@ -33,9 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-"use strict";
-class x{[yield](a){}}
-         ^^^^^------- error
+start@1:0, error@2:9
+╔══╦════════════════
+ 1 ║ "use strict";
+ 2 ║ class x{[yield](a){}}
+   ║          ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

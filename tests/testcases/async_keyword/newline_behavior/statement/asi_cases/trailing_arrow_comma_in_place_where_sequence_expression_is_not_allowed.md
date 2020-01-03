@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing closing square bracket for computed property name, found `,` instead
 
-let x = {[async () => x, y]: z}
-                       ^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ let x = {[async () => x, y]: z}
+   ║                        ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-(a, 1, "c", d, e, f) => x;
-                     ^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ (a, 1, "c", d, e, f) => x;
+   ║                      ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

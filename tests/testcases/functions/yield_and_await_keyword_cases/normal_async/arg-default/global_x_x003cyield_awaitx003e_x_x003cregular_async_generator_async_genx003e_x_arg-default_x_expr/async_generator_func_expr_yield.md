@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
-async function as(){ let f = async function *f(x=yield 100) {} }
-                                                 ^^^^^------- error
+start@1:0, error@1:49
+╔══╦═════════════════
+ 1 ║ async function as(){ let f = async function *f(x=yield 100) {} }
+   ║                                                  ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

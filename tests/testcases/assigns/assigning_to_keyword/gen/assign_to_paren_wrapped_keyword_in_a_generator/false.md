@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `(`) because it is not a valid assignment target
 
-function *f(){
-  (false) = 1;
-          ^------- error
+start@1:0, error@2:10
+╔══╦═════════════════
+ 1 ║ function *f(){
+ 2 ║   (false) = 1;
+   ║           ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

@@ -30,11 +30,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `for-await` inside an async function
 
-async function f(){
-  function *f(){   for await (yield x of y);   }
-                   ^^^^^^^^^------- error
+start@1:0, error@2:19
+╔══╦═════════════════
+ 1 ║ async function f(){
+ 2 ║   function *f(){   for await (yield x of y);   }
+   ║                    ^^^^^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

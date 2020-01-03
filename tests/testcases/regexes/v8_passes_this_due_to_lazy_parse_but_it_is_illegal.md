@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Found unescaped closing paren `)` without a group being open
 
-function l(){((/)/))(/]/)};
-               ^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ function l(){((/)/))(/]/)};
+   ║                ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

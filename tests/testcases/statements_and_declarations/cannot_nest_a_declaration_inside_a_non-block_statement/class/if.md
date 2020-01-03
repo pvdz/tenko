@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot parse a class declaration here, only expecting statements here
 
-if (x) class X {}
-       ^^^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ if (x) class X {}
+   ║        ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

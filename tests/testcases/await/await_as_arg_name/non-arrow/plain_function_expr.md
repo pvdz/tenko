@@ -90,8 +90,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-let x = function f(await){}
-                   ^^^^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ let x = function f(await){}
+   ║                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

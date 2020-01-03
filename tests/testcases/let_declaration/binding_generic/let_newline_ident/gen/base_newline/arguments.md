@@ -64,9 +64,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `arguments` but: Cannot create a binding named `arguments` in strict mode
 
-let
-arguments
-^^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ arguments
+   ║ ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

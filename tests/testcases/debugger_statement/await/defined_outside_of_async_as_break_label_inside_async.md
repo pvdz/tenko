@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The label (`await`) for this `break` was not defined in the current label set, which is illegal
 
-await: { async function f(){ break await; } }
-                                   ^^^^^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ await: { async function f(){ break await; } }
+   ║                                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-await: { async function f(){ break await; } }
-^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ await: { async function f(){ break await; } }
+   ║ ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

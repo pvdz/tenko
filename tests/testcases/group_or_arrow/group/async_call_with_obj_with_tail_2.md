@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the async arrow is not destructible so arrow is illegal
 
-async ({} + 1) => x;
-               ^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ async ({} + 1) => x;
+   ║                ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

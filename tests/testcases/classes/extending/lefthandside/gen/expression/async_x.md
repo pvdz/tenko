@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `x` instead
 
-(class B extends async
-x {})
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ (class B extends async
+ 2 ║ x {})
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

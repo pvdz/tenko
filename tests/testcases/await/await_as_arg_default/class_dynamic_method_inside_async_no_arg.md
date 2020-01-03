@@ -132,11 +132,14 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async function f() {
-  class x{[x](a=await){}}
-                     ^------- error
+start@1:0, error@2:21
+╔══╦═════════════════
+ 1 ║ async function f() {
+ 2 ║   class x{[x](a=await){}}
+   ║                      ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

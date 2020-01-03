@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expecting closing paren `)` for the call, found `y` instead
 
-class outer { constructor(){  class x extends feh(super.foo y) { }  }}
-                                                            ^------- error
+start@1:0, error@1:60
+╔══╦═════════════════
+ 1 ║ class outer { constructor(){  class x extends feh(super.foo y) { }  }}
+   ║                                                             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The first token after the template expression should be a continuation of the template
 
-`foo ${a b} bar`
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ `foo ${a b} bar`
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

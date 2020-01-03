@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-({ggg: new} = null)
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ ({ggg: new} = null)
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `this`) because it is not a valid assignment target
 
-(this = "sentinal 453543")
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ (this = "sentinal 453543")
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

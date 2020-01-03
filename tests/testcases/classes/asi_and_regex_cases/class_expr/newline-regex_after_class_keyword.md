@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `/` instead
 
-let c = class
- /foo/ x{}
- ^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ let c = class
+ 2 ║  /foo/ x{}
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

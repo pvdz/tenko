@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The postfix `++` is a restricted production so ASI must apply but that is not valid in this context
 
-(foo
- ++)
- ^^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ (foo
+ 2 ║  ++)
+   ║  ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

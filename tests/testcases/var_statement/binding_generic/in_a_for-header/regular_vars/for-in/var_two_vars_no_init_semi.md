@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   For-in and for-of can only have one binding, found 2
 
-for (var foo, bar in x);
-                  ^^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ for (var foo, bar in x);
+   ║                   ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

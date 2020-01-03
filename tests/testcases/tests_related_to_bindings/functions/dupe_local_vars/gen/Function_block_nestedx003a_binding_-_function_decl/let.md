@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `f` but another binding already existed on the same level
 
-function g(){ { let f = 1; function f() {} } }
-                                    ^------- error
+start@1:0, error@1:36
+╔══╦═════════════════
+ 1 ║ function g(){ { let f = 1; function f() {} } }
+   ║                                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

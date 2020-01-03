@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode)
 
-/foo \2 bar/
-^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /foo \2 bar/
+   ║ ^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

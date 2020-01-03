@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-/* a b c */ /* a b c */ /* a b c */ --> foo bar baz
-                                      ^------- error
+start@1:0, error@1:38
+╔══╦═════════════════
+ 1 ║ /* a b c */ /* a b c */ /* a b c */ --> foo bar baz
+   ║                                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

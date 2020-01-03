@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `of` instead
 
-for (a = b of x);
-           ^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ for (a = b of x);
+   ║            ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

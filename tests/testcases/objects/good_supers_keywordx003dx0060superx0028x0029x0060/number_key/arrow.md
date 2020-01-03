@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
-class x extends y {constructor(){    ({790: super()}) => x    }}
-                                                      ^^------- error
+start@1:0, error@1:54
+╔══╦═════════════════
+ 1 ║ class x extends y {constructor(){    ({790: super()}) => x    }}
+   ║                                                       ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -70,9 +70,13 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `await` but: Await is illegal as var name with module goal
 
-let
-await
-^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ await
+   ║ ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

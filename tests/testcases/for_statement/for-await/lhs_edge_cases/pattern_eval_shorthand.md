@@ -126,11 +126,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The for-header lhs binding pattern is not destructible
 
-async function f() {
-  for await ({ eval = 0 } of [{}]) ;
-                          ^^------- error
+start@1:0, error@2:26
+╔══╦═════════════════
+ 1 ║ async function f() {
+ 2 ║   for await ({ eval = 0 } of [{}]) ;
+   ║                           ^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

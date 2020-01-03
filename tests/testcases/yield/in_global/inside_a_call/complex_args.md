@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expecting closing paren `)` for the call, found `x` instead
 
-call(yield x + y)
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ call(yield x + y)
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -41,8 +45,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-call(yield x + y)
-     ^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ call(yield x + y)
+   ║      ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

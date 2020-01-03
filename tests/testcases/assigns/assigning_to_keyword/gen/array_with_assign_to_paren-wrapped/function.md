@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-async x => (function) = 1
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ async x => (function) = 1
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

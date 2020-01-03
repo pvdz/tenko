@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`package`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-class package {}
-      ^^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ class package {}
+   ║       ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

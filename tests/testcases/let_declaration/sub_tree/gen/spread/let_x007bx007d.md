@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Encountered invalid input after spread/rest argument
 
-[...let
-{}]
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ [...let
+ 2 ║ {}]
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -45,10 +49,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Can not use `let` as variable name in strict mode
 
-[...let
-    ^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ [...let
+   ║     ^^^------- error
+ 2 ║ {}]
+╚══╩════════════════
 
-{}]
 `````
 
 

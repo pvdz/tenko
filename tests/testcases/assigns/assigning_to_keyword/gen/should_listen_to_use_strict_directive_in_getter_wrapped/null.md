@@ -35,14 +35,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `null`) because it is not a valid assignment target
 
-foo = {
-  get x(){
-    "use strict";
-    (null = x);
-          ^------- error
+start@1:0, error@4:10
+╔══╦═════════════════
+ 1 ║ foo = {
+ 2 ║   get x(){
+ 3 ║     "use strict";
+ 4 ║     (null = x);
+   ║           ^------- error
+ 5 ║   }
+ 6 ║ }
+╚══╩═════════════════
 
-  }
-}
 `````
 
 ### Strict mode

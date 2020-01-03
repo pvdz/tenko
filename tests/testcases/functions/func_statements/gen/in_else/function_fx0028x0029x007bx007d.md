@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A function declaration can only be the child of an `if`/`else` in sloppy web compat mode
 
-if (x) x;
-else function f(){}
-     ^^^^^^^^------- error
+start@1:0, error@2:5
+╔══╦════════════════
+ 1 ║ if (x) x;
+ 2 ║ else function f(){}
+   ║      ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

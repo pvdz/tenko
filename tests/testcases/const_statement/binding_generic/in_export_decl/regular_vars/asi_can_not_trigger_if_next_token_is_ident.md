@@ -29,10 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export const
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export const
+   ║ ^^^^^^------- error
+ 2 ║ foo()
+╚══╩════════════════
 
-foo()
 `````
 
 ### Strict mode
@@ -49,9 +52,13 @@ Parsed with the module goal.
 throws: Parser error!
   Constants must be initialized
 
-export const
-foo()
-   ^------- error
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ export const
+ 2 ║ foo()
+   ║    ^------- error
+╚══╩════════════════
+
 `````
 
 

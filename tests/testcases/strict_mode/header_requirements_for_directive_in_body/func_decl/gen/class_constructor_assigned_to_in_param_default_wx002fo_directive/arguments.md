@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-class A {
-  constructor(x=arguments=10){ }
-                         ^------- error
+start@1:0, error@2:25
+╔══╦═════════════════
+ 1 ║ class A {
+ 2 ║   constructor(x=arguments=10){ }
+   ║                          ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `foo` but another binding already existed on the same level
 
-const {foo} = x, {foo} = y;
-                  ^^^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ const {foo} = x, {foo} = y;
+   ║                   ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

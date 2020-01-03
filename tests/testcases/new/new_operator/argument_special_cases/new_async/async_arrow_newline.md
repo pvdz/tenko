@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `new` keyword can not be applied to an arrow
 
-new async ()
- => x
- ^^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ new async ()
+ 2 ║  => x
+   ║  ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

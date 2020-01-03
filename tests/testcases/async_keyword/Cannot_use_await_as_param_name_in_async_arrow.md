@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use `await` as an arg name with async arrows
 
-async await => {}
-      ^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ async await => {}
+   ║       ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

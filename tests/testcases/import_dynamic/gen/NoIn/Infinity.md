@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The dynamic import syntax explicitly forbids the `in` operator
 
-import(x in y);
-         ^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ import(x in y);
+   ║          ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-({x:function(x=y, a){"use strict";}})
-                                  ^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ ({x:function(x=y, a){"use strict";}})
+   ║                                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing start of catch clause (`(`) or start of catch body (`{`), found `foo` instead
 
-try {} catch foo {}
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ try {} catch foo {}
+   ║              ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

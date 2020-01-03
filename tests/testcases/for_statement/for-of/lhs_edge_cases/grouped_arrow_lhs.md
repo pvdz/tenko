@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Left part of for-of must be assignable
 
-for (((x)=>{}) of y);
-^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ for (((x)=>{}) of y);
+   ║ ^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

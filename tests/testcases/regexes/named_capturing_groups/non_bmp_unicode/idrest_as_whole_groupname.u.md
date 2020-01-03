@@ -36,8 +36,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`@{xd835}@`, 55349]
 
-/(?<@{x1d7d0}@>foo)/u
-^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<@{x1d7d0}@>foo)/u
+   ║ ^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

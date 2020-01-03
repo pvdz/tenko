@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a struct that must be destructured but was not
 
-foo({a=1}. {b=2}, {c=3} = {}))
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ foo({a=1}. {b=2}, {c=3} = {}))
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

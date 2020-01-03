@@ -33,8 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-(new)=2
-    ^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ (new)=2
+   ║     ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

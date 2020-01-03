@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing function param definition closing parenthesis, found `y` instead
 
-class x { constructor(x=super.foo y){} }
-                                  ^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ class x { constructor(x=super.foo y){} }
+   ║                                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

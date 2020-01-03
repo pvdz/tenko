@@ -31,12 +31,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
-debugger;
-'xyz \1';
-^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ debugger;
+ 2 ║ 'xyz \1';
+   ║ ^^^^^^^^------- error
+ 3 ║ 'xyz \x01';
+ 4 ║ 'xyz \\1';
+╚══╩════════════════
 
-'xyz \x01';
-'xyz \\1';
 `````
 
 ### Strict mode
@@ -47,12 +50,15 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-debugger;
-'xyz \1';
-^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ debugger;
+ 2 ║ 'xyz \1';
+   ║ ^^^^^^^^------- error
+ 3 ║ 'xyz \x01';
+ 4 ║ 'xyz \\1';
+╚══╩════════════════
 
-'xyz \x01';
-'xyz \\1';
 `````
 
 

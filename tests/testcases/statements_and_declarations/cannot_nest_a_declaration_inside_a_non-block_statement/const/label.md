@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot parse a labelled const declaration, only expecting statements here
 
-foo: const y = x
-     ^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ foo: const y = x
+   ║      ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

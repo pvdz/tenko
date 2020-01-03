@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Targeted language version does not support trailing function arg comma
 
-function f([x] = y,){}
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ function f([x] = y,){}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

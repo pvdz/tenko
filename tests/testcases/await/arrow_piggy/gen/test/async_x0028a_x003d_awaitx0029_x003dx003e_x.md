@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
-async (a = await) => x
-^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ async (a = await) => x
+   ║ ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async (a = await) => x
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ async (a = await) => x
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 

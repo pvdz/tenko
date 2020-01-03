@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `new`) because it is not a valid assignment target
 
-new a = b
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ new a = b
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

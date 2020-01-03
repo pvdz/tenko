@@ -31,10 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
-do foo: bar: function f(){}
-             ^^^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ do foo: bar: function f(){}
+   ║              ^^^^^^^^------- error
+ 2 ║ while (x);
+╚══╩═════════════════
 
-while (x);
 `````
 
 ### Strict mode

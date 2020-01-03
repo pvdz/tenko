@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-class x extends y {constructor(){    ({790: super}) => x    }}
-                                            ^^^^^------- error
+start@1:0, error@1:44
+╔══╦═════════════════
+ 1 ║ class x extends y {constructor(){    ({790: super}) => x    }}
+   ║                                             ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

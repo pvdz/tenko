@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-for (let [...,] in obj);
-             ^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for (let [...,] in obj);
+   ║              ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

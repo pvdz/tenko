@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The ... argument must be destructible in an arrow header, found something that was not destructible
 
-(...a = x,) = x
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ (...a = x,) = x
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`fin\u0061lly`) as a variable name because: Keywords may not have escapes in their name and this resolves to `finally`
 
-(fin\u0061lly = x);
- ^^^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (fin\u0061lly = x);
+   ║  ^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -138,12 +138,16 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Found a part that cant destruct and a part that must destruct so it is not destructible
 
-({
-  __proto__: null,
-  other: null,
-  '__proto__': null
-});
- ^------- error
+start@1:0, error@5:1
+╔══╦════════════════
+ 1 ║ ({
+ 2 ║   __proto__: null,
+ 3 ║   other: null,
+ 4 ║   '__proto__': null
+ 5 ║ });
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`extends`) as a variable name because: Cannot never use this reserved word as a variable name
 
-var extends = x;
-    ^^^^^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ var extends = x;
+   ║     ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

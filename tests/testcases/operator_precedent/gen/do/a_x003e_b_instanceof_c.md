@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-do a > b instanceof c while (x);
-                      ^^^^^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ do a > b instanceof c while (x);
+   ║                       ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

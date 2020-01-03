@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The label (`LABEL`) for this `break` was not defined in the current label set, which is illegal
 
-while(x) {
-  LABEL: x;
-  break LABEL;
-        ^^^^^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ while(x) {
+ 2 ║   LABEL: x;
+ 3 ║   break LABEL;
+   ║         ^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

@@ -123,11 +123,14 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-async function f() {
-  class x{[x](await){}}
-              ^^^^^------- error
+start@1:0, error@2:14
+╔══╦═════════════════
+ 1 ║ async function f() {
+ 2 ║   class x{[x](await){}}
+   ║               ^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

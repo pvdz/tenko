@@ -33,9 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-for (x of 3) continue
-/
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ for (x of 3) continue
+ 2 ║ /
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

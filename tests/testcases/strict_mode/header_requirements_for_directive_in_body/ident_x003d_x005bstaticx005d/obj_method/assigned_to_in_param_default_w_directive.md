@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-o = {foo(x=static=y){ "use strict"; }}
-                                    ^------- error
+start@1:0, error@1:36
+╔══╦═════════════════
+ 1 ║ o = {foo(x=static=y){ "use strict"; }}
+   ║                                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -43,8 +47,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
-o = {foo(x=static=y){ "use strict"; }}
-           ^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ o = {foo(x=static=y){ "use strict"; }}
+   ║            ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

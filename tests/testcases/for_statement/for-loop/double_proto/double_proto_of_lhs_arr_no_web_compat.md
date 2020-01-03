@@ -119,8 +119,12 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Found a part that cant destruct and a part that must destruct so it is not destructible
 
-for ([{__proto__: 1, __proto__: 2}];;);
-                                  ^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ for ([{__proto__: 1, __proto__: 2}];;);
+   ║                                   ^------- error
+╚══╩═════════════════
+
 `````
 
 

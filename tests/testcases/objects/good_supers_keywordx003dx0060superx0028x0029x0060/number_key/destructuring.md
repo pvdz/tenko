@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-class x extends y {constructor(){    ({790: super()} = x)    }}
-                                                     ^------- error
+start@1:0, error@1:53
+╔══╦═════════════════
+ 1 ║ class x extends y {constructor(){    ({790: super()} = x)    }}
+   ║                                                      ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

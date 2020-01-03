@@ -88,11 +88,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
-function *f(){
-  let = 1;
-  ^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   let = 1;
+   ║   ^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

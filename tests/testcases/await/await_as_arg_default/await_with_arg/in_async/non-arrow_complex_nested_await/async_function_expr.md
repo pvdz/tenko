@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Await is illegal as default arg value
 
-async function g(){let x = async function f(foo = [h, {m: t(await bar)}]){}    }
-                                                            ^^^^^------- error
+start@1:0, error@1:60
+╔══╦═════════════════
+ 1 ║ async function g(){let x = async function f(foo = [h, {m: t(await bar)}]){}    }
+   ║                                                             ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

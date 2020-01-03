@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-(delete = "sentinal 453543")
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ (delete = "sentinal 453543")
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The escaped property value `NONONO` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
-/\p{Script_Extensions=NONONO}/g;
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\p{Script_Extensions=NONONO}/g;
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

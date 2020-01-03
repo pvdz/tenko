@@ -92,8 +92,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-(x=eval=10) => { }
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ (x=eval=10) => { }
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 

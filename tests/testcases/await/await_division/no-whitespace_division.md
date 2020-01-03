@@ -69,8 +69,12 @@ Parsed with the module goal.
 throws: Lexer error!
     Regex: Found EOF before regex was closed
 
-await/x
-     ^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ await/x
+   ║      ^^------- error
+╚══╩════════════════
+
 `````
 
 

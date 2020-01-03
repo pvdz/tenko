@@ -102,8 +102,12 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-var x = a; function x(){};
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ var x = a; function x(){};
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -51,12 +51,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
-{
-  var f = 123;
-  oops: function f(){}
-        ^^^^^^^^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ {
+ 2 ║   var f = 123;
+ 3 ║   oops: function f(){}
+   ║         ^^^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode
@@ -79,11 +82,14 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Attempted to create a lexical binding for `f` but another binding already existed on the same level
 
-{
-  var f = 123;
-  oops: function f(){}
-                 ^------- error
+start@1:0, error@3:17
+╔══╦═════════════════
+ 1 ║ {
+ 2 ║   var f = 123;
+ 3 ║   oops: function f(){}
+   ║                  ^------- error
+ 4 ║ }
+╚══╩═════════════════
 
-}
 `````
 

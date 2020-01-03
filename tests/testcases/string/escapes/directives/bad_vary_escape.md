@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     String had an illegal escape
 
-"oops \u{110001}"
-^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ "oops \u{110001}"
+   ║ ^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

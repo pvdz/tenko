@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing closing paren `)` for group, found `function` instead
 
-(async
- function(){})
- ^^^^^^^^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ (async
+ 2 ║  function(){})
+   ║  ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

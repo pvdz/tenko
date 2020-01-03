@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export ...x = y
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export ...x = y
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Unknown export type `...` (note: you can only export individual vars through `export {foo};`)
 
-export ...x = y
-       ^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ export ...x = y
+   ║        ^^^------- error
+╚══╩════════════════
+
 `````
 
 

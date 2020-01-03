@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   An `await` expression is not allowed here
 
-async function f() {   class x extends await y { }   }
-                                       ^^^^^------- error
+start@1:0, error@1:39
+╔══╦═════════════════
+ 1 ║ async function f() {   class x extends await y { }   }
+   ║                                        ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

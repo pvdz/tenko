@@ -33,9 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-"use strict";
-"You \077 ok";
-^^^^^^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ "use strict";
+ 2 ║ "You \077 ok";
+   ║ ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

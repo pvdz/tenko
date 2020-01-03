@@ -40,11 +40,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-var a;
-export {a};
-^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ var a;
+ 2 ║ export {a};
+   ║ ^^^^^^------- error
+ 3 ║ export {a};
+╚══╩════════════════
 
-export {a};
 `````
 
 ### Strict mode
@@ -61,10 +64,14 @@ Parsed with the module goal.
 throws: Parser error!
   Tried to export the name `a` twice
 
-var a;
-export {a};
-export {a};
-^^^^^^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ var a;
+ 2 ║ export {a};
+ 3 ║ export {a};
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

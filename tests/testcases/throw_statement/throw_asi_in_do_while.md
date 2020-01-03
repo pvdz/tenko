@@ -33,11 +33,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-function f() {
-  do throw pass while(x);
-                ^^^^^------- error
+start@1:0, error@2:16
+╔══╦═════════════════
+ 1 ║ function f() {
+ 2 ║   do throw pass while(x);
+   ║                 ^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

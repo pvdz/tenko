@@ -37,14 +37,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`else`) as a variable name because: Cannot never use this reserved word as a variable name
 
-function x(){
-  if (x)
-    debugger
-    / /;
-  else;
-  ^^^^------- error
+start@1:0, error@5:2
+╔══╦════════════════
+ 1 ║ function x(){
+ 2 ║   if (x)
+ 3 ║     debugger
+ 4 ║     / /;
+ 5 ║   else;
+   ║   ^^^^------- error
+ 6 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

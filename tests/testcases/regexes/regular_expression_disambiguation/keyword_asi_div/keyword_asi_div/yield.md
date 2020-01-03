@@ -67,9 +67,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     Regex: Found EOF before regex was closed
 
-yield
-/x
-^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ yield
+ 2 ║ /x
+   ║ ^^------- error
+╚══╩════════════════
+
 `````
 
 

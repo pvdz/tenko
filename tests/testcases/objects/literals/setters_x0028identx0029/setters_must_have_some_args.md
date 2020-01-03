@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Setters must have exactly one parameter
 
-wrap({set bar(){}});
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ wrap({set bar(){}});
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

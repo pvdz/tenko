@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-import {a} from "c"; import {b as a} from "c"
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ import {a} from "c"; import {b as a} from "c"
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a lexical binding for `a` but another binding already existed on the same level
 
-import {a} from "c"; import {b as a} from "c"
-                                  ^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ import {a} from "c"; import {b as a} from "c"
+   ║                                   ^------- error
+╚══╩═════════════════
+
 `````
 
 

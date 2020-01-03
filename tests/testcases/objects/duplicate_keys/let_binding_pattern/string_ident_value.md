@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-let x, {"foo": x} = obj
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ let x, {"foo": x} = obj
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

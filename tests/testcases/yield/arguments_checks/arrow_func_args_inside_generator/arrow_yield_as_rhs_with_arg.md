@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
-function *g() { (x = x + yield y) => x; }
-                         ^^^^^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ function *g() { (x = x + yield y) => x; }
+   ║                          ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Char class can not contain `\B` with u-flag or without webcompat
 
-/[a-\B]/
-^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[a-\B]/
+   ║ ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

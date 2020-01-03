@@ -104,13 +104,16 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `await` but: Await is illegal as var name with module goal
 
-function f() {
-  "use strict";
-  let
-  await
-  ^^^^^------- error
+start@1:0, error@4:2
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   let
+ 4 ║   await
+   ║   ^^^^^------- error
+ 5 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

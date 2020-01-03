@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-function g(){ const f = 1; function f() {} }
-                                    ^------- error
+start@1:0, error@1:36
+╔══╦═════════════════
+ 1 ║ function g(){ const f = 1; function f() {} }
+   ║                                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

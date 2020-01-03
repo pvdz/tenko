@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-foo(class x { y() {} }
- /foo/)
-      ^------- error
+start@1:0, error@2:6
+╔══╦════════════════
+ 1 ║ foo(class x { y() {} }
+ 2 ║  /foo/)
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

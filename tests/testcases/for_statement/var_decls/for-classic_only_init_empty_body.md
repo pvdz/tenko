@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Constants must be initialized
 
-for (const a;;);
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ for (const a;;);
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

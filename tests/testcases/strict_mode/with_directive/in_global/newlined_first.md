@@ -31,10 +31,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-"haha\
-still\
-fine"; "use strict"; with (x) y;
-                     ^^^^------- error
+start@1:0, error@3:21
+╔══╦═════════════════
+ 1 ║ "haha\
+ 2 ║ still\
+ 3 ║ fine"; "use strict"; with (x) y;
+   ║                      ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

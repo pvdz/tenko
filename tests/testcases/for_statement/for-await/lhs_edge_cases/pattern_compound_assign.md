@@ -34,11 +34,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot compound assign to an object or array pattern
 
-async function f() {
-  for await ({}/=y of a)x
-               ^^------- error
+start@1:0, error@2:15
+╔══╦═════════════════
+ 1 ║ async function f() {
+ 2 ║   for await ({}/=y of a)x
+   ║                ^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
-delete (import.prop)
-        ^^^^^^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ delete (import.prop)
+   ║         ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

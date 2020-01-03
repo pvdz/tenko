@@ -34,9 +34,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `/`
 
-with
-/x/g
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ with
+ 2 ║ /x/g
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -47,10 +51,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-with
-^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ with
+   ║ ^^^^------- error
+ 2 ║ /x/g
+╚══╩════════════════
 
-/x/g
 `````
 
 

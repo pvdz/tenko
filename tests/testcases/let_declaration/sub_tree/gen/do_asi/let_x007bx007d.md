@@ -33,11 +33,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A `do` must be followed by a `while`, but found `{` instead
 
-do let
-{}
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ do let
+ 2 ║ {}
+   ║ ^------- error
+ 3 ║ while (a);
+╚══╩════════════════
 
-while (a);
 `````
 
 ### Strict mode
@@ -48,11 +51,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
-do let
-   ^^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ do let
+   ║    ^^^------- error
+ 2 ║ {}
+ 3 ║ while (a);
+╚══╩════════════════
 
-{}
-while (a);
 `````
 
 

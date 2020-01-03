@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-f = function f(x=yield=10){ "use strict"; }
-                                          ^------- error
+start@1:0, error@1:42
+╔══╦═════════════════
+ 1 ║ f = function f(x=yield=10){ "use strict"; }
+   ║                                           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -43,8 +47,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-f = function f(x=yield=10){ "use strict"; }
-                 ^^^^^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ f = function f(x=yield=10){ "use strict"; }
+   ║                  ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

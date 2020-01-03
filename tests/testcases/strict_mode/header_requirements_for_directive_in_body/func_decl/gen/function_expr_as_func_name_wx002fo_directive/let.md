@@ -84,8 +84,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`let`) as a variable name because: Can not use `let` as variable name in strict mode
 
-f = function let(a){ }
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ f = function let(a){ }
+   ║              ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

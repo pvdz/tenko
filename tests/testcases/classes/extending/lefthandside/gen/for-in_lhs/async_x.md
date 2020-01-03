@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `x` instead
 
-for (async
-x in x) ;
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ for (async
+ 2 ║ x in x) ;
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

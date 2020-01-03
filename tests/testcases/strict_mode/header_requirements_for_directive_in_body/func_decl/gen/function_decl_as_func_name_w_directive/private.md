@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not use reserved keyword `private` in strict mode as id for function that has a use strict directive
 
-function private(b){
-         ^^^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ function private(b){
+   ║          ^^^^^^^------- error
+ 2 ║   "use strict";
+ 3 ║ }
+╚══╩════════════════
 
-  "use strict";
-}
 `````
 
 ### Strict mode
@@ -47,11 +50,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`private`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-function private(b){
-         ^^^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ function private(b){
+   ║          ^^^^^^^------- error
+ 2 ║   "use strict";
+ 3 ║ }
+╚══╩════════════════
 
-  "use strict";
-}
 `````
 
 

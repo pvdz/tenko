@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
-debugger;
-'\0737 \xaa \u{abc} \0 finish';
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ debugger;
+ 2 ║ '\0737 \xaa \u{abc} \0 finish';
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,9 +46,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-debugger;
-'\0737 \xaa \u{abc} \0 finish';
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ debugger;
+ 2 ║ '\0737 \xaa \u{abc} \0 finish';
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

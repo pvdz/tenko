@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-function f() {
-  "use strict";
-  (function = x);
-            ^------- error
+start@1:0, error@3:12
+╔══╦═════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   (function = x);
+   ║             ^------- error
+ 4 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

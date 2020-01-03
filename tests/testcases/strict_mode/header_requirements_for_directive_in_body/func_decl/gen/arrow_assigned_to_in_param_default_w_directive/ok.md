@@ -32,10 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-(x=ok=10) => {
-  "use strict";
-}
-^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ (x=ok=10) => {
+ 2 ║   "use strict";
+ 3 ║ }
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

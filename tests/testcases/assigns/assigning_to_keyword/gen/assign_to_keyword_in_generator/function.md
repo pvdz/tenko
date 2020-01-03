@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Function decl missing required ident
 
-function *f(){
-  function = 1;
-           ^------- error
+start@1:0, error@2:11
+╔══╦═════════════════
+ 1 ║ function *f(){
+ 2 ║   function = 1;
+   ║            ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

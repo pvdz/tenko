@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Template contained an illegal escape, illegal in a statement
 
-`\513`
-^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ `\513`
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

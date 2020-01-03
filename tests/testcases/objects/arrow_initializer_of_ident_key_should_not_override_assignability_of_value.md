@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `fail`) because it is not a valid assignment target
 
-({foo: fail() = x}) => x
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ ({foo: fail() = x}) => x
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

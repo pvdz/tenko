@@ -94,11 +94,14 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-function *f(){
-  (await) = 1;
-        ^------- error
+start@1:0, error@2:8
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   (await) = 1;
+   ║         ^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

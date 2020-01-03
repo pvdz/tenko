@@ -75,8 +75,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The left hand side of the async arrow is not destructible so arrow is illegal
 
-async (a, arguments) => {}
-                     ^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ async (a, arguments) => {}
+   ║                      ^^------- error
+╚══╩═════════════════
+
 `````
 
 

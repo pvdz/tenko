@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A unary expression is not allowed here
 
-class A extends void x {}
-                ^^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ class A extends void x {}
+   ║                 ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

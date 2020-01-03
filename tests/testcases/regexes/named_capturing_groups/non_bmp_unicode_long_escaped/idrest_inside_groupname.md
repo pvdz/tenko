@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The es6 long unicode escape is only valid with u-flag; Found "es6" unicode escape (`\u{..}`) or surrogate pair quads (`\uxxxx\uxxxx`) in regex ident, which is only valid with u-flag in regex; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
-/(?<abc\u{1D7D0}def>foo)/
-^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<abc\u{1D7D0}def>foo)/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

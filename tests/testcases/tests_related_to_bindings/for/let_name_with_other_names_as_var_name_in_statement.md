@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-for (let a, b, x, d;;) { var foo; var bar; { var doo, x, ee; } }
-                                                      ^------- error
+start@1:0, error@1:54
+╔══╦═════════════════
+ 1 ║ for (let a, b, x, d;;) { var foo; var bar; { var doo, x, ee; } }
+   ║                                                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing right square bracket for computed member, found `x` instead
 
-(fail = class A {[await x](){}; "x"(){}}) => {}
-                        ^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ (fail = class A {[await x](){}; "x"(){}}) => {}
+   ║                         ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -50,8 +54,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-(fail = class A {[await x](){}; "x"(){}}) => {}
-                        ^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ (fail = class A {[await x](){}; "x"(){}}) => {}
+   ║                         ^------- error
+╚══╩═════════════════
+
 `````
 
 

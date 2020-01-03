@@ -93,8 +93,12 @@ Parsed with the module goal.
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-function f() {} var f = 1;
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ function f() {} var f = 1;
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 

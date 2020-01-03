@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-[async (x, y) => ok].x
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ [async (x, y) => ok].x
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

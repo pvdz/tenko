@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-try { import {x} from "y"; } catch(e){}
-      ^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ try { import {x} from "y"; } catch(e){}
+   ║       ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   The `import` keyword is only supported at the top level
 
-try { import {x} from "y"; } catch(e){}
-      ^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ try { import {x} from "y"; } catch(e){}
+   ║       ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

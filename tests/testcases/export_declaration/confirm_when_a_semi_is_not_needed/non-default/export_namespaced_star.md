@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export * as x from "x" foo
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export * as x from "x" foo
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Unable to ASI
 
-export * as x from "x" foo
-                       ^^^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ export * as x from "x" foo
+   ║                        ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

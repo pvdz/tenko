@@ -72,8 +72,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`p\u0061ckage`) as a variable name because: Keywords may not have escapes in their name and this resolves to `package`
 
-function foo(p\u0061ckage) { }
-             ^^^^^^^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ function foo(p\u0061ckage) { }
+   ║              ^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

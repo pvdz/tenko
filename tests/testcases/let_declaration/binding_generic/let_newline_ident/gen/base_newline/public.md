@@ -64,9 +64,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `public` but: Cannot use this reserved word as a variable name in strict mode
 
-let
-public
-^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ public
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

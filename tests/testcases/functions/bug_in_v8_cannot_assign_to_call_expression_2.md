@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `y`) because it is not a valid assignment target
 
-({x:{1:y()=x},x:{7:3}})>x
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ ({x:{1:y()=x},x:{7:3}})>x
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

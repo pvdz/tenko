@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-var foo, bar; export {{foo}}
-              ^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ var foo, bar; export {{foo}}
+   ║               ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Export object can only have "shorthand" `{x}` or "as" `{x as y}
 
-var foo, bar; export {{foo}}
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ var foo, bar; export {{foo}}
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 

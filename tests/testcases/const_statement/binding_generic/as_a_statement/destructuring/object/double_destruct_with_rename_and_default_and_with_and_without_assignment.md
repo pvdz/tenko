@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Declaration destructuring must have init
 
-const {x:y=z} = obj, {a:b=c};
-                            ^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ const {x:y=z} = obj, {a:b=c};
+   ║                             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

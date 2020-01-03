@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Unknown input
 
-@
-^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ @
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

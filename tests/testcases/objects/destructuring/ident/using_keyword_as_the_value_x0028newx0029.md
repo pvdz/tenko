@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-s = {s: new}
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ s = {s: new}
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

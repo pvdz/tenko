@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot compound assign to an object or array pattern
 
-for({}/=y of a)x
-      ^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ for({}/=y of a)x
+   ║       ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   An arrow function can not have a postfix update operator
 
-async => {} ++foo
-            ^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ async => {} ++foo
+   ║             ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

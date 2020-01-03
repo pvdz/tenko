@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found second `default` in same switch
 
-switch(x) { case y: break; case z: break; default: default: }
-                                                   ^^^^^^^------- error
+start@1:0, error@1:51
+╔══╦═════════════════
+ 1 ║ switch(x) { case y: break; case z: break; default: default: }
+   ║                                                    ^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -62,8 +62,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Arrows cannot be lhs to for-in
 
-for (x=>x in y;;);
-          ^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ for (x=>x in y;;);
+   ║           ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

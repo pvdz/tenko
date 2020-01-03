@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing closing paren `)` for group, found `foo` instead
 
-let f = async
- (g = await foo) => g
-            ^^^------- error
+start@1:0, error@2:12
+╔══╦═════════════════
+ 1 ║ let f = async
+ 2 ║  (g = await foo) => g
+   ║             ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,9 +52,13 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-let f = async
- (g = await foo) => g
-            ^------- error
+start@1:0, error@2:12
+╔══╦═════════════════
+ 1 ║ let f = async
+ 2 ║  (g = await foo) => g
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 

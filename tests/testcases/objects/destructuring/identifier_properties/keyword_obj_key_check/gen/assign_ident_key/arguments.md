@@ -86,8 +86,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-({key: arguments} = null)
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ ({key: arguments} = null)
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 

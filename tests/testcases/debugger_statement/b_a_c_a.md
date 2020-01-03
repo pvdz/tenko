@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Saw the same label twice which is not allowed
 
-bar: foo: ding: foo: x
-                ^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ bar: foo: ding: foo: x
+   ║                 ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

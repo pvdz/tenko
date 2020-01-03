@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`implements`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-class c {foo(x=implements=y){ }}
-               ^^^^^^^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ class c {foo(x=implements=y){ }}
+   ║                ^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Template contained an illegal escape, illegal in a statement
 
-`start \0737 \xaa \u{abc} \0 finish`;
-^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ `start \0737 \xaa \u{abc} \0 finish`;
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

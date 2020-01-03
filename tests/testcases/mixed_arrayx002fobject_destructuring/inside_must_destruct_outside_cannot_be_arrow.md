@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
-([...{a = b} = c]) => d;
-                   ^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ ([...{a = b} = c]) => d;
+   ║                    ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

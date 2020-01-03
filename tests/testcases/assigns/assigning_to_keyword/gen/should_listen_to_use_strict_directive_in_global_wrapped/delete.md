@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-"use strict"; (delete = x);
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ "use strict"; (delete = x);
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

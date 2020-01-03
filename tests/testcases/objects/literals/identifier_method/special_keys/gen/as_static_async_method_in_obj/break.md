@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `break`
 
-({
-  static async break(){}
-               ^^^^^------- error
+start@1:0, error@2:15
+╔══╦═════════════════
+ 1 ║ ({
+ 2 ║   static async break(){}
+   ║                ^^^^^------- error
+ 3 ║ });
+╚══╩═════════════════
 
-});
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only increment or decrement an identifier or member expression
 
-for ({a: b.c}-- of d) e
-             ^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for ({a: b.c}-- of d) e
+   ║              ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

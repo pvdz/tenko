@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-function *f() {
-  let
-  await 0
-        ^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   let
+ 3 ║   await 0
+   ║         ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode
@@ -55,12 +58,15 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `await` but: Await is illegal as var name with module goal
 
-function *f() {
-  let
-  await 0
-  ^^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   let
+ 3 ║   await 0
+   ║   ^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

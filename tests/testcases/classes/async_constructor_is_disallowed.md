@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Class constructors can not be async
 
-class X {    async constructor() {}   }
-             ^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ class X {    async constructor() {}   }
+   ║              ^^^^^^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

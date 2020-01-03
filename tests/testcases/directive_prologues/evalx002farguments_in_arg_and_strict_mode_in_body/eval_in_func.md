@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-function f(eval) { "use strict"; }
-                                 ^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ function f(eval) { "use strict"; }
+   ║                                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -40,8 +44,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
-function f(eval) { "use strict"; }
-           ^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ function f(eval) { "use strict"; }
+   ║            ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

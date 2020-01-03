@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The start of an group name had a surrogate pair and is therefor only valid with u-flag; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
-/(?<@{x2f9df}@rest>foo)/
-^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<@{x2f9df}@rest>foo)/
+   ║ ^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

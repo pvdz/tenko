@@ -35,10 +35,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export default x
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export default x
+   ║ ^^^^^^------- error
+ 2 ║ /y/
+╚══╩════════════════
 
-/y/
 `````
 
 ### Strict mode
@@ -55,9 +58,13 @@ Parsed with the module goal.
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-export default x
-/y/
-   ^------- error at EOF
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ export default x
+ 2 ║ /y/
+   ║    ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `(`
 
-var {(x)} = v
-     ^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ var {(x)} = v
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -29,10 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Catch clause can not have init / default
 
-try {} catch(e = async
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ try {} catch(e = async
+   ║                ^------- error
+ 2 ║  () => x) {}
+╚══╩═════════════════
 
- () => x) {}
 `````
 
 ### Strict mode

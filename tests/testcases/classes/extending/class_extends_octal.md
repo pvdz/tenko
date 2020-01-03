@@ -36,8 +36,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-class x extends 08 {}
-                ^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ class x extends 08 {}
+   ║                 ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

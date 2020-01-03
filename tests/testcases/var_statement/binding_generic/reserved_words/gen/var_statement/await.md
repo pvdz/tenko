@@ -73,8 +73,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-var await = x;
-    ^^^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ var await = x;
+   ║     ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

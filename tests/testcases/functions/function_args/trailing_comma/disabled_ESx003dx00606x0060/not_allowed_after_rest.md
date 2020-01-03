@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-function f(...a,){}
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ function f(...a,){}
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

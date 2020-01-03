@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`arguments`) as a variable name because: Cannot create a binding named `arguments` in strict mode
 
-class arguments {}
-      ^^^^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ class arguments {}
+   ║       ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

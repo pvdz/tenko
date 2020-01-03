@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `y` instead
 
-class outer { meh(){  class x extends super.foo y { }  }}
-                                                ^------- error
+start@1:0, error@1:48
+╔══╦═════════════════
+ 1 ║ class outer { meh(){  class x extends super.foo y { }  }}
+   ║                                                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

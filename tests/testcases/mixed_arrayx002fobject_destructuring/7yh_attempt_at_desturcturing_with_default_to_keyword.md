@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a part that cant destruct and a part that must destruct so it is not destructible
 
-[...{a: 0} = c]
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ [...{a: 0} = c]
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

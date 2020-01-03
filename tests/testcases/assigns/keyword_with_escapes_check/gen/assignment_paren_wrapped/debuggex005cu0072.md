@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`debugge\u0072`) as a variable name because: Keywords may not have escapes in their name and this resolves to `debugger`
 
-(debugge\u0072 = x);
- ^^^^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (debugge\u0072 = x);
+   ║  ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

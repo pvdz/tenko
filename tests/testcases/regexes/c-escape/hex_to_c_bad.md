@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Encountered incorrect range (left>right) which is illegal with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag
 
-/[\x1f-\cA]/
-^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\x1f-\cA]/
+   ║ ^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

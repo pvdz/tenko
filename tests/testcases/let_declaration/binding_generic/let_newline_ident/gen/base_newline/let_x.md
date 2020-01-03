@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `let` but: Can not use `let` when binding through `let` or `const`
 
-let
-let x
-^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ let x
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

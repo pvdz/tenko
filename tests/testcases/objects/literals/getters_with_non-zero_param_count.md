@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Getters can not have any parameters
 
-({get foo(x){}});
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ ({get foo(x){}});
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

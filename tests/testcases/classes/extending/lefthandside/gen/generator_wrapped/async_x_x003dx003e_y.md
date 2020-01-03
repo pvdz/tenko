@@ -34,12 +34,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `x` instead
 
-function *P(){
-  class D extends async
-x => y {}
-^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ function *P(){
+ 2 ║   class D extends async
+ 3 ║ x => y {}
+   ║ ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

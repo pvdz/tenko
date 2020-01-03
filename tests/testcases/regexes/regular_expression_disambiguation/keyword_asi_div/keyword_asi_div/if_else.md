@@ -34,10 +34,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Found EOF before regex was closed
 
-if (x) ;
-else
-/x
-^^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ if (x) ;
+ 2 ║ else
+ 3 ║ /x
+   ║ ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

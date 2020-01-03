@@ -89,8 +89,12 @@ Parsed with the module goal.
 throws: Parser error!
   An `await` expression is not allowed here
 
-function f() {   class x extends await { }   }
-                                 ^^^^^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ function f() {   class x extends await { }   }
+   ║                                  ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

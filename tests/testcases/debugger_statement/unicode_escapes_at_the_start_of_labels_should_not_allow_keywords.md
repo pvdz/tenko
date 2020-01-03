@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`\u{61}wait`) as a variable name because: Await not allowed here
 
-async () => { \u{61}wait: x }
-              ^^^^^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ async () => { \u{61}wait: x }
+   ║               ^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`\u{61}wait`) as a variable name because: Await is illegal as var name with module goal
 
-async () => { \u{61}wait: x }
-              ^^^^^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ async () => { \u{61}wait: x }
+   ║               ^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -52,12 +52,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
-function g(){
-  var f = 123;
-  oops: function f(){}
-        ^^^^^^^^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ function g(){
+ 2 ║   var f = 123;
+ 3 ║   oops: function f(){}
+   ║         ^^^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

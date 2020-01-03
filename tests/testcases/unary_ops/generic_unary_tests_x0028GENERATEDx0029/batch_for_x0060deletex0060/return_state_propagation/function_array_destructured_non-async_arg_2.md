@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the closing bracket `]` for the array, found `x` instead
 
-async function f(){   function fh([delete await x]) { "use strict"; }   }
-                                                ^------- error
+start@1:0, error@1:48
+╔══╦═════════════════
+ 1 ║ async function f(){   function fh([delete await x]) { "use strict"; }   }
+   ║                                                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -40,8 +44,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
-async function f(){   function fh([delete await x]) { "use strict"; }   }
-                                   ^^^^^^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ async function f(){   function fh([delete await x]) { "use strict"; }   }
+   ║                                    ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 
@@ -53,8 +61,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async function f(){   function fh([delete await x]) { "use strict"; }   }
-                                                ^------- error
+start@1:0, error@1:48
+╔══╦═════════════════
+ 1 ║ async function f(){   function fh([delete await x]) { "use strict"; }   }
+   ║                                                 ^------- error
+╚══╩═════════════════
+
 `````
 
 

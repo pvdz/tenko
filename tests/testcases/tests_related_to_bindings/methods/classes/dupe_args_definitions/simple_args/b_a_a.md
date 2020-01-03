@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Method had duplicate params
 
-class o {f(b, a, a) {}}
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ class o {f(b, a, a) {}}
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

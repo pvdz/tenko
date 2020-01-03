@@ -79,8 +79,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode (at EOF)
 
-if (x) ; else let
-              ^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ if (x) ; else let
+   ║               ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

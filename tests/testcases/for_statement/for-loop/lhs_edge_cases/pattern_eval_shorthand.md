@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use lhs as regular for-loop because it must destruct
 
-for ({ eval = 0 } ;;) ;
-     ^^^^^^^^^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ for ({ eval = 0 } ;;) ;
+   ║      ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

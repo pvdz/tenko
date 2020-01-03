@@ -49,8 +49,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing function param definition closing parenthesis, found `100` instead
 
-async function f(x=yield 100) {}
-                         ^^^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ async function f(x=yield 100) {}
+   ║                          ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -61,8 +65,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-async function f(x=yield 100) {}
-                   ^^^^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ async function f(x=yield 100) {}
+   ║                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

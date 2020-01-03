@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid (at EOF)
 
-async({a=1})
-     ^^^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ async({a=1})
+   ║      ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

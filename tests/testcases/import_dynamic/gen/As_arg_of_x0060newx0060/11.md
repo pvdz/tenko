@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use dynamic import as an argument to `new`, the spec simply does not allow it
 
-new import(x);
-^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ new import(x);
+   ║ ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

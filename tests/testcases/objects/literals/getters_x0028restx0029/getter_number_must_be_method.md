@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `:`
 
-wrap({get 123: x});
-             ^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ wrap({get 123: x});
+   ║              ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

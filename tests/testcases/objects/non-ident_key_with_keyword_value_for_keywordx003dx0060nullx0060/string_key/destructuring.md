@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-({"foo": null} = x)
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ ({"foo": null} = x)
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

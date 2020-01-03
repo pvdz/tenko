@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-function f(){  class x extends feh(yield) { }  }
-                                   ^^^^^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ function f(){  class x extends feh(yield) { }  }
+   ║                                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

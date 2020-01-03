@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Either the current modifier is unknown or the input that followed was unexpected
 
-class x {    static static f(){}    }
-                           ^------- error
+start@1:0, error@1:27
+╔══╦═════════════════
+ 1 ║ class x {    static static f(){}    }
+   ║                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Arrow had duplicate params
 
-(x, {x}) => {}
-     ^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ (x, {x}) => {}
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

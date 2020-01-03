@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-class c {foo(x=eval=y){ "use strict"; }}
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ class c {foo(x=eval=y){ "use strict"; }}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

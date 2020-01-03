@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Found `n`. It is not legal for an ident or number token to start after a number token without some form of separation
 
-313e+2n
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ 313e+2n
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

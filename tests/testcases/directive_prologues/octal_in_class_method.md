@@ -41,14 +41,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-class x {
-  y(){
-    "";
-    "\5";
-    ^^^^------- error
+start@1:0, error@4:4
+╔══╦════════════════
+ 1 ║ class x {
+ 2 ║   y(){
+ 3 ║     "";
+ 4 ║     "\5";
+   ║     ^^^^------- error
+ 5 ║   }
+ 6 ║ }
+╚══╩════════════════
 
-  }
-}
 `````
 
 ### Strict mode

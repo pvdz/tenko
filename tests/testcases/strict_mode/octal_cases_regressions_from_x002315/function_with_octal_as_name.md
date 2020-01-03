@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Function decl missing required ident
 
-function 00004() { "use strict"; 00004; }
-         ^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ function 00004() { "use strict"; 00004; }
+   ║          ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -41,8 +45,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-function 00004() { "use strict"; 00004; }
-         ^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ function 00004() { "use strict"; 00004; }
+   ║          ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

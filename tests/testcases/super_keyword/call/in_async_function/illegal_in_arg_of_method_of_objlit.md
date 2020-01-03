@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
-x={ dsda(){ async function g(a=super()) {} }}
-                               ^^^^^^------- error
+start@1:0, error@1:31
+╔══╦═════════════════
+ 1 ║ x={ dsda(){ async function g(a=super()) {} }}
+   ║                                ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

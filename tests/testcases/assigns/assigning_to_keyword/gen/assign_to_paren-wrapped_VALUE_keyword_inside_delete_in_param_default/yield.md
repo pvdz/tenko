@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
-function *f(x = delete ((yield) = f)) {}
-                         ^^^^^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ function *f(x = delete ((yield) = f)) {}
+   ║                          ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

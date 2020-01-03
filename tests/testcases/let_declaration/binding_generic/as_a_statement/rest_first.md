@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-let ...a = 1;
-    ^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ let ...a = 1;
+   ║     ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
-let ...a = 1;
-^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ let ...a = 1;
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 

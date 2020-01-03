@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The arguments of an arrow cannot contain a yield expression in their defaults
 
-function *f(){  return (x=yield y) => x;  }
-                                   ^^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ function *f(){  return (x=yield y) => x;  }
+   ║                                    ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

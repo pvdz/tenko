@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   This `continue` had a label (`y`) that was not defined in the current label set as the direct parent of a loop, which would be required
 
-() => { while (true)       if (x) continue y   }
-                                           ^------- error
+start@1:0, error@1:43
+╔══╦═════════════════
+ 1 ║ () => { while (true)       if (x) continue y   }
+   ║                                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

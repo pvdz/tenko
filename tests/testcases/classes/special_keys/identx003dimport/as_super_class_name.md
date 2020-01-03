@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
-class x extends import {}
-                ^^^^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ class x extends import {}
+   ║                 ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

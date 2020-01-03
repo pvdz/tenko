@@ -36,8 +36,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-const x = a; function x(){};
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ const x = a; function x(){};
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -54,8 +58,12 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-const x = a; function x(){};
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ const x = a; function x(){};
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 

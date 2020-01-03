@@ -39,9 +39,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-var canBeUndeclared;
-export {mustExist as canBeUndeclared};
-^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ var canBeUndeclared;
+ 2 ║ export {mustExist as canBeUndeclared};
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -58,9 +62,13 @@ Parsed with the module goal.
 throws: Parser error!
   Exporting a name that was not bound in global: `mustExist` (at EOF)
 
-var canBeUndeclared;
-export {mustExist as canBeUndeclared};
-                                      ^------- error at EOF
+start@1:0, error@2:38
+╔══╦═════════════════
+ 1 ║ var canBeUndeclared;
+ 2 ║ export {mustExist as canBeUndeclared};
+   ║                                       ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The rest/spread operator is missing an argument
 
-for (const [...] of obj);
-            ^^^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ for (const [...] of obj);
+   ║             ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

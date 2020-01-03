@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Await is illegal as default arg value
 
-function *as(){ o = {async f(x=await foo) {}} }
-                               ^^^^^------- error
+start@1:0, error@1:31
+╔══╦═════════════════
+ 1 ║ function *as(){ o = {async f(x=await foo) {}} }
+   ║                                ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

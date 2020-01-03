@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `x` instead
 
-class A extends await x {}
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ class A extends await x {}
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   An `await` expression is not allowed here
 
-class A extends await x {}
-                ^^^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ class A extends await x {}
+   ║                 ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

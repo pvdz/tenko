@@ -33,8 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
-function foo(p\141ckage) { }
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ function foo(p\141ckage) { }
+   ║              ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

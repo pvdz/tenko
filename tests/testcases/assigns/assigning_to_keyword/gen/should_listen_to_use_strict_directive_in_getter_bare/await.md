@@ -137,14 +137,17 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-foo = {
-  get x(){
-    "use strict";
-    await = x
-          ^------- error
+start@1:0, error@4:10
+╔══╦═════════════════
+ 1 ║ foo = {
+ 2 ║   get x(){
+ 3 ║     "use strict";
+ 4 ║     await = x
+   ║           ^------- error
+ 5 ║   }
+ 6 ║ }
+╚══╩═════════════════
 
-  }
-}
 `````
 
 

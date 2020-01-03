@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-class A {
-  f(x=arguments=10){
-               ^------- error
+start@1:0, error@2:15
+╔══╦═════════════════
+ 1 ║ class A {
+ 2 ║   f(x=arguments=10){
+   ║                ^------- error
+ 3 ║     "use strict";
+ 4 ║   }
+ 5 ║ }
+╚══╩═════════════════
 
-    "use strict";
-  }
-}
 `````
 
 ### Strict mode

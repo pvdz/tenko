@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Async functions are not supported in the currently targeted language version
 
-x = {async foo(){}}
-     ^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ x = {async foo(){}}
+   ║      ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -85,12 +85,15 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `public` but: Cannot use this reserved word as a variable name in strict mode
 
-function *f() {
-  let
-  public
-  ^^^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   let
+ 3 ║   public
+   ║   ^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

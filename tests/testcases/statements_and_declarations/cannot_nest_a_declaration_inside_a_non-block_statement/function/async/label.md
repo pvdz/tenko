@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" can not be async
 
-foo: async function f() {}
-     ^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ foo: async function f() {}
+   ║      ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

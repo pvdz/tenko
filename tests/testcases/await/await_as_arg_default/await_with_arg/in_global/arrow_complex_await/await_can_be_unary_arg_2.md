@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expecting closing paren `)` for the call, found `bar` instead
 
-async (foo = [{m: 5 + t(+await bar)}]) => {}
-                               ^^^------- error
+start@1:0, error@1:31
+╔══╦═════════════════
+ 1 ║ async (foo = [{m: 5 + t(+await bar)}]) => {}
+   ║                                ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async (foo = [{m: 5 + t(+await bar)}]) => {}
-                               ^------- error
+start@1:0, error@1:31
+╔══╦═════════════════
+ 1 ║ async (foo = [{m: 5 + t(+await bar)}]) => {}
+   ║                                ^------- error
+╚══╩═════════════════
+
 `````
 
 

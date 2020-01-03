@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot compound-assign to an array literal
 
-({ident: [foo, bar] += x})
-                    ^^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ ({ident: [foo, bar] += x})
+   ║                     ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

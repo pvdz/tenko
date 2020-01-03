@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-function f() {
-  "use strict";
-  (eval = x);
-        ^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   (eval = x);
+   ║         ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

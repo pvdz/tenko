@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing function param definition closing parenthesis, found `y` instead
 
-async function f() {   class x { foo(await y){} }   }
-                                           ^------- error
+start@1:0, error@1:43
+╔══╦═════════════════
+ 1 ║ async function f() {   class x { foo(await y){} }   }
+   ║                                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-async function f() {   class x { foo(await y){} }   }
-                                     ^^^^^------- error
+start@1:0, error@1:37
+╔══╦═════════════════
+ 1 ║ async function f() {   class x { foo(await y){} }   }
+   ║                                      ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-class o {f(){ let x; var x; }}
-                         ^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ class o {f(){ let x; var x; }}
+   ║                          ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

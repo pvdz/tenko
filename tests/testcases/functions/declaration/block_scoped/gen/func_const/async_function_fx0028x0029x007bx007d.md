@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `f` but another binding already existed on the same level
 
-{ const f = x; async function f(){} }
-                              ^------- error
+start@1:0, error@1:30
+╔══╦═════════════════
+ 1 ║ { const f = x; async function f(){} }
+   ║                               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -33,10 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
-"You \077 ok";
-^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ "You \077 ok";
+   ║ ^^^^^^^^^^^^^------- error
+ 2 ║ "use strict"
+╚══╩════════════════
 
-"use strict"
 `````
 
 ### Strict mode
@@ -47,10 +50,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-"You \077 ok";
-^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ "You \077 ok";
+   ║ ^^^^^^^^^^^^^------- error
+ 2 ║ "use strict"
+╚══╩════════════════
 
-"use strict"
 `````
 
 
@@ -68,8 +74,12 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Octal in directive with strict mode directive or in strict mode is always illegal (at EOF)
 
-"You \077 ok";
-"use strict"
-            ^------- error at EOF
+start@1:0, error@2:12
+╔══╦═════════════════
+ 1 ║ "You \077 ok";
+ 2 ║ "use strict"
+   ║             ^------- error at EOF
+╚══╩═════════════════
+
 `````
 

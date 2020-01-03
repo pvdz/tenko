@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `this`) because it is not a valid assignment target
 
-this = x
-     ^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ this = x
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

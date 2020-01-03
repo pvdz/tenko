@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword
 
-async function f(){    (fail = class A extends (await foo) {}) => fail    }
-                                                               ^^------- error
+start@1:0, error@1:63
+╔══╦═════════════════
+ 1 ║ async function f(){    (fail = class A extends (await foo) {}) => fail    }
+   ║                                                                ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

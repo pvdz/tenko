@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Next token should be `target` but was `` (at EOF)
 
-function d(){new.
-                 ^------- error at EOF
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ function d(){new.
+   ║                  ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

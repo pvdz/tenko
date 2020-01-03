@@ -36,8 +36,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-do debugger while(x) x
-            ^^^^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ do debugger while(x) x
+   ║             ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

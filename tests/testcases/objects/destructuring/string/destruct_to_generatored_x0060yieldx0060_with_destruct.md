@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `yield`) because it is not a valid assignment target
 
-function *g() {   s = {"foo": yield = x} = x   }
-                                    ^------- error
+start@1:0, error@1:36
+╔══╦═════════════════
+ 1 ║ function *g() {   s = {"foo": yield = x} = x   }
+   ║                                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

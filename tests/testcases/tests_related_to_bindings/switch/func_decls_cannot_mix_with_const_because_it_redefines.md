@@ -38,8 +38,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `f` but another binding already existed on the same level
 
-switch (x) {case a: const f = x; break; case b: function f(){}; break; }
-                                                         ^------- error
+start@1:0, error@1:57
+╔══╦═════════════════
+ 1 ║ switch (x) {case a: const f = x; break; case b: function f(){}; break; }
+   ║                                                          ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A newline after async is always a syntax error if the rhs turns to be an arrow function
 
-with (async
- () => x) {}
-    ^^------- error
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ with (async
+ 2 ║  () => x) {}
+   ║     ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,10 +46,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-with (async
-^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ with (async
+   ║ ^^^^------- error
+ 2 ║  () => x) {}
+╚══╩════════════════
 
- () => x) {}
 `````
 
 

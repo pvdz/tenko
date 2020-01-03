@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the closing curly `}` for an object, found `b` instead
 
-async ({a = yield b}) => x
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ async ({a = yield b}) => x
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -42,8 +46,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-async ({a = yield b}) => x
-            ^^^^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ async ({a = yield b}) => x
+   ║             ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

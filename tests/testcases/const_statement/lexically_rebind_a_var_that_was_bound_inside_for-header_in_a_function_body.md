@@ -39,12 +39,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-function f(){
-  for (var x;;);
-  const x = 1
-        ^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ function f(){
+ 2 ║   for (var x;;);
+ 3 ║   const x = 1
+   ║         ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

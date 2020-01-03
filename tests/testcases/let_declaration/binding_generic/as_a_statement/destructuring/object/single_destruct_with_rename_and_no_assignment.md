@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Declaration destructuring must have init
 
-let {x:y};
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ let {x:y};
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

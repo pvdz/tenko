@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing closing paren `)` for group, found `z` instead
 
-(x=(await z)=y)
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ (x=(await z)=y)
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-(x=(await z)=y)
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ (x=(await z)=y)
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 

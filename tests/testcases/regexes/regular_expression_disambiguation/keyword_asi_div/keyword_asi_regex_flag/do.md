@@ -34,9 +34,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A `do` must be followed by a `while`, but found `` instead (at EOF)
 
-do
-/x/g
-    ^------- error at EOF
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ do
+ 2 ║ /x/g
+   ║     ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode

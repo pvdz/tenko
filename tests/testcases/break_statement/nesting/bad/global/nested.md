@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only `break` without label inside a `switch` or loop (at EOF)
 
-if (x) break
-       ^^^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ if (x) break
+   ║        ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

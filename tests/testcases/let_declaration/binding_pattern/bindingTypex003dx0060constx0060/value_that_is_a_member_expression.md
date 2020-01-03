@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   This binding can not be used in function parameters because it is not destructible
 
-const {a: b.c} = v;
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ const {a: b.c} = v;
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

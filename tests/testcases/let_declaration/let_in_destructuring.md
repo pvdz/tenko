@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
-let [a, let, b] = [1, 2, 3];
-        ^^^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ let [a, let, b] = [1, 2, 3];
+   ║         ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

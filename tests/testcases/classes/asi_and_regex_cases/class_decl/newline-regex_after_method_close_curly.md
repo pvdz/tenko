@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
-class x { y() {}
- /foo/ }
- ^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ class x { y() {}
+ 2 ║  /foo/ }
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

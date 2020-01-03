@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `let` but: Can not use `let` when binding through `let` or `const`
 
-function f() {
-  "use strict";
-  let
-  let x
-  ^^^------- error
+start@1:0, error@4:2
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   let
+ 4 ║   let x
+   ║   ^^^------- error
+ 5 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

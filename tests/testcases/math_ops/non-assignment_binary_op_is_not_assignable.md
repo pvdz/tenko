@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign a value to non-assignable value
 
-a|b = c
-    ^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ a|b = c
+   ║     ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

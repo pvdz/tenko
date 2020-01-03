@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `true`) because it is not a valid assignment target
 
-({x:true = 5})
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ ({x:true = 5})
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

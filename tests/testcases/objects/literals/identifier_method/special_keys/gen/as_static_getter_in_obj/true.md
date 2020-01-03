@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `true`
 
-({
-  static get true(){}
-             ^^^^------- error
+start@1:0, error@2:13
+╔══╦═════════════════
+ 1 ║ ({
+ 2 ║   static get true(){}
+   ║              ^^^^------- error
+ 3 ║ });
+╚══╩═════════════════
 
-});
 `````
 
 ### Strict mode

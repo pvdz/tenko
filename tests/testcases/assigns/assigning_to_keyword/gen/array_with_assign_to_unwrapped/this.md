@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `this`) because it is not a valid assignment target
 
-async x => this = 1
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ async x => this = 1
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

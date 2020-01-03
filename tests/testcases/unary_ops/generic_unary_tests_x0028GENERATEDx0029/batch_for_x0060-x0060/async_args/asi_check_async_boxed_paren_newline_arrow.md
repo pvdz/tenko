@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Arrow is restricted production; cannot have newline before the arrow token
 
-let x = [- async (x)
- => x]
- ^^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ let x = [- async (x)
+ 2 ║  => x]
+   ║  ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -33,9 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   `let` must be a declaration in strict mode but the next ident is a reserved keyword (`debugger`)
 
-let
-debugger
-^^^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ debugger
+   ║ ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

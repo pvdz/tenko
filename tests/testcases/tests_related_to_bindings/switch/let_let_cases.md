@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `foo` but another binding already existed on the same level
 
-switch (x) { case a: let foo; break; case b: let foo; break; }
-                                                 ^^^------- error
+start@1:0, error@1:49
+╔══╦═════════════════
+ 1 ║ switch (x) { case a: let foo; break; case b: let foo; break; }
+   ║                                                  ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Left part of for-in must be assignable
 
-function *f(){   for (yield x in y in z);   }
-                 ^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ function *f(){   for (yield x in y in z);   }
+   ║                  ^^^^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

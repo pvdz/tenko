@@ -72,8 +72,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-class x{}(01)
-          ^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ class x{}(01)
+   ║           ^^------- error
+╚══╩═════════════════
+
 `````
 
 

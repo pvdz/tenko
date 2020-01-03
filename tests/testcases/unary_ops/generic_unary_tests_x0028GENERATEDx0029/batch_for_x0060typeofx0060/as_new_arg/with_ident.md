@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot `typeof` inside `new` (at EOF)
 
-new typeof
-    ^^^^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ new typeof
+   ║     ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

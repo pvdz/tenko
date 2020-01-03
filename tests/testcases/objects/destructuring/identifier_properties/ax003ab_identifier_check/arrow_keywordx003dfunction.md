@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-({ggg: function}) => null
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ ({ggg: function}) => null
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

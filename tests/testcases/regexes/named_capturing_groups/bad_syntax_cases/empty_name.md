@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`>`, 62]
 
-/(?<>a)/
-^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<>a)/
+   ║ ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

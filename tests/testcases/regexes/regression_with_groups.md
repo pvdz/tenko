@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Named back reference \k<@{x4c3d}@> was not defined in this regex: {}
 
-/\k<\u4c3d/
-^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\k<\u4c3d/
+   ║ ^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

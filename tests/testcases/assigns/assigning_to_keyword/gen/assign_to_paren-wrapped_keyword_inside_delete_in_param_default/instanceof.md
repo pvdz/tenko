@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`instanceof`) as a variable name because: Cannot never use this reserved word as a variable name
 
-async (x = delete ((instanceof) = f)) => {}
-                    ^^^^^^^^^^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ async (x = delete ((instanceof) = f)) => {}
+   ║                     ^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`var`) as a variable name because: Cannot never use this reserved word as a variable name
 
-delete (var.prop)
-        ^^^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ delete (var.prop)
+   ║         ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

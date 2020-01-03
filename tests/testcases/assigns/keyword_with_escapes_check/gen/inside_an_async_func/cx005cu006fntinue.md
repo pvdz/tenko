@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`c\u006fntinue`) as a variable name because: Keywords may not have escapes in their name and this resolves to `continue`
 
-async () => {  c\u006fntinue = x  }
-               ^^^^^^^^^^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ async () => {  c\u006fntinue = x  }
+   ║                ^^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

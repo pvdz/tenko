@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-({key: void} = null)
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ ({key: void} = null)
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

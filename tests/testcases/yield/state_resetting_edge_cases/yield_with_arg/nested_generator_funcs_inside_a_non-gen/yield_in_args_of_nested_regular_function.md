@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
-function f(){  return function*(x=yield y) {};  }
-                                  ^^^^^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ function f(){  return function*(x=yield y) {};  }
+   ║                                   ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

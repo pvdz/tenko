@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The arguments of an arrow cannot contain a yield expression in their defaults
 
-function *g() { async (x = y = yield z) => {}; }
-                                        ^^------- error
+start@1:0, error@1:40
+╔══╦═════════════════
+ 1 ║ function *g() { async (x = y = yield z) => {}; }
+   ║                                         ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

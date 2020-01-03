@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening curly, found `=`
 
-"use strict"; try = x;
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ "use strict"; try = x;
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

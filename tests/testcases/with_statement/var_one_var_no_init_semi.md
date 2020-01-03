@@ -62,8 +62,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-with (foo) bar;
-^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ with (foo) bar;
+   ║ ^^^^------- error
+╚══╩════════════════
+
 `````
 
 

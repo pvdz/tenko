@@ -65,8 +65,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`s\u0074atic`) as a variable name because: Keywords may not have escapes in their name and this resolves to `static`
 
-(s\u0074atic = "sentinal 6543322")
- ^^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (s\u0074atic = "sentinal 6543322")
+   ║  ^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

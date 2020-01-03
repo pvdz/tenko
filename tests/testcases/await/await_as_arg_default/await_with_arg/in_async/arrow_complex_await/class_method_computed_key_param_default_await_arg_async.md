@@ -34,11 +34,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing function param definition closing parenthesis, found `z` instead
 
-async function f(){
-  (fail = class A {[x](y=await z){}; "x"(){}}) => {}
-                               ^------- error
+start@1:0, error@2:31
+╔══╦═════════════════
+ 1 ║ async function f(){
+ 2 ║   (fail = class A {[x](y=await z){}; "x"(){}}) => {}
+   ║                                ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode
@@ -55,11 +58,14 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async function f(){
-  (fail = class A {[x](y=await z){}; "x"(){}}) => {}
-                               ^------- error
+start@1:0, error@2:31
+╔══╦═════════════════
+ 1 ║ async function f(){
+ 2 ║   (fail = class A {[x](y=await z){}; "x"(){}}) => {}
+   ║                                ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

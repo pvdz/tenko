@@ -95,8 +95,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-({xxxx:await}) => null
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ ({xxxx:await}) => null
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 

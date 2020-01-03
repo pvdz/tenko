@@ -53,8 +53,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Can not use `let` as variable name in strict mode
 
-(let);
- ^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (let);
+   ║  ^^^------- error
+╚══╩════════════════
+
 `````
 
 

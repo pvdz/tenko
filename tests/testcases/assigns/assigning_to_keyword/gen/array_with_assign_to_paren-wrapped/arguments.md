@@ -82,8 +82,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot assign to lhs (starting with `(`) because it is not a valid assignment target
 
-async x => (arguments) = 1
-                       ^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ async x => (arguments) = 1
+   ║                        ^------- error
+╚══╩═════════════════
+
 `````
 
 

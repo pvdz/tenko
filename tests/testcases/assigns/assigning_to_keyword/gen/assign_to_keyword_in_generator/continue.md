@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only `continue` inside a loop
 
-function *f(){
-  continue = 1;
-  ^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   continue = 1;
+   ║   ^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

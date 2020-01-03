@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-{ async function *f(){} var f }
-                            ^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ { async function *f(){} var f }
+   ║                             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

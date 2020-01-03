@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-let await 0
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ let await 0
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-let await 0
-    ^^^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ let await 0
+   ║     ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

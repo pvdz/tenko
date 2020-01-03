@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Escaping a dash in a char class is not allowed; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
 
-middleDashMatch = /[\-]/.exec
-                  ^^^^^^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ middleDashMatch = /[\-]/.exec
+   ║                   ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

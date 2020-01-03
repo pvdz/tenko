@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Await is illegal as default arg value
 
-class A {async f(x=await foo) {}}
-                   ^^^^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ class A {async f(x=await foo) {}}
+   ║                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

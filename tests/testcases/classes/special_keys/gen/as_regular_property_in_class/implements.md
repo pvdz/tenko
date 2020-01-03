@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Either the current modifier is unknown or the input that followed was unexpected
 
-class x {implements: x}
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ class x {implements: x}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

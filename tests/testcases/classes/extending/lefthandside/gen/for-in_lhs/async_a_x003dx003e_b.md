@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Arrows cannot be lhs to for-in
 
-for (async a => b in x) ;
-                  ^^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ for (async a => b in x) ;
+   ║                   ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

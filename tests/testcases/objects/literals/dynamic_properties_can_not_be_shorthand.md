@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A computed property name must be followed by a colon or paren
 
-call({[x]})
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ call({[x]})
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

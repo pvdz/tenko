@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
-x = { get x() { "use strict"; let = 787984536; } }
-                              ^^^------- error
+start@1:0, error@1:30
+╔══╦═════════════════
+ 1 ║ x = { get x() { "use strict"; let = 787984536; } }
+   ║                               ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

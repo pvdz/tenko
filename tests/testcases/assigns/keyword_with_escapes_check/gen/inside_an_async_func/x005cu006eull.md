@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`\u006eull`) as a variable name because: Keywords may not have escapes in their name and this resolves to `null`
 
-async () => {  \u006eull = x  }
-               ^^^^^^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ async () => {  \u006eull = x  }
+   ║                ^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

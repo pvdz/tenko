@@ -33,9 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Constants must be initialized
 
-const q
-/d/
-^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ const q
+ 2 ║ /d/
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

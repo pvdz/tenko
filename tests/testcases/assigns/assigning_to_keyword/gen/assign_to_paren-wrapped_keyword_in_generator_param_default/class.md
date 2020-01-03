@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `)` instead
 
-function *f(x = (class) = f) {}
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ function *f(x = (class) = f) {}
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

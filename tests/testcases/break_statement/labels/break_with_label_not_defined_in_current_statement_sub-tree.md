@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The label (`x`) for this `break` was not defined in the current label set, which is illegal
 
-x: foo; break x;
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ x: foo; break x;
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

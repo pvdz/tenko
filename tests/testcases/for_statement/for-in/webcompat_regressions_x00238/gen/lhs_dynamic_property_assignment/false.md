@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
-for(o[0] = 0 in {});
-             ^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for(o[0] = 0 in {});
+   ║              ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

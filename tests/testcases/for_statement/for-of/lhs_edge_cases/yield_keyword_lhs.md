@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `obj` instead
 
-function *f(){ for (yield of obj); }
-                             ^^^------- error
+start@1:0, error@1:29
+╔══╦═════════════════
+ 1 ║ function *f(){ for (yield of obj); }
+   ║                              ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

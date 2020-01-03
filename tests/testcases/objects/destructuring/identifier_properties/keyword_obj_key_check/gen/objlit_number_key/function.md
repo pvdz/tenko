@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-({500: function})
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ ({500: function})
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

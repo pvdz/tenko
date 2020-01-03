@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-var
-foo()
-   ^------- error
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ var
+ 2 ║ foo()
+   ║    ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

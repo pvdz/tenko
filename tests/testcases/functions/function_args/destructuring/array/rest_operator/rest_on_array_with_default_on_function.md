@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-f = function([...[ x ] = []]) {};
-                            ^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ f = function([...[ x ] = []]) {};
+   ║                             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

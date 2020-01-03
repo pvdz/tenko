@@ -89,8 +89,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-x, [eval] = [x]
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ x, [eval] = [x]
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 

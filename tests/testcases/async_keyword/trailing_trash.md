@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Unclosed template literal
 
-async () => x, y`
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ async () => x, y`
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `x` instead
 
-for (await x in x) ;
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ for (await x in x) ;
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-for (await x in x) ;
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ for (await x in x) ;
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
-for (x of y) foo: bar: third: function f(){}
-                              ^^^^^^^^------- error
+start@1:0, error@1:30
+╔══╦═════════════════
+ 1 ║ for (x of y) foo: bar: third: function f(){}
+   ║                               ^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

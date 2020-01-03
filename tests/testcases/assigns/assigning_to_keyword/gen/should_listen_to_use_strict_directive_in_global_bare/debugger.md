@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-"use strict"; debugger = x;
-                       ^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ "use strict"; debugger = x;
+   ║                        ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -92,8 +92,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`interface`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-(x=interface=10) => { }
-   ^^^^^^^^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ (x=interface=10) => { }
+   ║    ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

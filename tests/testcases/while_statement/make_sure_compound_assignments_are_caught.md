@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `function`) because it is not a valid assignment target
 
-while (function* () {} += x);
-                       ^^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ while (function* () {} += x);
+   ║                        ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

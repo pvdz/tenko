@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export var import = 10;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export var import = 10;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`import`) as a variable name because: Cannot never use this reserved word as a variable name
 
-export var import = 10;
-           ^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ export var import = 10;
+   ║            ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

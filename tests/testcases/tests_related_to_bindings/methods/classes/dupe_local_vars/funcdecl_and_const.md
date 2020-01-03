@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-class o {f(){ function x(){} const x = y; }}
-                                   ^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ class o {f(){ function x(){} const x = y; }}
+   ║                                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

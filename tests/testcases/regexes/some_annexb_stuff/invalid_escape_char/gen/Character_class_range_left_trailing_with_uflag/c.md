@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode
 
-/[\c-]/u
-^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\c-]/u
+   ║ ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -54,7 +58,11 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
-/[\c-]/u
-^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\c-]/u
+   ║ ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 

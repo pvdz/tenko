@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: A regex curly quantifier had no content
 
-class x extends
-/x {}
-^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ class x extends
+ 2 ║ /x {}
+   ║ ^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -56,8 +60,12 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: A regex curly quantifier had no content; Found EOF before regex was closed
 
-class x extends
-/x {}
-^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ class x extends
+ 2 ║ /x {}
+   ║ ^^^^^------- error
+╚══╩════════════════
+
 `````
 

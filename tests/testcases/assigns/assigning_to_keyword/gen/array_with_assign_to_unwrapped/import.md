@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
-async x => import = 1
-           ^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ async x => import = 1
+   ║            ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

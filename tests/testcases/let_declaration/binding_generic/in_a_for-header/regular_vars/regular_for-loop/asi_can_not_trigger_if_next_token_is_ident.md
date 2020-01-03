@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `(` instead
 
-for (let
-foo();;);
-   ^------- error
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ for (let
+ 2 ║ foo();;);
+   ║    ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

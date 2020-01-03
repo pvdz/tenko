@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-class x { [super](){} }
-           ^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ class x { [super](){} }
+   ║            ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

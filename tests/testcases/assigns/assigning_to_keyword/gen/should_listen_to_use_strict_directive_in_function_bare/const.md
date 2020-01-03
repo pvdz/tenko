@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected identifier, or array/object destructuring
 
-function f() {
-  "use strict";
-  const = x
-        ^------- error
+start@1:0, error@3:8
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   const = x
+   ║         ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

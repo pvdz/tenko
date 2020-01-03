@@ -31,12 +31,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   This `continue` had a label (`x`) that was not defined in the current label set as the direct parent of a loop, which would be required
 
-while (true)
-  while (true) {
-    x: continue x;
-                ^------- error
+start@1:0, error@3:16
+╔══╦═════════════════
+ 1 ║ while (true)
+ 2 ║   while (true) {
+ 3 ║     x: continue x;
+   ║                 ^------- error
+ 4 ║   }
+╚══╩═════════════════
 
-  }
 `````
 
 ### Strict mode

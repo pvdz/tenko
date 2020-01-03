@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
-({function(){}}) => x;
-                 ^^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ ({function(){}}) => x;
+   ║                  ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

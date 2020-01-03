@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-function f([...[a, b],]){}
-                       ^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ function f([...[a, b],]){}
+   ║                        ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

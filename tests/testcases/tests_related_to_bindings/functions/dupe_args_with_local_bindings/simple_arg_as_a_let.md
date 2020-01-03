@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot create lexical binding for `x` because it shadows a function parameter
 
-function f(x) { let x }
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ function f(x) { let x }
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

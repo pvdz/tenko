@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `do`
 
-({static set do(x){}});
-             ^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ ({static set do(x){}});
+   ║              ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

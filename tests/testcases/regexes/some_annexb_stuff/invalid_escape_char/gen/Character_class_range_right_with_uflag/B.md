@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Char class can not contain `\B` with u-flag or without webcompat
 
-/[a-\B]/u
-^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[a-\B]/u
+   ║ ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -54,7 +58,11 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: Char class can not contain `\B` with u-flag or without webcompat; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
-/[a-\B]/u
-^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[a-\B]/u
+   ║ ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-class X extends function(){ with(obj); } {}
-                            ^^^^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ class X extends function(){ with(obj); } {}
+   ║                             ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

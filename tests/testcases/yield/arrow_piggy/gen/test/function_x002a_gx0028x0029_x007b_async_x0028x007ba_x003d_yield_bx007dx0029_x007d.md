@@ -34,11 +34,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid
 
-function * g() {
-  async ({a = yield b})
-        ^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@2:8
+╔══╦════════════════
+ 1 ║ function * g() {
+ 2 ║   async ({a = yield b})
+   ║         ^^^^^^^^^^^^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

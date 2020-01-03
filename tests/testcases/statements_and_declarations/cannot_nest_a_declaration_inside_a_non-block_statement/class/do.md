@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot parse a class declaration here, only expecting statements here
 
-do class X {}; while (x);
-   ^^^^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ do class X {}; while (x);
+   ║    ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

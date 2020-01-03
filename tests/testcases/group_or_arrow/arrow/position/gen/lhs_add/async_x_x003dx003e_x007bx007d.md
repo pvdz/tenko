@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   An arrow function can not be part of an operator to the right
 
-async x => {} + x
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ async x => {} + x
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

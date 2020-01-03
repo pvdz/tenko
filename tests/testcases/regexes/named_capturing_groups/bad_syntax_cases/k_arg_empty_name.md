@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`>`, 62]
 
-/(?<a>.)\k<>/
-^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>.)\k<>/
+   ║ ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -52,7 +56,11 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: Missing closing angle bracket of name of capturing group; Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error
 
-/(?<a>.)\k<>/
-^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>.)\k<>/
+   ║ ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 

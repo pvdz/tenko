@@ -47,9 +47,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Declaration destructuring must have init
 
-class x { foo() { let
-{foo}; }}
-     ^------- error
+start@1:0, error@2:5
+╔══╦════════════════
+ 1 ║ class x { foo() { let
+ 2 ║ {foo}; }}
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

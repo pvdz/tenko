@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The label (`y`) for this `break` was not defined in the current label set, which is illegal
 
-do     if (x) break y   ; while(true);
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ do     if (x) break y   ; while(true);
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-for (var [...[foo, bar],] in obj);
-                          ^^------- error
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ for (var [...[foo, bar],] in obj);
+   ║                           ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

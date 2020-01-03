@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Comma not allowed in left side of `for-in`/`for-of` header
 
-for (oh,no in x) ;
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ for (oh,no in x) ;
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

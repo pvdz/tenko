@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only `continue` inside a loop
 
-switch (x) { default: continue foo; }
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ switch (x) { default: continue foo; }
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

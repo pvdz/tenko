@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A function declaration can only be the child of an `if`/`else` in sloppy web compat mode
 
-do if(8)function s(){}while(y)
-        ^^^^^^^^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ do if(8)function s(){}while(y)
+   ║         ^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

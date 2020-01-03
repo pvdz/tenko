@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
-class A {
-  constructor(x=static=10){
-                ^^^^^^------- error
+start@1:0, error@2:16
+╔══╦═════════════════
+ 1 ║ class A {
+ 2 ║   constructor(x=static=10){
+   ║                 ^^^^^^------- error
+ 3 ║     "use strict";
+ 4 ║   }
+ 5 ║ }
+╚══╩═════════════════
 
-    "use strict";
-  }
-}
 `````
 
 ### Strict mode

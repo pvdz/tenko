@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Either the current modifier is unknown or the input that followed was unexpected
 
-class outer { meh(){  class x { super.foo(){} }  }}
-                                     ^------- error
+start@1:0, error@1:37
+╔══╦═════════════════
+ 1 ║ class outer { meh(){  class x { super.foo(){} }  }}
+   ║                                      ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

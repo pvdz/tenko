@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found something that had to be a Pattern but had to parse more, which is an error
 
-[{x = y}.z] = obj
- ^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ [{x = y}.z] = obj
+   ║  ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

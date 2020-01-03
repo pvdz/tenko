@@ -35,14 +35,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-foo = {
-  get x(){
-    "use strict";
-    import = x
-    ^^^^^^------- error
+start@1:0, error@4:4
+╔══╦════════════════
+ 1 ║ foo = {
+ 2 ║   get x(){
+ 3 ║     "use strict";
+ 4 ║     import = x
+   ║     ^^^^^^------- error
+ 5 ║   }
+ 6 ║ }
+╚══╩════════════════
 
-  }
-}
 `````
 
 ### Strict mode
@@ -59,14 +62,17 @@ Parsed with the module goal.
 throws: Parser error!
   The `import` keyword is only supported at the top level
 
-foo = {
-  get x(){
-    "use strict";
-    import = x
-    ^^^^^^------- error
+start@1:0, error@4:4
+╔══╦════════════════
+ 1 ║ foo = {
+ 2 ║   get x(){
+ 3 ║     "use strict";
+ 4 ║     import = x
+   ║     ^^^^^^------- error
+ 5 ║   }
+ 6 ║ }
+╚══╩════════════════
 
-  }
-}
 `````
 
 

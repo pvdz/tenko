@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-foo = { get x(){  "use strict"; (super = "sentinal 79845134");   }}
-                                 ^^^^^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ foo = { get x(){  "use strict"; (super = "sentinal 79845134");   }}
+   ║                                  ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

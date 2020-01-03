@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot `await` as the arg of `new`
 
-async () => new await x()()
-                ^^^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ async () => new await x()()
+   ║                 ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

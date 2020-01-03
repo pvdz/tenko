@@ -61,8 +61,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot delete an identifier without tail, in strict mode (at EOF)
 
-delete await
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ delete await
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 
@@ -74,8 +78,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function (at EOF)
 
-delete await
-            ^------- error at EOF
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ delete await
+   ║             ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 

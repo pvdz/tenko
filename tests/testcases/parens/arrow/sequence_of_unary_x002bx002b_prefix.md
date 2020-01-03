@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-(++x, y) => x;
-         ^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ (++x, y) => x;
+   ║          ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

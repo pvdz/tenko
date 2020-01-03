@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing closing paren of the `for` header, found `,` instead
 
-for (let x of a,b) c
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ for (let x of a,b) c
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

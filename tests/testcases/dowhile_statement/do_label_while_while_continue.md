@@ -36,8 +36,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A `do` must be followed by a `while`, but found `` instead (at EOF)
 
-do wow: while (x) while (x) continue wow;
-                                         ^------- error at EOF
+start@1:0, error@1:41
+╔══╦═════════════════
+ 1 ║ do wow: while (x) while (x) continue wow;
+   ║                                          ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

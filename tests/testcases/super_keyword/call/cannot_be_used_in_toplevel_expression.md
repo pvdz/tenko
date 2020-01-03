@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
-const x = 5 + super();
-              ^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ const x = 5 + super();
+   ║               ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

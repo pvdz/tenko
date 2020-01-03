@@ -36,8 +36,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
-function w(casecase){y:j:function casecase(){}}
-                         ^^^^^^^^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ function w(casecase){y:j:function casecase(){}}
+   ║                          ^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

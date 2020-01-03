@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Object literal keys that are strings or numbers must be a method or have a colon
 
-[...{0=x} = c]
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ [...{0=x} = c]
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

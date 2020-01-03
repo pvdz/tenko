@@ -40,8 +40,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
-for (let [a, let] = x;;);
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for (let [a, let] = x;;);
+   ║              ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

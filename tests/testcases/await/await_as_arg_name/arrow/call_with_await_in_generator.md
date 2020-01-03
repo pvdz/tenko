@@ -90,8 +90,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-function *f(){  foo(await)  }
-                         ^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ function *f(){  foo(await)  }
+   ║                          ^------- error
+╚══╩═════════════════
+
 `````
 
 

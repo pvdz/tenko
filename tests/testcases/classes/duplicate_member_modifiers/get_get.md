@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `f`
 
-class x {    get get f(){}    }
-                     ^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ class x {    get get f(){}    }
+   ║                      ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

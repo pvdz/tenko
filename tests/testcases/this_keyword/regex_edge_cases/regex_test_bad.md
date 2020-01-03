@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-this
-/foo/;
-     ^------- error
+start@1:0, error@2:5
+╔══╦════════════════
+ 1 ║ this
+ 2 ║ /foo/;
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

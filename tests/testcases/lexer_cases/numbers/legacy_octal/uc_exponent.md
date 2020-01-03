@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     An exponent is not allowed after a legacy octal number and an ident after number must be separated by some whitespace so this is an error
 
-034E1
-^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ 034E1
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-034E1
-^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ 034E1
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 

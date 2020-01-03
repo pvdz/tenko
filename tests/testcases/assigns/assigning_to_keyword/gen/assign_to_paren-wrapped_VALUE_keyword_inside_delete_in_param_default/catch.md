@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`catch`) as a variable name because: Cannot never use this reserved word as a variable name
 
-function *f(x = delete ((catch) = f)) {}
-                         ^^^^^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ function *f(x = delete ((catch) = f)) {}
+   ║                          ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

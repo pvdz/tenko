@@ -85,8 +85,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`\u0070ackage`) as a variable name because: Keywords may not have escapes in their name and this resolves to `package`
 
-async () => {  \u0070ackage = x  }
-               ^^^^^^^^^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ async () => {  \u0070ackage = x  }
+   ║                ^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

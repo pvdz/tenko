@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
-class x { `constructor`(){} }
-          ^^^^^^^^^^^^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ class x { `constructor`(){} }
+   ║           ^^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A unary expression is not allowed here
 
-function *P(){
-  class D extends delete x {}
-                  ^^^^^^------- error
+start@1:0, error@2:18
+╔══╦═════════════════
+ 1 ║ function *P(){
+ 2 ║   class D extends delete x {}
+   ║                   ^^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

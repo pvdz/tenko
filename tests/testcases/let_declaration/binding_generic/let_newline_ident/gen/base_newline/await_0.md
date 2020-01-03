@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-let
-await 0
-      ^------- error
+start@1:0, error@2:6
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ await 0
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -50,9 +54,13 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `await` but: Await is illegal as var name with module goal
 
-let
-await 0
-^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ await 0
+   ║ ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

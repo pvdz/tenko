@@ -85,8 +85,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-function f() {   class await { }   }
-                       ^^^^^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ function f() {   class await { }   }
+   ║                        ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

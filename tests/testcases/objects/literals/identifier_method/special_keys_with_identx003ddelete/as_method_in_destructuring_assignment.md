@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-({delete(){}} = y);
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ ({delete(){}} = y);
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -38,8 +38,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Function had duplicate params
 
-function x([public], public){}
-                     ^^^^^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ function x([public], public){}
+   ║                      ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -50,8 +54,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`public`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-function x([public], public){}
-            ^^^^^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ function x([public], public){}
+   ║             ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

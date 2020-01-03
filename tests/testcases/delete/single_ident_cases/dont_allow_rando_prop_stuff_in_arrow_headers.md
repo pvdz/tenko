@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
-delete ([foo].bar)=>b)
-                  ^^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ delete ([foo].bar)=>b)
+   ║                   ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

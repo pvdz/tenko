@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-let f = async
-function g(){await x}
-                   ^------- error
+start@1:0, error@2:19
+╔══╦═════════════════
+ 1 ║ let f = async
+ 2 ║ function g(){await x}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,9 +52,13 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-let f = async
-function g(){await x}
-                   ^------- error
+start@1:0, error@2:19
+╔══╦═════════════════
+ 1 ║ let f = async
+ 2 ║ function g(){await x}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 

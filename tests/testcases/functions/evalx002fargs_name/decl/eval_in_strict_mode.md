@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
-"use strict"; function eval(){}
-                       ^^^^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ "use strict"; function eval(){}
+   ║                        ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

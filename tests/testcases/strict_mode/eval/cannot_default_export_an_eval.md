@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export default var eval = x;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export default var eval = x;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -49,8 +53,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`var`) as a variable name because: Cannot never use this reserved word as a variable name
 
-export default var eval = x;
-               ^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ export default var eval = x;
+   ║                ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

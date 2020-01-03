@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-with (x) import {x} from "y";
-         ^^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ with (x) import {x} from "y";
+   ║          ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,8 +46,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-with (x) import {x} from "y";
-^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ with (x) import {x} from "y";
+   ║ ^^^^------- error
+╚══╩════════════════
+
 `````
 
 

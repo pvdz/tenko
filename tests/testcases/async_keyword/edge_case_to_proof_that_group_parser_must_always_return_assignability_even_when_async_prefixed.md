@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `async`) because it is not a valid assignment target
 
-async
- (x) = y;
-     ^------- error
+start@1:0, error@2:5
+╔══╦════════════════
+ 1 ║ async
+ 2 ║  (x) = y;
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

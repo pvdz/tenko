@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Named back reference \k<ab> was not defined in this regex: {#a:true}
 
-/(?<a>a)\k<ab>/
-^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>a)\k<ab>/
+   ║ ^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

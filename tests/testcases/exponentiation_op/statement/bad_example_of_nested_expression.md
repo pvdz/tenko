@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)
 
-a * +a ** a ** 3
-       ^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ a * +a ** a ** 3
+   ║        ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`w\u0068ile`) as a variable name because: Keywords may not have escapes in their name and this resolves to `while`
 
-(w\u0068ile = "sentinal 1564646")
- ^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (w\u0068ile = "sentinal 1564646")
+   ║  ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-delete (((delete)))
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ delete (((delete)))
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

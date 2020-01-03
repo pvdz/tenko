@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The escaped lone property name `JavaScript` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
-/\P{JavaScript}/u;
-^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\P{JavaScript}/u;
+   ║ ^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -54,7 +58,11 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: The escaped lone property name `JavaScript` is not valid (does not appear in "table 55" nor "table 56"); Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
-/\P{JavaScript}/u;
-^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\P{JavaScript}/u;
+   ║ ^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only increment or decrement an identifier or member expression (at EOF)
 
-++new x()
-         ^------- error at EOF
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ ++new x()
+   ║          ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode

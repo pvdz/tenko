@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Found `r`. It is not legal for an ident or number token to start after a number token without some form of separation
 
-0x1rn
-   ^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ 0x1rn
+   ║    ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

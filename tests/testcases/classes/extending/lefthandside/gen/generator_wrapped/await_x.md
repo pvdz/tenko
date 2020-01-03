@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `x` instead
 
-function *P(){
-  class D extends await x {}
-                        ^------- error
+start@1:0, error@2:24
+╔══╦═════════════════
+ 1 ║ function *P(){
+ 2 ║   class D extends await x {}
+   ║                         ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode
@@ -53,11 +56,14 @@ Parsed with the module goal.
 throws: Parser error!
   An `await` expression is not allowed here
 
-function *P(){
-  class D extends await x {}
-                  ^^^^^------- error
+start@1:0, error@2:18
+╔══╦═════════════════
+ 1 ║ function *P(){
+ 2 ║   class D extends await x {}
+   ║                   ^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

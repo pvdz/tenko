@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
-function f() {
-  "use strict";
-  (import = x);
-   ^^^^^^------- error
+start@1:0, error@3:3
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   (import = x);
+   ║    ^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

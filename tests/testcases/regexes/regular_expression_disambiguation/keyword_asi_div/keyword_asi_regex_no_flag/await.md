@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-await
-/x/
-   ^------- error at EOF
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ await
+ 2 ║ /x/
+   ║    ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -51,9 +55,13 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-await
-/x/
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ await
+ 2 ║ /x/
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 

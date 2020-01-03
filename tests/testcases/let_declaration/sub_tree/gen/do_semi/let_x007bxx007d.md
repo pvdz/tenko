@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-do let {x}; while (a);
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ do let {x}; while (a);
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,8 +46,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
-do let {x}; while (a);
-   ^^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ do let {x}; while (a);
+   ║    ^^^------- error
+╚══╩════════════════
+
 `````
 
 

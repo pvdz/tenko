@@ -40,8 +40,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag; Named capturing group named contained an invalid unicode escaped char: [`@{xdddf}@`, 56799]
 
-/(?<\ud87e\udddfxyz>foo)met\k<\udddfxyz>/u
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<\ud87e\udddfxyz>foo)met\k<\udddfxyz>/u
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

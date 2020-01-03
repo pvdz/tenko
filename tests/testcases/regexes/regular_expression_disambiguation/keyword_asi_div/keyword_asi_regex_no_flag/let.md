@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-let
-/x/
-   ^------- error at EOF
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ /x/
+   ║    ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -45,10 +49,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Let declaration missing binding names and `let` cannot be a regular var or label name in strict mode
 
-let
-^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ let
+   ║ ^^^------- error
+ 2 ║ /x/
+╚══╩════════════════
 
-/x/
 `````
 
 

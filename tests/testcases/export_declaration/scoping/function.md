@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-function f(){export {x};}
-             ^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ function f(){export {x};}
+   ║              ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   The `export` keyword is only supported at the top level
 
-function f(){export {x};}
-             ^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ function f(){export {x};}
+   ║              ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

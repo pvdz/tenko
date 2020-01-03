@@ -64,8 +64,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-call(yield)
-     ^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ call(yield)
+   ║      ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

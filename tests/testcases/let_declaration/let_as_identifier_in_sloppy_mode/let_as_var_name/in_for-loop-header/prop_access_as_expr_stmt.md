@@ -82,8 +82,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Let binding missing binding names in strict mode
 
-for (let.foo;;);
-     ^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ for (let.foo;;);
+   ║      ^^^------- error
+╚══╩════════════════
+
 `````
 
 

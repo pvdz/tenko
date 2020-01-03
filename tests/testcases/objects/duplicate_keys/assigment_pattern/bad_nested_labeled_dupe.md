@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the closing curly `}` for an object, found `:` instead
 
-({x, a: c: {b: x}} = obj)
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ ({x, a: c: {b: x}} = obj)
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super.foo` in class or object methods or in arrows nested in those methods/arrows
 
-for (super.foo in x) ;
-     ^^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ for (super.foo in x) ;
+   ║      ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

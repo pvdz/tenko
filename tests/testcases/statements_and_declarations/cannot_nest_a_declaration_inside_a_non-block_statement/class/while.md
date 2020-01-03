@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-while (;;) class X {}
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ while (;;) class X {}
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

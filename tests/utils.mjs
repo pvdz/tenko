@@ -247,8 +247,9 @@ function parseTestFile(tob) {
     }, {});
 }
 
+// Some chars are added by the test script or parser that we don't expect to find in test input so don't encode them :)
 function encodeUnicode(str) {
-  return str.replace(/[^\u0020-\u007e\n]/ug, m => '@{x'+m.codePointAt(0).toString(16)+'}@');
+  return str.replace(/[^\u0020-\u007e\n]/ug, m => '║═╦╩╔╚'.includes(m) ? m : '@{x'+m.codePointAt(0).toString(16)+'}@');
 }
 function decodeUnicode(str) {
   // console.log('decoding', str)

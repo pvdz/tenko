@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a(nother) binding but none was found
 
-let c = class x { y(z,
- /foo/){} }
- ^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ let c = class x { y(z,
+ 2 ║  /foo/){} }
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   `for await` only accepts the `for-of` type
 
-async function f(){ for await (x in y) {} }
-                    ^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ async function f(){ for await (x in y) {} }
+   ║                     ^^^^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

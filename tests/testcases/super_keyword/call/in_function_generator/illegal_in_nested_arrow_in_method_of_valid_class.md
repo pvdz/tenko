@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-class x extends y { foo(){ return () => function *) { super(); }; }}
-                                                  ^------- error
+start@1:0, error@1:50
+╔══╦═════════════════
+ 1 ║ class x extends y { foo(){ return () => function *) { super(); }; }}
+   ║                                                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

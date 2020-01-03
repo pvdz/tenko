@@ -35,14 +35,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`protected`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-foo = {
-  get x(){
-    "use strict";
-    (protected = x);
-     ^^^^^^^^^------- error
+start@1:0, error@4:5
+╔══╦════════════════
+ 1 ║ foo = {
+ 2 ║   get x(){
+ 3 ║     "use strict";
+ 4 ║     (protected = x);
+   ║      ^^^^^^^^^------- error
+ 5 ║   }
+ 6 ║ }
+╚══╩════════════════
 
-  }
-}
 `````
 
 ### Strict mode

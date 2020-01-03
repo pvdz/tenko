@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left side of a `for-of` and `for-in` can not be an assignment, even if it is a BindingPattern
 
-for ({p: x = 0} = 0 in {});
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ for ({p: x = 0} = 0 in {});
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-for (const x of obj) { var x = 14 }
-                           ^------- error
+start@1:0, error@1:27
+╔══╦═════════════════
+ 1 ║ for (const x of obj) { var x = 14 }
+   ║                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

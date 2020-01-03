@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-while (;;) async function f() {}
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ while (;;) async function f() {}
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -38,8 +38,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-100\u006E
-   ^^^^^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ 100\u006E
+   ║    ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

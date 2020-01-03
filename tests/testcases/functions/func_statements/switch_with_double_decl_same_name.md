@@ -36,14 +36,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `f` but another binding already existed on the same level
 
-switch (0) {
-  case 1:
-    function f() {}
-  default:
-    function f() {}
-             ^------- error
+start@1:0, error@5:13
+╔══╦═════════════════
+ 1 ║ switch (0) {
+ 2 ║   case 1:
+ 3 ║     function f() {}
+ 4 ║   default:
+ 5 ║     function f() {}
+   ║              ^------- error
+ 6 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

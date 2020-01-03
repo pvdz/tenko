@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await not allowed here
 
-function *as(){ let f = async function await() { }
-                                       ^^^^^------- error
+start@1:0, error@1:39
+╔══╦═════════════════
+ 1 ║ function *as(){ let f = async function await() { }
+   ║                                        ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -65,8 +69,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
 
-function *as(){ let f = async function await() { }
-                                       ^^^^^------- error
+start@1:0, error@1:39
+╔══╦═════════════════
+ 1 ║ function *as(){ let f = async function await() { }
+   ║                                        ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

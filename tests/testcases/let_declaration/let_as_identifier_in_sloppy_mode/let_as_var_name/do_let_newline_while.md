@@ -74,10 +74,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
-do let
-   ^^^------- error
+start@1:0, error@1:3
+╔══╦════════════════
+ 1 ║ do let
+   ║    ^^^------- error
+ 2 ║ while(x)
+╚══╩════════════════
 
-while(x)
 `````
 
 

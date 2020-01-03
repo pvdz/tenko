@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-for (x of 3) continue/x/
-                     ^^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ for (x of 3) continue/x/
+   ║                      ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

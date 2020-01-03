@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
-class K extends {} {;async\n async *1(){}}
-                     ^^^^^^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ class K extends {} {;async\n async *1(){}}
+   ║                      ^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

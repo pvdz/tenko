@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The label (`y`) for this `break` was not defined in the current label set, which is illegal
 
-() => {    break y   }
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ () => {    break y   }
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

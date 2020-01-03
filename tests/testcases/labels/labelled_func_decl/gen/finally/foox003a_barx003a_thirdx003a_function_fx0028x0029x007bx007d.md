@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is only allowed in sloppy web compat mode
 
-try { } finally { foo: bar: third: function f(){} }
-                                   ^^^^^^^^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ try { } finally { foo: bar: third: function f(){} }
+   ║                                    ^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

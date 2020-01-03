@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `get`
 
-({static async get(){}});
-               ^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ ({static async get(){}});
+   ║                ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

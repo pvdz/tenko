@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
-async function f() {
-  await x => ok
-             ^^------- error
+start@1:0, error@2:13
+╔══╦═════════════════
+ 1 ║ async function f() {
+ 2 ║   await x => ok
+   ║              ^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

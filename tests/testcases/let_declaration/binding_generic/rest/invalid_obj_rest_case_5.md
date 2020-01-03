@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-let {...{a,b}} = foo
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ let {...{a,b}} = foo
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

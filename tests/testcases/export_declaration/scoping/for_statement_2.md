@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing the closing curly of the switch body, found `export` instead
 
-switch (x) { export {x}; }
-             ^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ switch (x) { export {x}; }
+   ║              ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

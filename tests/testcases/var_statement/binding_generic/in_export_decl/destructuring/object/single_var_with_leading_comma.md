@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export var {,x} = obj;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export var {,x} = obj;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -49,8 +53,12 @@ Parsed with the module goal.
 throws: Parser error!
   Objects cant have comma without something preceding it
 
-export var {,x} = obj;
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ export var {,x} = obj;
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 

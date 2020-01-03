@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A newline after async is always a syntax error if the rhs turns to be an arrow function
 
-{x: async
- () => x}
-    ^^------- error
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ {x: async
+ 2 ║  () => x}
+   ║     ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

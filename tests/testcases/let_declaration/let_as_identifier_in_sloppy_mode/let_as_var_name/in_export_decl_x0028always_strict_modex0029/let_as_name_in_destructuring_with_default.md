@@ -40,8 +40,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export let [let = a] = x;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export let [let = a] = x;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -58,8 +62,12 @@ Parsed with the module goal.
 throws: Parser error!
   Can not use `let` when binding through `let` or `const`
 
-export let [let = a] = x;
-            ^^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ export let [let = a] = x;
+   ║             ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

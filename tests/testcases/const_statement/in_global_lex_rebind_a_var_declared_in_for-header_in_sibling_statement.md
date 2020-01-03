@@ -40,9 +40,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-for (var x;;);
-const x = 1
-      ^------- error
+start@1:0, error@2:6
+╔══╦════════════════
+ 1 ║ for (var x;;);
+ 2 ║ const x = 1
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Objects cant have comma without something preceding it
 
-const {foo,,} = x;
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ const {foo,,} = x;
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -38,8 +38,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: name contained a character that is only a valid identifier with u-flag; Missing closing angle bracket of name of capturing group
 
-/(?<abc@{x1d7d0}@def>foo\k<abc@{xfffd}@def>)/u
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<abc@{x1d7d0}@def>foo\k<abc@{xfffd}@def>)/u
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

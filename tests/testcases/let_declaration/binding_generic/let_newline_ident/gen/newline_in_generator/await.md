@@ -91,12 +91,15 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `await` but: Await is illegal as var name with module goal
 
-function *f() {
-  let
-  await
-  ^^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   let
+ 3 ║   await
+   ║   ^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing closing paren `)` for group, found `x` instead
 
-(delete (((x)))
- x)
- ^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ (delete (((x)))
+ 2 ║  x)
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,10 +46,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
-(delete (((x)))
- ^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (delete (((x)))
+   ║  ^^^^^^------- error
+ 2 ║  x)
+╚══╩════════════════
 
- x)
 `````
 
 

@@ -32,10 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   It is never valid for an expression statement to begin with `let[`, and a `let` declaration would not be valid here
 
-for (a of b) let
-             ^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for (a of b) let
+   ║              ^^^^^------- error
+ 2 ║ []
+╚══╩═════════════════
 
-[]
 `````
 
 ### Strict mode
@@ -46,10 +49,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
-for (a of b) let
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for (a of b) let
+   ║              ^^^------- error
+ 2 ║ []
+╚══╩═════════════════
 
-[]
 `````
 
 

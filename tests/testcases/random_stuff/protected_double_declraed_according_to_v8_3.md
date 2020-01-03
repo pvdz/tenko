@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `protected` but another binding already existed on the same level
 
-function protected(){for(;;)switch(x){default:}}const protected=x
-                                                      ^^^^^^^^^------- error
+start@1:0, error@1:54
+╔══╦═════════════════
+ 1 ║ function protected(){for(;;)switch(x){default:}}const protected=x
+   ║                                                       ^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -40,8 +44,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`protected`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-function protected(){for(;;)switch(x){default:}}const protected=x
-         ^^^^^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ function protected(){for(;;)switch(x){default:}}const protected=x
+   ║          ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

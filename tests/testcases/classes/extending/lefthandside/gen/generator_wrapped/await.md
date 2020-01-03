@@ -93,11 +93,14 @@ Parsed with the module goal.
 throws: Parser error!
   An `await` expression is not allowed here
 
-function *P(){
-  class D extends await {}
-                  ^^^^^------- error
+start@1:0, error@2:18
+╔══╦═════════════════
+ 1 ║ function *P(){
+ 2 ║   class D extends await {}
+   ║                   ^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 

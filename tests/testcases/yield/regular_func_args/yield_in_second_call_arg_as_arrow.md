@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expecting closing paren `)` for the call, found `y` instead
 
-function *g() { function f(x = x + foo(a, yield y)) {}; }
-                                                ^------- error
+start@1:0, error@1:48
+╔══╦═════════════════
+ 1 ║ function *g() { function f(x = x + foo(a, yield y)) {}; }
+   ║                                                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -43,8 +47,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-function *g() { function f(x = x + foo(a, yield y)) {}; }
-                                          ^^^^^------- error
+start@1:0, error@1:42
+╔══╦═════════════════
+ 1 ║ function *g() { function f(x = x + foo(a, yield y)) {}; }
+   ║                                           ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `)` instead
 
-for (var {x : y = z} = obj);
-                          ^------- error
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ for (var {x : y = z} = obj);
+   ║                           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-async function g() {   s = {"foo": await = x} = x   }
-                                         ^------- error
+start@1:0, error@1:41
+╔══╦═════════════════
+ 1 ║ async function g() {   s = {"foo": await = x} = x   }
+   ║                                          ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -36,11 +36,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left side of a `for-of` and `for-in` can not be an assignment, even if it is a BindingPattern
 
-async function f(){
-  for await ([{x,...x}]=x of x) ;
-                       ^------- error
+start@1:0, error@2:23
+╔══╦═════════════════
+ 1 ║ async function f(){
+ 2 ║   for await ([{x,...x}]=x of x) ;
+   ║                        ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`interface`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-function f() { "use strict"; (interface = "sentinal 7533336"); }
-                              ^^^^^^^^^------- error
+start@1:0, error@1:30
+╔══╦═════════════════
+ 1 ║ function f() { "use strict"; (interface = "sentinal 7533336"); }
+   ║                               ^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

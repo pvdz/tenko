@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not have a `yield` expression on the left side of a ternary
 
-function *f() { yield ? yield : yield ; }
-                ^^^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ function *f() { yield ? yield : yield ; }
+   ║                 ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

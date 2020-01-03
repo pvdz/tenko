@@ -122,11 +122,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
-f = {
-  e(x=static=10){ }
-      ^^^^^^------- error
+start@1:0, error@2:6
+╔══╦════════════════
+ 1 ║ f = {
+ 2 ║   e(x=static=10){ }
+   ║       ^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `)` instead
 
-for (const {} = obj);
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ for (const {} = obj);
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

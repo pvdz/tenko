@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-var foo = [23]
--->[0];
-  ^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ var foo = [23]
+ 2 ║ -->[0];
+   ║   ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

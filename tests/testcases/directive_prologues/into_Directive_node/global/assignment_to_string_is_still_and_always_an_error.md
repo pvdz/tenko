@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `"ignore me"`) because it is not a valid assignment target
 
-"ignore me" = x
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ "ignore me" = x
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

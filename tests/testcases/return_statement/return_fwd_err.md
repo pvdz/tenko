@@ -37,12 +37,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Encountered early EOF
 
-function f(){
-  return
-  / x
-  ^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function f(){
+ 2 ║   return
+ 3 ║   / x
+   ║   ^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

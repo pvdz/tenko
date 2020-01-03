@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Constants must be initialized
 
-const [foo] = arr, bar;
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ const [foo] = arr, bar;
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`private`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-function f() {
-  "use strict";
-  (private = x);
-   ^^^^^^^------- error
+start@1:0, error@3:3
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   (private = x);
+   ║    ^^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

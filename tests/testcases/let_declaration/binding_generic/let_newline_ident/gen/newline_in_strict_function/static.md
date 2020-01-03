@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `static` but: `static` is a reserved word in strict mode
 
-function f() {
-  "use strict";
-  let
-  static
-  ^^^^^^------- error
+start@1:0, error@4:2
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   let
+ 4 ║   static
+   ║   ^^^^^^------- error
+ 5 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

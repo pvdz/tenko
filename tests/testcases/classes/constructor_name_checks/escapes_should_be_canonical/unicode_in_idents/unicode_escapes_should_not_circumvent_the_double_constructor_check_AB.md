@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Classes may only have one constructor
 
-class x { \u0063onstructor(){}; constructor(){} }
-                                ^^^^^^^^^^^------- error
+start@1:0, error@1:32
+╔══╦═════════════════
+ 1 ║ class x { \u0063onstructor(){}; constructor(){} }
+   ║                                 ^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

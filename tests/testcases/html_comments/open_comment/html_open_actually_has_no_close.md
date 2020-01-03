@@ -37,10 +37,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-call(); <!-- foo --> a b c
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ call(); <!-- foo --> a b c
+   ║         ^------- error
+ 2 ║ f()
+╚══╩════════════════
 
-f()
 `````
 
 ### Strict mode

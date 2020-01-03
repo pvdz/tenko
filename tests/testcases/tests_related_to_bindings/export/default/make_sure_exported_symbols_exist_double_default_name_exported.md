@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-var x, y; export default x; export {y as default};
-          ^^^^^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ var x, y; export default x; export {y as default};
+   ║           ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -47,8 +51,12 @@ Parsed with the module goal.
 throws: Parser error!
   Tried to export the name `default` twice
 
-var x, y; export default x; export {y as default};
-                            ^^^^^^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ var x, y; export default x; export {y as default};
+   ║                             ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

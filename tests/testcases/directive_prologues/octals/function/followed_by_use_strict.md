@@ -35,12 +35,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
-function f() {
-    "You \077 ok";
-    ^^^^^^^^^^^^^------- error
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║     "You \077 ok";
+   ║     ^^^^^^^^^^^^^------- error
+ 3 ║     "use strict"
+ 4 ║ }
+╚══╩════════════════
 
-    "use strict"
-}
 `````
 
 ### Strict mode
@@ -51,12 +54,15 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-function f() {
-    "You \077 ok";
-    ^^^^^^^^^^^^^------- error
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║     "You \077 ok";
+   ║     ^^^^^^^^^^^^^------- error
+ 3 ║     "use strict"
+ 4 ║ }
+╚══╩════════════════
 
-    "use strict"
-}
 `````
 
 
@@ -74,10 +80,14 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Octal in directive with strict mode directive or in strict mode is always illegal
 
-function f() {
-    "You \077 ok";
-    "use strict"
-}
-^------- error
+start@1:0, error@4:0
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║     "You \077 ok";
+ 3 ║     "use strict"
+ 4 ║ }
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 

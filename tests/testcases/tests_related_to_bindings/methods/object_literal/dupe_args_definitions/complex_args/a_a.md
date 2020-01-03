@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Method had duplicate params
 
-o = {f([a, a]) {}}
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ o = {f([a, a]) {}}
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

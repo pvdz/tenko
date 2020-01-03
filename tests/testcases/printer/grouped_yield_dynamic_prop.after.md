@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-function* f() {((yield[this] = y));}
-                             ^------- error
+start@1:0, error@1:29
+╔══╦═════════════════
+ 1 ║ function* f() {((yield[this] = y));}
+   ║                              ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

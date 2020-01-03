@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A "labelled function declaration" is not allowed in this situation
 
-async function f() {
-  for await (x of y) foo: bar: third: function f(){}
-                                      ^^^^^^^^------- error
+start@1:0, error@2:38
+╔══╦═════════════════
+ 1 ║ async function f() {
+ 2 ║   for await (x of y) foo: bar: third: function f(){}
+   ║                                       ^^^^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

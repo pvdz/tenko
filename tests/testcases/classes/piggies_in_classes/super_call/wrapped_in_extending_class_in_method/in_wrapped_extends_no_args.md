@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super()` in constructors of classes that extend another class
 
-class outer extends S { meh(){  class x extends feh(super()) { }  }}
-                                                    ^^^^^^------- error
+start@1:0, error@1:52
+╔══╦═════════════════
+ 1 ║ class outer extends S { meh(){  class x extends feh(super()) { }  }}
+   ║                                                     ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

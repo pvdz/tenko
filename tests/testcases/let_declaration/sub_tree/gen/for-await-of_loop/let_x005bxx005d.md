@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `for-await` inside an async function
 
-for await (a of b) let [x]
-^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ for await (a of b) let [x]
+   ║ ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

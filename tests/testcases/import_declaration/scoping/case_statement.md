@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-switch (x) { case x: import {x} from "y"; }
-                     ^^^^^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ switch (x) { case x: import {x} from "y"; }
+   ║                      ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   The `import` keyword is only supported at the top level
 
-switch (x) { case x: import {x} from "y"; }
-                     ^^^^^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ switch (x) { case x: import {x} from "y"; }
+   ║                      ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

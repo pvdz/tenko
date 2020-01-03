@@ -33,8 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Only unicode escapes are supported in identifier escapes
 
-p\x61ckage => { }
-^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ p\x61ckage => { }
+   ║ ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

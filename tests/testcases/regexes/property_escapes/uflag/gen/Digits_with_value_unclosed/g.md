@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Escaped property name/value contained illegal characters
 
-/\p{1=1234/g;
-^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\p{1=1234/g;
+   ║ ^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

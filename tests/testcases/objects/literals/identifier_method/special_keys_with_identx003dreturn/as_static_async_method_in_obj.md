@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `return`
 
-({static async return(){}});
-               ^^^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ ({static async return(){}});
+   ║                ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

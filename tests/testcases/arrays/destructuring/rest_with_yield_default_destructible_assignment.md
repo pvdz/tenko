@@ -113,8 +113,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-result = [...{ x = yield }] = y;
-                   ^^^^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ result = [...{ x = yield }] = y;
+   ║                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

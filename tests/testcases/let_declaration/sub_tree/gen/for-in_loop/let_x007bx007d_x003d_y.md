@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A statement can not start with object destructuring assignment (because block)
 
-for (a in b) let
-{} = y
-   ^------- error
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ for (a in b) let
+ 2 ║ {} = y
+   ║    ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -45,10 +49,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
 
-for (a in b) let
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for (a in b) let
+   ║              ^^^------- error
+ 2 ║ {} = y
+╚══╩═════════════════
 
-{} = y
 `````
 
 

@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The arrow is a restricted production an there can not be a newline before `=>` token
 
-delete async ()
- => x
- ^^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ delete async ()
+ 2 ║  => x
+   ║  ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

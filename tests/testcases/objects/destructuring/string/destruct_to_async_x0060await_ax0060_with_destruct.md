@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `await`) because it is not a valid assignment target
 
-async function g() {   s = {"foo": await a = x} = x   }
-                                           ^------- error
+start@1:0, error@1:43
+╔══╦═════════════════
+ 1 ║ async function g() {   s = {"foo": await a = x} = x   }
+   ║                                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

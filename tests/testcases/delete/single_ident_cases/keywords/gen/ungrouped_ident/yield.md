@@ -61,8 +61,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode (at EOF)
 
-delete yield
-       ^^^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ delete yield
+   ║        ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

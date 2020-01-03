@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-+function f(x=y){"use strict";}
-                              ^------- error
+start@1:0, error@1:30
+╔══╦═════════════════
+ 1 ║ +function f(x=y){"use strict";}
+   ║                               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

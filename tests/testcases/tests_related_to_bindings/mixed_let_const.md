@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `a` but another binding already existed on the same level
 
-let a = 1; const a = 2
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ let a = 1; const a = 2
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

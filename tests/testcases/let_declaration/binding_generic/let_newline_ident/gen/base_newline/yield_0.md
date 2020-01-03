@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-let
-yield 0
-      ^------- error
+start@1:0, error@2:6
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ yield 0
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -44,9 +48,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `yield` but: Cannot use this reserved word as a variable name in strict mode
 
-let
-yield 0
-^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ yield 0
+   ║ ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

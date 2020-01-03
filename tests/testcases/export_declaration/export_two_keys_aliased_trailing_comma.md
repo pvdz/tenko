@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-var x,y; export {x as a, y as b,}
-         ^^^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ var x,y; export {x as a, y as b,}
+   ║          ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Found EOF before regex was closed
 
-for (x of 3) continue/x
-                     ^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ for (x of 3) continue/x
+   ║                      ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

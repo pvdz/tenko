@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected character after object literal property name
 
-({async *=f(){}})
-        ^^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ ({async *=f(){}})
+   ║         ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A function declaration can only be the child of an `if`/`else` in sloppy web compat mode
 
-{ var f = 123; if (true) function f(){} }
-                         ^^^^^^^^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ { var f = 123; if (true) function f(){} }
+   ║                          ^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

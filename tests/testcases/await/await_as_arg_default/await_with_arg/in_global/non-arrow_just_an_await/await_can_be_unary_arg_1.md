@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing function param definition closing parenthesis, found `bar` instead
 
-function f(foo = +await bar){}
-                        ^^^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ function f(foo = +await bar){}
+   ║                         ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-function f(foo = +await bar){}
-                        ^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ function f(foo = +await bar){}
+   ║                         ^------- error
+╚══╩═════════════════
+
 `````
 
 

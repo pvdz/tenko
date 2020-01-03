@@ -112,8 +112,12 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Parser error!
   Cannot use lhs as regular for-loop because it must destruct
 
-for ({__proto__: 1, __proto__: 2};;);
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ for ({__proto__: 1, __proto__: 2};;);
+   ║      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

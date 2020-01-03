@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Catch clause can not have init / default
 
-try {} catch([e]=x){}
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ try {} catch([e]=x){}
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

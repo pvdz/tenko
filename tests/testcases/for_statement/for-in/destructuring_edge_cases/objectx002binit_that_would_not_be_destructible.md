@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `{`) because it is not a valid assignment target
 
-for ({a: x + y} = z in obj);
-                ^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ for ({a: x + y} = z in obj);
+   ║                 ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

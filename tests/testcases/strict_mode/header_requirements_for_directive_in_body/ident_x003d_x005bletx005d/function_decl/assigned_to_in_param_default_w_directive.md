@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-function f(x=let=10){ "use strict"; }
-                                    ^------- error
+start@1:0, error@1:36
+╔══╦═════════════════
+ 1 ║ function f(x=let=10){ "use strict"; }
+   ║                                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -43,8 +47,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Can not use `let` as variable name in strict mode
 
-function f(x=let=10){ "use strict"; }
-             ^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ function f(x=let=10){ "use strict"; }
+   ║              ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

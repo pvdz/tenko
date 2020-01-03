@@ -36,12 +36,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Encountered early EOF
 
-while (true) {
-  continue
-  /x
-  ^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ while (true) {
+ 2 ║   continue
+ 3 ║   /x
+   ║   ^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

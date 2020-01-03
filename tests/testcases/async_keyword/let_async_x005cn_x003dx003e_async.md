@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-let async
- => async
- ^^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ let async
+ 2 ║  => async
+   ║  ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

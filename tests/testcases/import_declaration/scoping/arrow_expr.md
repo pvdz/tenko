@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Import keyword only allowed on toplevel or in a dynamic import
 
-let x = () => import {x} from "y"
-              ^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ let x = () => import {x} from "y"
+   ║               ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

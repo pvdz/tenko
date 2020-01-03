@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `)` instead
 
-for (let [foo, ...bar] = obj);
-                            ^------- error
+start@1:0, error@1:28
+╔══╦═════════════════
+ 1 ║ for (let [foo, ...bar] = obj);
+   ║                             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

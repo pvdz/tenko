@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `=`
 
-class x extends y { dsda(){ return function *a=super()) {}; }}
-                                              ^------- error
+start@1:0, error@1:46
+╔══╦═════════════════
+ 1 ║ class x extends y { dsda(){ return function *a=super()) {}; }}
+   ║                                               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

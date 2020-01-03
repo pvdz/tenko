@@ -34,9 +34,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing start of catch clause (`(`) or start of catch body (`{`), found `/` instead
 
-try {} catch
-/x/g {}
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ try {} catch
+ 2 ║ /x/g {}
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

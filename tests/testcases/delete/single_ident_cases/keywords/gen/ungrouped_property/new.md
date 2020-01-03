@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must be inside/nested a regular function to use `new.target`
 
-delete new.prop
-       ^^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ delete new.prop
+   ║        ^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

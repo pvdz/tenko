@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Declaration destructuring must have init
 
-for (const [foo = x]);
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ for (const [foo = x]);
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

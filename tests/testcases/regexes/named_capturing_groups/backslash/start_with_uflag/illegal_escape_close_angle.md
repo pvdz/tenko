@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Found invalid escape character at the start of a group name identifier
 
-/(?<\a>.)/u;
-^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<\a>.)/u;
+   ║ ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Pattern can not have a tail but did not find a comma or closing paren of the arrow header
 
-async({a=1}. {b=2}, {c=3} = {}))
-           ^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ async({a=1}. {b=2}, {c=3} = {}))
+   ║            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

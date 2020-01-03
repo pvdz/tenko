@@ -240,19 +240,22 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`yield`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
- *g() {
-  callCount += 1;
-  yield {
-       ...yield yield,
-       ...(function(arg) {
-          var yield = arg;
-              ^^^^^------- error
+start@1:24, error@6:14
+╔═══╦═════════════════
+  1 ║  *g() {
+  2 ║   callCount += 1;
+  3 ║   yield {
+  4 ║        ...yield yield,
+  5 ║        ...(function(arg) {
+  6 ║           var yield = arg;
+    ║               ^^^^^------- error
+  7 ║           return {...yield};
+  8 ║        }(yield)),
+  9 ║        ...yield,
+ 10 ║     }
+ 11 ║ };
+╚═══╩═════════════════
 
-          return {...yield};
-       }(yield)),
-       ...yield,
-    }
-};
 `````
 
 

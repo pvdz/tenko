@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`s\u0075per`) as a variable name because: Keywords may not have escapes in their name and this resolves to `super`
 
-(s\u0075per = "sentinal 1564646")
- ^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (s\u0075per = "sentinal 1564646")
+   ║  ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

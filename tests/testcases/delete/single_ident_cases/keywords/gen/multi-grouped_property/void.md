@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected dot
 
-delete (((void.prop)))
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ delete (((void.prop)))
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

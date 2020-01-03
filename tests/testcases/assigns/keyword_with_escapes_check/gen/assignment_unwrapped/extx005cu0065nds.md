@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`ext\u0065nds`) as a variable name because: Keywords may not have escapes in their name and this resolves to `extends`
 
-ext\u0065nds = x;
-^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ ext\u0065nds = x;
+   ║ ^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

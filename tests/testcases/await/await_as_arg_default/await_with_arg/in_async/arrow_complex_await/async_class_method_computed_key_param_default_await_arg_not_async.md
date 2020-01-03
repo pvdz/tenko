@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Await is illegal as default arg value
 
-(fail = class A {async [x](y=await z){}; "x"(){}}) => {}
-                             ^^^^^------- error
+start@1:0, error@1:29
+╔══╦═════════════════
+ 1 ║ (fail = class A {async [x](y=await z){}; "x"(){}}) => {}
+   ║                              ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

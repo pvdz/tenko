@@ -66,8 +66,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`\u0079ield`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-(\u0079ield, "sentinal 89456")
- ^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (\u0079ield, "sentinal 89456")
+   ║  ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

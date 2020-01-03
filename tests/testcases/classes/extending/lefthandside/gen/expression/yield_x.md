@@ -32,10 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A `yield` expression is not allowed here
 
-(class B extends yield
-                 ^^^^^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ (class B extends yield
+   ║                  ^^^^^------- error
+ 2 ║ x {})
+╚══╩═════════════════
 
-x {})
 `````
 
 ### Strict mode

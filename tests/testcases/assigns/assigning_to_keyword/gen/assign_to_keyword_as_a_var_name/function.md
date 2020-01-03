@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Function decl missing required ident
 
-function = x
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ function = x
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

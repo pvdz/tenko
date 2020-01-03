@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Named back reference \k; missing group name: [47]
 
-/(?<a>.)\k/
-^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>.)\k/
+   ║ ^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

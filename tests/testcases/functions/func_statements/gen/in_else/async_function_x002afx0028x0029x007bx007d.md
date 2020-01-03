@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Labelled function statements must be plain functions, not generators
 
-if (x) x;
-else async function *f(){}
-                    ^------- error
+start@1:0, error@2:20
+╔══╦═════════════════
+ 1 ║ if (x) x;
+ 2 ║ else async function *f(){}
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

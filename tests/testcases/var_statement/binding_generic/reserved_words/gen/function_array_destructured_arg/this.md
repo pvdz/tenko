@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-function f([this]) {}
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ function f([this]) {}
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

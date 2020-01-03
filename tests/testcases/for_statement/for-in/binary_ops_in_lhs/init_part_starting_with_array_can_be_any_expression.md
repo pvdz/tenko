@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unknown input followed the left side of a for loop header
 
-for ([] + b in obj);
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ for ([] + b in obj);
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`do`) as a variable name because: Cannot never use this reserved word as a variable name
 
-"use strict"; (do = "sentinal 48945666");
-               ^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ "use strict"; (do = "sentinal 48945666");
+   ║                ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

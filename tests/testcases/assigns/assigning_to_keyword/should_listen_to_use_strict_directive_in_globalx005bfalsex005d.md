@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `false`) because it is not a valid assignment target
 
-"use strict"; (false = "sentinal 48945666");
-                     ^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ "use strict"; (false = "sentinal 48945666");
+   ║                      ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`private`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-class c {foo(private){ }}
-             ^^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ class c {foo(private){ }}
+   ║              ^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

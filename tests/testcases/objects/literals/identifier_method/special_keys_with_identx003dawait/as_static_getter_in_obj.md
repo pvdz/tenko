@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `await`
 
-({static get await(){}});
-             ^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ ({static get await(){}});
+   ║              ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export let a, ...b = 1;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export let a, ...b = 1;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -52,8 +56,12 @@ Parsed with the module goal.
 throws: Parser error!
   Rest is not allowed as toplevel for var/let/const declaration binding
 
-export let a, ...b = 1;
-              ^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ export let a, ...b = 1;
+   ║               ^^^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`c\u006fnst`) as a variable name because: Keywords may not have escapes in their name and this resolves to `const`
 
-function *f(){
-  c\u006fnst = x
-  ^^^^^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   c\u006fnst = x
+   ║   ^^^^^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

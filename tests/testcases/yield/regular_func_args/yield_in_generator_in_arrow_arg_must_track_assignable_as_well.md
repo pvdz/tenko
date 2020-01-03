@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing function param definition closing parenthesis, found `z` instead
 
-function *g() { function f(x = y = yield z) {}; }
-                                         ^------- error
+start@1:0, error@1:41
+╔══╦═════════════════
+ 1 ║ function *g() { function f(x = y = yield z) {}; }
+   ║                                          ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -41,8 +45,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-function *g() { function f(x = y = yield z) {}; }
-                                   ^^^^^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ function *g() { function f(x = y = yield z) {}; }
+   ║                                    ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

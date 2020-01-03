@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`implements`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-class A {
-  constructor(implements){ }
-              ^^^^^^^^^^------- error
+start@1:0, error@2:14
+╔══╦═════════════════
+ 1 ║ class A {
+ 2 ║   constructor(implements){ }
+   ║               ^^^^^^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

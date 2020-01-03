@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Not configured to parse `return` statement in global, bailing
 
-"use strict"; return = x;
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ "use strict"; return = x;
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

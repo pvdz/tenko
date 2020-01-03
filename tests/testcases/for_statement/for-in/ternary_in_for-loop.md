@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
-for (true ? 0 : 0 in {}; false; ) ;
-                  ^^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ for (true ? 0 : 0 in {}; false; ) ;
+   ║                   ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

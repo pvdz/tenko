@@ -29,9 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-new x()
-/y/
-   ^------- error at EOF
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ new x()
+ 2 ║ /y/
+   ║    ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode

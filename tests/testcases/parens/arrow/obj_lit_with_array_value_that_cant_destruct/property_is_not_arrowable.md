@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow can only be destructed through assignment so arrow is illegal
 
-({a:b[0]}) => x
-           ^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ ({a:b[0]}) => x
+   ║            ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

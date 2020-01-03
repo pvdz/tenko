@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-f = {
-  d(eval){
-    "use strict";
-  }
-  ^------- error
+start@1:0, error@4:2
+╔══╦════════════════
+ 1 ║ f = {
+ 2 ║   d(eval){
+ 3 ║     "use strict";
+ 4 ║   }
+   ║   ^------- error
+ 5 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode
@@ -51,13 +54,16 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
-f = {
-  d(eval){
-    ^^^^------- error
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ f = {
+ 2 ║   d(eval){
+   ║     ^^^^------- error
+ 3 ║     "use strict";
+ 4 ║   }
+ 5 ║ }
+╚══╩════════════════
 
-    "use strict";
-  }
-}
 `````
 
 

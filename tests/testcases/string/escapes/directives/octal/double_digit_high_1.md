@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Octal escapes are only allowed in sloppy mode with web compat enabled
 
-"\401"
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ "\401"
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -42,8 +46,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-"\401"
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ "\401"
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

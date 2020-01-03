@@ -32,13 +32,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `y` instead
 
-async function f(){
-  function *f(){
-    for (yield of y);
-                  ^------- error
+start@1:0, error@3:18
+╔══╦═════════════════
+ 1 ║ async function f(){
+ 2 ║   function *f(){
+ 3 ║     for (yield of y);
+   ║                   ^------- error
+ 4 ║   }
+ 5 ║ }
+╚══╩═════════════════
 
-  }
-}
 `````
 
 ### Strict mode

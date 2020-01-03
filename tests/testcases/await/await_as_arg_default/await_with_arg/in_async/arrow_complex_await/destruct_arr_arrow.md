@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword
 
-async function a(){     ([y] = [{m: 5 + t(await bar)}]) => {}     }
-                                                        ^^------- error
+start@1:0, error@1:56
+╔══╦═════════════════
+ 1 ║ async function a(){     ([y] = [{m: 5 + t(await bar)}]) => {}     }
+   ║                                                         ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

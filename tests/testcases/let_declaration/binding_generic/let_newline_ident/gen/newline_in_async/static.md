@@ -85,12 +85,15 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `static` but: `static` is a reserved word in strict mode
 
-async function f() {
-  let
-  static
-  ^^^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ async function f() {
+ 2 ║   let
+ 3 ║   static
+   ║   ^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

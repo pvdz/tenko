@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-import a, *= from 'f';
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ import a, *= from 'f';
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -50,8 +54,12 @@ Parsed with the module goal.
 throws: Parser error!
   A default import can only be followed by a star or object specifier
 
-import a, *= from 'f';
-          ^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ import a, *= from 'f';
+   ║           ^^------- error
+╚══╩═════════════════
+
 `````
 
 

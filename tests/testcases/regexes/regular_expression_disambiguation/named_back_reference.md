@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Illegal character after pseudo group marker `(?` [ord=120]
 
-match(/(?x.).kx/u)
-      ^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ match(/(?x.).kx/u)
+   ║       ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

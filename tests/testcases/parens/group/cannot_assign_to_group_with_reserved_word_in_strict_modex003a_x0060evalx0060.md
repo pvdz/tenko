@@ -64,8 +64,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot assign to lhs (starting with `(`) because it is not a valid assignment target
 
-(eval)=2
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ (eval)=2
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 

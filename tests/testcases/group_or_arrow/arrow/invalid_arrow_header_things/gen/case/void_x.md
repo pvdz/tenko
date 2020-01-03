@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
-(void x) => y
-         ^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ (void x) => y
+   ║          ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

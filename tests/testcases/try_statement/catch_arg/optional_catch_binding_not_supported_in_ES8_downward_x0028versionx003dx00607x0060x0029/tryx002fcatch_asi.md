@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing the `catch` clause. Optional catch clause is only supported since ES10  ES2019
 
-try {} catch
- {}
- ^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ try {} catch
+ 2 ║  {}
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

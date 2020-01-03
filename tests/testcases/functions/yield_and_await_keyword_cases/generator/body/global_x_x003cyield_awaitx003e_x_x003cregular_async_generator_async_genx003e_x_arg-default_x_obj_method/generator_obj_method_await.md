@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-function *as(){ o = {*f() { return await foo; }} }
-                                         ^^^------- error
+start@1:0, error@1:41
+╔══╦═════════════════
+ 1 ║ function *as(){ o = {*f() { return await foo; }} }
+   ║                                          ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -65,8 +69,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-function *as(){ o = {*f() { return await foo; }} }
-                                         ^------- error
+start@1:0, error@1:41
+╔══╦═════════════════
+ 1 ║ function *as(){ o = {*f() { return await foo; }} }
+   ║                                          ^------- error
+╚══╩═════════════════
+
 `````
 
 

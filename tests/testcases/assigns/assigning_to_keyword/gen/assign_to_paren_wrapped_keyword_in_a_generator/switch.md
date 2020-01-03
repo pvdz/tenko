@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`switch`) as a variable name because: Cannot never use this reserved word as a variable name
 
-function *f(){
-  (switch) = 1;
-   ^^^^^^------- error
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   (switch) = 1;
+   ║    ^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

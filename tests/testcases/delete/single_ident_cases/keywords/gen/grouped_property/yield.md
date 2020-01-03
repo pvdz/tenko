@@ -72,8 +72,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-delete (yield.prop)
-        ^^^^^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ delete (yield.prop)
+   ║         ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`throw`) as a variable name because: Cannot never use this reserved word as a variable name
 
-(x = (throw) = f) => {}
-      ^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ (x = (throw) = f) => {}
+   ║       ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

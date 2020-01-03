@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-function *f(){
-  throw = 1;
-        ^------- error
+start@1:0, error@2:8
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   throw = 1;
+   ║         ^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

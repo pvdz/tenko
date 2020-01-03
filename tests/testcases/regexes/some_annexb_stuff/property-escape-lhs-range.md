@@ -38,8 +38,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
 
-/[\p{Hex}-\uFFFF]/u;
-^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\p{Hex}-\uFFFF]/u;
+   ║ ^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -62,7 +66,11 @@ Parsed in sloppy script mode but with the web compat flag enabled.
 throws: Lexer error!
     Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
 
-/[\p{Hex}-\uFFFF]/u;
-^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\p{Hex}-\uFFFF]/u;
+   ║ ^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 

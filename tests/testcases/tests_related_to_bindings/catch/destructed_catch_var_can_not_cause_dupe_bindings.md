@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Attempted to create a lexical binding for `a` but another binding already existed on the same level
 
-try {} catch ([a,a]) { }
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ try {} catch ([a,a]) { }
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

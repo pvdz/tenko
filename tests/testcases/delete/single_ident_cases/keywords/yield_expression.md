@@ -36,11 +36,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Did not expect to parse an AssignmentExpression but found `yield`
 
-function *f() {
-  delete yield;
-         ^^^^^------- error
+start@1:0, error@2:9
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   delete yield;
+   ║          ^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

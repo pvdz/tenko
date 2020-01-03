@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-with(x) let y = x
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ with(x) let y = x
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -41,8 +45,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-with(x) let y = x
-^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ with(x) let y = x
+   ║ ^^^^------- error
+╚══╩════════════════
+
 `````
 
 

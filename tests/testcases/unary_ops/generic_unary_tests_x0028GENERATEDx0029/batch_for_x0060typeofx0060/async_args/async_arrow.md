@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
-typeof async () => x
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ typeof async () => x
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

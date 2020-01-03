@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `true`) because it is not a valid assignment target
 
-function f() { "use strict"; (true = "sentinal 79845134"); }
-                                   ^------- error
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ function f() { "use strict"; (true = "sentinal 79845134"); }
+   ║                                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `=` instead
 
-async function p(){
-  class C extends a = b {}
-                    ^------- error
+start@1:0, error@2:20
+╔══╦═════════════════
+ 1 ║ async function p(){
+ 2 ║   class C extends a = b {}
+   ║                     ^------- error
+ 3 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

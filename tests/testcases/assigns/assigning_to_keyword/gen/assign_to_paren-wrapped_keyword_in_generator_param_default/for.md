@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`for`) as a variable name because: Cannot never use this reserved word as a variable name
 
-function *f(x = (for) = f) {}
-                 ^^^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ function *f(x = (for) = f) {}
+   ║                  ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

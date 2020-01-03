@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign a value to non-assignable value
 
-[y/[]=x]
-     ^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ [y/[]=x]
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

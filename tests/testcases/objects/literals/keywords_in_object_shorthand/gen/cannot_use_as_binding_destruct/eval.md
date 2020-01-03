@@ -87,8 +87,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The binding pattern is not destructible
 
-const {eval} = x;
-             ^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ const {eval} = x;
+   ║              ^------- error
+╚══╩═════════════════
+
 `````
 
 

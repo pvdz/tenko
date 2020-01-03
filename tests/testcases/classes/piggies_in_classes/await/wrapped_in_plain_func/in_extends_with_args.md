@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `y` instead
 
-function f() {   class x extends await y { }   }
-                                       ^------- error
+start@1:0, error@1:39
+╔══╦═════════════════
+ 1 ║ function f() {   class x extends await y { }   }
+   ║                                        ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   An `await` expression is not allowed here
 
-function f() {   class x extends await y { }   }
-                                 ^^^^^------- error
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ function f() {   class x extends await y { }   }
+   ║                                  ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

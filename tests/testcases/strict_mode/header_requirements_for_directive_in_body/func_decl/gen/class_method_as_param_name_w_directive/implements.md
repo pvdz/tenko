@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`implements`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-class A {
-  d(implements){
-    ^^^^^^^^^^------- error
+start@1:0, error@2:4
+╔══╦════════════════
+ 1 ║ class A {
+ 2 ║   d(implements){
+   ║     ^^^^^^^^^^------- error
+ 3 ║     "use strict";
+ 4 ║   }
+ 5 ║ }
+╚══╩════════════════
 
-    "use strict";
-  }
-}
 `````
 
 ### Strict mode

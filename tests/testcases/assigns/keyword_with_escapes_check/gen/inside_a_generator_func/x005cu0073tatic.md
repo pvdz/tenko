@@ -86,11 +86,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`\u0073tatic`) as a variable name because: Keywords may not have escapes in their name and this resolves to `static`
 
-function *f(){
-  \u0073tatic = x
-  ^^^^^^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   \u0073tatic = x
+   ║   ^^^^^^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

@@ -33,9 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Either the current modifier is unknown or the input that followed was unexpected
 
-(class { x(){} c
-s(){}})
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ (class { x(){} c
+ 2 ║ s(){}})
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

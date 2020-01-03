@@ -86,11 +86,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`inte\u0072face`) as a variable name because: Keywords may not have escapes in their name and this resolves to `interface`
 
-function *f(){
-  inte\u0072face = x
-  ^^^^^^^^^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ function *f(){
+ 2 ║   inte\u0072face = x
+   ║   ^^^^^^^^^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

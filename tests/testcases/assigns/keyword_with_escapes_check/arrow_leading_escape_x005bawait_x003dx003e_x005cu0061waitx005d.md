@@ -72,8 +72,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`\u0061wait`) as a variable name because: Await is illegal as var name with module goal
 
-(\u0061wait, "sentinal 15145")
- ^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (\u0061wait, "sentinal 15145")
+   ║  ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

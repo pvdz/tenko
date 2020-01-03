@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Found `i`. It is not legal for an ident or number token to start after a number token without some form of separation
 
-300nin[]
-    ^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ 300nin[]
+   ║     ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

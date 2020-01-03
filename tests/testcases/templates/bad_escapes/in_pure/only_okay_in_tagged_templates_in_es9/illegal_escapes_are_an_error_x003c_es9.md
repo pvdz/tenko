@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Template contained an illegal escape, these are only allowed in _tagged_ templates in >=ES2018
 
-f`\xg`;
- ^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ f`\xg`;
+   ║  ^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

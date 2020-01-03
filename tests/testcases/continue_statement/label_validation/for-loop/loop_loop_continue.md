@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   This `continue` had a label (`foo`) that was not defined in the current label set as the direct parent of a loop, which would be required
 
-for (;;) for(;;) continue foo
-                          ^^^------- error
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ for (;;) for(;;) continue foo
+   ║                           ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

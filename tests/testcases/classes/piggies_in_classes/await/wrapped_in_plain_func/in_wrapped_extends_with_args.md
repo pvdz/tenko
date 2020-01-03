@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expecting closing paren `)` for the call, found `y` instead
 
-function f() {   class x extends feh(await y) { }   }
-                                           ^------- error
+start@1:0, error@1:43
+╔══╦═════════════════
+ 1 ║ function f() {   class x extends feh(await y) { }   }
+   ║                                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-function f() {   class x extends feh(await y) { }   }
-                                           ^------- error
+start@1:0, error@1:43
+╔══╦═════════════════
+ 1 ║ function f() {   class x extends feh(await y) { }   }
+   ║                                            ^------- error
+╚══╩═════════════════
+
 `````
 
 

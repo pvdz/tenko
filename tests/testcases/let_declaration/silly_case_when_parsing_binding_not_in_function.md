@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-let foo,)
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ let foo,)
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

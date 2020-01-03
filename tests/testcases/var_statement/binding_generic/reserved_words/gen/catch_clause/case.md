@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`case`) as a variable name because: Cannot never use this reserved word as a variable name
 
-try {} catch (case) {}
-              ^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ try {} catch (case) {}
+   ║               ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

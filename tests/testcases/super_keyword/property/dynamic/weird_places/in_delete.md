@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `super[foo]` in class or object methods or in arrows nested in those methods/arrows
 
-delete super[foo]
-       ^^^^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ delete super[foo]
+   ║        ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

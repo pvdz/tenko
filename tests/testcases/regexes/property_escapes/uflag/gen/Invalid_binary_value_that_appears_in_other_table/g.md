@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The escaped property value `Variation_Selector` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
-/\P{Script_Extensions=Variation_Selector}/g;
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\P{Script_Extensions=Variation_Selector}/g;
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

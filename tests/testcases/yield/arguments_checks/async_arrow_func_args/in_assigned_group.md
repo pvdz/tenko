@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `async`) because it is not a valid assignment target
 
-function *g() { async (x = yield) = {}; }
-                                  ^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ function *g() { async (x = yield) = {}; }
+   ║                                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

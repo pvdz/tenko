@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot `delete` inside `new` (at EOF)
 
-new delete
-    ^^^^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ new delete
+   ║     ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

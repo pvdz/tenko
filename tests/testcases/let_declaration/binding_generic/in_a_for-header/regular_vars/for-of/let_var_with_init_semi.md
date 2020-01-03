@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   For-in and for-of binding can not have an init
 
-for (let foo = bar of x);
-                   ^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ for (let foo = bar of x);
+   ║                    ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

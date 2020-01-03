@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected character after object literal property name
 
-a = { let {x} = y }
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ a = { let {x} = y }
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

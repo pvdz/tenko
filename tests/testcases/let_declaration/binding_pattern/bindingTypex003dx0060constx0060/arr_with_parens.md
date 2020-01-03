@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-const [(x)] = v;
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ const [(x)] = v;
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

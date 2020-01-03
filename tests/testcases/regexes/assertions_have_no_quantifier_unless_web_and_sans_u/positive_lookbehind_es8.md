@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Lookbehinds in regular expressions are not supported in the currently targeted language version
 
-/a(?<=x)b/
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /a(?<=x)b/
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

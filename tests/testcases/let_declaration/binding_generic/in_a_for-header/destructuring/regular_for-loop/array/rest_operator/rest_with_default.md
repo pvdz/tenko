@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The binding pattern is not destructible
 
-for (let [...bar = foo] = obj;;);
-                        ^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ for (let [...bar = foo] = obj;;);
+   ║                         ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

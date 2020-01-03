@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The left hand side of the arrow can only be destructed through assignment so arrow is illegal
 
-({x: {x: y}.length}) => x;
-                     ^^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ ({x: {x: y}.length}) => x;
+   ║                      ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

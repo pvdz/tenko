@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Targeted language version does not support trailing call arg comma
 
-foo(...a,);
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ foo(...a,);
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: This is bad with u-flag because a property escape name is whitelisted and bad with-out u-flag because only webcompat mode would allow `\p`
 
-/\P{Script_Extensions=Connector_Punctuation=Connector_Punctuation}/g;
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\P{Script_Extensions=Connector_Punctuation=Connector_Punctuation}/g;
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

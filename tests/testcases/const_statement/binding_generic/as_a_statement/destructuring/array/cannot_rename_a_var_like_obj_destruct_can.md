@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the closing bracket `]` for the array, found `:` instead
 
-const [foo:bar] = obj;
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ const [foo:bar] = obj;
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

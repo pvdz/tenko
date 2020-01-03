@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-async function as(){ class A {f(x=yield 100) {}} }
-                                  ^^^^^------- error
+start@1:0, error@1:34
+╔══╦═════════════════
+ 1 ║ async function as(){ class A {f(x=yield 100) {}} }
+   ║                                   ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

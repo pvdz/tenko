@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-function fh({x: new}) {}
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ function fh({x: new}) {}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

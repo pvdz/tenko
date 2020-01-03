@@ -33,10 +33,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A `do` must be followed by a `while`, but found `a` instead
 
-do {} a
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ do {} a
+   ║       ^------- error
+ 2 ║ while (b);
+╚══╩════════════════
 
-while (b);
 `````
 
 ### Strict mode

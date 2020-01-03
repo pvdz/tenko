@@ -70,8 +70,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`arguments`) as a variable name because: Cannot create a binding named `arguments` in strict mode
 
-function c(arguments){ }
-           ^^^^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ function c(arguments){ }
+   ║            ^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

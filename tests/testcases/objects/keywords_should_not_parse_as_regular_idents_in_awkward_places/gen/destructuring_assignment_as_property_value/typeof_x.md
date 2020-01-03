@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-({x: typeof x} = x);
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ ({x: typeof x} = x);
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

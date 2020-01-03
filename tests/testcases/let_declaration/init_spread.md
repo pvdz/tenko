@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected spread/rest dots
 
-let x = ...y;
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ let x = ...y;
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

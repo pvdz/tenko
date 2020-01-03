@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected identifier, or array/object destructuring
 
-var ...a = 1;
-    ^^^------- error
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ var ...a = 1;
+   ║     ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

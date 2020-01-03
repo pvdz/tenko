@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `=`
 
-let f = function *a=super()) {a};
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ let f = function *a=super()) {a};
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

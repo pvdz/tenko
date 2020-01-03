@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-"use strict"; import = x;
-              ^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ "use strict"; import = x;
+   ║               ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Expected a valid token after the `import` keyword, found `=` instead
 
-"use strict"; import = x;
-                     ^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ "use strict"; import = x;
+   ║                      ^------- error
+╚══╩═════════════════
+
 `````
 
 

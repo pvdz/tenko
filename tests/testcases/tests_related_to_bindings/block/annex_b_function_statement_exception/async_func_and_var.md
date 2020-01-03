@@ -35,12 +35,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there
 
-function f(){
-  var f = 123;
-  if (true) async function f(){}
-            ^^^^^------- error
+start@1:0, error@3:12
+╔══╦═════════════════
+ 1 ║ function f(){
+ 2 ║   var f = 123;
+ 3 ║   if (true) async function f(){}
+   ║             ^^^^^------- error
+ 4 ║ }
+╚══╩═════════════════
 
-}
 `````
 
 ### Strict mode

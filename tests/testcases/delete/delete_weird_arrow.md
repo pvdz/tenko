@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-delete(0)=>x
-         ^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ delete(0)=>x
+   ║          ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

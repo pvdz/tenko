@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-(x = (typeof) = f) => {}
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ (x = (typeof) = f) => {}
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

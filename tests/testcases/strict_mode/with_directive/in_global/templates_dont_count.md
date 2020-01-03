@@ -80,8 +80,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The `with` statement is not allowed in strict mode
 
-`use strict`; with (x) y;
-              ^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ `use strict`; with (x) y;
+   ║               ^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

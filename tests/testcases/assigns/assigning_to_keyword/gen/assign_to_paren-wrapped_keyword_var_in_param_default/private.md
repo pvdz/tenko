@@ -91,8 +91,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`private`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-(x = (private) = f) => {}
-      ^^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ (x = (private) = f) => {}
+   ║       ^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

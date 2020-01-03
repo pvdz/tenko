@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The escaped binary property name `ASCNOPE` is not valid (does not appear in "table 54") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
-/\P{ASCNOPE=Connector_Punctuation}/g;
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\P{ASCNOPE=Connector_Punctuation}/g;
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

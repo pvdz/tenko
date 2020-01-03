@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-import(/foo/) /bar/
-                   ^------- error at EOF
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ import(/foo/) /bar/
+   ║                    ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

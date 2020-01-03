@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-[new x] = x;
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ [new x] = x;
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `11`
 
-class A {async set 11(x){}}
-                   ^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ class A {async set 11(x){}}
+   ║                    ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

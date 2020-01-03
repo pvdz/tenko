@@ -38,13 +38,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-class X extends Y {
-  constructor() {
-    delete super;
-           ^^^^^------- error
+start@1:0, error@3:11
+╔══╦═════════════════
+ 1 ║ class X extends Y {
+ 2 ║   constructor() {
+ 3 ║     delete super;
+   ║            ^^^^^------- error
+ 4 ║   }
+ 5 ║ }
+╚══╩═════════════════
 
-  }
-}
 `````
 
 ### Strict mode

@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Object literal keys that are strings or numbers must be a method or have a colon
 
-x = {5n};
-       ^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ x = {5n};
+   ║        ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

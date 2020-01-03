@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not create a lexical binding for `e` because it shadows a catch clause binding
 
-try {} catch (e) { const e = x; }
-                         ^------- error
+start@1:0, error@1:25
+╔══╦═════════════════
+ 1 ║ try {} catch (e) { const e = x; }
+   ║                          ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

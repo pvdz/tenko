@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Unexpected unicode character: 11823 (@{x2e2f}@)
 
-var a@{x2e2f}@;
-     ^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ var a@{x2e2f}@;
+   ║      ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

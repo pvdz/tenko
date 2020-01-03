@@ -30,9 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Block body arrows can not be immediately accessed without a group
 
-()=>{}
-.x
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ ()=>{}
+ 2 ║ .x
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

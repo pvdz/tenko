@@ -36,11 +36,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing colon after case expr
 
-switch (x) {
-    case
-    /x/g
-}
-^------- error
+start@1:0, error@4:0
+╔══╦════════════════
+ 1 ║ switch (x) {
+ 2 ║     case
+ 3 ║     /x/g
+ 4 ║ }
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

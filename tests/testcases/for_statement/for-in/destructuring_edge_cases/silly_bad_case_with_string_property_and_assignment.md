@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `in` instead
 
-for ("foo".bar = x in obj);
-                   ^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ for ("foo".bar = x in obj);
+   ║                    ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

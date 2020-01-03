@@ -33,8 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-fuction *f() {  return await yield foo;  }
-             ^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ fuction *f() {  return await yield foo;  }
+   ║              ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

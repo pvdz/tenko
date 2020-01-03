@@ -70,8 +70,12 @@ Parsed with the module goal.
 throws: Parser error!
   An `await` expression is not allowed here
 
-class x extends await { }
-                ^^^^^------- error
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ class x extends await { }
+   ║                 ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

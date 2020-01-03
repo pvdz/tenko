@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
-class static {}
-      ^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ class static {}
+   ║       ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

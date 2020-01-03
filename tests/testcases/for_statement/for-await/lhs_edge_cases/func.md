@@ -34,11 +34,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Left part of for-of must be assignable
 
-async function f(){
-  for await (function(){} of x);
-  ^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ async function f(){
+ 2 ║   for await (function(){} of x);
+   ║   ^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

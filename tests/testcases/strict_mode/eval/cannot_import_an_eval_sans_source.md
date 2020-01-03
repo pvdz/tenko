@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `import` keyword can only be used with the module goal
 
-import eval;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ import eval;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -47,8 +51,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
 
-import eval;
-       ^^^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ import eval;
+   ║        ^^^^------- error
+╚══╩════════════════
+
 `````
 
 

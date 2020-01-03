@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected EOF (at EOF)
 
-for (eval instanceof this; new 2e308;)
-                                      ^------- error at EOF
+start@1:0, error@1:38
+╔══╦═════════════════
+ 1 ║ for (eval instanceof this; new 2e308;)
+   ║                                       ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

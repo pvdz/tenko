@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `in` instead
 
-(class B extends x in y {})
-                   ^^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ (class B extends x in y {})
+   ║                    ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

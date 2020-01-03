@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-(x = delete ((function) = f)) => {}
-                      ^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ (x = delete ((function) = f)) => {}
+   ║                       ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   For-in and for-of can only have one binding, found 2
 
-for (let {x} = a, obj of obj2);
-                      ^^------- error
+start@1:0, error@1:22
+╔══╦═════════════════
+ 1 ║ for (let {x} = a, obj of obj2);
+   ║                       ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

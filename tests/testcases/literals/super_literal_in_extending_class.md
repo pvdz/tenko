@@ -9,7 +9,11 @@
 ## Input
 
 `````js
-class x extends y { constructor(){ super }}
+class x extends y {
+  constructor(){
+    super
+  }
+}
 `````
 
 ## Output
@@ -28,8 +32,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-class x extends y { constructor(){ super }}
-                                   ^^^^^------- error
+start@1:0, error@3:4
+╔══╦════════════════
+ 1 ║ class x extends y {
+ 2 ║   constructor(){
+ 3 ║     super
+   ║     ^^^^^------- error
+ 4 ║   }
+ 5 ║ }
+╚══╩════════════════
+
 `````
 
 ### Strict mode

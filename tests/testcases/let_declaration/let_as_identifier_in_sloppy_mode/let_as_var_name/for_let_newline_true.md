@@ -39,12 +39,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`true`) as a variable name because: Cannot never use this reserved word as a variable name
 
-for (
-let
-true
-^^^^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ for (
+ 2 ║ let
+ 3 ║ true
+   ║ ^^^^------- error
+ 4 ║ ;;);
+╚══╩════════════════
 
-;;);
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `}` instead
 
-({500: class}) => null
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ ({500: class}) => null
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

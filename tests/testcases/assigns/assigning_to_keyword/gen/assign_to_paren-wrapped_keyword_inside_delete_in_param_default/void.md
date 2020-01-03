@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-async (x = delete ((void) = f)) => {}
-                        ^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ async (x = delete ((void) = f)) => {}
+   ║                         ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

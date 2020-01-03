@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-xyz; /* foo
-bar */ --> a b
-         ^------- error
+start@1:0, error@2:9
+╔══╦════════════════
+ 1 ║ xyz; /* foo
+ 2 ║ bar */ --> a b
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

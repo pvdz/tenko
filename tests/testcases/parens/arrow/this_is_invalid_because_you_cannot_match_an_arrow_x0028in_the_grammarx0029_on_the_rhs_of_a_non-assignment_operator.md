@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
-/i/ * ()=>j
-          ^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ /i/ * ()=>j
+   ║           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

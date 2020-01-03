@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`sw\u0069tch`) as a variable name because: Keywords may not have escapes in their name and this resolves to `switch`
 
-async () => {  sw\u0069tch = x  }
-               ^^^^^^^^^^^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ async () => {  sw\u0069tch = x  }
+   ║                ^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

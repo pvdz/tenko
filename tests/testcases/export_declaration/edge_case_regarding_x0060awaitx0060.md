@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export default await
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export default await
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function (at EOF)
 
-export default await
-                    ^------- error at EOF
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ export default await
+   ║                     ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 

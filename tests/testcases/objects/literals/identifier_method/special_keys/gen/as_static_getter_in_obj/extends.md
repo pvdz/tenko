@@ -32,11 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `extends`
 
-({
-  static get extends(){}
-             ^^^^^^^------- error
+start@1:0, error@2:13
+╔══╦═════════════════
+ 1 ║ ({
+ 2 ║   static get extends(){}
+   ║              ^^^^^^^------- error
+ 3 ║ });
+╚══╩═════════════════
 
-});
 `````
 
 ### Strict mode

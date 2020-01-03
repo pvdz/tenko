@@ -36,12 +36,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Next token should be `:` but was `/`
 
-switch (x) {
-  default
-  /x/g
-  ^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ switch (x) {
+ 2 ║   default
+ 3 ║   /x/g
+   ║   ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

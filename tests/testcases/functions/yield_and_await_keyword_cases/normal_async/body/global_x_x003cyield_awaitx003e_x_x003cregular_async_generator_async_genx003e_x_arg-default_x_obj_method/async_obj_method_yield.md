@@ -47,8 +47,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-async function as(){ o = {async f() { return yield 100; }} }
-                                                   ^^^------- error
+start@1:0, error@1:51
+╔══╦═════════════════
+ 1 ║ async function as(){ o = {async f() { return yield 100; }} }
+   ║                                                    ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -59,8 +63,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-async function as(){ o = {async f() { return yield 100; }} }
-                                             ^^^^^------- error
+start@1:0, error@1:45
+╔══╦═════════════════
+ 1 ║ async function as(){ o = {async f() { return yield 100; }} }
+   ║                                              ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

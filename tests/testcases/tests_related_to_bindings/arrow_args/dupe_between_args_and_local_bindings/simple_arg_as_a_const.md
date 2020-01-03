@@ -34,8 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot create lexical binding for `x` because it shadows a function parameter
 
-(x) => { const x = y }
-               ^------- error
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ (x) => { const x = y }
+   ║                ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

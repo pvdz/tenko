@@ -71,8 +71,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   The left hand side of the arrow is not destructible so arrow is illegal
 
-(eval) => { }
-       ^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ (eval) => { }
+   ║        ^^------- error
+╚══╩════════════════
+
 `````
 
 

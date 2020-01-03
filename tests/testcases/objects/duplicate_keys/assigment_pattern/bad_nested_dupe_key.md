@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `{`
 
-({a: x, {b: x}} = obj)
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ ({a: x, {b: x}} = obj)
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

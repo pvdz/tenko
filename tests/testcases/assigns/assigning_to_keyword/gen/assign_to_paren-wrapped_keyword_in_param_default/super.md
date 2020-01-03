@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `super` keyword can only be used as call or member expression
 
-async (x = (super) = f) => {}
-            ^^^^^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ async (x = (super) = f) => {}
+   ║             ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

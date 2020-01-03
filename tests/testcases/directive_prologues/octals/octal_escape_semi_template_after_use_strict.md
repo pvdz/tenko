@@ -35,12 +35,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Template contained an illegal escape, illegal in a statement
 
-function f() {
-  "use strict";
-  ` \8 `
-  ^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   "use strict";
+ 3 ║   ` \8 `
+   ║   ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

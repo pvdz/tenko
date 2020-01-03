@@ -40,8 +40,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`let`) as a variable name because: Can not use `let` when binding through `let` or `const`
 
-for (const let;;);
-           ^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ for (const let;;);
+   ║            ^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

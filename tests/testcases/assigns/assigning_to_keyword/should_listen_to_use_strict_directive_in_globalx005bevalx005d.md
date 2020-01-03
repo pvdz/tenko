@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-"use strict"; (eval = "sentinal 535426");
-                    ^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ "use strict"; (eval = "sentinal 535426");
+   ║                     ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Next token should be `=>` but was `{`
 
-async let
-{}
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ async let
+ 2 ║ {}
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

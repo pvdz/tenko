@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Must have func arguments next but did not find `(`
 
-foo = { get x(){  "use strict"; (function = "sentinal 79845134");   }}
-                                          ^------- error
+start@1:0, error@1:42
+╔══╦═════════════════
+ 1 ║ foo = { get x(){  "use strict"; (function = "sentinal 79845134");   }}
+   ║                                           ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

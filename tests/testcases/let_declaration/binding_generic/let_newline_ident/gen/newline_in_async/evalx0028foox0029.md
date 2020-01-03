@@ -33,12 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-async function f() {
-  let
-  eval(foo)
-      ^------- error
+start@1:0, error@3:6
+╔══╦════════════════
+ 1 ║ async function f() {
+ 2 ║   let
+ 3 ║   eval(foo)
+   ║       ^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode
@@ -49,12 +52,15 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `eval` but: Cannot create a binding named `eval` in strict mode
 
-async function f() {
-  let
-  eval(foo)
-  ^^^^------- error
+start@1:0, error@3:2
+╔══╦════════════════
+ 1 ║ async function f() {
+ 2 ║   let
+ 3 ║   eval(foo)
+   ║   ^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 

@@ -34,9 +34,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value (at EOF)
 
-arguments
-/x/
-   ^------- error at EOF
+start@1:0, error@2:3
+╔══╦════════════════
+ 1 ║ arguments
+ 2 ║ /x/
+   ║    ^------- error at EOF
+╚══╩════════════════
+
 `````
 
 ### Strict mode

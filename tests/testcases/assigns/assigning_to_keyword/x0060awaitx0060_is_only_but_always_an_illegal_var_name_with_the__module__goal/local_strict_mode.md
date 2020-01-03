@@ -102,8 +102,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-function f() { "use strict"; (await = "sentinal 7533336"); }
-                                    ^------- error
+start@1:0, error@1:36
+╔══╦═════════════════
+ 1 ║ function f() { "use strict"; (await = "sentinal 7533336"); }
+   ║                                     ^------- error
+╚══╩═════════════════
+
 `````
 
 

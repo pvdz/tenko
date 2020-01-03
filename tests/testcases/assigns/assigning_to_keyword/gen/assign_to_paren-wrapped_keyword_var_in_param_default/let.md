@@ -91,8 +91,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Can not use `let` as variable name in strict mode
 
-(x = (let) = f) => {}
-      ^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ (x = (let) = f) => {}
+   ║       ^^^------- error
+╚══╩════════════════
+
 `````
 
 

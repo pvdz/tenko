@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `` instead (at EOF)
 
-class x extends class {}
-                        ^------- error at EOF
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ class x extends class {}
+   ║                         ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

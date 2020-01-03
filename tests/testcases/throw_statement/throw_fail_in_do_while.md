@@ -34,12 +34,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a newline between `throw` and its argument but that is not allowed
 
-function f() {
-  do throw
-     ^^^^^^^^------- error
+start@1:0, error@2:5
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║   do throw
+   ║      ^^^^^^^^------- error
+ 3 ║   pass while(x);
+ 4 ║ }
+╚══╩════════════════
 
-  pass while(x);
-}
 `````
 
 ### Strict mode

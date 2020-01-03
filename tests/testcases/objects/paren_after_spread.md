@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Encountered invalid input after spread/rest argument
 
-+{...x)
-      ^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ +{...x)
+   ║       ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

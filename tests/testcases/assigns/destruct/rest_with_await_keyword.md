@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to destructure something that is not destructible
 
-async x => [...await x] = obj
-                        ^------- error
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ async x => [...await x] = obj
+   ║                         ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -31,8 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Dynamic `import` only expected exactly one argument and does not allow for a trailing comma
 
-import(x,);
-^^^^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ import(x,);
+   ║ ^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing right square bracket for computed member, found `y` instead
 
-class outer extends S { constructor(){  class x { [super() y](){} }  }}
-                                                           ^------- error
+start@1:0, error@1:59
+╔══╦═════════════════
+ 1 ║ class outer extends S { constructor(){  class x { [super() y](){} }  }}
+   ║                                                            ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -38,11 +38,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot assign to lhs (starting with `yield`) because it is not a valid assignment target
 
-function *f() {
-  yield **= x;
-        ^^^------- error
+start@1:0, error@2:8
+╔══╦════════════════
+ 1 ║ function *f() {
+ 2 ║   yield **= x;
+   ║         ^^^------- error
+ 3 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

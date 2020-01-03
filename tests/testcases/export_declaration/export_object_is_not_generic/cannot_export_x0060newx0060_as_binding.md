@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export {new}
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export {new}
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Exporting a name that was not bound in global: `new` (at EOF)
 
-export {new}
-            ^------- error at EOF
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ export {new}
+   ║             ^------- error at EOF
+╚══╩═════════════════
+
 `````
 
 

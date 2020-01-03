@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The ... argument must be destructible in an arrow header, found something that was not destructible
 
-(x, ...y, z) => x
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ (x, ...y, z) => x
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

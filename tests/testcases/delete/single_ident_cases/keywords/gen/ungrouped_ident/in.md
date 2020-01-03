@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`in`) as a variable name because: Cannot never use this reserved word as a variable name (at EOF)
 
-delete in
-       ^^------- error
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ delete in
+   ║        ^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

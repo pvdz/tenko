@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`\u0073uper`) as a variable name because: Keywords may not have escapes in their name and this resolves to `super`
 
-(\u0073uper = "sentinal 1564646")
- ^^^^^^^^^^------- error
+start@1:0, error@1:1
+╔══╦════════════════
+ 1 ║ (\u0073uper = "sentinal 1564646")
+   ║  ^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

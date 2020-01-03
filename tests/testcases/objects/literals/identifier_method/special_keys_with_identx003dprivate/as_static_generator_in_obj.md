@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Object members can not be "static"
 
-({static * private(){}});
-  ^^^^^^------- error
+start@1:0, error@1:2
+╔══╦════════════════
+ 1 ║ ({static * private(){}});
+   ║   ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

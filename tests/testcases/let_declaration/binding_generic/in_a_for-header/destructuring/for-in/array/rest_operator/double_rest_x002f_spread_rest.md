@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not rest twice
 
-for (let [... ...foo] in obj);
-          ^^^^^^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ for (let [... ...foo] in obj);
+   ║           ^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse an opening paren, found `=`
 
-x={ dsda(){ return function *a=super()) {}; }}
-                              ^------- error
+start@1:0, error@1:30
+╔══╦═════════════════
+ 1 ║ x={ dsda(){ return function *a=super()) {}; }}
+   ║                               ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse the start of a property but found an unknown modifier
 
-a = { let [x] = y }
-      ^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ a = { let [x] = y }
+   ║       ^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

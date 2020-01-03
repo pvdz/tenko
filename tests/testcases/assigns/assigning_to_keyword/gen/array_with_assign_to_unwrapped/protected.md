@@ -81,8 +81,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`protected`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-async x => protected = 1
-           ^^^^^^^^^------- error
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ async x => protected = 1
+   ║            ^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

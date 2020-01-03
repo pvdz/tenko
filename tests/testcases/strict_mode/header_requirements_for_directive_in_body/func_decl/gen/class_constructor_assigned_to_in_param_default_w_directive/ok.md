@@ -34,13 +34,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-class A {
-  constructor(x=ok=10){
-    "use strict";
-  }
-  ^------- error
+start@1:0, error@4:2
+╔══╦════════════════
+ 1 ║ class A {
+ 2 ║   constructor(x=ok=10){
+ 3 ║     "use strict";
+ 4 ║   }
+   ║   ^------- error
+ 5 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

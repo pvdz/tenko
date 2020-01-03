@@ -32,9 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Missing first semi in `for` header, found `x` instead
 
-for (yield
-x in x) ;
-^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ for (yield
+ 2 ║ x in x) ;
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -45,10 +49,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use `yield` outside of generator functions when in strict mode
 
-for (yield
-     ^^^^^------- error
+start@1:0, error@1:5
+╔══╦════════════════
+ 1 ║ for (yield
+   ║      ^^^^^------- error
+ 2 ║ x in x) ;
+╚══╩════════════════
 
-x in x) ;
 `````
 
 

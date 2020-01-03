@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Function had duplicate params
 
-function f([b, a, a]) {}
-                  ^------- error
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ function f([b, a, a]) {}
+   ║                   ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

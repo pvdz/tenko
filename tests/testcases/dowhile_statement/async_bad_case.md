@@ -31,9 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   A `do` must be followed by a `while`, but found `f` instead
 
-do async
- f(){}; while (y)
- ^------- error
+start@1:0, error@2:1
+╔══╦════════════════
+ 1 ║ do async
+ 2 ║  f(){}; while (y)
+   ║  ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

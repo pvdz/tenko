@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Found a struct that must be destructured but was not
 
-[{x = y}].z
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ [{x = y}].z
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

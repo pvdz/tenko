@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)
 
-(delete 3 ** 2)
-          ^^------- error
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ (delete 3 ** 2)
+   ║           ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     "Illegal" octal escape in strict mode
 
-function foo() { "use strict"; 00004; }
-                               ^^^^^------- error
+start@1:0, error@1:31
+╔══╦═════════════════
+ 1 ║ function foo() { "use strict"; 00004; }
+   ║                                ^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

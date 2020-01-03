@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Identifier escape did not yield a valid identifier character
 
-\u0B6EPASS
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ \u0B6EPASS
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

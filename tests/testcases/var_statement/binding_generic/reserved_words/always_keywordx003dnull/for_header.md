@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`null`) as a variable name because: Cannot never use this reserved word as a variable name
 
-for (var null = x;;);
-         ^^^^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ for (var null = x;;);
+   ║          ^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

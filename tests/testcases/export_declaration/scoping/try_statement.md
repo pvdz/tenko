@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-try { export {x}; } catch(e){}
-      ^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ try { export {x}; } catch(e){}
+   ║       ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   The `export` keyword is only supported at the top level
 
-try { export {x}; } catch(e){}
-      ^^^^^^------- error
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ try { export {x}; } catch(e){}
+   ║       ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

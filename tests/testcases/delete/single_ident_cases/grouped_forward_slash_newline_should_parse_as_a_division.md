@@ -83,10 +83,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot delete an identifier without tail, in strict mode
 
-delete (x)
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ delete (x)
+   ║ ^^^^^^------- error
+ 2 ║ /f/g
+╚══╩════════════════
 
-/f/g
 `````
 
 

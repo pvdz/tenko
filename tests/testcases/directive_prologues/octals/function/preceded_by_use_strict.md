@@ -35,12 +35,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Illegal legacy octal escape in strict mode
 
-function f() {
-    "use strict";
-    "You \077 ok";
-    ^^^^^^^^^^^^^------- error
+start@1:0, error@3:4
+╔══╦════════════════
+ 1 ║ function f() {
+ 2 ║     "use strict";
+ 3 ║     "You \077 ok";
+   ║     ^^^^^^^^^^^^^------- error
+ 4 ║ }
+╚══╩════════════════
 
-}
 `````
 
 ### Strict mode

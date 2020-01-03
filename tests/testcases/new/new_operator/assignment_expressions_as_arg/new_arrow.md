@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Was parsing a value that could not be AssignmentExpression but found an arrow
 
-new (x)=>{}
-         ^------- error
+start@1:0, error@1:9
+╔══╦════════════════
+ 1 ║ new (x)=>{}
+   ║          ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

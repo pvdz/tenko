@@ -32,10 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only declare use strict if func params are "simple"
 
-f = function f(x=arguments=10){
-  "use strict";
-}
-^------- error
+start@1:0, error@3:0
+╔══╦════════════════
+ 1 ║ f = function f(x=arguments=10){
+ 2 ║   "use strict";
+ 3 ║ }
+   ║ ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,11 +50,14 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot assign to `eval` and `arguments` in strict mode
 
-f = function f(x=arguments=10){
-                          ^------- error
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ f = function f(x=arguments=10){
+   ║                           ^------- error
+ 2 ║   "use strict";
+ 3 ║ }
+╚══╩═════════════════
 
-  "use strict";
-}
 `````
 
 

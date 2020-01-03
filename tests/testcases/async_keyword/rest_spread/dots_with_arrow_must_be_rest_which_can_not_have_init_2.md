@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Tried to assign to a value that was not assignable in arr/obj lit/patt
 
-async (a, ...true=b) => a;
-                 ^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ async (a, ...true=b) => a;
+   ║                  ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

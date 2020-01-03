@@ -28,8 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-export let {a:=c} = z;
-^^^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ export let {a:=c} = z;
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
@@ -46,8 +50,12 @@ Parsed with the module goal.
 throws: Parser error!
   Expected to parse a value
 
-export let {a:=c} = z;
-              ^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ export let {a:=c} = z;
+   ║               ^------- error
+╚══╩═════════════════
+
 `````
 
 

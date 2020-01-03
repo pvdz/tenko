@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   An async function expression is not allowed here
 
-(class B extends async function *f(){} {})
-                 ^^^^^^^^^^^^^^------- error
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ (class B extends async function *f(){} {})
+   ║                  ^^^^^^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

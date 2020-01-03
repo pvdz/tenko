@@ -75,8 +75,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-delete await.foo
-            ^------- error
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ delete await.foo
+   ║             ^------- error
+╚══╩═════════════════
+
 `````
 
 

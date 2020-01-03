@@ -32,8 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Pattern can not have a tail but did not find a comma or closing paren of the arrow header
 
-({x = y}.z)
-        ^------- error
+start@1:0, error@1:8
+╔══╦════════════════
+ 1 ║ ({x = y}.z)
+   ║         ^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode

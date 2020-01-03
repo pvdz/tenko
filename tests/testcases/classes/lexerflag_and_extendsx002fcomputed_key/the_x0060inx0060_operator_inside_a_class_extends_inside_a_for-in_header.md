@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the opening curly `{` of a class body, found `in` instead
 
-for (class x extends a in b {} in c);
-                       ^^------- error
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ for (class x extends a in b {} in c);
+   ║                        ^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

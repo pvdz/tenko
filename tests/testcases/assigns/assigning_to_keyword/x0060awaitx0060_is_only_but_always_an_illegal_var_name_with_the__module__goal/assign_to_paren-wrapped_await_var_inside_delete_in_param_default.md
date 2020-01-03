@@ -102,8 +102,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-(x = delete ((await) = f)) => {}
-                   ^------- error
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ (x = delete ((await) = f)) => {}
+   ║                    ^------- error
+╚══╩═════════════════
+
 `````
 
 

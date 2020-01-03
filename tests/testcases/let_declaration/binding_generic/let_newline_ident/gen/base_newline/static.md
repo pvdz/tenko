@@ -64,9 +64,13 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Attempted to create a `let` binding on special reserved keyword `static` but: `static` is a reserved word in strict mode
 
-let
-static
-^^^^^^------- error
+start@1:0, error@2:0
+╔══╦════════════════
+ 1 ║ let
+ 2 ║ static
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 

@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected the closing curly `}` for an object, found `c` instead
 
-async ({a: b = await c})
-                     ^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ async ({a: b = await c})
+   ║                      ^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-async ({a: b = await c})
-                     ^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ async ({a: b = await c})
+   ║                      ^------- error
+╚══╩═════════════════
+
 `````
 
 

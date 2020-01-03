@@ -91,8 +91,12 @@ Parsed with the module goal.
 throws: Parser error!
   Attempted to create a lexical binding for `f` but another binding already existed on the same level
 
-function f() {} ; function f() {}
-                           ^------- error
+start@1:0, error@1:27
+╔══╦═════════════════
+ 1 ║ function f() {} ; function f() {}
+   ║                            ^------- error
+╚══╩═════════════════
+
 `````
 
 

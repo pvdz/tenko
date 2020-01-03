@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The `export` keyword can only be used with the module goal
 
-"use strict"; export = x;
-              ^^^^^^------- error
+start@1:0, error@1:14
+╔══╦═════════════════
+ 1 ║ "use strict"; export = x;
+   ║               ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode
@@ -48,8 +52,12 @@ Parsed with the module goal.
 throws: Parser error!
   Unknown export type `=` (note: you can only export individual vars through `export {foo};`)
 
-"use strict"; export = x;
-                     ^------- error
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ "use strict"; export = x;
+   ║                      ^------- error
+╚══╩═════════════════
+
 `````
 
 

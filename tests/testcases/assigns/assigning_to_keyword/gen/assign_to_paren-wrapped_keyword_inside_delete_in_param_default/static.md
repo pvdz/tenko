@@ -98,8 +98,12 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Cannot use this name (`static`) as a variable name because: `static` is a reserved word in strict mode
 
-async (x = delete ((static) = f)) => {}
-                    ^^^^^^------- error
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ async (x = delete ((static) = f)) => {}
+   ║                     ^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 

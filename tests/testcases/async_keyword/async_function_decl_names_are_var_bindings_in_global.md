@@ -87,8 +87,12 @@ Parsed with the module goal.
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-async function f() {} var f;
-                          ^------- error
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ async function f() {} var f;
+   ║                           ^------- error
+╚══╩═════════════════
+
 `````
 
 

@@ -29,8 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use this name (`protected`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
 
-class c {foo(protected){ }}
-             ^^^^^^^^^------- error
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ class c {foo(protected){ }}
+   ║              ^^^^^^^^^------- error
+╚══╩═════════════════
+
 `````
 
 ### Strict mode

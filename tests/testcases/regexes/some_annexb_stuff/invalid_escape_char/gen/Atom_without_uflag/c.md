@@ -30,8 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Illegal char escape char (ord=47)
 
-/\c/
-^^^^------- error
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\c/
+   ║ ^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Strict mode
