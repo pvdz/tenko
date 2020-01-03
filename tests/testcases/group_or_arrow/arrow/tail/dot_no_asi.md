@@ -1,18 +1,16 @@
 # Tenko parser test case
 
-- Path: tests/testcases/parens/arrow/arrows_is_not_a_normal_expression_value/arrow_regex_with_newline.md
+- Path: tests/testcases/group_or_arrow/arrow/tail/dot_no_asi.md
 
-> :: parens : arrow : arrows is not a normal expression value
+> :: group or arrow : arrow : tail
 >
-> ::> arrow regex with newline
+> ::> dot no asi
+## FAIL
 
 ## Input
 
-- `requireAst = true`
-
 `````js
-a => {}
-/x/
+()=>{}.x
 `````
 
 ## Output
@@ -29,11 +27,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse a value
+  Block body arrows can not be immediately accessed without a group
 
-a => {}
-/x/
-^------- error
+()=>{}.x
+      ^------- error
 `````
 
 ### Strict mode

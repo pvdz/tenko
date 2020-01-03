@@ -8978,31 +8978,37 @@ function Parser(code, options = {}) {
     }
 
     {
+      let $tp_errorToken_type = tok_getType();
       let $tp_errorToken_start = tok_getStart();
       let $tp_errorToken_stop = tok_getStop();
+      let $tp_errorToken_nl = tok_getNlwas();
 
       // All checks in this block only serve to provide a nicer error message. Omitting them would still lead to an error.
-      if (insideForLhs && tok_getType() === $ID_in) {
+      if (insideForLhs && $tp_errorToken_type === $ID_in) {
         return THROW_RANGE('Arrows cannot be lhs to for-in', $tp_errorToken_start, $tp_errorToken_stop);
       }
       // Arrows cannot have tails. Most expressions will consume them, but not `x++` for example. So do after either path.
-      if (tok_getType() === $PUNC_DOT) {
+      if ($tp_errorToken_type === $PUNC_DOT) {
         return THROW_RANGE('Block body arrows can not be immediately accessed without a group', $tp_errorToken_start, $tp_errorToken_stop);
       }
-      if (tok_getType() === $PUNC_PAREN_OPEN) {
+      if ($tp_errorToken_nl) {
+        // ASI will probably happen next
+        return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW;
+      }
+      if ($tp_errorToken_type === $PUNC_PAREN_OPEN) {
         return THROW_RANGE('Block body arrows can not be immediately invoked without a group', $tp_errorToken_start, $tp_errorToken_stop);
       }
-      if (tok_getType() === $PUNC_BRACKET_OPEN) {
+      if ($tp_errorToken_type === $PUNC_BRACKET_OPEN) {
         return THROW_RANGE('Block body arrows can not be immediately accessed without a group', $tp_errorToken_start, $tp_errorToken_stop);
       }
-      if (isTemplateStart(tok_getType())) {
+      if (isTemplateStart($tp_errorToken_type)) {
         return THROW_RANGE('Block body arrows can not be immediately tagged without a group', $tp_errorToken_start, $tp_errorToken_stop);
       }
-      if ((isCompoundAssignment(tok_getType(), $tp_errorToken_start, $tp_errorToken_stop) || isNonAssignBinOp(tok_getType(), lexerFlags)) && (tok_getNlwas() === false || tok_getType() === $PUNC_DIV)) {
+      if ((isCompoundAssignment($tp_errorToken_type, $tp_errorToken_start, $tp_errorToken_stop) || isNonAssignBinOp($tp_errorToken_type, lexerFlags)) && (tok_getNlwas() === false || $tp_errorToken_type === $PUNC_DIV)) {
         // - `()=>{}+a'
         return THROW_RANGE('An arrow function can not be part of an operator to the right', $tp_errorToken_start, $tp_errorToken_stop);
       }
-      if ((tok_getType() === $PUNC_PLUS_PLUS || tok_getType() === $PUNC_MIN_MIN) && tok_getNlwas() === false) {
+      if ($tp_errorToken_type === $PUNC_PLUS_PLUS || $tp_errorToken_type === $PUNC_MIN_MIN) {
         // - `()=>{}++'
         // - `()=>{}--'
         // - `()=>{}\n++x'
