@@ -6,6 +6,7 @@ REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
   - Anything stage 4 up to ES11 / ES2020
+    - TODO: optional chaining (`?.`) / nullish coalescing (`&&`) operators 
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
@@ -136,14 +137,16 @@ Some interesting usages of `./t`:
 ./t F "test262/test/annexB/built-ins/foo.js"
 
 # Generate prod builds
-# Generate a build. Strips ASSERT*, inline many constants, minify with Terser
+# Generate a build. Strips ASSERT*, inline many constants
 ./t z
-# Same as above but explicitly set `acornCompat` and `babelCompat` to `false`. Terser will eliminate the dead branches.
+# Same as above but explicitly set `acornCompat` and `babelCompat` to `false`.
 ./t z --no-compat
 # Generate pretty builds for debugging without asserts:
-./t --no-min --pretty
+./t --pretty
+# Minified build with Terser (will lower performance due to inlining)
+./t --min
 
-# Run test262 tests (requires cloning https://github.com/tc39/test262 into projroot/ignore/test262)
+# Run test262 tests (requires cloning https://github.com/tc39/test262 into tenko/ignore/test262)
 ./t t
 
 # Fuzz the parser
@@ -167,15 +170,20 @@ Some tooling that requires additional setup;
 # Benchmarks (requires benchmark files in projroot/ignore/perf);
 # Simply spawn new node process and run test:
 ./t p
-# Setup machine and run node as stable as possible (dangerous! requires root)
-./t p2
-# Cleanup things setup with p2
-./t p3
-# Setup machine but run node without special stabilizing flags
-./t p4
+# Run benchmarks repeatedly and report results
+./t p6
+# Configure machine to be as stable as possible (DANGEROUS, read the script before using it, requires root). All 
+# changes should be reset after reboot. Then run the benchmarks in the shielded cpus at RT prio (also requires root).
+./t stable
+./t p6 --stabled
+# Same as above but without running `./t stable` previously, and tries to undo certain (but not all) things afterwards
+./t p6 --stable
 
 # Investigate v8 perf regressions with deoptigate:
 ./t deoptigate
+
+# Profile the parser in Chrome devtools (open the tab through `about://inspect`)
+./t devtools
 
 # Run a visual heatmap profiler for counts based investigation (private)
 ./t hf
@@ -188,6 +196,7 @@ There are many flags. Some are specific to an action, others are generic. Some e
 --strict             Run with script goal but consider the code strict
 --module             Run with module goal (enabling strict mode by default)
 --web                Run with script goal, non-strict, and enable web compat (AnnexB rules)
+--annexb             Force enable AnnexB rules, regardless of mode
 
 6                    Run as close to the rules as of ES6  / ES2015 as possible
 7                    Run as close to the rules as of ES7  / ES2016 as possible
@@ -206,7 +215,7 @@ There are many flags. Some are specific to an action, others are generic. Some e
 --nb                 Do not build (many actions will kick of a build before doing their thing, this prevents that)
 ```
 
-For details, `./t --help` should give you an up to date list of all actions and options.
+And many more. For details, `./t --help` should give you an up to date list of all actions and options.
 
 # Building
 
@@ -215,6 +224,7 @@ While the parser runs perfectly fine in dev mode it will be a bit slow. A build:
 - will remove non-assert dev artifacts
 - can remove inline asserts (lines that start with `ASSERT`)
 - can remove all the AST generation from the build (lines that start with `AST`)
+- inlines many constants used by the parser as enums or bitwise fields
 
 To generate a build run this in the project root, flags can be combined:
 
@@ -222,12 +232,13 @@ To generate a build run this in the project root, flags can be combined:
 ./t z                      # Regular build with everything
 ./t z --no-ast             # Strip most AST related code from the build (~50% faster, but obviously no AST)
 ./t z --no-compat          # Strip acorn/babel compatibility
-./t z --no-min --pretty    # Skip minifier and use Prettier on result
+./t z --min                # Run Terser on result (will decrease performance due to inlining)
+./t z --pretty             # Run Prettier on build result
 ```
 
 Note that this (initially) uses my own printer to print the AST.
 
-The build script writes to `./build`
+The build script writes and ESM and CJS file to `./build`
 
 ## Validation without AST
 
@@ -248,6 +259,6 @@ If a run does not pass the error message and a pointer to where the error occurr
 
 The files can be auto-updated with `./t u` or `./t m`. This makes it easy to update something in the parser and use git to confirm whether anything changed, and if so what.
 
-There are also `autogen.md` files, which generate a bunch of combinatory tests (`./t g` or `./t G`), similar to the other tests.
+There are also `autogen.md` files, which generate a bunch of combinatorial tests (`./t g` or `./t G`), similar to the other tests.
 
 To create a new test simply add a new file, start it with `@`, a description, a line with only `###` and the rest will be considered the test case verbatim. When you run the test runner this file will automatically be converted to a proper test case.
