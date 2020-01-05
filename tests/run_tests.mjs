@@ -162,6 +162,7 @@ import {
   processAcornResult,
 } from './parse_acorn.mjs';
 
+import {walker} from "../src/tools/walker.mjs";
 import {testPrinter} from "./run_printer.mjs";
 
 // Lazily loaded
@@ -277,6 +278,52 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
       if (tob.printerOutput[2] !== 'same' && tob.printerOutput[2] !== 'diff-same') {
         tob.continuePrint = 'Printer output needs attention [' + tob.printerOutput[2] + ']';
       }
+
+      // Assert that the walker works properly. The first phase adds a new key to each node and throws an error if
+      // that key already exists. The second phase "manually" walks each property of the AST and confirms that each
+      // node is properly visited. If not it will leave a dirty key behind which should show up in the AST test diff.
+      // Phase 1:
+      walker(r.ast, (node, parent, prop, index) => {
+        ASSERT(node && typeof node === 'object' && !(node instanceof RegExp), 'node should be a plain obj');
+        ASSERT(node.test_walked !== true, 'should not walk the same node twice');
+        if (parent !== undefined) {
+          // Root node has no parent
+          if (Array.isArray(parent[prop])) {
+            ASSERT(typeof index === 'number', 'index should be number if parent[prop] is an array', index);
+            ASSERT(parent[prop][index] === node, 'parent[prop][index] should be node', prop, index, parent);
+          } else {
+            ASSERT(typeof index === 'undefined', 'index should be undefined if parent[prop] is not an array', index);
+            ASSERT(parent[prop] === node, 'parent prop should be node', prop, parent);
+          }
+        }
+        node.test_walked = true;
+      });
+      // Phase 2:
+      function repeat(node, key, parent) {
+        if (!Array.isArray(node)) {
+          // node must be a plain object (because don't use anything else besides arrays)
+          if (node.test_walked) {
+            delete node.test_walked;
+          } else {
+            node.ASSERTION_ERROR_WALKER_DID_NOT_VISIT_THIS_NODE = true;
+          }
+        }
+
+        for (let key in node) if (node.hasOwnProperty(key)
+          && key !== 'loc'
+          && !(node.type === 'Literal' && key === 'regex')
+          && !(node.type === 'TemplateElement' && key === 'value')
+        ) {
+          let v = node[key];
+          if (Array.isArray(v)) {
+            v.forEach(e => e && repeat(e, key, node));
+          } else if (typeof v === 'object' && v && !(v instanceof RegExp)) {
+            repeat(v, key, node);
+          }
+        }
+      }
+      // If the walker was incomplete then the AST will be modified with keys to the unvisited objects.
+      repeat(r.ast, 'root', {});
     }
   } catch (_e) {
     if (INPUT_OVERRIDE || TARGET_FILE) {
