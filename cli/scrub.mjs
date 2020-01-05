@@ -33,84 +33,6 @@ const SCRUB_ERRORS = process.argv.includes('--strip-errors'); // strip error mes
 const NATIVE_SYMBOLS = process.argv.includes('--native-symbols'); // Replace `PERF_$` with `%`?
 const NO_AST = process.argv.includes('--no-ast'); // drop ast related code from the parser (`AST_*`)
 
-let strippedAssertNames = new Set;
-let assertWhitelist = new Set([
-  'ASSERT',
-  'ASSERT_VALID',
-  'ASSERT_FDS',
-  'ASSERT_BINDING_TYPE',
-  'ASSERT_LABELSET',
-  'ASSERT_ASSIGN_EXPR',
-  'ASSERT_BINDING_ORIGIN',
-]);
-let assertSkipWhitelist = new Set([
-  'ASSERT_skipRex',
-  'ASSERT_skipDiv',
-  'ASSERT_skipAny',
-  'ASSERT_skipToParenOpenOrDie',
-  'ASSERT_skipToParenOpenCurlyOpen',
-  'ASSERT_skipToCurlyOpenOrDie',
-  'ASSERT_skipToFromOrDie',
-  'ASSERT_skipToStringOrDie',
-  'ASSERT_skipToIdentOrDie',
-  'ASSERT_skipToArrowOrDie',
-  'ASSERT_skipToAsOrDie',
-  'ASSERT_skipToAsCommaCurlyClose',
-  'ASSERT_skipToAsCommaFrom',
-  'ASSERT_skipToColonOrDie',
-  'ASSERT_skipToTargetOrDie',
-  'ASSERT_skipToStatementStart',
-  'ASSERT_skipToExpressionStart',
-  'ASSERT_skipToObjectMemberStart',
-  'ASSERT_skipToObjectMemberRest',
-  'ASSERT_skipToClassMemberStart',
-  'ASSERT_skipToClassMemberRest',
-  'ASSERT_skipToSwitchBody',
-  'ASSERT_skipToBindingStart',
-  'ASSERT_skipToBindingStartGrouped',
-  'ASSERT_skipToColonParenOpen',
-  'ASSERT_skipToIdentParenOpen',
-  'ASSERT_skipToIdentStarParenOpen',
-  'ASSERT_skipToIdentStarCurlyOpen',
-  'ASSERT_skipToIdentCommaCurlyClose',
-  'ASSERT_skipToCommaCurlyClose',
-  'ASSERT_skipToIdentCurlyOpen',
-  'ASSERT_skipToIdentCurlyClose',
-  'ASSERT_skipToIdentStarCurlyOpenParenOpenString',
-  'ASSERT_skipToAwaitParenOpen',
-  'ASSERT_skipToIdentStringNumberSquareOpen',
-  'ASSERT_skipToParamStart',
-  'ASSERT_skipToExpressionStartSemi',
-  'ASSERT_skipToExpressionStartGrouped',
-  'ASSERT_skipToAfterNew',
-  'ASSERT_skipToExpressionStartSquareCloseComma',
-]);
-
-let exportedSymbols = [
-  'COLLECT_TOKENS_NONE',
-  'COLLECT_TOKENS_SOLID',
-  'COLLECT_TOKENS_ALL',
-
-  'GOAL_MODULE',
-  'GOAL_SCRIPT',
-
-  'WEB_COMPAT_OFF',
-  'WEB_COMPAT_ON',
-
-  'VERSION_EXPONENTIATION',
-  'VERSION_WHATEVER',
-];
-
-// Collect identifier names to inline
-// This should contain all constants from specific files with the values they should replace
-let constMap = new Map;
-let recordingConstants = false;
-
-let $flag_lf = 0;
-let $flag_start = 0;
-let $flag_leaf = 0;
-let $flag_group = 7; // keep in sync with tokentype.js
-
 function ArrayExpression(node) {
   assert(node.type, 'ArrayExpression');
   return '[' + node.elements.map(n => n === null ? ',' : ($(n) + (n.type === 'RestElement' ? '' : ','))).join(' ') + ']';
@@ -176,26 +98,13 @@ function CallExpression(node) {
       }
       return '0';
     }
-    if (NO_AST) {
-      if (node.callee.name.startsWith('AST_')) {
-        return '0';
-      }
-      if (node.callee.name.startsWith('_AST_')) {
-        return '0';
-      }
-    }
-
-    // Terser should do this :'(
-    if (node.callee.name === 'DEVONLY') {
-      return 'false';
-    }
 
     // The lexer `peek()` is really just a return of a closured variable, and in dev mode some assertions.
     // So for a build, just replace it with the closured variable instead...
     if (node.callee.name === 'peek' || node.callee.name === '_readCache') {
       return 'cache'; // This is the local closure
     }
-    // The lexer `peek()` is really just a local comparison. similar to the `peek()` optimization above
+    // The lexer `peeky()` is really just a local comparison. similar to the `peek()` optimization above
     if (node.callee.name === 'peeky') {
       return 'cache === ' + $(node.arguments[0]);
     }
@@ -206,12 +115,6 @@ function CallExpression(node) {
     // `eof()` is really just `pointer >= len`
     if (node.callee.name === 'eof') {
       return 'pointer >= len';
-    }
-
-    // AST_close(start, line, col, 'BlockStatement') -> AST_close(start, line, col), because the names are only used for assertions
-    if (node.callee.name === 'AST_close') {
-      assert(node.arguments.length, 4); // node name(s) to close
-      node.arguments.pop(); // Drop the name; it's for debugging only
     }
 
     if (node.callee.name === 'sansFlag') {
@@ -252,31 +155,6 @@ function CallExpression(node) {
     if (node.callee.name === 'updateRegexUflagIsMandatory') {
       return 'updateRegexUflagIsMandatory(' + $(node.arguments[0]) + ', 1)';
     }
-  }
-
-  if (node.callee.type === 'Identifier' && node.callee.name.startsWith('ASSERT')) {
-
-    if (assertSkipWhitelist.has(node.callee.name)) {
-      // The first argument (some aspect of the token to skip we want to assert) must be dropped, too
-      return node.callee.name.slice('ASSERT_'.length) + '(' + node.arguments.slice(1).map($).join(', ') + ')';
-    }
-
-    switch (node.callee.name) {
-      case 'ASSERT_skip':
-      case 'ASSERT_skipPeek':
-        // Drop the first arg which is the char to assert
-        return node.callee.name.slice('ASSERT_'.length) + '(' + node.arguments.slice(1).map($).join(', ') + ')';
-    }
-
-    if (!strippedAssertNames.has(node.callee.name)) {
-      if (!assertWhitelist.has(node.callee.name)) {
-        throw new Error('assert calls that can be dropped must be whitelisted to prevent accidentally dropping calls to new prefix-only asserts, `' + node.callee.name + '` was not white listed');
-      }
-      console.log('Stripping', node.callee.name);
-      strippedAssertNames.add(node.callee.name);
-    }
-
-    return '1001';
   }
 
   return (
@@ -327,14 +205,6 @@ function CommentLine(node) {
 }
 function ConditionalExpression(node) {
   assert(node.type, 'ConditionalExpression');
-
-  // Scrub `dev()` branching
-  if (node.test.type === 'CallExpression' && node.test.callee.type === 'Identifier' && node.test.callee.name === 'DEVONLY') {
-    assert(node.test.arguments.length, 0, 'not expecting args for DEVONLY');
-    // Drop the dev version entirely. Helps with debugging perf.
-    return $w(node.alternate);
-  }
-
   return '(' + $w(node.test) + '? ' + $w(node.consequent) + ' : ' + $w(node.alternate) + ')';
 }
 function ContinueStatement(node) {
@@ -363,36 +233,23 @@ function EmptyStatement(node) {
 }
 function ExportAllDeclaration(node) {
   assert(node.type, 'ExportAllDeclaration');
-  throw new Error('Not expecting star exports. Every file must work in one scope with imports/exports cut. Star exports make that process more difficult.');
-  return 'export * from ' + $(node.source) + ';';
+  assert(0, 1, 'should not exist anymore');
 }
 function ExportDefaultDeclaration(node) {
   assert(node.type, 'ExportDefaultDeclaration');
-  if (!(node.declaration && node.declaration.type === 'Identifier' && (node.declaration.name === 'Parser' || node.declaration.name === 'Lexer' || node.declaration.name === 'Tenko'))) {
-    throw new Error('Not expecting default exports. Every file must work in one scope with imports/exports cut. Default exports make that process more difficult to guarantee. (name=' + node.declaration.name + ')');
-  }
-  return '/*1004*/;'; // Still scrub all exports :)
-  return 'export default ' + $(node.declaration) + (node.declaration.type === 'ClassDeclaration' || node.declaration.type === 'FunctionDeclaration' ? '' : ';');
+  assert(0, 1, 'should not exist anymore');
 }
 function ExportNamespaceSpecifier(node) {
   assert(node.type, 'ExportNamespaceSpecifier');
-  return '* as ' + $(node.exported)
+  assert(0, 1, 'should not exist anymore');
 }
 function ExportNamedDeclaration(node) {
   assert(node.type, 'ExportNamedDeclaration');
-  return '/*1003*/;'; // Drop all exports from the build
-  if (node.specifiers.length === 1 && node.specifiers[0].type === 'ExportNamespaceSpecifier') {
-    // This is specifically `export * as foo from 'bar'` syntax
-    assert(!!node.source, true, 'spec dictates this syntax requires the source');
-    return 'export ' + $(node.specifiers[0]) + ' from ' + $(node.source) + ';';
-  }
-  assert(node.specifiers.length !== 1 || (node.specifiers.length > 0 && node.specifiers[0].type !== 'ExportNamespaceSpecifier'). true, 'the ExportNamespaceSpecifier node has restrictions');
-  return 'export ' + (node.declaration ? $(node.declaration) : ('{' + node.specifiers.map($).join(', ') + '}')) + (node.source ? ' from ' + $(node.source) : '');
+  assert(0, 1, 'should not exist anymore');
 }
 function ExportSpecifier(node) {
   assert(node.type, 'ExportSpecifier');
-  throw new Error('Not expecting this printer to be called');
-  return (node.local.name !== node.exported.name ? $(node.local) + ' as ' : '') + $(node.exported);
+  assert(0, 1, 'should not exist anymore');
 }
 function ExpressionStatement(node) {
   assert(node.type, 'ExpressionStatement');
@@ -436,21 +293,6 @@ function ForStatement(node) {
 }
 function FunctionDeclaration(node) {
   assert(node.type, 'FunctionDeclaration');
-  if (node.id && node.id.type === 'Identifier') {
-    if (node.id.name.startsWith('ASSERT')) {
-      return '';
-    }
-    if (!NATIVE_SYMBOLS && node.id.name.startsWith('PERF_')) {
-      return '';
-    }
-    if (NO_AST && (node.id.name.startsWith('AST_') || node.id.name.startsWith('_AST_'))) {
-      return '0';
-    }
-    if (node.id.name === 'AST_close') {
-      assert(node.params.length, 4, 'ast_close has 4 params');
-      node.params.pop(); // drop the name; it is only used in ASSERTs
-    }
-  }
   let suffix = (NATIVE_SYMBOLS && node.id ? ';allFuncs.push('+node.id.name+');' : '');
   return (
     (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + node.body.body.map($).join('\n') + '}'
@@ -465,11 +307,6 @@ function Identifier(node) {
 
   let name = node.name;
 
-  if (SCRUB_OTHERS) {
-    if (name === 'babelCompat') return 'false';
-    if (name === 'acornCompat') return 'false';
-  }
-
   switch (name) {
     case '__$lf_flag':
     case '__$start':
@@ -478,7 +315,6 @@ function Identifier(node) {
       throw new Error('The ident `' + name + '` should only be used as part of an update expression (++x), the build script assumes this');
   }
 
-  if (constMap.has(name)) return constMap.get(name); // inline constants...
   return name;
 }
 function IfStatement(node) {
@@ -487,38 +323,27 @@ function IfStatement(node) {
 }
 function Import(node) {
   assert(node.type, 'Import');
-  return 'import';
+  assert(0, 1, 'imports should have been scrubbed');
 }
 function ImportDeclaration(node) {
   assert(node.type, 'ImportDeclaration');
-  return '/*1002*/;'; // Drop all imports from the build
-
-  let importSpecifiers = node.specifiers.filter(s => s.type === 'ImportSpecifier');
-  let otherSpecifiers = node.specifiers.filter(s => s.type !== 'ImportSpecifier');
-  if (!importSpecifiers.length && !otherSpecifiers.length) {
-    return 'import {}' + (node.source ? ' from ' + $(node.source) : '') + ';';
-  }
-  return 'import ' + (otherSpecifiers.length ? otherSpecifiers.map($).join(', ') : '') + (importSpecifiers.length && otherSpecifiers.length ? ', ' : '') + (importSpecifiers.length ? '{' + importSpecifiers.map($).join(', ') + '}' : '') + (node.source ? ' from ' + $(node.source) : '') + ';';
+  assert(0, 1, 'imports should have been scrubbed');
 }
 function ImportDefaultSpecifier(node) {
   assert(node.type, 'ImportDefaultSpecifier');
-  throw new Error('Not expecting default import. All src files should work in one scope when imports/exports are dropped. Default imports make it difficult to enforce this keeps working.');
-  return $(node.local);
+  assert(0, 1, 'imports should have been scrubbed');
 }
 function ImportExpression(node) {
   assert(node.type, 'ImportExpression');
-  throw new Error('Not expecting dynamic import. All src files should work in one scope when imports/exports are dropped. Dynamic imports make that difficult.');
-  return 'import(' + node.arguments.map($).join(', ') + ')';
+  assert(0, 1, 'imports should have been scrubbed');
 }
 function ImportNamespaceSpecifier(node) {
   assert(node.type, 'ImportNamespaceSpecifier');
-  throw new Error('Not expecting star import. All src files should work in one scope when imports/exports are dropped. Star imports make that difficult.');
-  return '* as ' + $(node.local);
+  assert(0, 1, 'imports should have been scrubbed');
 }
 function ImportSpecifier(node) {
   assert(node.type, 'ImportSpecifier');
-  throw new Error('Not expecting aliases. All src files should work in one scope when imports/exports are dropped. Renaming imports make that difficult.');
-  return $(node.imported) + (node.local ? ' as ' + $(node.local) : '');
+  assert(0, 1, 'imports should have been scrubbed');
 }
 function LabeledStatement(node) {
   assert(node.type, 'LabeledStatement');
@@ -595,9 +420,11 @@ function NumericLiteral(node) {
   assert(node.type, 'NumericLiteral');
   return node.raw;
 }
+let x = 0
 function ObjectExpression(node) {
   assert(node.type, 'ObjectExpression');
-  return '{' + node.properties.map($).join(', ') + '}';
+  let arr = node.properties.map((e, i) => $(e, i));
+  return '{' + arr.join(', ') + '}';
 }
 function ObjectMethod(node) {
   assert(node.type, 'ObjectMethod');
@@ -628,6 +455,7 @@ function Program(node) {
 function Property(node) {
   assert(node.type, 'Property');
   if (SCRUB_OTHERS) {
+    // Do not visit the ident otherwise you change `{acornCompat: false}` to `{false: false}`
     if (node.key.type === 'Identifier' && (node.key.name === 'acornCompat' || node.key.name === 'babelCompat')) {
       return node.key.name;
     }
@@ -716,35 +544,11 @@ function UnaryExpression(node) {
 function UpdateExpression(node) {
   assert(node.type, 'UpdateExpression');
 
-  if (node.argument.type === 'Identifier') {
-    switch (node.argument.name) {
-      case '__$flag_lf':
-        return ++$flag_lf;
-      case '__$flag_start':
-        return $flag_start++;
-      case '__$flag_leaf':
-        return ++$flag_leaf;
-      case '__$flag_group':
-        return ++$flag_group;
-    }
-  }
-
   return (node.prefix ? node.operator : '') + $(node.argument) + (node.prefix ? '' : node.operator);
 }
-
 function VariableDeclaration(node, fromFor) {
   assert(node.type, 'VariableDeclaration');
   assert(node.declarations.length, 1, 'coding style uses only one binding per declaration (counting a whole destructuring as one) `' + (node.declarations.length !== 1 && (node.kind + ' ' + node.declarations.map($).join(', '))) + '`');
-  let decl = node.declarations[0];
-  if (decl.id.type === 'Identifier') assert(constMap.has(decl.id.name), false, 'constants should not be redefined');
-  if (recordingConstants && node.kind === 'const' && decl.id.type === 'Identifier') {
-    assert(!fromFor, true, 'files from which constants are recorded would not use const inside a for-header');
-    let name = decl.id.name;
-    constMap.set(name, $w(decl.init)); // All constants must have an init as per spec
-    if (!exportedSymbols.includes(name)) return '/* const ' + name + ' */;\n';
-    // Return the constant because it is also exported in the build
-    return node.kind + ' ' + name + ' = ' + $w(node.declarations[0].init) + ';';
-  }
   return node.kind + ' ' + node.declarations.map($).join(', ') + (fromFor ? '' : ';'); // no semi inside `for`
 }
 function VariableDeclarator(node) {
@@ -944,9 +748,7 @@ function $(node, _, __, fromFor) {
   return jumpTable[hash](node, fromFor, type, c);
 }
 
-function scrub(node, localConstMap, recordConstants) {
-  constMap = localConstMap;
-  recordingConstants = recordConstants;
+function scrub(node) {
   return $(node);
 }
 

@@ -3,6 +3,7 @@ import path from 'path';
 
 import Tenko, {COLLECT_TOKENS_NONE, GOAL_MODULE, WEB_COMPAT_OFF} from '../src/index.mjs';
 import {scrub} from './scrub.mjs';
+import {transform} from './transform.mjs';
 import Terser from 'terser';
 
 console.time('Finished build script (');
@@ -67,7 +68,7 @@ function processSource(source, constMap, recordConstants, keepAsserts) {
     goalMode: GOAL_MODULE,
     collectTokens: COLLECT_TOKENS_NONE,
     webCompat: WEB_COMPAT_OFF, // Probably...
-    fullErrorContext: true,
+    // fullErrorContext: true,
     exposeScopes: true, // constant inlining
 
     $log: () => {},
@@ -75,6 +76,9 @@ function processSource(source, constMap, recordConstants, keepAsserts) {
     $error: () => {},
   });
 
+  console.log('Transforming AST');
+  transform(t.ast, constMap, recordConstants);
+  console.log('Scrubbing and printing AST');
   source = scrub(t.ast, constMap, recordConstants);
 
   return source;
@@ -181,7 +185,7 @@ ${forEsm ? '};' : '});'}
       goalMode: GOAL_MODULE,
       collectTokens: COLLECT_TOKENS_NONE,
       webCompat: false, // Probably...
-      fullErrorContext: true,
+      // fullErrorContext: true,
 
       // $log: () => {},
       // $warn: () => {},
