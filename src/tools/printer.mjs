@@ -107,30 +107,18 @@ function ClassExpression(node) {
 }
 function ClassMethod(node) {
   assert(node.type, 'ClassMethod');
-  if (node.value === undefined) {
-    assert('value' in node, false);
-    // Babel does not have .value and merges the method node with the function node, different from the estree spec
-    return (
-      (node.static ? 'static ' : '') +
-      (node.kind === 'get' ? 'get ' : '') +
-      (node.kind === 'set' ? 'set ' : '') +
-      (node.async ? 'async ' : '') +
-      (node.generator ? '* ' : '') +
-      (node.computed ? '[' + $(node.key) + ']' : $(node.key)) +
-      '(' + node.params.map($).join(', ') + ')' +
-      $(node.body) +
-      ';'
-    );
-  }
+  assert('value' in node, false);
+  // The `ClassMethod` type is only used for babelCompat
+  // Babel does not have .value and merges the method node with the function node, different from the estree spec
   return (
     (node.static ? 'static ' : '') +
     (node.kind === 'get' ? 'get ' : '') +
     (node.kind === 'set' ? 'set ' : '') +
-    (node.value.async ? 'async ' : '') +
-    (node.value.generator ? '* ' : '') +
-    (node.computed ? '[' + $(node.value.id) + ']' : $(node.value.id)) +
-    '(' + $(node.value.params).join(', ') + ')' +
-    $(node.value.body) +
+    (node.async ? 'async ' : '') +
+    (node.generator ? '* ' : '') +
+    (node.computed ? '[' + $(node.key) + ']' : $(node.key)) +
+    '(' + node.params.map($).join(', ') + ')' +
+    $(node.body) +
     ';'
   );
 }
@@ -355,30 +343,18 @@ function ObjectExpression(node) {
 }
 function ObjectMethod(node) {
   assert(node.type, 'ObjectMethod');
-  if (node.value === undefined) {
-    assert('value' in node, false);
-    // Babel does not have .value and merges the method node with the function node, different from the estree spec
-    return (
-      (node.static ? 'static ' : '') +
-      (node.kind === 'get' ? 'get ' : '') +
-      (node.kind === 'set' ? 'set ' : '') +
-      (node.async ? 'async ' : '') +
-      (node.generator ? '* ' : '') +
-      (node.computed ? '[' + $(node.key) + ']' : $(node.key)) +
-      '(' + node.params.map($).join(', ') + ')' +
-      $(node.body)
-    );
-  }
-
+  assert('value' in node, false);
+  // Note: 'ObjectMethod' is only used for babelCompat
+  // Babel does not have .value and merges the method node with the function node, different from the estree spec
   return (
     (node.static ? 'static ' : '') +
     (node.kind === 'get' ? 'get ' : '') +
     (node.kind === 'set' ? 'set ' : '') +
-    (node.value.async ? 'async ' : '') +
-    (node.value.generator ? '* ' : '') +
-    (node.computed ? '[' + $(node.value.id) + ']' : $(node.value.id)) +
-    '(' + node.value.params($).join(', ') + ')' +
-    $(node.value.body)
+    (node.async ? 'async ' : '') +
+    (node.generator ? '* ' : '') +
+    (node.computed ? '[' + $(node.key) + ']' : $(node.key)) +
+    '(' + node.params.map($).join(', ') + ')' +
+    $(node.body)
   );
 }
 function ObjectPattern(node) {

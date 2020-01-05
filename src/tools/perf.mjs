@@ -52,7 +52,7 @@ function PERF_$GetOptimizationStatus(func) {}
 
 // %HasFastProperties
 function PERF_HasFastProperties(obj) { return PERF_$HasFastProperties(obj); }
-const IGNORE = {};
+let IGNORE = {};
 function PERF_$HasFastProperties(obj) { return IGNORE; }
 function PERF_enforce_HasFastProperties(obj) {
   let state = PERF_HasFastProperties(obj);
