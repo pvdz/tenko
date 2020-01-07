@@ -1,17 +1,17 @@
 # Tenko parser test case
 
-- Path: tests/testcases/group_or_arrow/arrow/tail/update_asi.md
+- Path: tests/testcases/group_or_arrow/arrow/tail/paramname_async/array_asi.md
 
-> :: group or arrow : arrow : tail
+> :: group or arrow : arrow : tail : paramname async
 >
-> ::> update asi
+> ::> array asi
 ## PASS
 
 ## Input
 
 `````js
-async => {}
-++foo
+async=>{}
+[x]
 `````
 
 ## Output
@@ -29,14 +29,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:2,column:5},source:''},
+  loc:{start:{line:1,column:0},end:{line:2,column:3},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
       expression: {
         type: 'ArrowFunctionExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
         params: [
           {
             type: 'Identifier',
@@ -50,32 +50,32 @@ ast: {
         expression: false,
         body: {
           type: 'BlockStatement',
-          loc:{start:{line:1,column:9},end:{line:1,column:11},source:''},
+          loc:{start:{line:1,column:7},end:{line:1,column:9},source:''},
           body: []
         }
       }
     },
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:2,column:0},end:{line:2,column:5},source:''},
+      loc:{start:{line:2,column:0},end:{line:2,column:3},source:''},
       expression: {
-        type: 'UpdateExpression',
-        loc:{start:{line:2,column:0},end:{line:2,column:5},source:''},
-        argument: {
-          type: 'Identifier',
-          loc:{start:{line:2,column:2},end:{line:2,column:5},source:''},
-          name: 'foo'
-        },
-        operator: '++',
-        prefix: true
+        type: 'ArrayExpression',
+        loc:{start:{line:2,column:0},end:{line:2,column:3},source:''},
+        elements: [
+          {
+            type: 'Identifier',
+            loc:{start:{line:2,column:1},end:{line:2,column:2},source:''},
+            name: 'x'
+          }
+        ]
       }
     }
   ]
 }
 
-tokens (9x):
+tokens (10x):
        ID_async PUNC_EQ_GT PUNC_CURLY_OPEN PUNC_CURLY_CLOSE ASI
-       PUNC_PLUS_PLUS IDENT ASI
+       PUNC_BRACKET_OPEN IDENT PUNC_BRACKET_CLOSE ASI
 `````
 
 ### Strict mode
@@ -102,7 +102,7 @@ Printer output different from input [sloppy]:
 
 ````js
 async => {};
-++foo;
+([x,]);
 ````
 
 Produces same AST

@@ -7134,6 +7134,12 @@ function Parser(code, options = {}) {
       // - `async => x`
       //          ^^
       assignable = parseArrowParenlessFromPunc(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, $ID_async, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, allowAssignment, PARAMS_ALL_SIMPLE, $UNTYPED, astProp);
+      if (stmtOrExpr === IS_STATEMENT) {
+        if (tok_getType() === $PUNC_COMMA) {
+          // - `async => x, b`
+          _parseExpressions(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, NOT_ASSIGNABLE, astProp);
+        }
+      }
     } else {
       // - `async foo => x`
       //          ^^^
@@ -7207,6 +7213,11 @@ function Parser(code, options = {}) {
     let assignable = parseArrowParenlessFromPunc(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, allowAssignment, isSimple, $ID_async, astProp);
 
     if (fromStmtOrExpr === IS_STATEMENT) {
+      if (tok_getType() === $PUNC_COMMA) {
+        // - `async foo => x, b`
+        _parseExpressions(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, NOT_ASSIGNABLE, astProp);
+      }
+
       parseSemiOrAsi(lexerFlags); // this is not a func decl!
       AST_close($tp_async_start, $tp_async_line, $tp_async_column, 'ExpressionStatement');
     }

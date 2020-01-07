@@ -1,16 +1,16 @@
 # Tenko parser test case
 
-- Path: tests/testcases/group_or_arrow/arrow/tail/update_no_asi.md
+- Path: tests/testcases/group_or_arrow/arrow/tail/async/template_no_asi.md
 
-> :: group or arrow : arrow : tail
+> :: group or arrow : arrow : tail : async
 >
-> ::> update no asi
+> ::> template no asi
 ## FAIL
 
 ## Input
 
 `````js
-async => {} ++foo
+async x=>{}`x`
 `````
 
 ## Output
@@ -27,12 +27,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An arrow function can not have a postfix update operator
+  Block body arrows can not be immediately tagged without a group
 
-start@1:0, error@1:12
+start@1:0, error@1:11
 ╔══╦═════════════════
- 1 ║ async => {} ++foo
-   ║             ^^------- error
+ 1 ║ async x=>{}`x`
+   ║            ^^^------- error
 ╚══╩═════════════════
 
 `````
