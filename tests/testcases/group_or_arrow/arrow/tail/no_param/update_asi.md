@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/group_or_arrow/arrow/tail/update_asi.md
+- Path: tests/testcases/group_or_arrow/arrow/tail/no_param/update_asi.md
 
-> :: group or arrow : arrow : tail
+> :: group or arrow : arrow : tail : no param
 >
 > ::> update asi
 ## PASS
