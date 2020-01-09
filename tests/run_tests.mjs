@@ -229,7 +229,6 @@ async function extractFiles(list) {
 }
 function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
   wasHit = false;
-  let tok;
   let r, e = '';
   let stdout = [];
   try {
@@ -248,7 +247,6 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
 
-        getLexer: lexer => tok = lexer,
         $log: INPUT_OVERRIDE ? undefined : (...a) => stdout.push(a),
         $warn: INPUT_OVERRIDE ? undefined : (...a) => stdout.push(a),
         $error: INPUT_OVERRIDE ? undefined : (...a) => stdout.push(a),
@@ -367,10 +365,10 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
     }
   }
 
-  return {r, e, tok, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa};
+  return {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa};
 }
 async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "strict" | "module" | "web" */) {
-  let {parserRawOutput: {[testVariant]: {r, e, tok, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa}}, file} = tob;
+  let {parserRawOutput: {[testVariant]: {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa}}, file} = tob;
   if (!r && !e) return; // no output for this variant
 
   let errorMessage = '';
