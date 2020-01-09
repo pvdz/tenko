@@ -944,6 +944,7 @@ function Lexer(
     if (peekd(1) === $$DOT_2E) {
       ASSERT_skip($$DOT_2E);
       ASSERT_skip($$DOT_2E);
+      return $PUNC_DOT_DOT_DOT;
     } // the else will ultimately lead to an error in the parser
     return $PUNC_DOT_DOT_DOT;
   }
