@@ -255,7 +255,7 @@ Tenko test runner help:
     --nb)           NO_BUILDING='--nb'    ;;
     --no-compat)    NOCOMP='--no-compat'  ;;
     --no-ast)       NOAST='--no-ast'      ;;
-    --min)          MINIFY='--min'        ;;
+    --minify)       MINIFY='--min'        ;;
     --no-mangle)    NO_MANGLE='--no-mangle' ;;
     --pretty)       PRETTIER='yes'        ;;
     --prettier)     PRETTIER='yes'        ;;
