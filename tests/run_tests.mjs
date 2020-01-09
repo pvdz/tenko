@@ -821,7 +821,8 @@ function sanitize(dir) {
   return dir
   .trim()
   .replace(/(?:\s|;|,)+/g, '_')
-  .replace(/[^a-zA-Z0-9_-]/g, (s)=>'x' + (s.charCodeAt(0).toString(16)).padStart(4, '0'));
+  .replace(/\.\.\./g, 'rest') // or spread, but bla
+  .replace(/[^a-zA-Z0-9_-]/g, s => s.charCodeAt(0).toString(16));
 }
 
 async function gen() {
