@@ -102,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((protected) / (x))) / (g)));
+(protected / x) / g;
 ````
 
 Produces same AST

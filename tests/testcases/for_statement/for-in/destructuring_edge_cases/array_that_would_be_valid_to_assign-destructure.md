@@ -98,7 +98,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ([(x).y,] in obj) ;
+for ([x.y] in obj) ;
 ````
 
 Produces same AST

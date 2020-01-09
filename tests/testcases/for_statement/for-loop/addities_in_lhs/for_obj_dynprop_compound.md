@@ -109,7 +109,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((({}).u |= c));;) (x);
+for ((({}).u |= c);;) x;
 ````
 
 Produces same AST

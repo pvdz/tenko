@@ -120,7 +120,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {a:((((a) instanceof (b))) > (c))}));
+x = {a:(a instanceof b) > c};
 ````
 
 Produces same AST

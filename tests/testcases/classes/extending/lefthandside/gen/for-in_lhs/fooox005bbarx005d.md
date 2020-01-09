@@ -90,7 +90,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((fooo)[bar]) in x) ;
+for ((fooo[bar]) in x) ;
 ````
 
 Produces same AST

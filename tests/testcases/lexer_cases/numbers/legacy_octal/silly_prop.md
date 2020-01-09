@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((034).e034);
+(034).e034;
 ````
 
 Produces same AST

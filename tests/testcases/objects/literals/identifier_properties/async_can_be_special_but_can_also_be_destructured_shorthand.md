@@ -109,7 +109,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((wrap)(({async} = x)));
+wrap(({async} = x));
 ````
 
 Produces same AST

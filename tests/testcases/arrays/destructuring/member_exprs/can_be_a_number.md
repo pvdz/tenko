@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(([(5.).length,] = x));
+[(5.).length] = x;
 ````
 
 Produces same AST

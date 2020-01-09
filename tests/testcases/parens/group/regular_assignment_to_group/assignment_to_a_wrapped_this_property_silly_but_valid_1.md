@@ -89,7 +89,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((this.a = 1));
+this.a = 1;
 ````
 
 Produces same AST

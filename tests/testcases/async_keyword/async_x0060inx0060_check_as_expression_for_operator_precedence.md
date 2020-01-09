@@ -100,7 +100,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f)(((((a) + (async))) in (b))));
+f((a + async) in b);
 ````
 
 Produces same AST

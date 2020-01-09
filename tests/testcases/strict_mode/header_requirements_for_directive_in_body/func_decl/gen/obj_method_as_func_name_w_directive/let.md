@@ -131,7 +131,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = {let(b){"use strict";}}));
+f = {let(b){"use strict";}};
 ````
 
 Produces same AST

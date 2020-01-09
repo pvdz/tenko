@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({500:await} = null));
+({500:await} = null);
 ````
 
 Produces same AST

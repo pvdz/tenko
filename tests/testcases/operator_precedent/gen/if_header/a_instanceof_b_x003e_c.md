@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-if (((((a) instanceof (b))) > (c))) ;
+if ((a instanceof b) > c) ;
 ````
 
 Produces same AST

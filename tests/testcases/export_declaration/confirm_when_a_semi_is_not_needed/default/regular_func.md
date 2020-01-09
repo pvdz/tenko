@@ -102,7 +102,7 @@ Printer output different from input [module]:
 
 ````js
 export default function f() {}
-(foo);
+foo;
 ````
 
 Produces same AST

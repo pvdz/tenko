@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-`X${a => (((b) + (c)))}Y`;
+`X${a => (b + c)}Y`;
 ````
 
 Produces same AST

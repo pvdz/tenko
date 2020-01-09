@@ -110,7 +110,7 @@ Printer output different from input [sloppy]:
 
 ````js
 do throw function() {}; while (y);
-for (;;) (x);
+for (;;) x;
 ````
 
 Produces same AST

@@ -119,7 +119,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-([...({a:(b).b} = c),]);
+[...({a:b.b} = c)];
 ````
 
 Produces same AST

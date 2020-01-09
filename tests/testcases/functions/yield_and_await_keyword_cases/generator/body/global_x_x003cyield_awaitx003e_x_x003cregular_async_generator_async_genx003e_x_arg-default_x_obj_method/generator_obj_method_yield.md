@@ -162,7 +162,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* as() {((o = {* f(){return (yield (100));}}));}
+function* as() {o = {* f(){return (yield (100));}};}
 ````
 
 Produces same AST

@@ -107,7 +107,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((a)? (b) : (((c)? (((d) * (x))) : (e))));
+(a? b : ((c? d * x : e)));
 ````
 
 Produces same AST

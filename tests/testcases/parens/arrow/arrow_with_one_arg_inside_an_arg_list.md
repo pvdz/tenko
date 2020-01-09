@@ -132,7 +132,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f)((a => (((a) + (b))))(1, 4), 5));
+f((a => (a + b))(1, 4), 5);
 ````
 
 Produces same AST

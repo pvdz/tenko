@@ -117,7 +117,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f() {(yield (((((a) + (b))) instanceof (c))));}
+function* f() {(yield ((a + b) instanceof c));}
 ````
 
 Produces same AST

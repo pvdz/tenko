@@ -130,7 +130,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((function() {if (((a) in (b))) ;}).prop) of x) ;
+for (((function() {if (a in b) ;}).prop) of x) ;
 ````
 
 Produces same AST

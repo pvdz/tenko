@@ -143,7 +143,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((o = {async f(yield){}}));
+o = {async f(yield){}};
 ````
 
 Produces same AST

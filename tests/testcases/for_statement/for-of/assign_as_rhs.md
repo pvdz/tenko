@@ -89,7 +89,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ((a) of (b = c)) ;
+for ((a) of b = c) ;
 ````
 
 Produces same AST

@@ -114,7 +114,7 @@ Printer output different from input [sloppy]:
 
 ````js
 switch (a) {case b:
-let [x,] = y;}
+let [x] = y;}
 ````
 
 Produces same AST

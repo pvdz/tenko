@@ -124,7 +124,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async (x = delete ((static = f))) => {};
+async (x = delete (static = f)) => {};
 ````
 
 Produces same AST

@@ -123,7 +123,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f(x = delete ((interface = f))) {}
+function* f(x = delete (interface = f)) {}
 ````
 
 Produces same AST

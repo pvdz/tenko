@@ -109,7 +109,7 @@ _Output same as sloppy mode._
 Printer output different from input [module]:
 
 ````js
-export const [foo, bar,] = arr;
+export const [foo, bar] = arr;
 ````
 
 Produces same AST

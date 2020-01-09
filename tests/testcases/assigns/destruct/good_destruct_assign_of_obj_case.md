@@ -236,7 +236,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((({...obj} = foo), ({...obj} = foo), ({...(obj).x} = foo), ({...({}).x} = foo), ({...[].x} = foo)));
+(({...obj} = foo), ({...obj} = foo), ({...obj.x} = foo), ({...({}).x} = foo), ({...[].x} = foo));
 ````
 
 Produces same AST

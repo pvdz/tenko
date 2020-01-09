@@ -247,7 +247,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({a, a:a, a:a = a, [a]:{a}, a:((some_call)())[a], a:this.a} = 0));
+({a, a:a, a:a = a, [a]:{a}, a:some_call()[a], a:this.a} = 0);
 ````
 
 Produces same AST

@@ -79,7 +79,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((("ignore me") + (x)));
+"ignore me" + x;
 ````
 
 Produces same AST

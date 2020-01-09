@@ -149,8 +149,8 @@ Printer output different from input [sloppy]:
 
 ````js
 function f() {"use strict";
-(foo);}
-function g() {with (x) (y);}
+foo;}
+function g() {with (x) y;}
 ````
 
 Produces same AST

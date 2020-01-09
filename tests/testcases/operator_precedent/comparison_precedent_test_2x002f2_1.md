@@ -129,7 +129,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((((((((((a) instanceof (b))) in (c))) >= (d))) > (e))) <= (f))) < (g)));
+(((((a instanceof b) in c) >= d) > e) <= f) < g;
 ````
 
 Produces same AST

@@ -119,7 +119,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-const [a = [...b,], ...c] = obj;
+const [a = [...b], ...c] = obj;
 ````
 
 Produces same AST

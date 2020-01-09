@@ -163,7 +163,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function a() {(async((foo = [{m:((5) + ((t)(await (bar))))},])));}
+async function a() {async(foo = [{m:5 + t(await (bar))}]);}
 ````
 
 Produces same AST

@@ -99,7 +99,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f)(new (/z/.foo)()));
+f(new /z/.foo());
 ````
 
 Produces same AST

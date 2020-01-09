@@ -138,7 +138,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({a:{x = true} = true} = y));
+({a:{x = true} = true} = y);
 ````
 
 Produces same AST

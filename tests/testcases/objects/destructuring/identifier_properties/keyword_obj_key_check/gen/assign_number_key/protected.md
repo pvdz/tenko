@@ -114,7 +114,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({500:protected} = null));
+({500:protected} = null);
 ````
 
 Produces same AST

@@ -95,7 +95,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(delete ((true.__proto__).foo));
+delete true.__proto__.foo;
 ````
 
 Produces same AST

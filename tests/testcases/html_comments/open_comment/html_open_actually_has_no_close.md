@@ -109,8 +109,8 @@ tokens (9x):
 Printer output different from input [web]:
 
 ````js
-((call)());
-((f)());
+call();
+f();
 ````
 
 Produces same AST

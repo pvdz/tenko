@@ -129,7 +129,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function f([a = [...b,], ...c] = obj) {}
+function f([a = [...b], ...c] = obj) {}
 ````
 
 Produces same AST

@@ -101,7 +101,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((foo)[((((a) + (b))) instanceof (c))]);
+foo[(a + b) instanceof c];
 ````
 
 Produces same AST

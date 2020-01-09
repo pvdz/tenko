@@ -91,7 +91,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((yield = "sentinal 543665"));
+yield = "sentinal 543665";
 ````
 
 Produces same AST

@@ -119,7 +119,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f() {(delete (((foo)((yield))).bar));}
+function* f() {delete foo((yield)).bar;}
 ````
 
 Produces same AST

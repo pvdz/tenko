@@ -126,7 +126,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {foo(){(super.foo);}}));
+x = {foo(){super.foo;}};
 ````
 
 Produces same AST

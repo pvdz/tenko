@@ -111,7 +111,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async () => {((private = x));};
+async () => {private = x;};
 ````
 
 Produces same AST

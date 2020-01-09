@@ -110,7 +110,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = function implements(a) {}));
+f = function implements(a) {};
 ````
 
 Produces same AST

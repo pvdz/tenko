@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((delete ((x).def)) + (delete ((y).x))));
+(delete x.def) + (delete y.x);
 ````
 
 Produces same AST

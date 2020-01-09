@@ -110,7 +110,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f() {(yield (((1)? (2) : (3))));}
+function* f() {(yield ((1? 2 : 3)));}
 ````
 
 Produces same AST

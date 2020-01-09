@@ -123,7 +123,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f() {((x = `1 ${(yield (x))} 2`));}
+function* f() {x = `1 ${(yield (x))} 2`;}
 ````
 
 Produces same AST

@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {0o730:y}));
+x = {0o730:y};
 ````
 
 Produces same AST

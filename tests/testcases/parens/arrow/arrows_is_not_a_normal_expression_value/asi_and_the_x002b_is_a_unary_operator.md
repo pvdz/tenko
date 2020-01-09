@@ -104,7 +104,7 @@ Printer output different from input [sloppy]:
 
 ````js
 () => {};
-(+ (function() {}));
++(function() {});
 ````
 
 Produces same AST

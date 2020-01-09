@@ -102,7 +102,7 @@ Printer output different from input [sloppy]:
 
 ````js
 async x => {};
-([x,]);
+[x];
 ````
 
 Produces same AST

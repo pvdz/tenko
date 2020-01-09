@@ -131,7 +131,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = {yield(b){"use strict";}}));
+f = {yield(b){"use strict";}};
 ````
 
 Produces same AST

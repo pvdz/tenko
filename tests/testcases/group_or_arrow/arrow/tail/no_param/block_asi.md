@@ -96,7 +96,7 @@ Printer output different from input [sloppy]:
 
 ````js
 () => {};
-{(x);}
+{x;}
 ````
 
 Produces same AST

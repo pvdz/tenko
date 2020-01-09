@@ -110,7 +110,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-({ident:(([foo, bar,]) / (x))});
+({ident:[foo, bar] / x});
 ````
 
 Produces same AST

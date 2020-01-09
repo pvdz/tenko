@@ -89,7 +89,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-const [x,] = v;
+const [x] = v;
 ````
 
 Produces same AST

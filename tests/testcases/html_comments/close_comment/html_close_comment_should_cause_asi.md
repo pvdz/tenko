@@ -98,8 +98,8 @@ tokens (5x):
 Printer output different from input [web]:
 
 ````js
-(a);
-(b);
+a;
+b;
 ````
 
 Produces same AST

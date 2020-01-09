@@ -87,7 +87,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class A extends ([foo,]) {}
+class A extends ([foo]) {}
 ````
 
 Produces same AST

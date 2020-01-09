@@ -106,7 +106,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((typeof ((a).b)) / (foo))) / (g)));
+((typeof a.b) / foo) / g;
 ````
 
 Produces same AST

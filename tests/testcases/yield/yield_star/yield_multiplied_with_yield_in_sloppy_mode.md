@@ -89,7 +89,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((yield) * (yield)));
+yield * yield;
 ````
 
 Produces same AST

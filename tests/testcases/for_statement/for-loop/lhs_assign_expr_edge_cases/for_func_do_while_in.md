@@ -118,7 +118,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ((function() {do ; while (((x) in (t)));});;) (x);
+for ((function() {do ; while (x in t);});;) x;
 ````
 
 Produces same AST

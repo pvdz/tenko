@@ -99,7 +99,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = function ok(a) {}));
+f = function ok(a) {};
 ````
 
 Produces same AST

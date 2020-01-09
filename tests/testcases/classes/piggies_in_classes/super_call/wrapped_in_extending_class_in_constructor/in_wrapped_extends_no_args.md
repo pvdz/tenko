@@ -143,7 +143,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class outer extends (S) {constructor(){class x extends ((feh)(super())) {}};}
+class outer extends (S) {constructor(){class x extends (feh(super())) {}};}
 ````
 
 Produces same AST

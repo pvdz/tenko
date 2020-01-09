@@ -102,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((package) / (x))) / (g)));
+(package / x) / g;
 ````
 
 Produces same AST

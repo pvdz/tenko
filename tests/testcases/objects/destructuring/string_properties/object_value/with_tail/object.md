@@ -142,7 +142,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-({"x":(({a:((y) + (x))}).slice)(0)});
+({"x":({a:y + x}).slice(0)});
 ````
 
 Produces same AST

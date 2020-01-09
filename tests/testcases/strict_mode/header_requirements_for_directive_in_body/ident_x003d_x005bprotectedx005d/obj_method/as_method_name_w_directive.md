@@ -119,7 +119,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((o = {protected(){"use strict";}}));
+o = {protected(){"use strict";}};
 ````
 
 Produces same AST

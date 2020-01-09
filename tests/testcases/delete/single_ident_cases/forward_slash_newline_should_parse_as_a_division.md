@@ -109,7 +109,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((delete (x)) / (f))) / (g)));
+((delete x) / f) / g;
 ````
 
 Produces same AST

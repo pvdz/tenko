@@ -146,7 +146,7 @@ start@1:0, error@1:42
 Printer output different from input [sloppy]:
 
 ````js
-([{web:false, __proto__:a, __proto__:b},]);
+[{web:false, __proto__:a, __proto__:b}];
 ````
 
 Produces same AST

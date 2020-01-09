@@ -276,7 +276,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-var gen = async function* g() {((callCount += 1));
+var gen = async function* g() {callCount += 1;
 (yield ({...(yield ((yield))), ...(function(arg) {var yield = arg;
 return {...yield};})((yield)), ...(yield)}));};
 ````

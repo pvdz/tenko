@@ -132,7 +132,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (const {x = ((a) in (b))} = obj;;) ;
+for (const {x = a in b} = obj;;) ;
 ````
 
 Produces same AST

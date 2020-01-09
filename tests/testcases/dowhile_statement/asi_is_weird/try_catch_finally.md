@@ -104,7 +104,7 @@ Printer output different from input [sloppy]:
 
 ````js
 do try {} catch {} while (x);
-(x);
+x;
 ````
 
 Produces same AST

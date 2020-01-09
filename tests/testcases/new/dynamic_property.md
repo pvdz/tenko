@@ -112,7 +112,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function x() {(""[new.target]);}
+function x() {""[new.target];}
 ````
 
 Produces same AST

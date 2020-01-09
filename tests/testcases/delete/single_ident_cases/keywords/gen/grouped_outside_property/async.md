@@ -87,7 +87,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(delete ((async).prop));
+delete async.prop;
 ````
 
 Produces same AST

@@ -83,7 +83,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f)(/(?<before\uD801\uDCA4>.)/u));
+f(/(?<before\uD801\uDCA4>.)/u);
 ````
 
 Produces same AST

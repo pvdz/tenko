@@ -133,7 +133,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((yield)(({c = 3} = {})));
+yield(({c = 3} = {}));
 ````
 
 Produces same AST

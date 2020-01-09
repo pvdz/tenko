@@ -98,7 +98,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (const [, foo,] of arr) ;
+for (const [, foo] of arr) ;
 ````
 
 Produces same AST

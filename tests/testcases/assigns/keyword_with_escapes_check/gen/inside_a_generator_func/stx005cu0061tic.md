@@ -114,7 +114,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f() {((static = x));}
+function* f() {static = x;}
 ````
 
 Produces same AST

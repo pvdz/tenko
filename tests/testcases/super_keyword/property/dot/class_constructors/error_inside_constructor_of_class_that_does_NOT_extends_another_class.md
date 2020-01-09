@@ -122,7 +122,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class x{constructor(){(super.mom);};}
+class x{constructor(){super.mom;};}
 ````
 
 Produces same AST

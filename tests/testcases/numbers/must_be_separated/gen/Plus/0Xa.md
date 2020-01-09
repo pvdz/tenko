@@ -82,7 +82,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((0Xa) + (1)));
+0Xa + 1;
 ````
 
 Produces same AST

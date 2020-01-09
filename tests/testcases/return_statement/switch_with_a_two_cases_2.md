@@ -124,10 +124,10 @@ Printer output different from input [sloppy]:
 
 ````js
 switch (A) {case B:
-(C);
+C;
 break;
 case D:
-(E);
+E;
 break;}
 ````
 

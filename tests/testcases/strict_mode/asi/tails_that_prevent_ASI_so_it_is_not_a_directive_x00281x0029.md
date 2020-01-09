@@ -133,8 +133,8 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function f() {("use strict"[foo]);
-((eval = 1));}
+function f() {"use strict"[foo];
+eval = 1;}
 ````
 
 Produces same AST

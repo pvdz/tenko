@@ -152,7 +152,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {dsda(){return (a = super[bar]) => (a);}}));
+x = {dsda(){return (a = super[bar]) => (a);}};
 ````
 
 Produces same AST

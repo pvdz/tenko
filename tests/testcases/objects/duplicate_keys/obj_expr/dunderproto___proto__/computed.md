@@ -125,7 +125,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {[__proto__]:1, __proto__:2}));
+x = {[__proto__]:1, __proto__:2};
 ````
 
 Produces same AST

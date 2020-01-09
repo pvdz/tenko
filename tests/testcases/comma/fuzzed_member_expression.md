@@ -115,7 +115,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((2)[(x, x)], x)) > (x)));
+(((2)[(x, x)], x)) > x;
 ````
 
 Produces same AST

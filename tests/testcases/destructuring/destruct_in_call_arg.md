@@ -7,6 +7,8 @@
 > ::> destruct in call arg
 >
 > Found by fuzzer. Node (v8) rejects this.
+>
+> (This will be a runtime error because calling an array is not what you wanted to do in the first place)
 
 ## PASS
 
@@ -111,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(([((y) < (t)),])(({} = y)));
+[y < t](({} = y));
 ````
 
 Produces same AST

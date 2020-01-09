@@ -106,7 +106,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-_ => (((((_) / (foo))) / (g)));
+_ => ((_ / foo) / g);
 ````
 
 Produces same AST

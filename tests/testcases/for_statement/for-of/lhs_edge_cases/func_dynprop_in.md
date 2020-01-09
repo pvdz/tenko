@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((function() {})[((x) in (y))]) of x) ;
+for (((function() {})[x in y]) of x) ;
 ````
 
 Produces same AST

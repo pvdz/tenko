@@ -105,7 +105,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((x)(((x) in (t))));;) (x);
+for ((x(x in t));;) x;
 ````
 
 Produces same AST

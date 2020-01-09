@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((typeof ((x).def)) + (typeof ((y).x))));
+(typeof x.def) + (typeof y.x);
 ````
 
 Produces same AST

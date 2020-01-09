@@ -101,7 +101,7 @@ Printer output different from input [module]:
 
 ````js
 export default async function*() {}
-(foo);
+foo;
 ````
 
 Produces same AST

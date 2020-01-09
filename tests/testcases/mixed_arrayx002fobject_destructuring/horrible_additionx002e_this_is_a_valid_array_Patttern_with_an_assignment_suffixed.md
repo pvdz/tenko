@@ -116,7 +116,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((log)(({foo:[bar,]} = obj)));
+log(({foo:[bar]} = obj));
 ````
 
 Produces same AST

@@ -135,7 +135,7 @@ start@1:0, error@1:6
 Printer output different from input [sloppy]:
 
 ````js
-(async({__proto__:a, __proto__:b}));
+async({__proto__:a, __proto__:b});
 ````
 
 Produces same AST

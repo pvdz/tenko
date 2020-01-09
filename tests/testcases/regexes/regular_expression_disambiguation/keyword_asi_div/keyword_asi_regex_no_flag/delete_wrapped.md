@@ -92,7 +92,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(delete (/x/.foo));
+delete /x/.foo;
 ````
 
 Produces same AST

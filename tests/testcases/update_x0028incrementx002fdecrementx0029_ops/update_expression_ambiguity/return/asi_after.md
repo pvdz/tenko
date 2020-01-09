@@ -105,7 +105,7 @@ Printer output different from input [sloppy]:
 
 ````js
 function f() {return a++;
-(b);}
+b;}
 ````
 
 Produces same AST

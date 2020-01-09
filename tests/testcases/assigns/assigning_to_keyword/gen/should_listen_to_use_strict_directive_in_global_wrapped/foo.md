@@ -93,7 +93,7 @@ Printer output different from input [sloppy]:
 
 ````js
 "use strict";
-((foo = x));
+foo = x;
 ````
 
 Produces same AST

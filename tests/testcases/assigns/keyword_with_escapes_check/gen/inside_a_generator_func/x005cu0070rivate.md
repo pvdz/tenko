@@ -114,7 +114,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* f() {((private = x));}
+function* f() {private = x;}
 ````
 
 Produces same AST

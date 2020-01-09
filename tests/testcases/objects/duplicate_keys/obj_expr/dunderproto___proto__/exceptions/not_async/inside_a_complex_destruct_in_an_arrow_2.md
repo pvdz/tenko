@@ -168,7 +168,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function f(a, [b, [c, {__proto__:d, __proto__:e},],], f) {}
+function f(a, [b, [c, {__proto__:d, __proto__:e}]], f) {}
 ````
 
 Produces same AST

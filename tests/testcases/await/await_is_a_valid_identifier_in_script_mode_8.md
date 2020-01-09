@@ -102,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((call)((await)[1]));
+call(await[1]);
 ````
 
 Produces same AST

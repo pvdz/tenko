@@ -126,7 +126,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = ({arrow:async x => {}}).y));
+x = ({arrow:async x => {}}).y;
 ````
 
 Produces same AST

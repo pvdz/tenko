@@ -94,7 +94,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((import(/foo/)) / (bar)));
+import(/foo/) / bar;
 ````
 
 Produces same AST

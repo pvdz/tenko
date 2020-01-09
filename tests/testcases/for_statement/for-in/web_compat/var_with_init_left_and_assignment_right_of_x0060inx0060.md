@@ -143,7 +143,7 @@ tokens (16x):
 Printer output different from input [web]:
 
 ````js
-for (var a = 0 in ((stored = a), {})) ;
+for (var a = 0 in (stored = a, {})) ;
 ````
 
 Produces same AST

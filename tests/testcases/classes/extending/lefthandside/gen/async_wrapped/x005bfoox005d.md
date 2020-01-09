@@ -109,7 +109,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function p() {class C extends ([foo,]) {}}
+async function p() {class C extends ([foo]) {}}
 ````
 
 Produces same AST

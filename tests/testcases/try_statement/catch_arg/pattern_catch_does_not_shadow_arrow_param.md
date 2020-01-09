@@ -124,7 +124,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-g => {try {} catch ([g,]) {}};
+g => {try {} catch ([g]) {}};
 ````
 
 Produces same AST

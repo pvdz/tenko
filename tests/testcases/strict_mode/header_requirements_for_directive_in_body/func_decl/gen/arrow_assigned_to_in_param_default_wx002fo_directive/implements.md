@@ -118,7 +118,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(x = (implements = 10)) => {};
+(x = implements = 10) => {};
 ````
 
 Produces same AST

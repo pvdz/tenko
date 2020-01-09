@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {set prototype(x){}}));
+x = {set prototype(x){}};
 ````
 
 Produces same AST

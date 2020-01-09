@@ -183,7 +183,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((((((((x0) >> (x1))) & (((x2) < (x3))))) && (x4))) || (((((x5) ^ (((x6) / (((x7) ** (x8))))))) | (((x9) != (((x10) - (x))))))));
+(((((x0 >> x1) & (x2 < x3)) && x4)) || ((x5 ^ (x6 / (x7 ** x8))) | (x9 != (x10 - x))));
 ````
 
 Produces same AST

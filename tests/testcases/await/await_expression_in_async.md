@@ -103,7 +103,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function f() {(async(await (x)));}
+async function f() {async(await (x));}
 ````
 
 Produces same AST

@@ -162,7 +162,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function as() {((o = {async * f(){return (yield (100));}}));}
+async function as() {o = {async * f(){return (yield (100));}};}
 ````
 
 Produces same AST

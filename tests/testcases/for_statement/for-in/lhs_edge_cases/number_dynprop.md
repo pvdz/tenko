@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((456)[x]) in c) (d);
+for (((456)[x]) in c) d;
 ````
 
 Produces same AST

@@ -68,7 +68,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(PASS@{x194a}@PASS);
+PASS@{x194a}@PASS;
 ````
 
 Produces same AST

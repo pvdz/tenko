@@ -103,7 +103,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-{((x = [await,]));}
+{x = [await];}
 ````
 
 Produces same AST

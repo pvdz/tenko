@@ -116,7 +116,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(([please, {[make]:it}, stop,] = bwahahahaha));
+[please, {[make]:it}, stop] = bwahahahaha;
 ````
 
 Produces same AST

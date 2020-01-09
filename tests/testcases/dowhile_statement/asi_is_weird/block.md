@@ -88,7 +88,7 @@ Printer output different from input [sloppy]:
 
 ````js
 do {} while (x);
-(x);
+x;
 ````
 
 Produces same AST

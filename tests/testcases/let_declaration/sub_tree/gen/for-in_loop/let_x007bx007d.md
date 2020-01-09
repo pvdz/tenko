@@ -104,7 +104,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ((a) in b) (let);
+for ((a) in b) let;
 {}
 ````
 

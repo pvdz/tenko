@@ -123,7 +123,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ((function() {while (((x) in (y))) (t);});;) (x);
+for ((function() {while (x in y) t;});;) x;
 ````
 
 Produces same AST

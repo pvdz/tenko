@@ -92,7 +92,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-let [foo, bar,] = arr;
+let [foo, bar] = arr;
 ````
 
 Produces same AST

@@ -101,7 +101,7 @@ Printer output different from input [sloppy]:
 
 ````js
 function f() {{return;
-(foo);}}
+foo;}}
 ````
 
 Produces same AST

@@ -104,7 +104,7 @@ Printer output different from input [module]:
 
 ````js
 export function f() {}
-(foo);
+foo;
 ````
 
 Produces same AST

@@ -202,7 +202,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((a = (b += (c -= (d **= (e *= (f /= (g %= (h <<= (i >>= (j >>>= (k &= (l ^= (m |= n))))))))))))));
+a = b += c -= d **= e *= f /= g %= h <<= i >>= j >>>= k &= l ^= m |= n;
 ````
 
 Produces same AST

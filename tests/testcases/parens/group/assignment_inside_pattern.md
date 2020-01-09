@@ -125,7 +125,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(([((target)())[(targetKey)((a = b))],] = x));
+[target()[targetKey(a = b)]] = x;
 ````
 
 Produces same AST

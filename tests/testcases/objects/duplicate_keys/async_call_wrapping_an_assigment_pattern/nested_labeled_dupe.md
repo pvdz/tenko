@@ -148,7 +148,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(async(({x, a:{b:x}} = obj)));
+async(({x, a:{b:x}} = obj));
 ````
 
 Produces same AST

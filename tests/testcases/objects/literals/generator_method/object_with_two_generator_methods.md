@@ -136,7 +136,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((wrap)({* foo(){}, * bar(){}}));
+wrap({* foo(){}, * bar(){}});
 ````
 
 Produces same AST

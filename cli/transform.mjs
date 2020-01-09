@@ -447,6 +447,20 @@ export function transform(ast, localConstMap, recordConstants) {
               raw: 'false',
             });
           }
+
+          // Replace all `undefined` with `void 0`
+          // if (node.name == 'undefined') {
+          //   replace(parent, prop, index, {
+          //     type: 'UnaryExpression',
+          //     operator: 'void',
+          //     argument: {
+          //       type: 'Literal',
+          //       loc: node.loc,
+          //       value: 0,
+          //       raw: '0',
+          //     }
+          //   })
+          // }
         }
 
         break;

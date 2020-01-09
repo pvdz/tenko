@@ -103,7 +103,7 @@ tokens (8x):
 Printer output different from input [web]:
 
 ````js
-var foo = [23,];
+var foo = [23];
 ````
 
 Produces same AST

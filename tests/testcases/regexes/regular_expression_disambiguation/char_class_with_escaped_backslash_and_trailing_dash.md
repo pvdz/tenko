@@ -103,7 +103,7 @@ tokens (7x):
 Printer output different from input [web]:
 
 ````js
-((middleDashMatch = /[\-]/.exec));
+middleDashMatch = /[\-]/.exec;
 ````
 
 Produces same AST

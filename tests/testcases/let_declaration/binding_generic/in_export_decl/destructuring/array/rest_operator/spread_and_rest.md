@@ -134,7 +134,7 @@ _Output same as sloppy mode._
 Printer output different from input [module]:
 
 ````js
-export let [a = [...b,], ...c] = obj;
+export let [a = [...b], ...c] = obj;
 ````
 
 Produces same AST

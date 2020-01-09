@@ -117,7 +117,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async (x = (let = f)) => {};
+async (x = let = f) => {};
 ````
 
 Produces same AST

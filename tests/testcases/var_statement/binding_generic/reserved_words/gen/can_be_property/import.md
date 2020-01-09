@@ -80,7 +80,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((obj).import);
+obj.import;
 ````
 
 Produces same AST

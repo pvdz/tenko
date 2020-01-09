@@ -132,7 +132,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {async f(){var f = 1;}}));
+x = {async f(){var f = 1;}};
 ````
 
 Produces same AST

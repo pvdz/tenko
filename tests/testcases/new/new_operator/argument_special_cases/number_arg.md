@@ -94,7 +94,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-new (((1.).__proto__).constructor)();
+new (1.).__proto__.constructor();
 ````
 
 Produces same AST

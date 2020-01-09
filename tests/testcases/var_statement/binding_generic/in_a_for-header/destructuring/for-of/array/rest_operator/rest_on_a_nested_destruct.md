@@ -114,7 +114,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (var [...[foo, bar,]] of obj) ;
+for (var [...[foo, bar]] of obj) ;
 ````
 
 Produces same AST

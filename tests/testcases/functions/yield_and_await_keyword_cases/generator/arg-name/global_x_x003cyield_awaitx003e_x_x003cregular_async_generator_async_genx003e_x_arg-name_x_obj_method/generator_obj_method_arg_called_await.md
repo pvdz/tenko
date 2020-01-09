@@ -162,7 +162,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* as() {((o = {* f(await){}}));}
+function* as() {o = {* f(await){}};}
 ````
 
 Produces same AST

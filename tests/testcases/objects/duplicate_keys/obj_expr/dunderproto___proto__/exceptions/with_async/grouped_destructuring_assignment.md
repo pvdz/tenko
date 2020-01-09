@@ -134,7 +134,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(async(({__proto__:a, __proto__:b} = x)));
+async(({__proto__:a, __proto__:b} = x));
 ````
 
 Produces same AST

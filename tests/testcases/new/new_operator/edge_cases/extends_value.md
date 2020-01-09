@@ -84,7 +84,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class x extends (new (A)()) {}
+class x extends (new A()) {}
 ````
 
 Produces same AST

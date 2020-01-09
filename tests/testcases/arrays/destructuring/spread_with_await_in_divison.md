@@ -102,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-([...((/x/) / (yield)),]);
+[.../x/ / yield];
 ````
 
 Produces same AST

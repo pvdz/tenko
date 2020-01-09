@@ -154,7 +154,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function f() {class x{foo(x = new (await)()){};}}
+async function f() {class x{foo(x = new await()){};}}
 ````
 
 Produces same AST

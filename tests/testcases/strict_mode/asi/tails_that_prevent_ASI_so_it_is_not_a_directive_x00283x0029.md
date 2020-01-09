@@ -140,7 +140,7 @@ Printer output different from input [sloppy]:
 
 ````js
 function f() {("use strict")`x`;
-((eval = 1));}
+eval = 1;}
 ````
 
 Produces same AST

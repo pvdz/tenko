@@ -105,7 +105,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((void ((a).b)) / (foo))) / (g)));
+((void a.b) / foo) / g;
 ````
 
 Produces same AST

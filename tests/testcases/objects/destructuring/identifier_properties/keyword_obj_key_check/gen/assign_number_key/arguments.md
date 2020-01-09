@@ -114,7 +114,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({500:arguments} = null));
+({500:arguments} = null);
 ````
 
 Produces same AST

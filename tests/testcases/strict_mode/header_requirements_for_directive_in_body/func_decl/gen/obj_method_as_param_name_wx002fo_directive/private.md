@@ -130,7 +130,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = {c(private){}}));
+f = {c(private){}};
 ````
 
 Produces same AST

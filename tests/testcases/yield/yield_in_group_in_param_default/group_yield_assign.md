@@ -106,7 +106,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = (yield = y)));
+x = yield = y;
 ````
 
 Produces same AST

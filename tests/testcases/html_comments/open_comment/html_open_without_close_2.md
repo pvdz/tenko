@@ -127,7 +127,7 @@ tokens (5x):
 Printer output different from input [sloppy]:
 
 ````js
-((((call)()) < (! (--foo))));
+call() < (!(--foo));
 ````
 
 Produces same AST

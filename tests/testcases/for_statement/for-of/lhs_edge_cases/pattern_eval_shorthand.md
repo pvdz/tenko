@@ -133,7 +133,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ({eval = 0} of [{},]) ;
+for ({eval = 0} of [{}]) ;
 ````
 
 Produces same AST

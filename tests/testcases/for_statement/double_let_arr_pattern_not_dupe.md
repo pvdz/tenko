@@ -144,8 +144,8 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (let [a,] = x;;) ;
-for (let [a,] = x;;) ;
+for (let [a] = x;;) ;
+for (let [a] = x;;) ;
 ````
 
 Produces same AST

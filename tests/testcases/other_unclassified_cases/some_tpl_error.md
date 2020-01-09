@@ -172,7 +172,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((y)`${((x) in (y))}`);;) for (;;y => {(((x) in (n)));}) (x);
+for (((y)`${x in y}`);;) for (;;y => {x in n;}) x;
 ````
 
 Produces same AST

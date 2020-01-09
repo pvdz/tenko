@@ -101,7 +101,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class x extends ((feh)(await)) {}
+class x extends (feh(await)) {}
 ````
 
 Produces same AST

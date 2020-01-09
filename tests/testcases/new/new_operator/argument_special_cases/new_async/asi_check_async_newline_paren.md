@@ -93,7 +93,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-let x = new (async)(x);
+let x = new async(x);
 ````
 
 Produces same AST

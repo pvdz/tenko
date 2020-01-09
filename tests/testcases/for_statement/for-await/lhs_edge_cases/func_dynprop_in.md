@@ -135,7 +135,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function f() {for await (((function() {})[((x) in (y))]) of x) ;}
+async function f() {for await (((function() {})[x in y]) of x) ;}
 ````
 
 Produces same AST

@@ -109,7 +109,7 @@ Printer output different from input [sloppy]:
 
 ````js
 switch (a) {default:
-let [x,] = y;}
+let [x] = y;}
 ````
 
 Produces same AST

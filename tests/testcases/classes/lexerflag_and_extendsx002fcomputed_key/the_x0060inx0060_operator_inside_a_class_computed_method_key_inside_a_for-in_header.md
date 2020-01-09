@@ -139,7 +139,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((class x{[((a) in (b))](){};}).x) in c) ;
+for (((class x{[a in b](){};}).x) in c) ;
 ````
 
 Produces same AST

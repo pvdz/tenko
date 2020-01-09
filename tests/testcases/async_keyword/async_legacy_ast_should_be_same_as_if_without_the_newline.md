@@ -117,7 +117,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-let f = ((((((a) + (b))) + (async()))) + (d));
+let f = ((a + b) + async()) + d;
 ````
 
 Produces same AST

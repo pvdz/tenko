@@ -96,7 +96,7 @@ Printer output different from input [sloppy]:
 
 ````js
 async => {};
-(foo);
+foo;
 ````
 
 Produces same AST

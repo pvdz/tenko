@@ -82,7 +82,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((5648123159456151315486153487912312341575123154656n) + (1)));
+(5648123159456151315486153487912312341575123154656n) + 1;
 ````
 
 Produces same AST

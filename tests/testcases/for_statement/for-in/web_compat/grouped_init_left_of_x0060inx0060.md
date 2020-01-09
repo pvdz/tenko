@@ -145,7 +145,7 @@ tokens (17x):
 Printer output different from input [web]:
 
 ````js
-for (var a = (++effects, - (1)) in x) ;
+for (var a = (++effects, -1) in x) ;
 ````
 
 Produces same AST

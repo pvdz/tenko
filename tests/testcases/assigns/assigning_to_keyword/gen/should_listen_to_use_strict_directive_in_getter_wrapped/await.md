@@ -162,8 +162,8 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((foo = {get x(){"use strict";
-((await = x));}}));
+foo = {get x(){"use strict";
+await = x;}};
 ````
 
 Produces same AST

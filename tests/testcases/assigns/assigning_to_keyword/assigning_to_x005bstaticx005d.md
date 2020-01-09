@@ -91,7 +91,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((static = "sentinal 543665"));
+static = "sentinal 543665";
 ````
 
 Produces same AST

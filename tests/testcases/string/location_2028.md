@@ -101,7 +101,7 @@ Printer output different from input [sloppy]:
 
 ````js
 (a)`\@{x2028}@`;
-(x);
+x;
 ````
 
 Produces same AST

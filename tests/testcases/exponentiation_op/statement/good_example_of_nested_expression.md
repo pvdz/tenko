@@ -106,7 +106,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((+ (a)) * (((b) ** (((c) ** (3)))))));
+(+a) * (b ** (c ** 3));
 ````
 
 Produces same AST

@@ -101,7 +101,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-new (async)();
+new async();
 x => (y);
 ````
 

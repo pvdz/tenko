@@ -153,7 +153,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {foo(){(([a = super.foo,] = c));}}));
+x = {foo(){[a = super.foo] = c;}};
 ````
 
 Produces same AST

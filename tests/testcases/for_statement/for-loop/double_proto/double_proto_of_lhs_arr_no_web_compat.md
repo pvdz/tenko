@@ -133,7 +133,7 @@ start@1:0, error@1:34
 Printer output different from input [sloppy]:
 
 ````js
-for (([{__proto__:1, __proto__:2},]);;) ;
+for (([{__proto__:1, __proto__:2}]);;) ;
 ````
 
 Produces same AST

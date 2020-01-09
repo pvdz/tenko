@@ -83,7 +83,7 @@ tokens (3x):
 Printer output different from input [web]:
 
 ````js
-(xyz);
+xyz;
 ````
 
 Produces same AST

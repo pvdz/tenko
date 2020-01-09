@@ -110,7 +110,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = function c(protected) {}));
+f = function c(protected) {};
 ````
 
 Produces same AST

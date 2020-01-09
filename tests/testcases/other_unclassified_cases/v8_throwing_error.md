@@ -123,7 +123,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-throw (protected)(x => {"use strict";});
+throw protected(x => {"use strict";});
 ````
 
 Produces same AST

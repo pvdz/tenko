@@ -124,7 +124,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((o = {foo(package){}}));
+o = {foo(package){}};
 ````
 
 Produces same AST

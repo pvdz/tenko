@@ -106,7 +106,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-([(foo /= ((g) / ((m).x))),]);
+[foo /= g / m.x];
 ````
 
 Produces same AST

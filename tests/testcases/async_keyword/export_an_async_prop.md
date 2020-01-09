@@ -88,10 +88,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [module]:
-
-````js
-export default (async).x;
-````
-
-Produces same AST
+Printer output was same as input [module]

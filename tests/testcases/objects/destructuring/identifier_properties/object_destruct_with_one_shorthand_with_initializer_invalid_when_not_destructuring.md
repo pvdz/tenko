@@ -118,7 +118,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((wrap)(({a = b} = c)));
+wrap(({a = b} = c));
 ````
 
 Produces same AST

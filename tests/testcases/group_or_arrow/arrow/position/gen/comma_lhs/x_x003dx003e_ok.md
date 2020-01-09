@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x => (ok), a));
+(x => (ok), a);
 ````
 
 Produces same AST

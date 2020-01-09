@@ -92,10 +92,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
-
-````js
-((yield *= x));
-````
-
-Produces same AST
+Printer output was same as input [sloppy]

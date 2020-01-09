@@ -159,8 +159,8 @@ tokens (9x):
 Printer output different from input [sloppy]:
 
 ````js
-((((call)()) < (! (--foo))));
-((more)());
+call() < (!(--foo));
+more();
 ````
 
 Produces same AST

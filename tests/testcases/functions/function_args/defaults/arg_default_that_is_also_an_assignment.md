@@ -102,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function f(a = (b = c)) {}
+function f(a = b = c) {}
 ````
 
 Produces same AST

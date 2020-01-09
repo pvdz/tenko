@@ -122,7 +122,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class x{foo(){(super[foo]);};}
+class x{foo(){super[foo];};}
 ````
 
 Produces same AST

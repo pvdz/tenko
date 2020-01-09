@@ -107,7 +107,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((! ((x).abc)) + ((y).x)));
+(!x.abc) + y.x;
 ````
 
 Produces same AST

@@ -154,7 +154,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-async function f() {for await ({eval = 0} of [{},]) ;}
+async function f() {for await ({eval = 0} of [{}]) ;}
 ````
 
 Produces same AST

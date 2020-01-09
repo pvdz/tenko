@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((typeof (a)) + (((b) / (c)))));
+(typeof a) + (b / c);
 ````
 
 Produces same AST

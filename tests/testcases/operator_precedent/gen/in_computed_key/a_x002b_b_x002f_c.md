@@ -121,7 +121,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((x = {[((a) + (((b) / (c))))]:y}));
+x = {[a + (b / c)]:y};
 ````
 
 Produces same AST

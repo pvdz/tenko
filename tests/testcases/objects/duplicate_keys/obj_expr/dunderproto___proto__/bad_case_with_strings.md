@@ -138,7 +138,7 @@ start@1:0, error@1:36
 Printer output different from input [sloppy]:
 
 ````js
-((x = {'__proto__':1, "__proto__":2}));
+x = {'__proto__':1, "__proto__":2};
 ````
 
 Produces same AST

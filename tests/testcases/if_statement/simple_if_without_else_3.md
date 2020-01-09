@@ -107,8 +107,8 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-if (foo) (a);
-if (bar) (b); else (c);
+if (foo) a;
+if (bar) b; else c;
 ````
 
 Produces same AST

@@ -111,7 +111,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((((typeof (async function f() {})) / (foo))) / (g)));
+((typeof (async function f() {})) / foo) / g;
 ````
 
 Produces same AST

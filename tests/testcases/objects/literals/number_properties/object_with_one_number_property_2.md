@@ -176,10 +176,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
-
-````js
-((wrap)({.9:a, 0x84:b, 0b1:c, 0o27:d, 1e234:e}));
-````
-
-Produces same AST
+Printer output was same as input [sloppy]

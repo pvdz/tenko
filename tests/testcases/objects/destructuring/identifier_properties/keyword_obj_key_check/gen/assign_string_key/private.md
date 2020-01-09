@@ -114,7 +114,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({"key":private} = null));
+({"key":private} = null);
 ````
 
 Produces same AST

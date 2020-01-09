@@ -124,7 +124,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(x = delete ((package = f))) => {};
+(x = delete (package = f)) => {};
 ````
 
 Produces same AST

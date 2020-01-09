@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({500:yield} = null));
+({500:yield} = null);
 ````
 
 Produces same AST

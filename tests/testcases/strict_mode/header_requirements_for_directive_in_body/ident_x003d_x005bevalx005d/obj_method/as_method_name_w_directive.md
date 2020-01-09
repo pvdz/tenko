@@ -119,7 +119,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((o = {eval(){"use strict";}}));
+o = {eval(){"use strict";}};
 ````
 
 Produces same AST

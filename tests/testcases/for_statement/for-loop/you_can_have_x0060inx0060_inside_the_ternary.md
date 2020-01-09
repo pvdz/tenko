@@ -106,7 +106,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for ((((true)? (((a) in (b))) : ({})));false;) ;
+for (((true? a in b : {}));false;) ;
 ````
 
 Produces same AST

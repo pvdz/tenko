@@ -99,7 +99,7 @@ Printer output different from input [sloppy]:
 
 ````js
 do if (x) {} while (x);
-(x);
+x;
 ````
 
 Produces same AST

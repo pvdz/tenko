@@ -92,7 +92,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((await, "sentinal 431431"));
+(await, "sentinal 431431");
 ````
 
 Produces same AST

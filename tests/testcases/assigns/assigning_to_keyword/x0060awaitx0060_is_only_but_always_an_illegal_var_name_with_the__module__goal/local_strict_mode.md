@@ -123,7 +123,7 @@ Printer output different from input [sloppy]:
 
 ````js
 function f() {"use strict";
-((await = "sentinal 7533336"));}
+await = "sentinal 7533336";}
 ````
 
 Produces same AST

@@ -145,7 +145,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((o = {f(await){}}));
+o = {f(await){}};
 ````
 
 Produces same AST

@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(((void ((x).def)) + (void ((y).x))));
+(void x.def) + (void y.x);
 ````
 
 Produces same AST

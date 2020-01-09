@@ -100,7 +100,7 @@ Printer output different from input [sloppy]:
 
 ````js
 switch (a) {default:
-((c, d));}
+(c, d);}
 ````
 
 Produces same AST

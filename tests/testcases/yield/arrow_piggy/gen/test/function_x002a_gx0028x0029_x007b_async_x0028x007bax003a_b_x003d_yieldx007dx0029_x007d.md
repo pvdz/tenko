@@ -136,7 +136,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* g() {(async({a:(b = (yield))}));}
+function* g() {async({a:b = (yield)});}
 ````
 
 Produces same AST

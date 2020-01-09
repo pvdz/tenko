@@ -139,10 +139,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
-
-````js
-((wrap)({set foo(c){}, bar(){}}));
-````
-
-Produces same AST
+Printer output was same as input [sloppy]

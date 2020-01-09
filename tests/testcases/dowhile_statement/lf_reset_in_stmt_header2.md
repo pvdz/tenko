@@ -111,7 +111,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-do if (x => {}) ; else (n); while (y);
+do if (x => {}) ; else n; while (y);
 ````
 
 Produces same AST

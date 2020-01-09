@@ -77,7 +77,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-new (/more crap/g)();
+new /more crap/g();
 ````
 
 Produces same AST

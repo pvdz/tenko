@@ -99,7 +99,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(delete ((yield).prop));
+delete yield.prop;
 ````
 
 Produces same AST

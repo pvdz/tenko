@@ -108,7 +108,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (let [foo,] = arr, bar;;) ;
+for (let [foo] = arr, bar;;) ;
 ````
 
 Produces same AST

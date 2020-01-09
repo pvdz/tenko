@@ -132,7 +132,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class A{e(x = (ok = 10)){};}
+class A{e(x = ok = 10){};}
 ````
 
 Produces same AST

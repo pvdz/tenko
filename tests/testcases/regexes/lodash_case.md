@@ -80,10 +80,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
-
-````js
-((x = /[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+/g));
-````
-
-Produces same AST
+Printer output was same as input [sloppy]

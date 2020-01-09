@@ -191,7 +191,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((f = ([cls = class{}, xCls = class X{}, xCls2 = class{static name(){};},]) => {}));
+f = ([cls = class{}, xCls = class X{}, xCls2 = class{static name(){};}]) => {};
 ````
 
 Produces same AST

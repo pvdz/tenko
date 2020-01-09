@@ -133,7 +133,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function f() {throw `${delete (y)}`;}
+function f() {throw `${delete y}`;}
 ````
 
 Produces same AST

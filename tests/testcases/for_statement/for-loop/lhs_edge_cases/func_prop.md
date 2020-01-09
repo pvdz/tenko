@@ -119,7 +119,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((function() {(((a) in (b)));}).foo);;) ;
+for (((function() {a in b;}).foo);;) ;
 ````
 
 Produces same AST

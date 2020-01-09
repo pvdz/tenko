@@ -81,7 +81,7 @@ Printer output different from input [sloppy]:
 
 ````js
 "foo";
-(x);
+x;
 ````
 
 Produces same AST

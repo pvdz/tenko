@@ -118,7 +118,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(x = (private = 10)) => {};
+(x = private = 10) => {};
 ````
 
 Produces same AST

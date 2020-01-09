@@ -105,7 +105,7 @@ _Output same as sloppy mode._
 Printer output different from input [module]:
 
 ````js
-export default ((((x) / (y))) / (g));
+export default (x / y) / g;
 ````
 
 Produces same AST

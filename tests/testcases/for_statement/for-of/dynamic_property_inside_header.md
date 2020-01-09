@@ -102,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-for (((x)[((a) in (b))]) of y) ;
+for ((x[a in b]) of y) ;
 ````
 
 Produces same AST

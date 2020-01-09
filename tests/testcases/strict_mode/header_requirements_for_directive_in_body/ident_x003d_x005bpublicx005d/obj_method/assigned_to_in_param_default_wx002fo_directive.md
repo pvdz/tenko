@@ -145,7 +145,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-((o = {foo(x = (public = y)){}}));
+o = {foo(x = public = y){}};
 ````
 
 Produces same AST

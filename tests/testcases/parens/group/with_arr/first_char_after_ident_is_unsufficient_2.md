@@ -93,7 +93,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-([void (/=g/m.x),]);
+[void /=g/m.x];
 ````
 
 Produces same AST

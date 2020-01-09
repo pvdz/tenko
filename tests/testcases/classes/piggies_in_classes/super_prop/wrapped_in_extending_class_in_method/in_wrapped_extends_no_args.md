@@ -148,7 +148,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-class outer extends (S) {meh(){class x extends ((feh)(super.foo)) {}};}
+class outer extends (S) {meh(){class x extends (feh(super.foo)) {}};}
 ````
 
 Produces same AST

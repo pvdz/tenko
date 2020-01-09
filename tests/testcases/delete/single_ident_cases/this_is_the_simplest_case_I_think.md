@@ -85,7 +85,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(delete (x));
+delete x;
 ````
 
 Produces same AST

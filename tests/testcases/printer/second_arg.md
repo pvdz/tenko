@@ -103,7 +103,7 @@ Printer output different from input [sloppy]:
 ````js
 ;
 var e = D;
-((s)());
+s();
 ````
 
 Produces same AST

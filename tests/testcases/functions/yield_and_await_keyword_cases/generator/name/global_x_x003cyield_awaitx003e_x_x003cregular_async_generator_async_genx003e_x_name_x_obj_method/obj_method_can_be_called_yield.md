@@ -145,7 +145,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function* as() {((A = {yield(){}}));}
+function* as() {A = {yield(){}};}
 ````
 
 Produces same AST

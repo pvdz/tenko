@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-(({500:static} = null));
+({500:static} = null);
 ````
 
 Produces same AST

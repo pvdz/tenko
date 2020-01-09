@@ -35,15 +35,32 @@ const NO_AST = process.argv.includes('--no-ast'); // drop ast related code from 
 
 function ArrayExpression(node) {
   assert(node.type, 'ArrayExpression');
-  return '[' + node.elements.map(n => n === null ? ',' : ($(n) + (n.type === 'RestElement' ? '' : ','))).join(' ') + ']';
+  return '[' + node.elements.map((n, i) => n === null ? ',' : ($(n) + ((n.type === 'RestElement' || i === node.elements.length - 1) ? '' : ','))).join(' ') + ']'
 }
 function ArrayPattern(node) {
   assert(node.type, 'ArrayPattern');
-  return '[' + node.elements.map(n => n === null ? ',' : ($(n) + (n.type === 'RestElement' ? '' : ','))).join(' ') + ']';
+  return '[' + node.elements.map((n, i) => n === null ? ',' : ($(n) + ((n.type === 'RestElement' || i === node.elements.length - 1) ? '' : ','))).join(' ') + ']'
 }
 function ArrowFunctionExpression(node) {
   assert(node.type, 'ArrowFunctionExpression');
-  let body = node.expression ? $w(node.body) : $(node.body);
+  let body = $(node.body);
+  if (node.expression || (node.expression === undefined && node.body.type !== 'BlockStatement') && (
+    node.expression.type !== 'Identifier'           // x=>x
+    && node.expression.type !== 'Import'            // x=>import()
+    && node.expression.type !== 'Super'             // x=>super
+    && node.expression.type !== 'MemberExpression'  // x=>x.y
+    && node.expression.type !== 'Literal'           // x=>5
+    && node.expression.type !== 'CallExpression'    // x=>x()
+    && node.expression.type !== 'ArrayExpression'   // x=>[x]
+    // && node.expression.type !== 'ObjectExpression'  // {x}           Can not because x=>{} is a block, not objlit
+    && node.expression.type !== 'MetaProperty'      // x=>new.target
+    && node.expression.type !== 'TaggedTemplateExpression' // x=>foo``
+    && node.expression.type !== 'TemplateLiteral'   // x=>`foo`
+    && node.expression.type !== 'ThisExpression'    // x=>this
+  )) {
+    body = '(' + body + ')';
+  }
+
   if (
     node.params.length === 1 &&
     node.params[0].type !== 'AssignmentPattern' &&
@@ -57,7 +74,11 @@ function ArrowFunctionExpression(node) {
 }
 function AssignmentExpression(node) {
   assert(node.type, 'AssignmentExpression');
-  return '(' + $(node.left) + ' ' + node.operator + ' ' + $(node.right) + ')';
+  if (node.left.type === 'ObjectPattern') {
+    return '(' + $(node.left) + ' ' + node.operator + ' ' + $(node.right) + ')';
+  }
+
+  return $(node.left) + ' ' + node.operator + ' ' + $(node.right);
 }
 function AssignmentPattern(node) {
   assert(node.type, 'AssignmentPattern');
@@ -73,7 +94,41 @@ function BigIntLiteral(node) {
 }
 function BinaryExpression(node) {
   assert(node.type, 'BinaryExpression');
-  return '((' + $(node.left) + ') ' + node.operator + ' (' + $(node.right) + '))';
+
+  let left = $(node.left);
+  switch (node.left.type) {
+    case 'Identifier':
+    case 'Literal':
+    case 'MemberExpression':
+    case 'CallExpression':
+    case 'ArrayExpression':
+    case 'MetaProperty':
+    case 'TaggedTemplateExpression':
+    case 'TemplateLiteral':
+    case 'ThisExpression':
+      break;
+    default:
+      left = '(' + left + ')';
+  }
+
+  let right = $(node.right);
+  switch (node.right.type) {
+    case 'Identifier':
+    case 'Literal':
+    case 'MemberExpression':
+    case 'CallExpression':
+    case 'ArrayExpression':
+    case 'ObjectExpression':
+    case 'MetaProperty':
+    case 'TaggedTemplateExpression':
+    case 'TemplateLiteral':
+    case 'ThisExpression':
+      break;
+    default:
+      right = '(' + right + ')';
+  }
+
+  return left + ' ' + node.operator + ' ' + right;
 }
 function BlockStatement(node) {
   assert(node.type, 'BlockStatement');
@@ -157,13 +212,24 @@ function CallExpression(node) {
     }
   }
 
-  return (
-    node.callee.type === 'Import' ||
-    node.callee.type === 'Super' ||
-    node.callee.name === 'async' // `async({__proto__: 1, __proto__: 2})`
-      ? $(node.callee)
-      : $w(node.callee)
-  ) + '(' + node.arguments.map($).join(', ') + ')';
+  if (
+    node.callee.type === 'Identifier' // prevents `x()` becoming `(x)()`, but also `async({__proto__: 1, __proto__: 2})`
+    || node.callee.type === 'Import'            // import()
+    || node.callee.type === 'Super'             // super()
+    || node.callee.type === 'MemberExpression'  // x.y()
+    || node.callee.type === 'Literal'           // 5()              Probably an error
+    || node.callee.type === 'CallExpression'    // x()()
+    || node.callee.type === 'ArrayExpression'   // [x]()            Probably an error
+    // || node.callee.type === 'ObjectExpression'  // {x}()         Probably an error, but unsafe for block anyways
+    || node.callee.type === 'MetaProperty'      // new.target()
+    || node.callee.type === 'TaggedTemplateExpression' // foo``()   Probably an error
+    || node.callee.type === 'TemplateLiteral'   // `foo`()          Probably an error
+    || node.callee.type === 'ThisExpression'    //  this()          Could technically work
+  ) {
+    return $(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  }
+
+  return $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
 }
 function CatchClause(node) {
   assert(node.type, 'CatchClause');
@@ -183,15 +249,18 @@ function ClassExpression(node) {
 }
 function ClassMethod(node) {
   assert(node.type, 'ClassMethod');
+  assert('value' in node, false);
+  // The `ClassMethod` type is only used for babelCompat
+  // Babel does not have .value and merges the method node with the function node, different from the estree spec
   return (
     (node.static ? 'static ' : '') +
     (node.kind === 'get' ? 'get ' : '') +
     (node.kind === 'set' ? 'set ' : '') +
-    (node.value.async ? 'async ' : '') +
-    (node.value.generator ? '* ' : '') +
-    (node.computed ? '[' + $(node.value.id) + ']' : $(node.value.id)) +
-    '(' + $(node.value.params).join(', ') + ')' +
-    $(node.value.body) +
+    (node.async ? 'async ' : '') +
+    (node.generator ? '* ' : '') +
+    (node.computed ? '[' + $(node.key) + ']' : $(node.key)) +
+    '(' + node.params.map($).join(', ') + ')' +
+    $(node.body) +
     ';'
   );
 }
@@ -205,7 +274,68 @@ function CommentLine(node) {
 }
 function ConditionalExpression(node) {
   assert(node.type, 'ConditionalExpression');
-  return '(' + $w(node.test) + '? ' + $w(node.consequent) + ' : ' + $w(node.alternate) + ')';
+
+  let a = $(node.test);
+  if (
+    node.test.type !== 'Super'                          // super ? b : c  (Error since super is always call or member)
+    && node.test.type !== 'Import'                      // import() ? b : c
+    && node.test.type !== 'Identifier'                  // y ? b : c
+    && node.test.type !== 'Literal'                     // 5 ? b : c
+    && node.test.type !== 'MemberExpression'            // x.y ? b : c
+    && node.test.type !== 'CallExpression'              // x()() ? b : c
+    && node.test.type !== 'ArrayExpression'             // [] ? b : c
+    // && node.test.type !== 'ObjectExpression'         // {}  ? b : c  Unsafe if exprstmt
+    && node.test.type !== 'MetaProperty'                // new.target ? b : c
+    && node.test.type !== 'TaggedTemplateExpression'    // foo``()  ? b : c
+    && node.test.type !== 'TemplateLiteral'             // `foo` ? b : c
+    && node.test.type !== 'ThisExpression'              // this ? b : c
+  // && node.test.type !== 'BinaryExpression'         // a ? x + y : c       TODO: verify whether this is safe
+  // && node.test.type !== 'AssignmentExpression'     // x = y ? b : c -> x = (y ? b : c)   Unsafe
+  ) {
+    a = '(' + a + ')';
+  }
+
+  let b = $(node.consequent);
+  if (
+    node.consequent.type !== 'Super'                          // a ? super : c  (Error since super is always call or member)
+    && node.consequent.type !== 'Import'                      // a ? import() : c
+    && node.consequent.type !== 'Identifier'                  // a ? y : c
+    && node.consequent.type !== 'Literal'                     // a ? 5 : c
+    && node.consequent.type !== 'MemberExpression'            // a ? x.y : c
+    && node.consequent.type !== 'CallExpression'              // a ? x()() : c
+    && node.consequent.type !== 'ArrayExpression'             // a ? [] : c
+    && node.consequent.type !== 'ObjectExpression'            // a ? {} : c
+    && node.consequent.type !== 'MetaProperty'                // a ? new.target : c
+    && node.consequent.type !== 'TaggedTemplateExpression'    // a ? foo``() : c
+    && node.consequent.type !== 'TemplateLiteral'             // a ? `foo` : c
+    && node.consequent.type !== 'ThisExpression'              // a ? this : c
+    && node.consequent.type !== 'BinaryExpression'            // a ? x + y : c
+    && node.consequent.type !== 'AssignmentExpression'        // a ? x = y : c
+  ) {
+    b = '(' + b + ')';
+  }
+
+  let c = $(node.alternate);
+  if (
+    node.alternate.type !== 'Super'                          // a ? b : super     (Error since super is always call or member)
+    && node.alternate.type !== 'Import'                      // a ? b : import()
+    && node.alternate.type !== 'Identifier'                  // a ? b : y
+    && node.alternate.type !== 'Literal'                     // a ? b : 5
+    && node.alternate.type !== 'MemberExpression'            // a ? b : x.y
+    && node.alternate.type !== 'CallExpression'              // a ? b : x()()
+    && node.alternate.type !== 'ArrayExpression'             // a ? b : []
+    && node.alternate.type !== 'ObjectExpression'            // a ? b : {}
+    && node.alternate.type !== 'MetaProperty'                // a ? b : new.target
+    && node.alternate.type !== 'TaggedTemplateExpression'    // a ? b : foo``()
+    && node.alternate.type !== 'TemplateLiteral'             // a ? b : `foo`
+    && node.alternate.type !== 'ThisExpression'              // a ? b : this
+  // && node.alternate.type !== 'BinaryExpression'         // a ? x + y : c     TODO: verify whether this is safe
+  // && node.alternate.type !== 'AssignmentExpression'    // a ? b : (x = y)   Unsafe
+  ) {
+    c = '(' + c + ')';
+  }
+
+  return '(' + a + '? ' + b + ' : ' + c + ')';
 }
 function ContinueStatement(node) {
   assert(node.type, 'ContinueStatement');
@@ -254,18 +384,22 @@ function ExportSpecifier(node) {
 function ExpressionStatement(node) {
   assert(node.type, 'ExpressionStatement');
   if (node.directive === undefined && ( // Protect directives from demotion
-    node.expression.type === 'ObjectExpression' ||
-    node.expression.type === 'ArrayExpression' || // [{__proto__: 1, __proto__: 2}]
-    node.expression.type === 'SequenceExpression' ||
-    node.expression.type === 'FunctionExpression' ||
-    node.expression.type === 'ClassExpression' ||
-    node.expression.type === 'BinaryExpression' ||
-    node.expression.type === 'MemberExpression' ||
-    node.expression.type === 'Identifier' ||
-    node.expression.type === 'UnaryExpression' ||
-    node.expression.type === 'CallExpression' ||
-    (!node.directive && node.expression.type === 'Literal' && typeof node.expression.value === 'string') || // Prevent grouped strings of being promoted to directives
-    node.expression.type === 'AssignmentExpression'
+    node.expression.type === 'ObjectExpression' ||       // {} would be a block if not paren wrapped
+    // node.expression.type === 'ArrayExpression' ||     // [{__proto__: 1, __proto__: 2}] Should be fine with semis
+    // node.expression.type === 'SequenceExpression' ||  // a,b
+    node.expression.type === 'FunctionExpression' ||     // function(){} -> (function(){}) Else it's a decl or illegal
+    node.expression.type === 'ClassExpression' ||        // class{} -> (class{}) Else it's a decl or illegal
+    // node.expression.type === 'BinaryExpression' ||    // a+b
+    // node.expression.type === 'MemberExpression' ||    // a.b
+    // node.expression.type === 'Identifier' ||          // foo
+    // node.expression.type === 'UnaryExpression' ||     // ~foo
+    // node.expression.type === 'CallExpression' ||      // foo()
+    // node.expression.type === 'AssignmentExpression'   // a=b
+    // node.expression.type === 'MetaExpression'         // new.target
+    // TaggedTemplate
+    // TemplateLiteral
+    // ThisExpression
+    (!node.directive && node.expression.type === 'Literal' && typeof node.expression.value === 'string') // Prevent grouped strings of being promoted to directives
   )) {
     // :'(
     let stmt = $w(node.expression) + ';';
@@ -365,25 +499,62 @@ function Literal(node) {
 }
 function LogicalExpression(node) {
   assert(node.type, 'LogicalExpression');
-  return '(' + $w(node.left) + ' ' + node.operator + ' ' + $w(node.right) + ')';
+
+  let left = $(node.left);
+  if (
+    node.left.type !== 'Super'                          // super && x  (Error since super is always call or member)
+    && node.left.type !== 'Import'                      // import() && x
+    && node.left.type !== 'Identifier'                  // x && y
+    && node.left.type !== 'Literal'                     // 5 && x
+    && node.left.type !== 'MemberExpression'            // x.y && z
+    && node.left.type !== 'CallExpression'              // x()() && x
+    && node.left.type !== 'ArrayExpression'             // [] && x
+    // && node.left.type !== 'ObjectExpression'         // {} && x     Block if statement expression so, meh
+    && node.left.type !== 'MetaProperty'                // new.target && x
+    && node.left.type !== 'TaggedTemplateExpression'    // foo``() && x
+    && node.left.type !== 'TemplateLiteral'             // `foo` && x
+    && node.left.type !== 'ThisExpression'              // this && x
+  ) {
+    left = '(' + left + ')';
+  }
+
+  let right = $(node.right);
+  if (
+    node.right.type !== 'Super'                          // x && super  (Error since super is always call or member)
+    && node.right.type !== 'Import'                      // x && import()
+    && node.right.type !== 'Identifier'                  // x && y
+    && node.right.type !== 'Literal'                     // x && 5
+    && node.right.type !== 'MemberExpression'            // x && x.y
+    && node.right.type !== 'CallExpression'              // x && x()()
+    && node.right.type !== 'ArrayExpression'             // x && []
+    && node.right.type !== 'ObjectExpression'            // x && {}
+    && node.right.type !== 'MetaProperty'                // x && new.target
+    && node.right.type !== 'TaggedTemplateExpression'    // x && foo``()
+    && node.right.type !== 'TemplateLiteral'             // x && `foo`
+    && node.right.type !== 'ThisExpression'              // x && this
+  ) {
+    right = '(' + right + ')';
+  }
+
+  return '(' + left + ' ' + node.operator + ' ' + right + ')';
 }
 function MemberExpression(node) {
   assert(node.type, 'MemberExpression');
   if (
-    node.object.type === 'ObjectExpression' ||
-    node.object.type === 'SequenceExpression' ||
-    node.object.type === 'FunctionExpression' ||
-    node.object.type === 'ClassExpression' ||
-    node.object.type === 'Identifier' ||
-    node.object.type === 'BinaryExpression' ||
-    node.object.type === 'MemberExpression' ||
-    node.object.type === 'Identifier' ||
-    node.object.type === 'CallExpression' ||
-    node.object.type === 'UnaryExpression' || // `(!t).y`
-    node.object.type === 'ArrowFunctionExpression' ||
-    node.object.type === 'UpdateExpression' || // `(++x)[x]`
+    node.object.type === 'ObjectExpression' ||              // {}.c -> ({}).c
+    node.object.type === 'SequenceExpression' ||            // a,b.c -> (a,b).c
+    node.object.type === 'FunctionExpression' ||            // function(){}.c -> (function(){}).c
+    node.object.type === 'ClassExpression' ||               // class x{}.b -> (class x{}).b
+    node.object.type === 'BinaryExpression' ||              // a+b.c -> (a+b).c
+    // node.object.type === 'MemberExpression' ||           // a.b.c -> (a.b).c
+    // node.object.type === 'Identifier' ||                 // a.b -> (a).b
+    // node.object.type === 'CallExpression' ||             // -> a().b -> (a()).b
+    node.object.type === 'UnaryExpression' ||               // `(!t).y`
+    node.object.type === 'ArrowFunctionExpression' ||       // ()=>x.y -> (()=>x).y
+    node.object.type === 'UpdateExpression' ||              // `(++x)[x]`
     (node.object.type === 'Literal' && typeof node.object.value === 'number') || // `4 .p`
-    node.object.type === 'AssignmentExpression'
+    (node.object.type === 'Identifier' && node.object.name === 'let') || // `(let)[x]`
+    node.object.type === 'AssignmentExpression'             // a=b.c -> (a=b).c
   ) {
     return $w(node.object) + (node.computed ? '[' + $(node.property) + ']' : ('.' + $(node.property)));
   } else {
@@ -410,7 +581,23 @@ function MethodDefinition(node) {
 }
 function NewExpression(node) {
   assert(node.type, 'NewExpression');
-  return 'new ' + (node.callee.type !== 'Super' && node.callee.type !== 'Import' ? $w(node.callee) : $(node.callee)) + '(' + node.arguments.map($).join(', ') + ')';
+  if (
+    node.callee.type === 'Super'
+    || node.callee.type === 'Import'
+    || node.callee.type === 'Identifier'
+    || node.callee.type === 'Literal'
+    || node.callee.type === 'MemberExpression'
+    // || node.callee.type === 'CallExpression'           // new x()() -> new (x())()
+    || node.callee.type === 'ArrayExpression'             // new []     Runtime error...?
+    || node.callee.type === 'ObjectExpression'            // new {}     Runtime error...?
+    || node.callee.type === 'MetaProperty'                // new new.target
+    // || node.callee.type === 'TaggedTemplateExpression' // new foo``() -> new (foo``)
+    || node.callee.type === 'TemplateLiteral'             // new `foo`  Runtime error?
+    || node.callee.type === 'ThisExpression'              // new this   (Could be made to work)
+  ) {
+    return 'new ' + $(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  }
+  return 'new ' + $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
 }
 function NullLiteral(node) {
   assert(node.type, 'NullLiteral');
@@ -539,7 +726,25 @@ function TryStatement(node) {
 }
 function UnaryExpression(node) {
   assert(node.type, 'UnaryExpression');
-  return node.operator + ' ' + $w(node.argument);
+
+  if (
+    node.argument.type === 'Identifier'           // !foo
+    || node.argument.type === 'Import'            // !import()
+    || node.argument.type === 'Super'             // !super
+    || node.argument.type === 'MemberExpression'  // !x.y
+    || node.argument.type === 'Literal'           // !5
+    || node.argument.type === 'CallExpression'    // !x()
+    || node.argument.type === 'ArrayExpression'   // ![x]
+    || node.argument.type === 'ObjectExpression'  // !{x}
+    || node.argument.type === 'MetaProperty'      // !new.target
+    || node.argument.type === 'TaggedTemplateExpression' // ! foo`x`
+    || node.argument.type === 'TemplateLiteral'   // !`foo`
+    || node.argument.type === 'ThisExpression'    // !this
+  ) {
+    return node.operator + ('!+-~'.includes(node.operator)?'':' ') + $(node.argument);
+  }
+
+  return node.operator + ('!+-~'.includes(node.operator)?'':' ') + $w(node.argument);
 }
 function UpdateExpression(node) {
   assert(node.type, 'UpdateExpression');
@@ -553,6 +758,7 @@ function VariableDeclaration(node, fromFor) {
 }
 function VariableDeclarator(node) {
   assert(node.type, 'VariableDeclarator');
+
   return $(node.id) + (node.init ? ' = ' + $(node.init) : '');
 }
 function WhileStatement(node) {

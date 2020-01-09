@@ -117,7 +117,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy]:
 
 ````js
-function e(x = (interface = 10)) {}
+function e(x = interface = 10) {}
 ````
 
 Produces same AST
