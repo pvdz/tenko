@@ -452,6 +452,12 @@ if [[ ! -z "${STABLE}" && -z "${STABLE_NO_SETUP}" ]]; then
   sudo su -c "echo 0 > /sys/devices/system/cpu/cpu6/online" || true
   sudo su -c "echo 0 > /sys/devices/system/cpu/cpu7/online" || true
 
+  # Do not scale down cpu freq to save power. Run at a fixed hz
+  # Assert this is enabled by `watch grep \"cpu MHz\" /proc/cpuinfo`. It should show a nearly fixed value these cores
+  sudo su -c "echo 'performance' > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor" || true
+  sudo su -c "echo 'performance' > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor" || true
+  sudo su -c "echo 'performance' > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor" || true
+
   # Disable "intel boost". Source: https://gist.github.com/Dieterbe/a52c95a9603507670eb39274544ee1a8
   # (Should be redundant with intel_pstats=disable)
   # https://www.kernel.org/doc/html/v4.14/admin-guide/pm/cpufreq.html#the-boost-file-in-sysfs
