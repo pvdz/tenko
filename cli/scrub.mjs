@@ -132,7 +132,7 @@ function BinaryExpression(node) {
 }
 function BlockStatement(node) {
   assert(node.type, 'BlockStatement');
-  return '{' + node.body.map($).join('\n') + '}';
+  return '{\n' + node.body.map($).join('\n') + '\n}';
 }
 function BooleanLiteral(node) {
   assert(node.type, 'BooleanLiteral');
@@ -237,7 +237,7 @@ function CatchClause(node) {
 }
 function ClassBody(node) {
   assert(node.type, 'ClassBody');
-  return '{' + node.body.map($).join('\n') + '}';
+  return '{\n' + node.body.map($).join('\n') + '\n}';
 }
 function ClassDeclaration(node) {
   assert(node.type, 'ClassDeclaration');
@@ -429,12 +429,12 @@ function FunctionDeclaration(node) {
   assert(node.type, 'FunctionDeclaration');
   let suffix = (NATIVE_SYMBOLS && node.id ? ';allFuncs.push('+node.id.name+');' : '');
   return (
-    (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + node.body.body.map($).join('\n') + '}'
+    (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {\n' + node.body.body.map($).join('\n') + '\n}'
   ) + suffix;
 }
 function FunctionExpression(node) {
   assert(node.type, 'FunctionExpression');
-  return (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + node.body.body.map($).join('\n') + '}';
+  return (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {\n' + node.body.body.map($).join('\n') + '\n}';
 }
 function Identifier(node) {
   assert(node.type, 'Identifier');
@@ -698,7 +698,7 @@ function SwitchCase(node) {
 }
 function SwitchStatement(node) {
   assert(node.type, 'SwitchStatement');
-  return 'switch ' + $w(node.discriminant) + ' {' + node.cases.map($).join('\n') + '}';
+  return 'switch ' + $w(node.discriminant) + ' {\n' + node.cases.map($).join('\n') + '\n}';
 }
 function TaggedTemplateExpression(node) {
   assert(node.type, 'TaggedTemplateExpression');

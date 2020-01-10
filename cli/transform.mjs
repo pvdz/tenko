@@ -483,18 +483,42 @@ export function transform(ast, localConstMap, recordConstants) {
 
         break;
 
-      case 'BlockStatement':
+      case 'BlockStatement': {
+        let body = node.body;
+
         // Don't visit the last element. We don't care if the return/* is the last statement.
-        for (let i=0, len = node.body.length - 1; i<len; ++i) {
-          if (node.body[i] && ['ReturnStatement', 'BreakStatement', 'ContinueStatement', 'ThrowStatement'].includes(node.body[i].type)) {
+        for (let i=0, len = body.length - 1; i<len; ++i) {
+          if (body[i] && ['ReturnStatement', 'BreakStatement', 'ContinueStatement', 'ThrowStatement'].includes(body[i].type)) {
             // Prune dead code in a block that has statements following a `return` statement. This can happen due to
             // build artifacts or just development state.
             // We don't rely on stuff in the dead code (like eval or padding to prevent jit stuff) so get rid of it.
-            node.body.length = i + 1; // Discard the rest
+            body.length = i + 1; // Discard the rest
             break;
           }
         }
+
+        // Drop all empty statements (useless semi colons) from blocks
+        for (let i = body.length - 1; i >= 0; --i) {
+          if (body[i] && body[i].type === 'EmptyStatement') {
+            body.splice(i, 1);
+          }
+        }
+
         break;
+      }
+
+      case 'Program': {
+        let body = node.body;
+
+        // Drop all empty statements (useless semi colons) from blocks
+        for (let i = body.length - 1; i >= 0; --i) {
+          if (body[i] && body[i].type === 'EmptyStatement') {
+            body.splice(i, 1);
+          }
+        }
+
+        break;
+      }
 
       case 'SequenceExpression': {
         // Note: everything except the last element is fair game. Side-effect free expressions should be dropped.
