@@ -27,36 +27,37 @@ const RESET = '\x1b[0m';
   }
 
   // Note: the baselines are lowest times for my machine ... ymmv. But it helps to approximate deviation by system load
+  // All tests run with annexb=true
   let files = [
     // Sanity test and quick overhead baseline check. Basically this file in an earlier iteration.
     // await read({path: 'ignore/perf/es6.tiny.js', mode: 'module'}),
 
     // // A million corner cases
-    // await read({path: 'ignore/perf/es5.js1k.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5.js1k.js', mode: 'sloppy'}),
     //
     // // Large js file rom fb (es3, minified build output, 3+ y/o)
-    // await read({path: 'ignore/perf/es3.fb.newsfeed.min.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es3.fb.newsfeed.min.js', mode: 'sloppy'}),
     //
     // // From babel repo
-    // await read({path: 'ignore/perf/es6.material-ui-core.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es6.material-ui-core.js', mode: 'sloppy'}),
     // await read({path: 'ignore/perf/es6.angular-compiler.js', mode: 'module'}),
     //
     // // Random
-    // await read({path: 'ignore/perf/es5.moment-with-locales.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5.moment-with-locales.js', mode: 'sloppy'}),
     // await read({path: 'ignore/perf/es6.mljs.js', mode: 'module'}),
     //
     // // Specific regex test case
     // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes.js', mode: 'module'}),
     // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-noclass.js', mode: 'module'}), // (same except all `[` are removed which promotes all escapes to atoms)
     // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes.js', mode: 'module'}), // (same except replaced unicode quad with unicode variables)
-    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-strings.js', mode: 'web'}), // (same except regexes replaced with strings)
-    // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes-as-templates.js', mode: 'web'}), // (same except regexes replaced with templates)
+    // await read({path: 'ignore/perf/es5.5mb.node-unicode-data-regexes-as-strings.js', mode: 'sloppy'}), // (same except regexes replaced with strings)
+    // await read({path: 'ignore/perf/es6.5mb.node-unicode-data-regexes-as-templates.js', mode: 'sloppy'}), // (same except regexes replaced with templates)
     //
     // old... 20mb
-    // await read({path: 'ignore/perf/es5.8mb-bench.js', mode: 'web'}),
-    await read({path: 'ignore/perf/es5.16mb-bench.js', mode: 'web'}),
-    // await read({path: 'ignore/perf/es5.webkit.npm.1.0.0.js', mode: 'web'}),
-    // await read({path: 'ignore/perf/es5.35mb-kate.js.jo.js', mode: 'web'}),
+    // await read({path: 'ignore/perf/es5.8mb-bench.js', mode: 'sloppy'}),
+    await read({path: 'ignore/perf/es5.16mb-bench.js', mode: 'sloppy'}),
+    // await read({path: 'ignore/perf/es5.webkit.npm.1.0.0.js', mode: 'sloppy'}),
+    // await read({path: 'ignore/perf/es5.35mb-kate.js.jo.js', mode: 'sloppy'}),
   ].filter(Boolean);
 
   files.forEach(({path, code, mode}) => {

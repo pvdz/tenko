@@ -7,7 +7,7 @@ function runTenkoBuild(code, testVariant, annexb, version) {
       goalMode: testVariant === 'module',
       collectTokens: 0,
       strictMode: testVariant === 'strict',
-      webCompat: annexb || testVariant === 'web',
+      webCompat: annexb,
       targetEsVersion: Number.isFinite(version) ? version : 11,
 
       babelCompat: false,

@@ -12,8 +12,6 @@ import {Tenko, COLLECT_TOKENS_SOLID, COLLECT_TOKENS_NONE , GOAL_MODULE, GOAL_SCR
 const TEST_SLOPPY = 'sloppy';
 const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
-const TEST_WEB = 'web';
-
 
 function compareAcorn(code, tenkoPassed, testVariant, enableAnnexb, file, version, timePerf) {
   let acornOk, acornFail, tasa;
@@ -33,7 +31,7 @@ function compareAcorn(code, tenkoPassed, testVariant, enableAnnexb, file, versio
           goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
           collectTokens: COLLECT_TOKENS_SOLID,
           strictMode: testVariant === TEST_STRICT,
-          webCompat: (enableAnnexb || testVariant === TEST_WEB) ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
+          webCompat: enableAnnexb ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
           acornCompat: true,
 
           $log: () => {},

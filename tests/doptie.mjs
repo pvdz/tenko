@@ -20,7 +20,7 @@ function testTenko(tenko, code, testVariant, enableAnnexb) {
       goalMode: testVariant === 'module' ? GOAL_MODULE : GOAL_SCRIPT,
       collectTokens: COLLECT_TOKENS_NONE,
       strictMode: testVariant === 'strict',
-      webCompat: enableAnnexb || testVariant === 'web',
+      webCompat: enableAnnexb,
       // targetEsVersion: tob.inputOptions.es,
       babelCompat: false,
       acornCompat: false,

@@ -17,7 +17,6 @@ const RESET = '\x1b[0m';
 const TEST_SLOPPY = 'sloppy';
 const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
-const TEST_WEB = 'web';
 
 function sameFunc(testVariant, enableAnnexb, forTestFile, code) {
   ASSERT(sameFunc.length === arguments.length, 'arg count');
@@ -30,7 +29,7 @@ function sameFunc(testVariant, enableAnnexb, forTestFile, code) {
     return {e: {message: '(Tenko rejected input)'}};
   }
   // Now confirm this with the printed output of this ast.
-  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb || testVariant === 'web', inputAst.ast, forTestFile, false);
+  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, inputAst.ast, forTestFile, false);
   if (printerStatus === 'fail-crash') {
     console.log('status was fail :\'(');
     console.log(msg);
@@ -41,9 +40,8 @@ function sameFunc(testVariant, enableAnnexb, forTestFile, code) {
 
 function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePrinterError, ignoreProblems, logTime) {
   ASSERT(testPrinter.length === arguments.length, 'arg count');
-  // if (testVariant === 'web') throw new Error('the "web" variant is deprecated. Please pass on sloppy and enable annexB');
 
-  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb || testVariant === 'web', ast, forTestFile, logTime);
+  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime);
 
   if (!ignoreProblems && printerStatus !== 'same' && printerStatus !== 'diff-same') {
     let reducedInput;
@@ -93,7 +91,6 @@ function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePr
 
 function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime) {
   ASSERT(_testPrinter.length === arguments.length, 'arg count');
-  // if (testVariant === 'web') throw new Error('the "web" variant is deprecated. Please pass on sloppy and enable annexB');
 
   // Test the ast printer
   // We only really need to test it once for whatever run passes
@@ -111,9 +108,9 @@ function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime
     console.timeEnd('Pure print time');
   }
   if (printedFail) {
-    return ['fail-crash', `\n## AST Printer\n\nPrinter failed [${testVariant === 'web' ? 'sloppy' : testVariant}][annexb:${enableAnnexb?'yes':'no'}][fail-crash]:\n\n${printedFail}\n\n Input:\n\n${code}`];
+    return ['fail-crash', `\n## AST Printer\n\nPrinter failed [${testVariant}][annexb:${enableAnnexb?'yes':'no'}][fail-crash]:\n\n${printedFail}\n\n Input:\n\n${code}`];
   } else if (printedCode === code) {
-    return ['same', `\n## AST Printer\n\nPrinter output was same as input [${testVariant === 'web' ? 'sloppy' : testVariant}][annexb:${enableAnnexb?'yes':'no'}]\n`];
+    return ['same', `\n## AST Printer\n\nPrinter output was same as input [${testVariant}][annexb:${enableAnnexb?'yes':'no'}]\n`];
   } else {
     // Parse the input again, check whether the AST equal to before (it ought to be)
 
@@ -126,7 +123,7 @@ function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime
       return ['diff-fail', `
 ## AST Printer
 
-Printer output different from input [${testVariant === 'web' ? 'sloppy' : testVariant}][annexb:${enableAnnexb?'yes':'no'}][diff-fail]:
+Printer output different from input [${testVariant}][annexb:${enableAnnexb?'yes':'no'}][diff-fail]:
 
 Original input:
 \`\`\`\`js
@@ -149,7 +146,7 @@ Tenko failed to parse printed code (with same parameters as original)
         return ['diff-same', `
 ## AST Printer
 
-Printer output different from input [${testVariant === 'web' ? 'sloppy' : testVariant}][annexb:${enableAnnexb?'yes':'no'}]:
+Printer output different from input [${testVariant}][annexb:${enableAnnexb?'yes':'no'}]:
 
 \`\`\`\`js
 ${printedCode}
@@ -179,7 +176,7 @@ Produces same AST
         return ['diff-ast', `
 ## AST Printer
 
-Printer output different from input [${testVariant === 'web' ? 'sloppy' : testVariant}][annexb:${enableAnnexb?'yes':'no'}][diff-diff]:
+Printer output different from input [${testVariant}][annexb:${enableAnnexb?'yes':'no'}][diff-diff]:
 
 Original input:
 \`\`\`\`js
@@ -209,7 +206,7 @@ function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MOD
       goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
       collectTokens: COLLECT_TOKENS_SOLID,
       strictMode: testVariant === TEST_STRICT,
-      webCompat: enableAnnexb || testVariant === TEST_WEB,
+      webCompat: enableAnnexb,
 
       templateNewlineNormalization: false, // (!!)
 

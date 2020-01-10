@@ -5,7 +5,7 @@ function testTenko(tenko, code, testVariant, enableAnnexb, version) {
       goalMode: testVariant === 'module',
       collectTokens: 0,
       strictMode: testVariant === 'strict',
-      webCompat: enableAnnexb || testVariant === 'web',
+      webCompat: enableAnnexb,
       // targetEsVersion: version,
       babelCompat: false,
       acornCompat: false,

@@ -19,9 +19,11 @@ const RESET = '\x1b[0m';
 const INPUT_HEADER = '\n## Input\n';
 const OUTPUT_HEADER = '\n## Output\n';
 const OUTPUT_HEADER_SLOPPY = '\n### Sloppy mode\n';
+const OUTPUT_HEADER_SLOPPY_ANNEXB = '\n### Sloppy mode with AnnexB\n';
 const OUTPUT_HEADER_STRICT = '\n### Strict mode\n';
+// const OUTPUT_HEADER_STRICT_ANNEXB = '\n### Strict mode with AnnexB\n';
 const OUTPUT_HEADER_MODULE = '\n### Module goal\n';
-const OUTPUT_HEADER_WEB = '\n### Web compat mode\n';
+const OUTPUT_HEADER_MODULE_ANNEXB = '\n### Module goal with AnnexB\n';
 const OUTPUT_QUINTICK = '\n`````\n';
 const OUTPUT_QUINTICKJS = '\n`````js\n';
 
@@ -110,13 +112,17 @@ export class Tob {
     this.skippedForParser = false;
 
     this.oldOutputSloppy = false;
+    this.oldOutputSloppyAnnexB = false;
     this.newOutputSloppy = false;
+    this.newOutputSloppyAnnexB = false;
     this.oldOutputStrict = false;
+    this.oldOutputStrictAnnexB = false;
     this.newOutputStrict = false;
+    this.newOutputStrictAnnexB = false;
     this.oldOutputModule = false;
+    this.oldOutputModuleAnnexB = false;
     this.newOutputModule = false;
-    this.oldOutputWeb = false;
-    this.newOutputWeb = false;
+    this.newOutputModuleAnnexB = false;
   }
 }
 
@@ -177,9 +183,10 @@ function parseTestFile(tob) {
     let outputOffset = oldData.indexOf(OUTPUT_HEADER, inputCodeOffset);
 
     ASSERT(oldData.includes(OUTPUT_HEADER_SLOPPY, outputOffset), 'missing sloppy header', file);
+    // ASSERT(oldData.includes(OUTPUT_HEADER_SLOPPY_ANNEXB, outputOffset), 'missing sloppy annexb header', file);
     ASSERT(oldData.includes(OUTPUT_HEADER_STRICT, outputOffset), 'missing strict header', file);
     ASSERT(oldData.includes(OUTPUT_HEADER_MODULE, outputOffset), 'missing module header', file);
-    ASSERT(oldData.includes(OUTPUT_HEADER_WEB, outputOffset), 'missing web header', file);
+    // ASSERT(oldData.includes(OUTPUT_HEADER_MODULE_ANNEXB, outputOffset), 'missing module annexb header', file);
 
     let outputSloppyHeaderOffset = oldData.indexOf(OUTPUT_HEADER_SLOPPY, outputOffset);
     ASSERT(outputSloppyHeaderOffset >= 0, 'should have output sloppy header');
@@ -189,10 +196,21 @@ function parseTestFile(tob) {
     ASSERT(oldData.includes(OUTPUT_QUINTICK, outputSloppyOffset));
     tob.oldOutputSloppy = oldData.slice(outputSloppyOffset, oldData.indexOf(OUTPUT_QUINTICK, outputSloppyOffset));
 
-    let outputStrictHeaderOffset = oldData.indexOf(OUTPUT_HEADER_STRICT, outputSloppyHeaderOffset);
+    let outputSloppyAnnexbHeaderOffset = oldData.indexOf(OUTPUT_HEADER_SLOPPY_ANNEXB, outputOffset);
+    // ASSERT(outputSloppyAnnexbHeaderOffset >= 0, 'should have output annexB sloppy header');
+    let outputSloppyAnnexbOffset = oldData.indexOf(OUTPUT_QUINTICK, outputSloppyAnnexbHeaderOffset);
+    if (outputSloppyAnnexbHeaderOffset > 0 && outputSloppyAnnexbOffset > 0) {
+      outputSloppyAnnexbOffset += OUTPUT_QUINTICK.length;
+      ASSERT(oldData.includes(OUTPUT_QUINTICK, outputSloppyAnnexbOffset + OUTPUT_QUINTICK.length), 'output should contain strict output quintick');
+      tob.oldOutputSloppyAnnexB = oldData.slice(outputSloppyAnnexbOffset, oldData.indexOf(OUTPUT_QUINTICK, outputSloppyAnnexbOffset));
+    } else {
+      tob.oldOutputSloppyAnnexB = tob.oldOutputSloppy;
+    }
+
+    let outputStrictHeaderOffset = oldData.indexOf(OUTPUT_HEADER_STRICT, outputOffset);
     ASSERT(outputStrictHeaderOffset >= 0, 'should have output strict header');
     let outputStrictOffset = oldData.indexOf(OUTPUT_QUINTICK, outputStrictHeaderOffset);
-    if (outputStrictOffset >= 0) {
+    if (outputStrictHeaderOffset > 0 && outputStrictOffset >= 0) {
       outputStrictOffset += OUTPUT_QUINTICK.length;
       ASSERT(oldData.includes(OUTPUT_QUINTICK, outputStrictOffset + OUTPUT_QUINTICK.length), 'output should contain strict output quintick');
       tob.oldOutputStrict = oldData.slice(outputStrictOffset, oldData.indexOf(OUTPUT_QUINTICK, outputStrictOffset));
@@ -200,7 +218,18 @@ function parseTestFile(tob) {
       tob.oldOutputStrict = tob.oldOutputSloppy;
     }
 
-    let outputModuleHeaderOffset = oldData.indexOf(OUTPUT_HEADER_MODULE, outputStrictHeaderOffset);
+    // let outputStrictAnnexbHeaderOffset = oldData.indexOf(OUTPUT_HEADER_STRICT_ANNEXB, outputSloppyAnnexbHeaderOffset);
+    // ASSERT(outputStrictAnnexbHeaderOffset >= 0, 'should have output strict header');
+    // let outputStrictAnnexBOffset = oldData.indexOf(OUTPUT_QUINTICK, outputStrictAnnexbHeaderOffset);
+    // if (outputStrictAnnexBOffset >= 0) {
+    //   outputStrictAnnexBOffset += OUTPUT_QUINTICK.length;
+    //   ASSERT(oldData.includes(OUTPUT_QUINTICK, outputStrictAnnexBOffset + OUTPUT_QUINTICK.length), 'output should contain strict output quintick');
+    //   tob.oldOutputStrict = oldData.slice(outputStrictAnnexBOffset, oldData.indexOf(OUTPUT_QUINTICK, outputStrictAnnexBOffset));
+    // } else {
+    //   tob.oldOutputStrict = tob.oldOutputStrict || tob.oldOutputSloppy || tob.oldOutputSloppyAnnexB;
+    // }
+
+    let outputModuleHeaderOffset = oldData.indexOf(OUTPUT_HEADER_MODULE, outputOffset);
     ASSERT(outputModuleHeaderOffset >= 0, 'should have output module header');
     let outputModuleOffset = oldData.indexOf(OUTPUT_QUINTICK, outputModuleHeaderOffset);
     if (outputModuleOffset >= 0) {
@@ -208,19 +237,18 @@ function parseTestFile(tob) {
       ASSERT(oldData.includes(OUTPUT_QUINTICK, outputModuleOffset));
       tob.oldOutputModule = oldData.slice(outputModuleOffset, oldData.indexOf(OUTPUT_QUINTICK, outputModuleOffset));
     } else {
-      tob.oldOutputModule = tob.oldOutputStrict; // meh? module probably mimics strict, rather than sloppy
+      tob.oldOutputModule = tob.oldOutputStrict || tob.oldOutputSloppy;
     }
 
-    let outputWebHeaderOffset = oldData.indexOf(OUTPUT_HEADER_WEB, outputModuleHeaderOffset);
-    ASSERT(outputWebHeaderOffset >= 0, 'should have output web header');
-    let outputWebOffset = oldData.indexOf(OUTPUT_QUINTICK, outputWebHeaderOffset);
-    let nextHash = oldData.indexOf('\n##', outputWebHeaderOffset + 5);
-    if (outputWebOffset >= 0 && (nextHash < 0 || nextHash > outputWebOffset)) {
-      outputWebOffset += OUTPUT_QUINTICK.length;
-      ASSERT(oldData.includes(OUTPUT_QUINTICK, outputWebOffset));
-      tob.oldOutputWeb = oldData.slice(outputWebOffset, oldData.indexOf(OUTPUT_QUINTICK, outputWebOffset));
+    let outputModuleAnnexbHeaderOffset = oldData.indexOf(OUTPUT_HEADER_MODULE_ANNEXB, outputOffset);
+    // ASSERT(outputModuleAnnexbHeaderOffset >= 0, 'should have output module header');
+    let outputModuleAnnexbOffset = oldData.indexOf(OUTPUT_QUINTICK, outputModuleAnnexbHeaderOffset);
+    if (outputModuleAnnexbOffset >= 0) {
+      outputModuleAnnexbOffset += OUTPUT_QUINTICK.length;
+      ASSERT(oldData.includes(OUTPUT_QUINTICK, outputModuleAnnexbOffset));
+      tob.oldOutputModuleAnnexB = oldData.slice(outputModuleAnnexbOffset, oldData.indexOf(OUTPUT_QUINTICK, outputModuleAnnexbOffset));
     } else {
-      tob.oldOutputWeb = tob.oldOutputSloppy;
+      tob.oldOutputModuleAnnexB = tob.oldOutputModule || tob.oldOutputStrict || tob.oldOutputSloppy;
     }
   }
 
@@ -353,9 +381,11 @@ export {
   INPUT_HEADER,
   OUTPUT_HEADER,
   OUTPUT_HEADER_SLOPPY,
+  OUTPUT_HEADER_SLOPPY_ANNEXB,
   OUTPUT_HEADER_STRICT,
+  // OUTPUT_HEADER_STRICT_ANNEXB,
   OUTPUT_HEADER_MODULE,
-  OUTPUT_HEADER_WEB,
+  OUTPUT_HEADER_MODULE_ANNEXB,
   OUTPUT_QUINTICK,
   OUTPUT_QUINTICKJS,
 

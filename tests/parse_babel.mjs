@@ -12,7 +12,6 @@ import {Tenko, COLLECT_TOKENS_SOLID, COLLECT_TOKENS_NONE , GOAL_MODULE, GOAL_SCR
 const TEST_SLOPPY = 'sloppy';
 const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
-const TEST_WEB = 'web';
 
 function compareBabel(code, tenkoPassed, testVariant, enableAnnexb, file, timePerf) {
   let babelOk, babelFail, tasb;
@@ -32,7 +31,7 @@ function compareBabel(code, tenkoPassed, testVariant, enableAnnexb, file, timePe
           goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
           collectTokens: COLLECT_TOKENS_SOLID,
           strictMode: testVariant === TEST_STRICT,
-          webCompat: (enableAnnexb || testVariant === TEST_WEB) ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
+          webCompat: enableAnnexb ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
           babelCompat: true,
 
           $log: () => {},

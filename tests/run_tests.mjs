@@ -26,12 +26,11 @@ const AUTO_GENERATE_CONSERVATIVE = process.argv.includes('-G');
 const REDUCING = process.argv.includes('--min');
 const REDUCING_PRINTER = process.argv.includes('--min-printer');
 const ALL_VARIANTS = process.argv.includes('--all');
-let [a,b,c,d] = [process.argv.includes('--sloppy'), process.argv.includes('--strict'), process.argv.includes('--module'), process.argv.includes('--web')];
+let [a,b,c] = [process.argv.includes('--sloppy'), process.argv.includes('--strict'), process.argv.includes('--module')];
 const DISABLE_VARIANTS_UNLESS_OVERRIDE = SEARCH || INPUT_OVERRIDE || REDUCING;
-const RUN_SLOPPY = ALL_VARIANTS || (a || (!b && !c && !d));
-const RUN_STRICT = ALL_VARIANTS || b || (!DISABLE_VARIANTS_UNLESS_OVERRIDE && !a && !c && !d);
-const RUN_MODULE = ALL_VARIANTS || c || (!DISABLE_VARIANTS_UNLESS_OVERRIDE && !a && !b && !d);
-const RUN_WEB = ALL_VARIANTS || d || (!DISABLE_VARIANTS_UNLESS_OVERRIDE && !a && !b && !c);
+const RUN_SLOPPY = ALL_VARIANTS || (a || (!b && !c));
+const RUN_STRICT = ALL_VARIANTS || b || (!DISABLE_VARIANTS_UNLESS_OVERRIDE && !a && !c);
+const RUN_MODULE = ALL_VARIANTS || c || (!DISABLE_VARIANTS_UNLESS_OVERRIDE && !a && !b);
 const ENABLE_ANNEXB = process.argv.includes('--annexb');
 const TARGET_ES6 = process.argv.includes('--es6');
 const TARGET_ES7 = process.argv.includes('--es7');
@@ -87,7 +86,6 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
     --strict      Only run tests in strict mode (can be combined with other modes like --module)
     --module      Only run tests with module goal (can be combined with other modes like --strict)
     --annexb      Enable web compatibility extensions listed in Annex B in the specification
-    --web         Only run tests in sloppy mode with web compat mode on (alias for \`--sloppy --annexb\`)
     --acorn       Run in Acorn compat mode (\`acornCompat=true\`)
     --babel       Run in Babel compat mode (\`babelCompat=true\`)
     --test-acorn  Also show diff with Acorn AST / pass/fail with test cases (not the same as --acorn !)
@@ -108,7 +106,7 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
 }
 
 if (AUTO_UPDATE && (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE)) throw new Error('Cannot use auto update and auto generate together');
-if (AUTO_UPDATE && (a || b || c || d)) throw new Error('Cannot use --sloppy (etc) together with -u');
+if (AUTO_UPDATE && (a || b || c)) throw new Error('Cannot use --sloppy (etc) together with -u');
 
 import fs from 'fs';
 import path from 'path';
@@ -133,9 +131,11 @@ import {
   INPUT_HEADER,
   OUTPUT_HEADER,
   OUTPUT_HEADER_SLOPPY,
+  OUTPUT_HEADER_SLOPPY_ANNEXB,
   OUTPUT_HEADER_STRICT,
+  // OUTPUT_HEADER_STRICT_ANNEXB,
   OUTPUT_HEADER_MODULE,
-  OUTPUT_HEADER_WEB,
+  OUTPUT_HEADER_MODULE_ANNEXB,
   OUTPUT_QUINTICK,
   OUTPUT_QUINTICKJS,
 } from './utils.mjs';
@@ -191,7 +191,6 @@ const RESET = '\x1b[0m';
 const TEST_SLOPPY = 'sloppy';
 const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
-const TEST_WEB = 'web';
 
 if ((REDUCING || REDUCING_PRINTER) && !TARGET_FILE && !INPUT_OVERRIDE) THROW('Can only use `--min` and `--min-parser` together with `-f` or `-i`');
 if (NO_FATALS) console.log(BLINK + 'NO_FATALS enabled. Do not blindly commit result!!' + RESET);
@@ -228,7 +227,7 @@ async function extractFiles(list) {
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test file extraction time');
   console.log('Total input size:', bytes, 'bytes');
 }
-function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
+function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
   wasHit = false;
   let r, e = '';
   let stdout = [];
@@ -243,7 +242,7 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
         goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
         collectTokens: COLLECT_TOKENS_SOLID,
         strictMode: testVariant === TEST_STRICT,
-        webCompat: (ENABLE_ANNEXB || testVariant === TEST_WEB) ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
+        webCompat: ENABLE_ANNEXB || annexB ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
         targetEsVersion: tob.inputOptions.es,
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
@@ -267,7 +266,7 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
       tob.printerOutput = testPrinter(
         code,
         testVariant,
-        ENABLE_ANNEXB, // testVariant web will auto-enable this
+        ENABLE_ANNEXB || annexB,
         r.ast,
         !INPUT_OVERRIDE && !TARGET_FILE && (AUTO_UPDATE && !CONFIRMED_UPDATE),
         REDUCING_PRINTER,
@@ -336,7 +335,7 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
 
   if (tob.continuePrint) {
     if (!NO_FATALS && AUTO_UPDATE && tob.continuePrint && !CONFIRMED_UPDATE && !INPUT_OVERRIDE && !TARGET_FILE) {
-      console.error(BOLD + 'Test Assertion fail' + RESET + ': testVariant=' + testVariant + ', test ' + BOLD + tob.file + RESET + ' was explicitly marked to pass, but it failed somehow;\n' + RED + tob.continuePrint + RESET);
+      console.error(BOLD + 'Test Assertion fail' + RESET + ': testVariant=' + testVariant + ', annexB=' + annexB + ', test ' + BOLD + tob.file + RESET + ' was explicitly marked to pass, but it failed somehow;\n' + RED + tob.continuePrint + RESET);
       process.exit();
     } else {
       console.error(tob.continuePrint);
@@ -347,11 +346,11 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
   // Tests with specific versions should also have non-specific counter parts. Since Babel does not support targeting
   // specific spec versions, we should just skip those variants because they lead to false positives.
   if (TEST_BABEL && (!Number.isFinite(tob.inputOptions.es) || TARGET_FILE || INPUT_OVERRIDE)) {
-    [babelOk, babelFail, zasb] = compareBabel(code, !e, testVariant, ENABLE_ANNEXB, tob.file, INPUT_OVERRIDE || TARGET_FILE);
+    [babelOk, babelFail, zasb] = compareBabel(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, INPUT_OVERRIDE || TARGET_FILE);
   }
   let acornOk, acornFail, zasa;
   if (TEST_ACORN && (!Number.isFinite(tob.inputOptions.es) || TARGET_FILE || INPUT_OVERRIDE)) {
-    [acornOk, acornFail, zasa] = compareAcorn(code, !e, testVariant, ENABLE_ANNEXB, tob.file, tob.inputOptions.es, INPUT_OVERRIDE || TARGET_FILE);
+    [acornOk, acornFail, zasa] = compareAcorn(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, tob.inputOptions.es, INPUT_OVERRIDE || TARGET_FILE);
   }
 
   let nodeFail = undefined;
@@ -368,8 +367,8 @@ function coreTest(tob, tenko, testVariant, code = tob.inputCode) {
 
   return {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa};
 }
-async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "strict" | "module" | "web" */) {
-  let {parserRawOutput: {[testVariant]: {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa}}, file} = tob;
+async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "strict" | "module" */, annexB) {
+  let {parserRawOutput: {[testVariant+annexB]: {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa}}, file} = tob;
   if (!r && !e) return; // no output for this variant
 
   let errorMessage = '';
@@ -378,14 +377,14 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     if (errorMessage.includes('Assertion fail')) {
       stdout.forEach(a => console.log.apply(console, a));
 
-      console.error('####\nAn ' + BLINK + 'assertion' + RESET + ' error was thrown in ' + BOLD + testVariant + RESET + ' mode\n');
+      console.error('####\nAn ' + BLINK + 'assertion' + RESET + ' error was thrown in ' + BOLD + testVariant + RESET + ' mode with annexB=' + annexB + '\n');
       console.error(BOLD + 'Input:' + RESET + '\n\n`````\n' + tob.inputCode + '\n`````\n\n' + BOLD + 'Error message:' + RESET + '\n');
       console.error(errorMessage);
       console.error('####');
       console.error(e.stack);
       if (!NO_FATALS) {
         hardExit(tob, 'postProcessResult assertion error');
-        throw new Error('Assertion error. Mode = ' + testVariant + ', file = ' + file + '; ' + errorMessage.message);
+        throw new Error('Assertion error. Mode = ' + testVariant + ', annexB=' + annexB + ', file = ' + file + '; ' + errorMessage.message);
       }
     }
     else if (errorMessage.startsWith('Parser error!')) {
@@ -398,13 +397,13 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
       stdout.forEach(a => console.log.apply(console, a));
 
       // errorMessage = 'TEMP SKIPPED UNKNOWN ERROR';
-      console.error('####\nThe following ' + BLINK + 'unexpected' + RESET + ' error was thrown in ' + BOLD + testVariant + RESET + ' mode:\n');
+      console.error('####\nThe following ' + BLINK + 'unexpected' + RESET + ' error was thrown in ' + BOLD + testVariant + RESET + ' mode with annexB=' + annexB + ':\n');
       console.error(errorMessage);
       console.error(e.stack);
       console.error('####');
       if (!NO_FATALS) {
         hardExit(tob, 'postProcessResult unknown error');
-        throw new Error('Non-graceful error, fixme. Mode = ' + testVariant + ', file = ' + file + '; ' + errorMessage.message);
+        throw new Error('Non-graceful error, fixme. Mode = ' + testVariant + ', annexB=' + annexB + ', file = ' + file + '; ' + errorMessage.message);
       }
     }
   }
@@ -452,35 +451,49 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
   // Caching it like this takes up more memory but makes deduping other modes so-much-easier
   switch (testVariant) {
     case TEST_SLOPPY:
-      tob.newOutputSloppy = outputTestString;
-      tob.newOutputSloppyBabel = outputBabel;
-      tob.newOutputSloppyNode = nodeOutput;
-      tob.newOutputSloppyAcorn = outputAcorn;
+      if (annexB) {
+        tob.newOutputSloppyAnnexB = outputTestString;
+        tob.newOutputSloppyAnnexBBabel = outputBabel;
+        tob.newOutputSloppyAnnexBNode = nodeOutput;
+        tob.newOutputSloppyAnnexBAcorn = outputAcorn;
+      } else {
+        tob.newOutputSloppy = outputTestString;
+        tob.newOutputSloppyBabel = outputBabel;
+        tob.newOutputSloppyNode = nodeOutput;
+        tob.newOutputSloppyAcorn = outputAcorn;
+      }
       break;
     case TEST_STRICT:
-      tob.newOutputStrict = outputTestString;
-      tob.newOutputStrictBabel = outputBabel;
-      tob.newOutputStrictNode = nodeOutput;
-      tob.newOutputStrictAcorn = '';
+      if (annexB) {
+        tob.newOutputStrictAnnexB = outputTestString;
+        tob.newOutputStrictAnnexBBabel = outputBabel;
+        tob.newOutputStrictAnnexBNode = nodeOutput;
+        tob.newOutputStrictAnnexBAcorn = '';
+      } else {
+        tob.newOutputStrict = outputTestString;
+        tob.newOutputStrictBabel = outputBabel;
+        tob.newOutputStrictNode = nodeOutput;
+        tob.newOutputStrictAcorn = '';
+      }
       break;
     case TEST_MODULE:
-      tob.newOutputModule = outputTestString;
-      tob.newOutputModuleBabel = outputBabel;
-      tob.newOutputModuleAcorn = outputAcorn;
-      break;
-    case TEST_WEB:
-      tob.newOutputWeb = outputTestString;
-      tob.newOutputWebBabel = outputBabel;
-      tob.newOutputWebAcorn = outputAcorn;
+      if (annexB) {
+        tob.newOutputModuleAnnexB = outputTestString;
+        tob.newOutputModuleAnnexBBabel = outputBabel;
+        tob.newOutputModuleAnnexBAcorn = outputAcorn;
+      } else {
+        tob.newOutputModule = outputTestString;
+        tob.newOutputModuleBabel = outputBabel;
+        tob.newOutputModuleAcorn = outputAcorn;
+      }
       break;
     default: FIXME;
   }
 }
 
-async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module" | "web" */) {
-  if (!RUN_VERBOSE_IN_SERIAL) console.log(' - Now testing', INPUT_OVERRIDE ? 'for:' : 'all cases for:', testVariant);
-  if (!RUN_VERBOSE_IN_SERIAL) console.time('  $$ Batch for ' + testVariant);
-
+async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module" */, annexB) {
+  if (!RUN_VERBOSE_IN_SERIAL) console.log(' - Now testing', INPUT_OVERRIDE ? 'for:' : 'all cases for:', testVariant, 'annexb=', annexB);
+  if (!RUN_VERBOSE_IN_SERIAL) console.time('  $$ Batch for ' + testVariant + ' (annexB='+annexB+')');
 
   let bytes = 0;
   let ok = 0;
@@ -490,11 +503,11 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
   await Promise.all(list.map(async (tob/*: Tob */) => {
     let {inputCode, inputOptions} = tob;
     bytes += inputCode.length;
-    if (REDUCING) reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, code), tob.file);
+    if (REDUCING) reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, code), tob.file);
     // This is quite memory expensive but much easier to work with
-    tob.parserRawOutput[testVariant] = coreTest(tob, tenko, testVariant);
+    tob.parserRawOutput[testVariant+annexB] = coreTest(tob, tenko, testVariant, annexB);
     if (CONCISE) return;
-    let rawOutput = tob.parserRawOutput[testVariant];
+    let rawOutput = tob.parserRawOutput[testVariant+annexB];
     if (SEARCH) {
       let e = rawOutput.e;
       // If you use -q -i then you just want to know whether or not some codepath hits some code
@@ -522,11 +535,11 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
   } else {
     if (!RUN_VERBOSE_IN_SERIAL) console.log('   Processing', list.length, 'result for all tests');
     if (!RUN_VERBOSE_IN_SERIAL) console.time('   $$ Parse result post processing time');
-    await Promise.all(list.map(async (tob/*: Tob*/) => await postProcessResult(tob, testVariant)));
+    await Promise.all(list.map(async (tob/*: Tob*/) => await postProcessResult(tob, testVariant, annexB)));
     if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('   $$ Parse result post processing time');
   }
 
-  if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('  $$ Batch for ' + testVariant);
+  if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('  $$ Batch for ' + testVariant + ' (annexB='+annexB+')');
 }
 function showDiff(tob) {
   console.log(
@@ -545,20 +558,26 @@ function showDiff(tob) {
     `colordiff -a -y -w -W200 <(
       cat "${tob.file}" |
       grep -v "_Note: the whole output block is auto-generated. Manual changes will be overwritten!_" |
-      grep -v "Below follow outputs in four parsing modes: sloppy mode, strict mode script goal, module goal" |
+      grep -v "Below follow outputs in four parsing modes: sloppy mode, strict mode script goal, module goal, web compat mode (always sloppy)." |
+      grep -v "Below follow outputs in five parsing modes: sloppy, sloppy+annexb, strict script, module, module+annexb" |
       grep -v "Note that the output parts are auto-generated by the test runner to reflect actual result." |
       grep -v "Parsed with script goal and as if the code did not start with strict mode header." |
       grep -v "Parsed with script goal but as if it was starting with \\\`\\"use strict\\"\\\` at the top." |
+      grep -v "Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header." |
+      grep -v "Parsed with script goal with AnnexB rules enabled but as if it was starting with \\\`\\"use strict\\"\\\` at the top." |
       grep -v "Parsed with the module goal." |
       grep -v "Parsed in sloppy script mode but with the web compat flag enabled." |
       sed '/^$/N;/^\\n$/D'
     ) <(
       echo '${Buffer.from(encodeUnicode(tob.newData)).toString('base64')}' | base64 -d - |
       grep -v "_Note: the whole output block is auto-generated. Manual changes will be overwritten!_" |
-      grep -v "Below follow outputs in four parsing modes: sloppy mode, strict mode script goal, module goal" |
+      grep -v "Below follow outputs in four parsing modes: sloppy mode, strict mode script goal, module goal, web compat mode (always sloppy)." |
+      grep -v "Below follow outputs in five parsing modes: sloppy, sloppy+annexb, strict script, module, module+annexb" |
       grep -v "Note that the output parts are auto-generated by the test runner to reflect actual result." |
       grep -v "Parsed with script goal and as if the code did not start with strict mode header." |
+      grep -v "Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header." |
       grep -v "Parsed with script goal but as if it was starting with \\\`\\"use strict\\"\\\` at the top." |
+      grep -v "Parsed with script goal with AnnexB rules enabled but as if it was starting with \\\`\\"use strict\\"\\\` at the top." |
       grep -v "Parsed with the module goal." |
       grep -v "Parsed in sloppy script mode but with the web compat flag enabled." |
       sed '/^$/N;/^\\n$/D'
@@ -580,10 +599,11 @@ function hardExit(tob, msg) {
 async function runTests(list, tenko) {
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ Total runtime');
   if (!RUN_VERBOSE_IN_SERIAL) console.log('Now actually running all', list.length, 'test cases... 4x! Single threaded! This may take some time (~20s on my machine)');
-  if (RUN_SLOPPY) await runTest(list, tenko, TEST_SLOPPY);
-  if (RUN_STRICT) await runTest(list, tenko, TEST_STRICT);
-  if (RUN_MODULE) await runTest(list, tenko, TEST_MODULE);
-  if (RUN_WEB) await runTest(list, tenko, TEST_WEB);
+  if (RUN_SLOPPY) await runTest(list, tenko, TEST_SLOPPY, false);
+  if (RUN_STRICT) await runTest(list, tenko, TEST_STRICT, false);
+  if (RUN_MODULE) await runTest(list, tenko, TEST_MODULE, false);
+  if (RUN_SLOPPY) await runTest(list, tenko, TEST_SLOPPY, true);
+  if (RUN_MODULE) await runTest(list, tenko, TEST_MODULE, true);
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Total runtime');
   if (SEARCH) return;
 
@@ -596,20 +616,20 @@ async function runTests(list, tenko) {
         console.log('\nTest output change detected!\n');
         // dump outputs
         if (RUN_SLOPPY) {
-          console.log(BOLD + '### Terminal output for sloppy run:' + RESET);
-          tob.parserRawOutput.sloppy.stdout.forEach((a) => console.log(...a));
+          console.log(BOLD + '### Terminal output for sloppy annexb=false run:' + RESET);
+          tob.parserRawOutput.sloppyfalse.stdout.forEach((a) => console.log(...a));
+          console.log(BOLD + '### Terminal output for sloppy annexb=true run:' + RESET);
+          tob.parserRawOutput.sloppytrue.stdout.forEach((a) => console.log(...a));
         }
         if (RUN_STRICT) {
           console.log(BOLD + '### Terminal output for strict run:' + RESET);
-          tob.parserRawOutput.strict.stdout.forEach((a) => console.log(...a));
+          tob.parserRawOutput.strictfalse.stdout.forEach((a) => console.log(...a));
         }
         if (RUN_MODULE) {
-          console.log(BOLD + '### Terminal output for module run:' + RESET);
-          tob.parserRawOutput.module.stdout.forEach((a) => console.log(...a));
-        }
-        if (RUN_WEB) {
-          console.log(BOLD + '### Terminal output for web run:' + RESET);
-          tob.parserRawOutput.web.stdout.forEach((a) => console.log(...a));
+          console.log(BOLD + '### Terminal output for module annexb=false run:' + RESET);
+          tob.parserRawOutput.modulefalse.stdout.forEach((a) => console.log(...a));
+          console.log(BOLD + '### Terminal output for module annexb=true run:' + RESET);
+          tob.parserRawOutput.moduletrue.stdout.forEach((a) => console.log(...a));
         }
 
         if (!TARGET_FILE && !INPUT_OVERRIDE) {
@@ -747,32 +767,58 @@ async function cli() {
   if (!SEARCH && !CONCISE) {
     console.log('=============================================');
     if (RUN_SLOPPY) {
-      ASSERT(list[0].newOutputSloppy !== false, 'should update');
-      console.log('### Sloppy mode:');
-      console.log(list[0].newOutputSloppy);
-      console.log('=============================================\n');
+      ASSERT(list[0].newOutputSloppy !== false || list[0].newOutputSloppyAnnexB !== false, 'should update');
+      if (list[0].newOutputSloppy !== false) {
+        console.log('### Sloppy mode, annexB = false:');
+        console.log(list[0].newOutputSloppy);
+        console.log('=============================================\n');
+      }
+      if (list[0].newOutputSloppyAnnexB !== false) {
+        console.log('### Sloppy mode, annexB = true:');
+        if (list[0].newOutputSloppyAnnexB === list[0].newOutputSloppy) console.log('Same as sloppy without annexB');
+        else console.log(list[0].newOutputSloppyAnnexB);
+        console.log('=============================================\n');
+      }
     }
     if (RUN_STRICT) {
-      ASSERT(list[0].newOutputStrict !== false, 'should update');
-      console.log('### Strict mode:');
-      if (RUN_SLOPPY && list[0].newOutputSloppy === list[0].newOutputStrict) console.log('Same as sloppy');
-      else console.log(list[0].newOutputStrict);
-      console.log('=============================================\n');
+      ASSERT(list[0].newOutputStrict !== false || list[0].newOutputStrictAnnexB !== false, 'should update');
+      if (list[0].newOutputStrict !== false) {
+        console.log('### Strict mode, annexB = false:');
+             if (RUN_SLOPPY && list[0].newOutputStrict === list[0].newOutputSloppy) console.log('Same as sloppy');
+        else if (RUN_SLOPPY && list[0].newOutputStrict === list[0].newOutputSloppyAnnexB) console.log('Same as sloppy with annexB');
+        else console.log(list[0].newOutputStrict);
+        console.log('=============================================\n');
+      }
+      if (list[0].newOutputStrictAnnexB !== false) {
+        console.log('### Strict mode, annexB = true:');
+             if (RUN_SLOPPY && list[0].newOutputStrictAnnexB === list[0].newOutputSloppy) console.log('Same as sloppy');
+        else if (RUN_SLOPPY && list[0].newOutputStrictAnnexB === list[0].newOutputSloppyAnnexB) console.log('Same as sloppy with annexB');
+        else if (RUN_SLOPPY && list[0].newOutputStrictAnnexB === list[0].newOutputStrict) console.log('Same as strict without annexB');
+        else console.log(list[0].newOutputStrictAnnexB);
+        console.log('=============================================\n');
+      }
     }
     if (RUN_MODULE) {
-      ASSERT(list[0].newOutputModule !== false, 'should update');
-      console.log('### Module goal:');
-      if (RUN_SLOPPY && list[0].newOutputSloppy === list[0].newOutputModule) console.log('Same as sloppy');
-      else if (RUN_STRICT && list[0].newOutputStrict === list[0].newOutputModule) console.log('Same as strict');
-      else console.log(list[0].newOutputModule);
-      console.log('=============================================\n');
-    }
-    if (RUN_WEB) {
-      ASSERT(list[0].newOutputWeb !== false, 'should update');
-      console.log('### Web compat mode:');
-      if (RUN_SLOPPY && list[0].newOutputSloppy === list[0].newOutputWeb) console.log('Same as sloppy');
-      else console.log(list[0].newOutputWeb);
-      console.log('=============================================\n');
+      ASSERT(list[0].newOutputModule !== false || list[0].newOutputModuleAnnexB !== false, 'should update');
+      if (list[0].newOutputModule !== false) {
+        console.log('### Module goal, annexB = false:');
+             if (RUN_SLOPPY && list[0].newOutputModule === list[0].newOutputSloppy) console.log('Same as sloppy');
+        else if (RUN_SLOPPY && list[0].newOutputModule === list[0].newOutputSloppyAnnexB) console.log('Same as sloppy with annexB');
+        else if (RUN_STRICT && list[0].newOutputModule === list[0].newOutputStrict) console.log('Same as strict');
+        else if (RUN_STRICT && list[0].newOutputModule === list[0].newOutputStrictAnnexB) console.log('Same as strict with annexB');
+        else console.log(list[0].newOutputModule);
+        console.log('=============================================\n');
+      }
+      if (list[0].newOutputModuleAnnexB !== false) {
+        console.log('### Module goal, annexB = true:');
+             if (RUN_SLOPPY && list[0].newOutputModuleAnnexB === list[0].newOutputSloppy) console.log('Same as sloppy');
+        else if (RUN_SLOPPY && list[0].newOutputModuleAnnexB === list[0].newOutputSloppyAnnexB) console.log('Same as sloppy with annexB');
+        else if (RUN_STRICT && list[0].newOutputModuleAnnexB === list[0].newOutputStrict) console.log('Same as strict');
+        else if (RUN_STRICT && list[0].newOutputModuleAnnexB === list[0].newOutputStrictAnnexB) console.log('Same as strict with annexB');
+        else if (RUN_SLOPPY && list[0].newOutputModuleAnnexB === list[0].newOutputModule) console.log('Same as module without annexB');
+        else console.log(list[0].newOutputModuleAnnexB);
+        console.log('=============================================\n');
+      }
     }
     if (tob.printerOutput) console.log(tob.printerOutput[1]);
   }
@@ -1020,9 +1066,11 @@ function generateOutputBlock(tob) {
   // Some may not have been generated (yet) and will default to the old value
 
   let sloppy = ifNotFalse(tob.newOutputSloppy, tob.oldOutputSloppy);
+  let sloppyAnnexB = ifNotFalse(tob.newOutputSloppyAnnexB, tob.oldOutputSloppyAnnexB);
   let strict = ifNotFalse(tob.newOutputStrict, tob.oldOutputStrict);
+  // let strictAnnexB = ifNotFalse(tob.newOutputStrictAnnexB, tob.oldOutputStrictAnnexB);
   let module = ifNotFalse(tob.newOutputModule, tob.oldOutputModule);
-  let web = ifNotFalse(tob.newOutputWeb, tob.oldOutputWeb);
+  let moduleAnnexB = ifNotFalse(tob.newOutputModuleAnnexB, tob.oldOutputModuleAnnexB);
 
   let fold = updateAboveTheFold(tob);
 
@@ -1030,10 +1078,12 @@ function generateOutputBlock(tob) {
     fold +
     generateInput(tob) +
     generateOutputHeader() +
-    generateOutputSloppy(sloppy, tob.newOutputSloppyBabel, tob.newOutputSloppyNode, tob.newOutputSloppyAcorn) +
-    generateOutputStrict(strict, sloppy, tob.newOutputStrictBabel, tob.newOutputStrictNode) +
-    generateOutputModule(module, strict, sloppy, tob.newOutputModuleBabel, tob.newOutputModuleAcorn) +
-    generateOutputWeb(web, sloppy, tob.newOutputWebBabel) +
+    generateOutputSloppy(sloppy, false, '', tob.newOutputSloppyBabel, tob.newOutputSloppyNode, tob.newOutputSloppyAcorn) +
+    generateOutputStrict(strict, false, sloppy, tob.newOutputStrictBabel, tob.newOutputStrictNode) +
+    // generateOutputStrict(strictAnnexB, true, sloppy, tob.newOutputStrictAnnexBBabel, tob.newOutputStrictAnnexBNode) +
+    generateOutputModule(module, false, '', '', strict, sloppy, tob.newOutputModuleBabel, tob.newOutputModuleAcorn) +
+    generateOutputSloppy(sloppyAnnexB, true, sloppy, tob.newOutputSloppyAnnexBBabel, tob.newOutputSloppyAnnexBNode, tob.newOutputSloppyAnnexBAcorn) +
+    generateOutputModule(moduleAnnexB, true, module, sloppyAnnexB, strict, sloppy, tob.newOutputModuleAnnexBBabel, tob.newOutputModuleAnnexBAcorn) +
     (tob.printerOutput ? tob.printerOutput[1] : '') +
   '';
 }
@@ -1047,40 +1097,33 @@ function generateInput(tob) {
 function generateOutputHeader() {
   return OUTPUT_HEADER + '\n' +
     '_Note: the whole output block is auto-generated. Manual changes will be overwritten!_\n\n' +
-    'Below follow outputs in four parsing modes: sloppy mode, strict mode script goal, module goal, web compat mode (always sloppy).\n\n' +
+    'Below follow outputs in five parsing modes: sloppy, sloppy+annexb, strict script, module, module+annexb.\n\n' +
     'Note that the output parts are auto-generated by the test runner to reflect actual result.\n' +
     '';
 }
-function generateOutputSloppy(sloppyOutput, babelOutput, nodeOutput, acornOutput) {
-  return OUTPUT_HEADER_SLOPPY + '\n' +
-    'Parsed with script goal and as if the code did not start with strict mode header.\n' +
-    OUTPUT_QUINTICK + sloppyOutput + OUTPUT_QUINTICK +
+function generateOutputSloppy(sloppyOutput, annexB, sloppy, babelOutput, nodeOutput, acornOutput) {
+  return (annexB ? OUTPUT_HEADER_SLOPPY_ANNEXB : OUTPUT_HEADER_SLOPPY) + '\n' +
+    'Parsed with script goal' + (annexB ? ' with AnnexB rules enabled' : '') + ' and as if the code did not start with strict mode header.\n' +
+    (sloppyOutput === sloppy ? '\n_Output same as sloppy mode._\n' : (OUTPUT_QUINTICK + sloppyOutput + OUTPUT_QUINTICK)) +
     babelOutput +
     nodeOutput +
     acornOutput +
     '';
 }
-function generateOutputStrict(strictOutput, sloppyOutput, babelOutput, nodeOutput) {
+function generateOutputStrict(strictOutput, annexB, sloppyOutput, babelOutput, nodeOutput) {
   return OUTPUT_HEADER_STRICT + '\n' +
-    'Parsed with script goal but as if it was starting with `"use strict"` at the top.\n' +
-    (strictOutput === sloppyOutput ? '\n_Output same as sloppy mode._' : (OUTPUT_QUINTICK + strictOutput + OUTPUT_QUINTICK)) + '\n' +
+    'Parsed with script goal' + (annexB ? ' with AnnexB rules enabled' : '') + ' but as if it was starting with `"use strict"` at the top.\n' +
+    (strictOutput === sloppyOutput ? '\n_Output same as sloppy mode._\n' : (OUTPUT_QUINTICK + strictOutput + OUTPUT_QUINTICK)) +
     babelOutput +
     nodeOutput +
     '';
 }
-function generateOutputModule(moduleOutput, strictOutput, sloppyOutput, babelOutput, acornOutput) {
-  return OUTPUT_HEADER_MODULE + '\n' +
-    'Parsed with the module goal.\n' +
-    (moduleOutput === sloppyOutput ? '\n_Output same as sloppy mode._' : moduleOutput === strictOutput ? '\n_Output same as strict mode._' : (OUTPUT_QUINTICK + moduleOutput + OUTPUT_QUINTICK)) + '\n' +
+function generateOutputModule(moduleOutput, annexB, module, sloppyAnnexB, strictOutput, sloppyOutput, babelOutput, acornOutput) {
+  return (annexB ? OUTPUT_HEADER_MODULE_ANNEXB : OUTPUT_HEADER_MODULE) + '\n' +
+    'Parsed with the module goal' + (annexB ? ' with AnnexB rules enabled' : '') + '.\n' +
+    (moduleOutput === sloppyOutput ? '\n_Output same as sloppy mode._\n' : moduleOutput === strictOutput ? '\n_Output same as strict mode._\n' : moduleOutput === module ? '\n_Output same as module mode._\n' : moduleOutput === sloppyAnnexB ? '\n_Output same as sloppy mode with annexB._\n' : (OUTPUT_QUINTICK + moduleOutput + OUTPUT_QUINTICK)) +
     babelOutput +
     acornOutput +
-    '';
-}
-function generateOutputWeb(webOutput, sloppyOutput, babelOutput) {
-  return OUTPUT_HEADER_WEB + '\n' +
-    'Parsed in sloppy script mode but with the web compat flag enabled.\n' +
-    (webOutput === sloppyOutput ? '\n_Output same as sloppy mode._' : (OUTPUT_QUINTICK + webOutput + OUTPUT_QUINTICK)) + '\n' +
-    babelOutput +
     '';
 }
 
@@ -1090,10 +1133,9 @@ console.time('$$ Whole test run');
 let files = [];
 if (INPUT_OVERRIDE) {
   LOG('Using override input and only testing that...');
-  if (!a && !b && !c && !d) LOG('Sloppy mode implied (override with --strict --module or --web)');
-  if (b && !a && !c && !d) LOG('Testing in strict mode only');
-  if (c && !a && !b && !d) LOG('Testing in module goal only');
-  if (d && !a && !b && !c) LOG('Testing in web compat mode only');
+  if (!a && !b && !c) LOG('Sloppy mode implied (override with --strict or --module)');
+  if (b && !a && !c) LOG('Testing in strict mode only');
+  if (c && !a && !b) LOG('Testing in module goal only');
   if (ENABLE_ANNEXB) LOG('Testing with Annex B syntax extensions enabled');
   LOG('=============================================\n');
 } else {

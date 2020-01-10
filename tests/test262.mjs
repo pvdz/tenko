@@ -57,7 +57,7 @@ let Tenko = function(){ throw new Error('not yet loaded through import...'); };
 const PATH262 = path.join(dirname, './../ignore/test262/test');
 
 let stdout = [];
-function parse(input, strict, module, web) {
+function parse(input, strict, module, annexB) {
   stdout = [];
   return Tenko(
     input,
@@ -65,7 +65,7 @@ function parse(input, strict, module, web) {
       goalMode: module ? GOAL_MODULE : GOAL_SCRIPT,
       collectTokens: COLLECT_TOKENS_ALL,
       strictMode: strict,
-      webCompat: !!web,
+      webCompat: !!annexB,
       acornCompat: ACORN_AST,
       babelCompat: BABEL_AST,
       fullErrorContext: true,
@@ -153,7 +153,6 @@ function onRead(file, content) {
   }
 
   let printedOnce = false;
-  let webstr = webcompat ? 'web' : 'sloppy';
   if (!flags.includes('onlyStrict') && !flags.includes('module')) {
     // This is the sloppy or web run
 
@@ -161,9 +160,9 @@ function onRead(file, content) {
     let z;
     try {
       z = parse(content, false, false, webcompat);
-      console.log(GREEN, 'PASS', RESET, webstr, webcompat);
+      console.log(GREEN, 'PASS', RESET, 'sloppy', webcompat);
     } catch (e) {
-      console.log(GREEN, 'FAIL', RESET, webstr, webcompat);
+      console.log(GREEN, 'FAIL', RESET, 'sloppy', webcompat);
       failed = e;
     }
 
@@ -172,17 +171,17 @@ function onRead(file, content) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw assertion error' + RESET + ' in ' + BOLD + webstr + RESET);
+      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw assertion error' + RESET + ' in ' + BOLD + 'sloppy' + RESET);
     }
     if (failed && !(failed.toString().toLowerCase().includes('parser error!') || failed.toString().toLowerCase().includes('lexer error!'))) {
       console.log('\nUnrolling output;\n');
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + webstr + RESET);
+      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + 'sloppy' + RESET);
     }
     if (!failed && !printedOnce) {
-      testPrinter(content, 'web', true, z.ast, false, false, false, false);
+      testPrinter(content, 'sloppy', true, z.ast, false, false, false, false);
       printedOnce = true;
     }
     if (!!failed !== negative) {
@@ -190,7 +189,7 @@ function onRead(file, content) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed, negative);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + ' did not meet expectations in '+BOLD+webstr+RESET+', expecting ' + (negative?'fail':'pass') + ' but got '  + (failed?'fail':'pass'));
+      throw new Error('File ' + BOLD + file + RESET + ' did not meet expectations in '+BOLD+'sloppy'+RESET+', expecting ' + (negative?'fail':'pass') + ' but got '  + (failed?'fail':'pass'));
     }
 
     // #######################
@@ -201,7 +200,7 @@ function onRead(file, content) {
       // Parse and hope for the best. AnnexB is applied by default, no opt-out
       // Acorn doesn't spam comments so we don't have to scrub the input
 
-      let [acornOk, acornFail, zasa] = compareAcorn(content, !failed, 'web', true, file);
+      let [acornOk, acornFail, zasa] = compareAcorn(content, !failed, 'sloppy', true, file);
       let outputAcorn = processAcornResult(acornOk, acornFail, failed, zasa, false);
       if (outputAcorn) {
         console.log('##### "web" content that was tested in Acorn:');
@@ -223,7 +222,7 @@ function onRead(file, content) {
         noCommentContent = z.tokens.map(token => !isCommentToken(token.type) ? token.str : token.str.includes('\n') ? '\n' : '').join('');
       }
 
-      let [babelOk, babelFail, zasb] = compareBabel(noCommentContent, !failed, 'web', true, file);
+      let [babelOk, babelFail, zasb] = compareBabel(noCommentContent, !failed, 'sloppy', true, file);
       let outputBabel = processBabelResult(babelOk, babelFail, failed, zasb, false);
       if (outputBabel) {
         console.log('##### no comment "web" content that was tested in Babel:');

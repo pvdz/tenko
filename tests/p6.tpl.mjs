@@ -14,7 +14,7 @@ import {parse} from /* <TPL PARSER_PATH> */ './run_tenko_build.mjs' /* </TPL> */
 
 // We don't need to template-encode the file since we'll need to fs.readFile that anyways and we can do that sync
 const TARGET_FILE = process.argv.includes('--target-file') ? process.argv[process.argv.indexOf('--target-file') + 1] : 'ignore/perf/es5.5mb.node-unicode-data-regexes.js';
-const TARGET_MODE = process.argv.includes('--target-mode') ? process.argv[process.argv.indexOf('--target-mode') + 1] : 'web';
+const TARGET_MODE = process.argv.includes('--target-mode') ? process.argv[process.argv.indexOf('--target-mode') + 1] : 'sloppy';
 
 const code = fs.readFileSync(TARGET_FILE, 'utf8')
 
