@@ -70,6 +70,7 @@ Tenko test runner help:
  u             Run all test files and just write output
  U             Run all test files and force write output
  m             Run all tests and ask for update one-by-one
+ n             Run all tests, don't generate new test files or write anything (for coverage)
  s             Search for needles (call HIT() to place a needle and find all tests that hit them)
  t             Run test262 suite (only)
  a             Alias for ./t m --test-acorn, to verify Tenko output against the Acorn AST
@@ -82,6 +83,8 @@ Tenko test runner help:
  z             Create build
  tb            Test build (checks whether exports work as intended for parameters etc)
  devtools      Alias for \`./t p --inspect --devtools --build\` which can be used to debug the parser in chrome devtools
+ c8            Run c8 on \`./t u\` to get test code coverage. Generates text and html output, runs server to view html.
+ coverage      Alias for c8
  deoptigate    Run deoptigate (see doptie.js for file config)
  --sloppy      Enable sloppy script mode, do not auto-enable other modes
  --strict      Enable strict script mode, do not auto-enable other modes
@@ -107,7 +110,8 @@ Tenko test runner help:
  --no-mangle   For \`z\`; Run Terser but tell it not to mangle identifiers (use together with \`--pretty\`)
  --pretty      For \`z\`; Run prettier on the build afterwards
  --native-symbols For \`z\`; Special build step turns \`PERF_\$\` prefixed functions into \`%\` to enable v8 internal functions.
- --inspect     Run with \`node --inspect-brk\` to debug node in the chrome devtools. Use \`--devtools\` to auto-profile.
+ --inspect     Run with \`node --inspect\` to debug node in the chrome devtools. Use this if you don't want chrome to pause
+ --inspect-brk Run with \`node --inspect-brk\` to debug node in the chrome devtools. Use this to pause devtools before running
  --devtools    Call \`console.profile()\` before and after the core parse step (not all actions support this)
  --reset       For perf, force resets baseline to whatever the current result
  --record      For perf, updates baseline if better
@@ -162,6 +166,10 @@ Tenko test runner help:
       # Run all files and ask for any test case that needs updating (slower)
       ACTION='-q -U'
       ;;
+    n)
+      # Just run all tests, no error reporting, no writing (used for code coverage)
+      ACTION='-q -n'
+      ;;
     s)
       # Add `HIT()` to zeparser src and this will report all inputs that trigger that call in a very concise list
       if [[ "${ACTION}" = "" ]]; then
@@ -214,6 +222,10 @@ Tenko test runner help:
       ;;
     p6)
       ACTION='perf6'
+      ;;
+    c8);&
+    coverage):
+      ACTION='coverage'
       ;;
     d);&
     deoptigate)
@@ -274,6 +286,10 @@ Tenko test runner help:
         ARG=$1
         ;;
     --inspect)
+        INSPECT_NODE='--inspect'
+        INSPECT_ZEPAR='--devtools'
+        ;;
+    --inspect-brk)
         INSPECT_NODE='--inspect-brk'
         INSPECT_ZEPAR='--devtools'
         ;;
@@ -587,6 +603,8 @@ if [[ "${HF}" = "yes" ]]; then
     set +x
 
     trap "echo '###### HF killing server #####'; kill ${HFPID}" SIGINT SIGTERM EXIT
+
+    xdg-open http://localhost:3000/index.html || open http://localhost:3000/index.html || start http://localhost:3000/index.html
 
     echo '###### HF setup complete #####'
 fi
@@ -1045,6 +1063,21 @@ case "${ACTION}" in
     hf)
       ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${NO_BUILDING} ${INSPECT_ZEPAR} ${ANNEXB}
     ;;
+
+    coverage)
+      node_modules/.bin/c8 --include src --reporter html --reports-dir ignore/coverage ./t n
+      node_modules/.bin/c8 report --reporter text --reports-dir ignore/coverage
+      python -m SimpleHTTPServer 8005 &
+      LOCAL_SERVER_PID=$!
+      trap "echo '###### killing web server #####'; kill ${LOCAL_SERVER_PID}" SIGINT SIGTERM EXIT
+      xdg-open http://localhost:8005/ignore/coverage/index.html || open http://localhost:8005/ignore/coverage/index.html || start http://localhost:8005/ignore/coverage/index.html
+      set +x
+      echo "ctrl+c to stop webserver"
+      while true;
+      do
+        sleep 10
+      done
+      ;;
 
     doptigate)
       if [[ -z "${NO_BUILDING}" ]]; then

@@ -8,6 +8,7 @@
   "devDependencies": {
     "@babel/parser": "7.7.7",
     "acorn": "7.1.0",
+    "c8": "^7.0.0",
     "deoptigate": "0.5.0",
     "eslump": "2.0.0",
     "meriyah": "1.9.4",

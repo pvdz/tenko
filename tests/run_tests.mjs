@@ -39,7 +39,8 @@ const TARGET_ES8 = process.argv.includes('--es8');
 const TARGET_ES9 = process.argv.includes('--es9');
 const TARGET_ES10 = process.argv.includes('--es10');
 const TARGET_ES11 = process.argv.includes('--es11');
-const RUN_VERBOSE_IN_SERIAL = process.argv.includes('--serial') || (!SEARCH && (INPUT_OVERRIDE || TARGET_FILE || STOP_AFTER_TEST_FAIL || STOP_AFTER_FILE_FAIL));
+const TESTS_ONLY = process.argv.includes('-n'); // skip constructing updated test files, dont write anything. Used for code coverage
+const RUN_VERBOSE_IN_SERIAL = process.argv.includes('--serial') || (!SEARCH && !TESTS_ONLY && (INPUT_OVERRIDE || TARGET_FILE || STOP_AFTER_TEST_FAIL || STOP_AFTER_FILE_FAIL));
 const FORCE_WRITE = process.argv.includes('--force-write');
 const ACORN_COMPAT = process.argv.includes('--acorn');
 const BABEL_COMPAT = process.argv.includes('--babel');
@@ -516,10 +517,14 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
   if (SEARCH) return;
   if (CONCISE) return;
 
-  if (!RUN_VERBOSE_IN_SERIAL) console.log('   Processing', list.length, 'result for all tests');
-  if (!RUN_VERBOSE_IN_SERIAL) console.time('   $$ Parse result post processing time');
-  await Promise.all(list.map(async (tob/*: Tob*/) => await postProcessResult(tob, testVariant)));
-  if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('   $$ Parse result post processing time');
+  if (TESTS_ONLY) {
+    if (!RUN_VERBOSE_IN_SERIAL) console.log('   Skipping post process step because -n was given');
+  } else {
+    if (!RUN_VERBOSE_IN_SERIAL) console.log('   Processing', list.length, 'result for all tests');
+    if (!RUN_VERBOSE_IN_SERIAL) console.time('   $$ Parse result post processing time');
+    await Promise.all(list.map(async (tob/*: Tob*/) => await postProcessResult(tob, testVariant)));
+    if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('   $$ Parse result post processing time');
+  }
 
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('  $$ Batch for ' + testVariant);
 }
@@ -706,7 +711,10 @@ async function loadTenkoAsync() {
 }
 async function runAndRegenerateList(list, tenko) {
   await runTests(list, tenko);
-  if (!SEARCH) {
+  if (TESTS_ONLY) {
+    if (!RUN_VERBOSE_IN_SERIAL) console.log('Skipping write of updated test files because -n was given');
+  }
+  else if (!SEARCH) {
     constructNewOutput(list);
     if (USE_BUILD) {
       // The prod build does not include a tostring for tokens so they get printed as plain objects do
