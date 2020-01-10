@@ -464,6 +464,31 @@ export function transform(ast, localConstMap, recordConstants) {
             assert(node.params.length, 4, 'ast_close has 4 params');
             node.params.pop(); // drop the name; it is only used in ASSERTs
           }
+
+          // Note: the next func->arrow transform slows down load time and probably a micro slower runtime. Not worth it
+          // // Replace function decls with arrows.
+          // // Going the extra mile for arrows that can get expression bodies
+          // // Going the extra extra mile (potentially slightly unsafe) by giving expressionstatements the same treatment
+          // replace(parent, prop, index, {
+          //   type: 'VariableDeclaration',
+          //   loc: node.loc,
+          //   kind: 'let',
+          //   declarations: [{
+          //     type: 'VariableDeclarator',
+          //     id: node.id,
+          //     loc: node.loc,
+          //     init: {
+          //       type: 'ArrowFunctionExpression',
+          //       loc: node.loc,
+          //       params: node.params,
+          //       id: null,
+          //       generator: node.generator,
+          //       async: node.async,
+          //       expression: node.body.body.length === 1 && (node.body.body[0].type === 'ReturnStatement' || node.body.body[0].type === 'ExpressionStatement'), // single return? change to expression body
+          //       body: (node.body.body.length === 1 && node.body.body[0].type === 'ReturnStatement') ? node.body.body[0].argument : (node.body.body.length === 1 && node.body.body[0].type === 'ExpressionStatement') ? node.body.body[0].expression : node.body, // inline the arg of a single return
+          //     }
+          //   }],
+          // });
         }
         break;
 
