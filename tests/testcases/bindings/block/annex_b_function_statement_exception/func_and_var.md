@@ -149,7 +149,7 @@ tokens (22x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 function f() {var f = 123;

@@ -140,7 +140,7 @@ tokens (16x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 for (var a = 0 in (stored = a, {})) ;

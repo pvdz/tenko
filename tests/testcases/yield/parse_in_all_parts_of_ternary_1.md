@@ -118,7 +118,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 function* f() {(((yield (1)))? ((yield (2))) : ((yield (3))));}

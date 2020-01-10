@@ -88,7 +88,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 for ((2935 instanceof 2e308);;) debugger;

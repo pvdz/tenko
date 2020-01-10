@@ -108,7 +108,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [module]:
+Printer output different from input [module][annexb:no]:
 
 ````js
 import {x as a, z as z} from "y";

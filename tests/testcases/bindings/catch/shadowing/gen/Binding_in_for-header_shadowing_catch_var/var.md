@@ -131,7 +131,7 @@ tokens (21x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 try {} catch (e) {for (var e = 1;;) {}}

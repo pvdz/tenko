@@ -174,7 +174,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 class outer{meh(){class x{foo(x = new super.foo()){};}};}

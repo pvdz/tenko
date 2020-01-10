@@ -135,7 +135,7 @@ tokens (19x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 () => {foo: bar: third: function f() {}};

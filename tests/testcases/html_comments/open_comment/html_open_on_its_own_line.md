@@ -156,7 +156,7 @@ tokens (9x):
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 call() < (!(--foo));

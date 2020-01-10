@@ -132,7 +132,7 @@ start@1:0, error@1:6
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 async({__proto__:a, __proto__:b});

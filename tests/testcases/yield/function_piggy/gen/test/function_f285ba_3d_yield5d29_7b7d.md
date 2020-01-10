@@ -109,4 +109,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy]
+Printer output was same as input [sloppy][annexb:no]

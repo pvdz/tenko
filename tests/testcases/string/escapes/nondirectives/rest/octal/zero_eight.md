@@ -99,7 +99,7 @@ tokens (5x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 debugger;

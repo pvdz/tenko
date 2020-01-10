@@ -71,7 +71,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 /(?<abc@{x1d7d0}@def>foo\k<abc@{x1d7d0}@def>)/u;

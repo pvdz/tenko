@@ -111,7 +111,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [module]:
+Printer output different from input [module][annexb:no]:
 
 ````js
 export const x = 10, y = 20;

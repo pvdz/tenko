@@ -79,7 +79,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 (0x564a31c594b561d513e15c4861f5348791a2312341575123154656n) + 1;

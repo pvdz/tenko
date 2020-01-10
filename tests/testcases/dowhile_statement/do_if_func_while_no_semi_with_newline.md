@@ -118,7 +118,7 @@ tokens (17x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 do if (8) function s() {} while (y);

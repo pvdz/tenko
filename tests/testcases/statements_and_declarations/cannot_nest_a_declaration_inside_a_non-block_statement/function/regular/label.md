@@ -94,4 +94,4 @@ tokens (9x):
 
 ## AST Printer
 
-Printer output was same as input [web]
+Printer output was same as input [sloppy][annexb:yes]

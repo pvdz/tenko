@@ -130,7 +130,7 @@ start@1:0, error@1:34
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 for (([{__proto__:1, __proto__:2}]);;) ;

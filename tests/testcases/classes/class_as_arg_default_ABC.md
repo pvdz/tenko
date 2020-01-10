@@ -188,7 +188,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 f = ([cls = class{}, xCls = class X{}, xCls2 = class{static name(){};}]) => {};

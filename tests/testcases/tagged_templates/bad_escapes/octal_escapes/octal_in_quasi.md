@@ -117,7 +117,7 @@ tokens (6x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 (tag)`${'\07'}`;

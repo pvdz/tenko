@@ -130,7 +130,7 @@ tokens (24x):
 
 ## AST Printer
 
-Printer output different from input [web]:
+Printer output different from input [sloppy][annexb:yes]:
 
 ````js
 switch (x) {case c:

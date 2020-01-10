@@ -172,7 +172,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 class outer extends (S) {meh(){class x{foo(x = super.foo){};}};}

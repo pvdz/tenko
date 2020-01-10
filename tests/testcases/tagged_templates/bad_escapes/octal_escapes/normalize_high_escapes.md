@@ -85,7 +85,7 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy]:
+Printer output different from input [sloppy][annexb:no]:
 
 ````js
 (tag)`start \0737 \xaa \u{abc} \0 finish`;
