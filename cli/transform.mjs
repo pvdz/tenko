@@ -142,10 +142,20 @@ export function transform(ast, localConstMap, recordConstants) {
         }
         break;
 
+      case 'ExportAllDeclaration':
+      case 'ExportDefaultDeclaration':
+      case 'ExportNamedDeclaration':
+        // Drop all import declarations
+        replace(parent, prop, index, {
+          type: 'EmptyStatement',
+          loc: node.loc,
+        });
+        return false; // Prevent further traversal of the node
+
       case 'Identifier':
         if (
           // This check also just validates whether the ident is interesting to us at all, and we can ditch most node
-          // type.prop validations because of it. Most but not all.
+        // type.prop validations because of it. Most but not all.
           constMap.has(node.name) &&
           // Exported symbols still have a const declaration
           (parent.type !== 'VariableDeclarator' || prop === 'init') &&
@@ -171,13 +181,10 @@ export function transform(ast, localConstMap, recordConstants) {
         }
         break;
 
-      case 'ExportAllDeclaration':
-      case 'ExportDefaultDeclaration':
-      case 'ExportNamedDeclaration':
       case 'Import':
       case 'ImportDeclaration':
       case 'ImportNamespaceSpecifier':
-        // Drop all export/import declarations
+        // Drop all import declarations
         replace(parent, prop, index, {
           type: 'EmptyStatement',
           loc: node.loc,
@@ -279,6 +286,30 @@ export function transform(ast, localConstMap, recordConstants) {
           }
         }
         break;
+
+      case 'BlockStatement': {
+        let body = node.body;
+
+        // Don't visit the last element. We don't care if the return/* is the last statement.
+        for (let i=0, len = body.length - 1; i<len; ++i) {
+          if (body[i] && ['ReturnStatement', 'BreakStatement', 'ContinueStatement', 'ThrowStatement'].includes(body[i].type)) {
+            // Prune dead code in a block that has statements following a `return` statement. This can happen due to
+            // build artifacts or just development state.
+            // We don't rely on stuff in the dead code (like eval or padding to prevent jit stuff) so get rid of it.
+            body.length = i + 1; // Discard the rest
+            break;
+          }
+        }
+
+        // Drop all empty statements (useless semi colons) from blocks
+        for (let i = body.length - 1; i >= 0; --i) {
+          if (body[i] && body[i].type === 'EmptyStatement') {
+            body.splice(i, 1);
+          }
+        }
+
+        break;
+      }
 
       // case 'BreakStatement':
       //   if (Array.isArray(parent[prop]) && parent[prop].length > index + 1) {
@@ -482,30 +513,6 @@ export function transform(ast, localConstMap, recordConstants) {
         }
 
         break;
-
-      case 'BlockStatement': {
-        let body = node.body;
-
-        // Don't visit the last element. We don't care if the return/* is the last statement.
-        for (let i=0, len = body.length - 1; i<len; ++i) {
-          if (body[i] && ['ReturnStatement', 'BreakStatement', 'ContinueStatement', 'ThrowStatement'].includes(body[i].type)) {
-            // Prune dead code in a block that has statements following a `return` statement. This can happen due to
-            // build artifacts or just development state.
-            // We don't rely on stuff in the dead code (like eval or padding to prevent jit stuff) so get rid of it.
-            body.length = i + 1; // Discard the rest
-            break;
-          }
-        }
-
-        // Drop all empty statements (useless semi colons) from blocks
-        for (let i = body.length - 1; i >= 0; --i) {
-          if (body[i] && body[i].type === 'EmptyStatement') {
-            body.splice(i, 1);
-          }
-        }
-
-        break;
-      }
 
       case 'Program': {
         let body = node.body;
