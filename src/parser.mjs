@@ -2138,15 +2138,8 @@ function Parser(code, options = {}) {
     ASSERT(SCOPE_addVarBinding.length === arguments.length, 'arg count');
     ASSERT(typeof $tp_bindingIdent_canon === 'string', 'name = string', $tp_bindingIdent_canon);
     ASSERT(scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names, it must be a Map');
-    ASSERT_BINDING_TYPE(bindingType);
-
-    if (scoop === DO_NOT_BIND) {
-      // for example: toplevel array, function expression, class expression
-      // [v]: `[x = true] = y`
-      // [v]: `foo([a, b] = arr);`
-      // [v]: `x = class A {};`
-      return;
-    }
+    ASSERT(bindingType === BINDING_TYPE_VAR || bindingType === BINDING_TYPE_FUNC_VAR, 'explicitly checked at call sites'); // TODO: apply this logic and eliminate any checks for other values than these two
+    ASSERT(scoop !== DO_NOT_BIND, 'there is no path that leads here where scoop does not exist (only happens for lex)');
 
     // See details of specific catch var exceptions in the catch parser (they are tricky)
 
@@ -3341,6 +3334,7 @@ function Parser(code, options = {}) {
   function parseFuncArguments(lexerFlags, scoop, bindingFrom, $tp_get_type, $tp_set_type) {
     // parseArguments
     ASSERT(arguments.length === parseFuncArguments.length, 'arg count');
+    ASSERT(scoop !== DO_NOT_BIND, 'params must get scoop');
 
     // - `function f(a){}`
     //              ^
@@ -5836,6 +5830,7 @@ function Parser(code, options = {}) {
   }
   function parseImportNamespace(lexerFlags, scoop) {
     ASSERT(parseImportNamespace.length === arguments.length, 'arg count');
+    ASSERT(tok_getType() === $PUNC_STAR, 'validated at call sites');
 
     // import * as x from 'y'
     //        ^
