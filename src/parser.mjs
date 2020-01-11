@@ -3143,8 +3143,8 @@ function Parser(code, options = {}) {
     // super() is allowed in constructor param defaults so deal with the flag now...
     // these flags dont reset in arrows so only do it here
     if (isClassConstructor === IS_CONSTRUCTOR) {
-      ASSERT($tp_async_type === $UNTYPED, 'class constructors are not async');
-      ASSERT($tp_star_type === $UNTYPED || $tp_star_type === $PUNC_STAR, 'class constructors are not generators');
+      ASSERT($tp_async_type === $UNTYPED, 'should have thrown for async constructor when parsing the constructor key');
+      ASSERT($tp_star_type === $UNTYPED, 'should have thrown for generator constructor when parsing the constructor key');
       ASSERT(isMethod === IS_METHOD, 'class constructors are methods');
       // you can use `super()` in arg defaults so set it up now
       lexerFlags |= LF_IN_CONSTRUCTOR;
@@ -3353,6 +3353,7 @@ function Parser(code, options = {}) {
     parseBodyPartsWithDirectives(lexerFlagsNoTemplate, scoop, UNDEF_EXPORTS, UNDEF_EXPORTS, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tp_functionNameToVerify_type, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, $tp_functionNameToVerify_canon, NOT_GLOBAL_TOPLEVEL, 'body');
 
     if (tok_getType() !== $PUNC_CURLY_CLOSE) {
+      // [x]: `(function(){`
       return THROW_RANGE('Missing function body closing curly, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
     }
 
