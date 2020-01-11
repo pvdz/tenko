@@ -28,13 +28,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI
+  Async functions are not supported in the currently targeted version, they are >= ES8 / ES2017
 
-start@1:0, error@1:10
-╔══╦═════════════════
+start@1:0, error@1:4
+╔══╦════════════════
  1 ║ x = async function(){}
-   ║           ^^^^^^^^------- error
-╚══╩═════════════════
+   ║     ^^^^^^^^^^^^^^------- error
+╚══╩════════════════
 
 `````
 

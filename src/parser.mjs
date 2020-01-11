@@ -3066,15 +3066,8 @@ function Parser(code, options = {}) {
       });
     }
 
-    if ($tp_async_type === $ID_async) {
-      // In both of these cases the error range would be prettier with the function keyword included. But oh well?
-      if (!allowAsyncFunctions) {
-        return THROW_RANGE('Async functions are not supported in the currently targeted version, they are >= ES8 / ES2017', $tp_async_start, $tp_async_stop);
-      }
-      if ($tp_star_type === $PUNC_STAR && !allowAsyncGenerators) {
-        return THROW_RANGE('Async generator functions are not supported in the currently targeted version, they are >= ES9 / ES2018', $tp_async_start, $tp_async_stop);
-      }
-    }
+    ASSERT($tp_async_type !== $ID_async || allowAsyncFunctions, 'other places that parse `async` that lead here should have verified the es version by now');
+    ASSERT($tp_async_type !== $ID_async || $tp_star_type !== $PUNC_STAR || allowAsyncGenerators, 'other places that parse `async` with a generator that lead here should have verified the es version by now');
 
     let innerScoop = SCOPE_createGlobal('parseFunctionAfterKeyword_main_func_scope');
     ASSERT(innerScoop._ = 'func scope');
@@ -3692,8 +3685,12 @@ function Parser(code, options = {}) {
     //   - else: `async(..)`
     // - else: `async` as a var name
 
-
     if (!allowAsyncFunctions) {
+      if (tok_getType() === $ID_function && !tok_getNlwas()) {
+        // Redundant check prevents generic "missing value" error
+        return THROW_RANGE('Async functions are not supported in the currently targeted version, they are >= ES8 / ES2017', $tp_async_start, tok_getStop());
+      }
+
       return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp);
     }
 
@@ -4306,6 +4303,7 @@ function Parser(code, options = {}) {
     let $tp_async_stop = tok_getStop();
     let $tp_async_canon = tok_getCanoN();
 
+    // Note: newlines after `async` are not an error here since you can export the variable `async`
     ASSERT_skipRex($ID_async, lexerFlags); // function, arrow, or value-tail (for it can be a legacy async)
 
     // note: default export doesnt care as much about function type
