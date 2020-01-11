@@ -200,12 +200,15 @@ let stopAsap = false;
 let skippedOtherParserDelta = 0;
 
 // use -s and call HIT in some part of the code to log all test cases that visit that particular branch(es)
-let wasHit = false;
+let wasHits = [];
+let hitsToReport;
 let foundCache = new Set; // dont print multiples
-let foundTest = (x) => wasHit = x || true;
+let foundTest = (x) => wasHits.length || wasHits.push(x);
+let foundTests = (x) => wasHits.push(x);
 let PRINT_HIT = console.log;
 if (SEARCH) {
   global.HIT = foundTest; // faster to quickly search than exporting and having to uncomment the import...
+  global.HITS = foundTests; // this basically becomes console.log but ok, collect _all_ hits rather than just the first
   console.log = () => {};
   console.warn = () => {};
   console.error = () => {};
@@ -214,6 +217,7 @@ if (SEARCH) {
   PRINT_HIT(BLINK + 'Suppressing __all__ further output, only printing hits...' + RESET);
 } else {
   global.HIT = ()=>{};
+  global.HITS = ()=>{};
 }
 
 async function extractFiles(list) {
@@ -228,7 +232,8 @@ async function extractFiles(list) {
   console.log('Total input size:', bytes, 'bytes');
 }
 function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
-  wasHit = false;
+  wasHits = [];
+  hitsToReport = wasHits;
   let r, e = '';
   let stdout = [];
   try {
@@ -252,6 +257,7 @@ function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
         $error: INPUT_OVERRIDE ? undefined : (...a) => stdout.push(a),
       },
     );
+    wasHits = []; // Prevent other parse calls from adding more HITS
     if (INPUT_OVERRIDE || TARGET_FILE) {
       console.timeEnd('Pure Tenko parse time');
       if (CONCISE) return;
@@ -512,11 +518,26 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
       let e = rawOutput.e;
       // If you use -q -i then you just want to know whether or not some codepath hits some code
       if (INPUT_OVERRIDE) {
-        PRINT_HIT(`[${(e&&e.message.includes('TODO')?'T':e?RED+'x':GREEN+'v')+RESET}] Input ${wasHit ? BOLD + 'WAS' + RESET : ('was ' + BOLD + 'NOT' + RESET)} hit` + (wasHit === true ? '' : '    (' + wasHit + ')'));
-      } else if (wasHit) {
+        PRINT_HIT('# ' + testVariant + ' (annexb = ' + annexB + ')')
+        if (hitsToReport.length) {
+          let box = `[${(e&&e.message.includes('TODO')?'T':e?RED+'x':GREEN+'v')+RESET}]`;
+          let root = `${box} Input ${BOLD + 'WAS' + RESET} hit` + (hitsToReport.length > 1 ? ` (${hitsToReport.length}x)` : '') + '    ';
+          hitsToReport.forEach((hit, i) => {
+            if (i === 0) PRINT_HIT(root + '(' + hit + ')')
+            else PRINT_HIT(' ' + '('.padStart(root.length - ((box.length - 3) + BOLD.length + RESET.length), ' ') + hit + ')');
+          })
+        } else {
+          PRINT_HIT(`[${(e&&e.message.includes('TODO')?'T':e?RED+'x':GREEN+'v')+RESET}] Input ${'was ' + BOLD + 'NOT' + RESET} hit`);
+        }
+      } else if (hitsToReport.length) {
         if (!foundCache.has(inputCode)) {
-          PRINT_HIT(`// [${(e && e.message.includes('TODO')?'T':e?RED+'x':GREEN+'v')+RESET}]: \`${toPrint(inputCode)}\`` + (wasHit === true ? '' : '    (' + wasHit + ')'));
-          foundCache.add(tob.inputCode);
+          let box = `[${(e && e.message.includes('TODO')?'T':e?RED+'x':GREEN+'v')+RESET}]`;
+          let root = `// ${box}: \`${toPrint(inputCode)}\`` + (hitsToReport.length > 1 ? ' (' + hitsToReport.length + 'x)' : '') + '     ';
+          hitsToReport.forEach((hit, i) => {
+            if (i === 0) PRINT_HIT(root + '(' + hit + ')')
+            else PRINT_HIT(' ' + '('.padStart(root.length-(box.length - 3), ' ') + hit + ')');
+          });
+          foundCache.add(tob.inputCode); // dedupe tests with the same input
         }
       }
       return;
