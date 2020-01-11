@@ -2795,11 +2795,6 @@ function Parser(code, options = {}) {
       return;
     }
 
-    if (tok_getType() === $ERROR) {
-      THROW_RANGE('Lexer error: ' + tok_lexError(), tok_getStart(), tok_getStop());
-      return;
-    }
-
     if (tok_getType() === $EOF) {
       THROW_RANGE('Unexpected EOF', tok_getStart(), tok_getStop());
       return;
