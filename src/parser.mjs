@@ -2751,17 +2751,8 @@ function Parser(code, options = {}) {
       return;
     }
 
-    if (tok_getType() === $EOF) {
-      THROW_RANGE('Unexpected EOF', tok_getStart(), tok_getStop());
-      return;
-    }
-
-    THROW_RANGE('Unexpected token'
-      // <SCRUB DEV>
-      + ':: ' + T(tok_getType())
-      // </SCRUB DEV>
-      , tok_getStart(), tok_getStop()
-    );
+    ASSERT(tok_getType() === $EOF, 'the only high level tokens are already caught explicitly (ident, punc, number, string, template, regex) so this must be an EOF');
+    THROW_RANGE('Unexpected EOF', tok_getStart(), tok_getStop());
   }
 
   // ### functions
