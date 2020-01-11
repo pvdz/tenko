@@ -1446,12 +1446,8 @@ function Parser(code, options = {}) {
   }
 
   function initLexer(lexerFlags) {
-    do {
-      skipToStatementStart(lexerFlags);
-      if (tok_getType() === $ERROR) {
-        return THROW_RANGE('Lexer error: ' + tok_lexError(), tok_getStart(), tok_getStop());
-      }
-    } while (tok_getType() === $ERROR);
+    skipToStatementStart(lexerFlags);
+    ASSERT(tok_getType() !== $ERROR, 'skipToStatementStart -> skipRex -> skip -> error check that throws lexer error so type cannot be an error at this point');
   }
 
   function skipRex(lexerFlags) {
