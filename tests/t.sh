@@ -1067,6 +1067,13 @@ case "${ACTION}" in
     coverage)
       node_modules/.bin/c8 --include src --reporter html --reports-dir ignore/coverage ./t n
       node_modules/.bin/c8 report --reporter text --reports-dir ignore/coverage
+
+      # Just log the coverage, better than nothing. Hopefully I can do my due diligence to never commit a dirty repo :)
+      echo "Last generated: $(date)" > COVERAGE.md
+      # Note: clear the top of the generated table because github refuses to render the table otherwise
+      node_modules/.bin/c8 report --reporter text --reports-dir ignore/coverage | sed '1 s/^.*$//' >> COVERAGE.md
+      echo "Updated COVERAGE.md"
+
       python -m SimpleHTTPServer 8005 &
       LOCAL_SERVER_PID=$!
       trap "echo '###### killing web server #####'; kill ${LOCAL_SERVER_PID}" SIGINT SIGTERM EXIT
