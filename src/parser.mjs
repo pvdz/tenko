@@ -1632,16 +1632,6 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Next token should be `=>` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
     }
   }
-  function ASSERT_skipToAsOrDie(what, lexerFlags) {
-    skipToAsOrDie(lexerFlags);
-  }
-  function skipToAsOrDie(lexerFlags) {
-    // Next token must be `as`
-    skipAny(lexerFlags);
-    if (tok_getType() !== $ID_as) {
-      return THROW_RANGE('Next token should be `as` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
-    }
-  }
   function ASSERT_skipToAsCommaCurlyClose(what, lexerFlags) {
     skipToAsCommaCurlyClose(lexerFlags);
   }
@@ -5859,7 +5849,10 @@ function Parser(code, options = {}) {
     let $tp_star_column = tok_getColumn();
     let $tp_star_start = tok_getStart();
 
-    ASSERT_skipToAsOrDie('*', lexerFlags);
+    ASSERT_skipAny('*', lexerFlags);
+    if (tok_getType() !== $ID_as) {
+      return THROW_RANGE('Next token should be `as` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
+    }
     ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
 
     let $tp_local_type = tok_getType();
