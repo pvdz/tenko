@@ -105,6 +105,9 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
   process.exit();
 }
 
+const FORCED_ES_TARGET = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10  : TARGET_ES11 ? 11 : undefined;
+if (FORCED_ES_TARGET) console.log('Forcing target version: ES' + FORCED_ES_TARGET);
+
 if (AUTO_UPDATE && (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE)) throw new Error('Cannot use auto update and auto generate together');
 if (AUTO_UPDATE && (a || b || c)) throw new Error('Cannot use --sloppy (etc) together with -u');
 
@@ -248,7 +251,7 @@ function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
         collectTokens: COLLECT_TOKENS_SOLID,
         strictMode: testVariant === TEST_STRICT,
         webCompat: ENABLE_ANNEXB || annexB ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
-        targetEsVersion: tob.inputOptions.es,
+        targetEsVersion: FORCED_ES_TARGET || tob.inputOptions.es,
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
 
@@ -776,12 +779,9 @@ async function runAndRegenerateList(list, tenko) {
 async function cli() {
   let tenko = await loadTenkoAsync();
 
-  let forcedTarget = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10  : TARGET_ES11 ? 11 : undefined;
-  if (forcedTarget) console.log('Forcing target version: ES' + forcedTarget);
-
   let tob = new Tob('<cli>', INPUT_OVERRIDE);
   tob.inputCode = INPUT_OVERRIDE;
-  tob.inputOptions.es = forcedTarget;
+  tob.inputOptions.es = FORCED_ES_TARGET;
   let list = [tob];
   await runTests(list, tenko);
 
