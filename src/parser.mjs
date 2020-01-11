@@ -1121,17 +1121,21 @@ function Parser(code, options = {}) {
     ASSERT(_path.length > 0, 'path shouldnt be empty');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
 
-    let node = _path[_path.length-1][prop];
+    let parent = _path[_path.length-1];
+    let node = parent[prop];
     ASSERT(node, 'top[' + prop + '] should be a node');
+
     if (Array.isArray(node)) {
       // The destruct applies to the node just closed, so last in list
-      if (AST__destruct(node[node.length-1])) AST_destructReplaceAssignment(node, node.length - 1);
+      let last = node.length - 1;
+      AST__destruct(node[last], node, last);
+      return;
     }
 
-    if (AST__destruct(node)) AST_destructReplaceAssignment(_path[_path.length-1], prop);
+    AST__destruct(node, parent, prop);
   }
-  function AST__destruct(node) {
-    ASSERT(arguments.length === 1, 'arg count');
+  function AST__destruct(node, parent, astProp) {
+    ASSERT(AST__destruct.length === arguments.length, 'arg count');
 
     switch (node.type) {
       case 'ArrayExpression':
@@ -1141,9 +1145,9 @@ function Parser(code, options = {}) {
         for (let i = 0; i < e; ++i) {
           let element = elements[i];
           // note: children can be null (elided array destruct) but not undefined
-          if (element && AST__destruct(element)) AST_destructReplaceAssignment(elements, i);
+          if (element) AST__destruct(element, elements, i);
         }
-        return false;
+        return;
       case 'ObjectExpression':
         node.type = 'ObjectPattern';
         let properties = node.properties;
@@ -1155,24 +1159,25 @@ function Parser(code, options = {}) {
             ASSERT(properties[i].type === 'SpreadElement', 'expecting only properties, spreads, and assignments here');
             ASSERT(properties[i].argument, 'each property should have a value');
           }
-          if (AST__destruct(properties[i])) AST_destructReplaceAssignment(properties, i);
+          AST__destruct(properties[i], properties, i);
         }
-        return false;
+        return;
       case 'AssignmentExpression':
         // walk the left of the assignment only
-        if (AST__destruct(node.left)) AST_destructReplaceAssignment(node, 'left');
-        return true;
+        AST__destruct(node.left, node, 'left');
+        AST_destructReplaceAssignment(parent, astProp);
+        return;
       case NODE_NAME_PROPERTY:
-        if (AST__destruct(node.value)) AST_destructReplaceAssignment(node, 'value');
-        return false;
+        AST__destruct(node.value, node, 'value');
+        return;
       case 'SpreadElement':
         // `([...x]);` vs `([...x]) => x`
         // `({...x});` vs `({...x}) => x`
+        // TODO: this seems to deopt. can also set the parent[prop] = {} new node appraoch. need to benchmark that.
         node.type = 'RestElement';
-        if (AST__destruct(node.argument)) AST_destructReplaceAssignment(node, 'argument');
-        return false;
+        AST__destruct(node.argument, node, 'argument');
+        return;
     }
-    return false;
   }
   function AST_destructReplaceAssignment(parentNode, prop) {
     let oldNode = parentNode[prop];
@@ -10021,7 +10026,7 @@ function Parser(code, options = {}) {
     ASSERT(Array.isArray(top.params), 'params should now be an array in any case');
     let params = top.params;
     for (let i=0; i<params.length; ++i) {
-      if (AST__destruct(params[i])) AST_destructReplaceAssignment(params, i);
+      AST__destruct(params[i], params, i);
     }
     // </SCRUB AST>
 
