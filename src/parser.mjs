@@ -1504,7 +1504,7 @@ function Parser(code, options = {}) {
     while (isCommentToken($tp_maybeComment_type)) {
       tok_nextToken(lexerFlags);
       if (tok_getType() === $ERROR) {
-        tok_lexError();
+        return tok_lexError();
       }
 
       AST_babelAddComment($tp_maybeComment_start, $tp_maybeComment_stop, $tp_maybeComment_line, $tp_maybeComment_column, $tp_maybeComment_type);
@@ -10243,6 +10243,7 @@ function Parser(code, options = {}) {
           }
           else {
             // [x]: `for (const [x, x] in {}) {}`
+            // [v]: `[x] = obj`
 
             // If this isn't a binding, this is a noop
             // If this is inside a group, this is a noop if it turns out not to be an arrow
@@ -11055,6 +11056,7 @@ function Parser(code, options = {}) {
     // - `(x={y: await z}) => t`                    (propagate await/yield to invalidate this case)
     // - `({x: b = await c}) => d`                  (propagate await/yield to invalidate this case)
     ASSERT(tok_getType() === $PUNC_COLON, 'should not skip colon yet because that breaks end column');
+    ASSERT(isIdentToken($tp_key_type) || isNumberStringToken($tp_key_type), 'an objlit key is either an ident, a string, or a number');
 
     if (babelCompat) {
       AST_open(astProp, {
@@ -12009,7 +12011,6 @@ function Parser(code, options = {}) {
 
     let $tp_name_canon = parseClassId(lexerFlags, optionalIdent, scoop);
 
-    // TODO: I'm pretty sure scoop should be DO_NOT_BIND here (and can be folded inward)
     _parseClass(lexerFlags, originalOuterLexerFlags, IS_STATEMENT);
 
     AST_close($tp_class_start, $tp_class_line, $tp_class_column, 'ClassDeclaration');
@@ -12039,7 +12040,8 @@ function Parser(code, options = {}) {
       body: undefined,
     });
 
-    // TODO: can extends and computed prop keys access the class id? is there any way that is relevant for parsers?
+    // While extends and computed method keys can reference the class expression lexical bound id, they can't
+    // overwrite it, so there's no need to record/track it
     parseClassId(lexerFlags, IDENT_OPTIONAL, DO_NOT_BIND);
 
     let assignable = _parseClass(lexerFlags, originalOuterLexerFlags, IS_EXPRESSION);
