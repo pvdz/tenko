@@ -2488,7 +2488,7 @@ function Parser(code, options = {}) {
 
         // Check all directives for octals because strict mode may be enabled by a directive later in the same block
         // and that would still cause a previous sibling directive with octal escape to be an error.
-        if (!isStrict && /(^|[^\\])\\(?:0\d|[1-9])/.test(dir)) {
+        if (!isStrict && /(^|[^\\])(\\\\)*\\(?:0\d|[1-9])/.test(dir)) {
           // We can't really validate this with a regex. And yet, here we are :'(
           // [v]: `"x\\0"`
           // [x]: `"x\\0"; "use strict";`
@@ -2522,11 +2522,13 @@ function Parser(code, options = {}) {
               // - `"use strict" \n 0123`
               return THROW_RANGE('Illegal legacy octal literal in strict mode', tok_getStart(), tok_getStop());
             }
-            if (!hadOctal && /(^|[^\\])\\(?:0\d|[1-9])/.test(dir)) {
+            if (!hadOctal && /(^|[^\\])(\\\\)*\\(?:0\d|[1-9])/.test(tok_sliceInput(tok_getStart(), tok_getStop()))) {
               // We can't really validate this with a regex. And yet, here we are :'(
-              // [v]: `"x\\0"`
-              // [x]: `"x\\0"; "use strict";`
-              // [v]: `"x\\\\0"; "use strict";`
+              // [x]: `function f(){ "use strict" \n "x\\01" }`
+              // [v]: `function f(){ "use strict" \n "x\\\01" }`
+              // [v]: `function f(){ "use strict" \n "x\\\\01" }`
+              // [x]: `function f(){ "x\\0"; "use strict"; }`
+              // [v]: `function f(){ "x\\\\0"; "use strict"; }`
               return THROW_RANGE('Octal in directive with strict mode directive or in strict mode is always illegal', tok_getStart(), tok_getStop());
             }
           }
