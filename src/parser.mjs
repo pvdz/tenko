@@ -915,12 +915,10 @@ function Parser(code, options = {}) {
         AST_setNumberLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column);
       }
     }
-    else if (isRegexToken($tp_lit_type)) {
+    else {
+      ASSERT(isRegexToken($tp_lit_type), 'this must be regex now because this function is only called for strings, numbers, and regexes');
       ASSERT(tok_sliceInput($tp_lit_start, $tp_lit_stop).split('/').length > 2, 'a regular expression should have at least two forward slashes', tok_sliceInput($tp_lit_start, $tp_lit_stop));
       AST_setRegexLiteral(astProp, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column);
-    }
-    else {
-      ASSERT(false, 'what kind of literal is this?', T($tp_lit_type), isNumberToken($tp_lit_type));
     }
   }
   function AST_getStringNode($tp_string_start, $tp_string_stop, $tp_string_line, $tp_string_column, $tp_string_canon, fromDirective) {
