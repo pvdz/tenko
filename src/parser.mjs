@@ -2036,7 +2036,7 @@ function Parser(code, options = {}) {
   }
 
   function SCOPE_createGlobal(desc) {
-    // A dictionary of pound-sign prefixed variable names and a value for the type of binding they were recorded
+    // A map of  variable names and a value for the type of binding they were recorded
     // - var (can not shadow a lex binding)
     // - lex (--> let, const, class, import, export) (can not coexist with another lex/var binding of same name)
     // - function decl let (top-level module goal, deals with edge case)
@@ -2369,6 +2369,7 @@ function Parser(code, options = {}) {
     ASSERT(scoop === DO_NOT_BIND || scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names then it must be a Map');
     ASSERT_BINDING_TYPE(bindingType);
     ASSERT(bindingType !== BINDING_TYPE_FUNC_VAR, 'cannot be var because the only path this way that can have _func_* explicitly checks this');
+    ASSERT([BINDING_TYPE_FUNC_LEX, BINDING_TYPE_FUNC_STMT, BINDING_TYPE_ARG, BINDING_TYPE_LET, BINDING_TYPE_CONST, BINDING_TYPE_NONE, BINDING_TYPE_CATCH_IDENT, BINDING_TYPE_CATCH_OTHER, BINDING_TYPE_CLASS].includes(bindingType), 'this function is only called with a handful of binding types');
 
     // See comments in SCOPE_addVarBinding for excessive rule overview
 
@@ -2393,14 +2394,14 @@ function Parser(code, options = {}) {
         // [v]: `((x,x))`
         scoop.dupeParamErrorStart = $tp_bindingIdent_start + 1; // offset 1
         scoop.dupeParamErrorStop = $tp_bindingIdent_stop;
-      } else if (options_webCompat === WEB_COMPAT_ON && value === BINDING_TYPE_FUNC_LEX && fdState === FDS_LEX) {
+      } else if (options_webCompat !== WEB_COMPAT_ON || value !== BINDING_TYPE_FUNC_LEX || fdState !== FDS_LEX) {
+        return THROW_RANGE('Attempted to create a lexical binding for `' + $tp_bindingIdent_canon + '` but another binding already existed on the same level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
+      } else {
         // https://tc39.es/ecma262/#sec-block-duplicates-allowed-static-semantics
         // > It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate entries, unless the
         // > source code matching this production is not strict mode code and the duplicate entries are only bound by FunctionDeclarations.
         // (so only ignore sibling function decls in blocks or switches, in sloppy mode, not in script global nor function root)
         // [v]: `{ function f() {} ; function f() {} }`
-      } else {
-        return THROW_RANGE('Attempted to create a lexical binding for `' + $tp_bindingIdent_canon + '` but another binding already existed on the same level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
       }
     }
 
@@ -2408,65 +2409,25 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Cannot create lexical binding for `' + $tp_bindingIdent_canon + '` because it shadows a function parameter', $tp_bindingIdent_start, $tp_bindingIdent_stop);
     }
 
-    if (scoop.type === SCOPE_LAYER_ARROW_PARAMS && value !== BINDING_TYPE_NONE) {
-      if (bindingType === BINDING_TYPE_ARG) {
-        // [v]: ((x,x))
-        // [x]: ((x,x) = x)
-        // [x]: ((x,x) => x)
-        scoop.dupeParamErrorStart = $tp_bindingIdent_start + 1; // offset 1
-        scoop.dupeParamErrorStop = $tp_bindingIdent_stop;
-      } else if (bindingType === BINDING_TYPE_CATCH_IDENT || bindingType === BINDING_TYPE_CATCH_OTHER) {
-        // I guess we ignore this case...
-        // [v]: `e => { try {} catch (e) {} }`
-        // [v]: `e => { try {} catch ([e]) {} }`
-      } else {
-        return THROW_RANGE('Can not create a lexical binding for `' + $tp_bindingIdent_canon +'` because an arrow param already has that name', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-      }
+    if (scoop.type === SCOPE_LAYER_ARROW_PARAMS && value !== BINDING_TYPE_NONE && bindingType === BINDING_TYPE_ARG) {
+      // [v]: ((x,x))
+      // [x]: ((x,x) = x)
+      // [x]: ((x,x) => x)
+      scoop.dupeParamErrorStart = $tp_bindingIdent_start + 1; // offset 1
+      scoop.dupeParamErrorStop = $tp_bindingIdent_stop;
     }
 
     // [x]: `try {} catch ([x, x]) {}`
     // [x]: `try {} catch (x) { let x; }`
     // [v]: `try {} catch (x) { try {} catch (x) {} }`
     // [v]: `try {} catch (x) { try {} catch (y) { let x } }`
-    if (bindingType === BINDING_TYPE_CATCH_IDENT || bindingType === BINDING_TYPE_CATCH_OTHER) {
-      // Detect duplicate catch binding of the same catch clause
-      if (value === BINDING_TYPE_CATCH_IDENT || value === BINDING_TYPE_CATCH_OTHER) {
-        return THROW_RANGE('Can not create a lexical binding for `' + $tp_bindingIdent_canon + '` because it shadows a catch clause binding', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-      }
-    }
-    else if (scoop.type === SCOPE_LAYER_CATCH_BODY) {
+    if (scoop.type === SCOPE_LAYER_CATCH_BODY) {
       // A lexical binding (or any var) in the catch block cannot be shadowing a catch clause binding
       ASSERT(scoop.parent && scoop.parent.type === SCOPE_LAYER_CATCH_HEAD, 'scoop body must have head as parent', scoop);
       let parentValue = scoop.parent.names === HAS_NO_BINDINGS || !scoop.parent.names.has($tp_bindingIdent_canon) ? BINDING_TYPE_NONE : scoop.parent.names.get($tp_bindingIdent_canon);
       if (parentValue === BINDING_TYPE_CATCH_IDENT || parentValue === BINDING_TYPE_CATCH_OTHER) {
         return THROW_RANGE('Can not create a lexical binding for `' + $tp_bindingIdent_canon + '` because it shadows a catch clause binding', $tp_bindingIdent_start, $tp_bindingIdent_stop);
       }
-    }
-
-    let s = scoop.parent;
-    while (s && s.type !== SCOPE_LAYER_FUNC_ROOT) {
-      let value = s.names === HAS_NO_BINDINGS || !s.names.has($tp_bindingIdent_canon)  ? BINDING_TYPE_NONE : s.names.get($tp_bindingIdent_canon);
-      if (s.type === SCOPE_LAYER_ARROW_PARAMS) {
-        if (bindingType === BINDING_TYPE_CATCH_IDENT || bindingType === BINDING_TYPE_CATCH_OTHER) {
-          // I guess we ignore this case...
-          // [v]: `e => { try {} catch (e) {} }`
-          // [v]: `e => { try {} catch ([e]) {} }`
-        }
-        else if (value !== BINDING_TYPE_NONE && scoop.parent === s) {
-          return THROW_RANGE('Can not create a lexical binding for `' + $tp_bindingIdent_canon +'` because an arrow param already has that name', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-        }
-        else {
-          // TODO: this one does not need a loop. `(a) => {{let a}}` is not a problem.
-          if (bindingType === BINDING_TYPE_ARG) {
-            // [v]: ((x,x))
-            // [x]: ((x,x) = x)
-            // [x]: ((x,x) => x)
-            scoop.dupeParamErrorStart = $tp_bindingIdent_start + 1; // offset 1
-            scoop.dupeParamErrorStop = $tp_bindingIdent_stop;
-          }
-        }
-      }
-      s = s.parent;
     }
 
     if (scoop.names === HAS_NO_BINDINGS) scoop.names = new Map;
@@ -4404,6 +4365,7 @@ function Parser(code, options = {}) {
 
     // First record the `default` export name, which happens for any tail. If the tail is a declaration with
     // one or more names, those will also be recorded by sub parsers by passing on the binding objects.
+
     SCOPE_addLexBinding(scoop, $tp_default_start, $tp_default_stop, '*default*', BINDING_TYPE_LET, FDS_VAR); // TODO: confirm `let`
     addNameToExports(exportedNames, $tp_default_start, $tp_default_stop, 'default');
     addBindingToExports(exportedBindings, '*default*');
