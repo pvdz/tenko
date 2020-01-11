@@ -2342,69 +2342,54 @@ function Parser(code, options = {}) {
 
     // Scan the lex var path and apply the rules outlined above for each level.
     // If nothing throws, mark the var on the current lexvar level and move to the parent lexvar, rinse and repeat
-    let isLexBinding = SCOPE_bindingTypeIsLex(bindingType);
     let currScoop = scoop;
     do {
-      let value = currScoop.names === HAS_NO_BINDINGS || !currScoop.names.has($tp_bindingIdent_canon) ? BINDING_TYPE_NONE : currScoop.names.get($tp_bindingIdent_canon);
-      if (value !== BINDING_TYPE_NONE && SCOPE_bindingTypeIsLex(value)) {
-        // There already was a binding of any kind with the same name on this statement level, or a variable declaration
-        // of the same name in a statement that is a descendent of the current statement parent. This is the error.
-        if (
-          options_webCompat === WEB_COMPAT_ON &&
-          hasNoFlag(lexerFlags, LF_STRICT_MODE) &&
-          (
-            (bindingType === BINDING_TYPE_FUNC_STMT && (value === BINDING_TYPE_FUNC_VAR || value === BINDING_TYPE_FUNC_LEX))
-            ||
-            (value === BINDING_TYPE_FUNC_STMT && (bindingType === BINDING_TYPE_FUNC_VAR || bindingType === BINDING_TYPE_FUNC_LEX))
-          )
-        ) {
-          // https://tc39.es/ecma262/#sec-block-duplicates-allowed-static-semantics
-          // https://tc39.es/ecma262/#sec-switch-duplicates-allowed-static-semantics
-          // In web compat mode we can ignore errors when function statements cause dupe bindings when the binding
-          // is only used for function declarations otherwise (so not another func statement!).
-        }
-        else if (isLexBinding) {
-          return THROW_RANGE('Found a lexical binding that is duplicate of a lexical binding on the same statement level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-        }
-        else {
-          return THROW_RANGE('Found a var binding that is duplicate of a lexical binding on the same or lower statement level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-        }
+      if (currScoop.names === HAS_NO_BINDINGS) {
+        currScoop.names = new Map;
+      } else if (currScoop.names.has($tp_bindingIdent_canon)) {
+        let value = currScoop.names.get($tp_bindingIdent_canon);
+        verifyDuplicateVarBinding(lexerFlags, value, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon);
       }
-      if (currScoop === scoop) {
-        // Things to only check in the statement/scope level where they appear
-        if (value !== BINDING_TYPE_NONE && isLexBinding) {
-          return THROW_RANGE('Can not create a lexical binding for `' + $tp_bindingIdent_canon + '` because there already exists a binding on the same statement level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-        }
-
-        if (value === BINDING_TYPE_ARG && bindingType === BINDING_TYPE_ARG) {
-          currScoop.dupeParamErrorStart = $tp_bindingIdent_start + 1; // 0 means none!
-          currScoop.dupeParamErrorStop = $tp_bindingIdent_stop;
-        }
-      }
-      if (value === BINDING_TYPE_CATCH_IDENT || value === BINDING_TYPE_CATCH_OTHER) {
-        if (value === BINDING_TYPE_CATCH_IDENT && options_webCompat === WEB_COMPAT_ON && hasNoFlag(lexerFlags, LF_STRICT_MODE)) {
-          // https://tc39.es/ecma262/#sec-variablestatements-in-catch-blocks
-          // > It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the VarDeclaredNames
-          // > of Block unless CatchParameter is `CatchParameter: BindingIdentifier`.
-
-          // Shadowing catch clause vars with regular vars is okay in web compat mode...
-        } else {
-          return THROW_RANGE('Can not create a binding for `' + $tp_bindingIdent_canon + '` because was already bound as a catch clause binding', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-        }
-      }
-      if (currScoop.names === HAS_NO_BINDINGS) currScoop.names = new Map;
       currScoop.names.set($tp_bindingIdent_canon, bindingType);
       currScoop = currScoop.parent;
     } while (currScoop && currScoop.type !== SCOPE_LAYER_FUNC_ROOT);
   }
-  function SCOPE_bindingTypeIsLex(t) {
-    ASSERT_BINDING_TYPE(t);
-    return t === BINDING_TYPE_LET || t === BINDING_TYPE_CONST || t === BINDING_TYPE_FUNC_LEX || t === BINDING_TYPE_FUNC_STMT || t === BINDING_TYPE_CLASS
+  function verifyDuplicateVarBinding(lexerFlags, value, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon) {
+    switch (value) {
+      case BINDING_TYPE_NONE:
+      case BINDING_TYPE_ARG:
+      case BINDING_TYPE_VAR:
+      case BINDING_TYPE_FUNC_VAR:
+      case BINDING_TYPE_FUNC_STMT:
+        return;
+      case BINDING_TYPE_FUNC_LEX:
+      case BINDING_TYPE_LET:
+      case BINDING_TYPE_CONST:
+      case BINDING_TYPE_CLASS:
+        // There already was a binding of any kind with the same name on this statement level, or a variable declaration
+        // of the same name in a statement that is a descendent of the current statement parent. This is the error.
+        // https://tc39.es/ecma262/#sec-block-duplicates-allowed-static-semantics
+        // https://tc39.es/ecma262/#sec-switch-duplicates-allowed-static-semantics
+        // In web compat mode we can ignore errors when function statements cause dupe bindings when the binding
+        // is only used for function declarations otherwise (so not another func statement!).
+        return THROW_RANGE('Found a var binding that is duplicate of a lexical binding on the same or lower statement level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
+      case BINDING_TYPE_CATCH_IDENT:
+      case BINDING_TYPE_CATCH_OTHER:
+        if (options_webCompat === WEB_COMPAT_OFF || hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+          // https://tc39.es/ecma262/#sec-variablestatements-in-catch-blocks
+          // > It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the VarDeclaredNames
+          // > of Block unless CatchParameter is `CatchParameter: BindingIdentifier`.
+          // Shadowing catch clause vars with regular vars is okay in web compat mode...
+          return THROW_RANGE('Can not create a binding for `' + $tp_bindingIdent_canon + '` because was already bound as a catch clause binding', $tp_bindingIdent_start, $tp_bindingIdent_stop);
+        }
+        return;
+    }
   }
   function SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState) {
     ASSERT(SCOPE_addLexBinding.length === arguments.length, 'arg count');
     ASSERT(scoop === DO_NOT_BIND || scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names then it must be a Map');
     ASSERT_BINDING_TYPE(bindingType);
+    ASSERT(bindingType !== BINDING_TYPE_FUNC_VAR, 'cannot be var because the only path this way that can have _func_* explicitly checks this');
 
     // See comments in SCOPE_addVarBinding for excessive rule overview
 
