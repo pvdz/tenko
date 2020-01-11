@@ -28,13 +28,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Labelled function statements must be plain functions, not generators
+  An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there
 
-start@1:0, error@1:22
-╔══╦═════════════════
+start@1:0, error@1:7
+╔══╦════════════════
  1 ║ if (x) async function *f(){}
-   ║                       ^------- error
-╚══╩═════════════════
+   ║        ^^^^^------- error
+╚══╩════════════════
 
 `````
 

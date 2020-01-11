@@ -2811,11 +2811,8 @@ function Parser(code, options = {}) {
       $tp_star_start = tok_getStart();
       $tp_star_stop = tok_getStop();
 
-      if (isFuncDecl === IS_FUNC_DECL && fdState === FDS_IFELSE) {
-        // [x]: `foo: function *f(){}`
-        return THROW_RANGE('Labelled function statements must be plain functions, not generators', $tp_star_start, $tp_star_stop);
-      }
       ASSERT_skipToIdentParenOpen('*', lexerFlags);
+
       if ($tp_async_type === $ID_async && !allowAsyncGenerators) {
         return THROW_RANGE('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018', $tp_async_start, $tp_async_stop);
       }
@@ -2840,12 +2837,11 @@ function Parser(code, options = {}) {
       //   - module: https://tc39.es/ecma262/#sec-module-semantics-static-semantics-lexicallydeclarednames
       //   - block: https://tc39.es/ecma262/#sec-block-static-semantics-lexicallydeclarednames
       //   - switch: https://tc39.es/ecma262/#sec-switch-statement-static-semantics-lexicallydeclarednames
-      if (fdState === FDS_IFELSE) {
+
+      ASSERT(fdState !== FDS_IFELSE, 'the only place where IS_LABELLED is set will use FDS_ILLEGAL if this were the case');
+      if (fdState === FDS_ILLEGAL) {
         // - `if (x) foo: function f(){}`
         // - `if (x); else foo: function f(){}`
-        return THROW_RANGE('A "labelled function declaration" is never allowed inside an if-else', $tp_first_start, $tp_function_stop);
-      }
-      if (fdState === FDS_ILLEGAL) {
         // - `while (x) foo: function f(){}`
         // - `for (;;) foo: function f(){}`
         // - `with (x) foo: function f(){}`
@@ -2855,7 +2851,7 @@ function Parser(code, options = {}) {
         // - `foo: async function f(){}`
         return THROW_RANGE('A "labelled function declaration" can not be async', $tp_async_start, $tp_async_stop);
       }
-      if ($tp_star_start !== 0) {
+      if ($tp_star_type === $PUNC_STAR) {
         // - `foo: function *f(){}`
         return THROW_RANGE('A "labelled function declaration" can not be a generator', $tp_star_start, $tp_star_stop);
       }
@@ -2871,7 +2867,7 @@ function Parser(code, options = {}) {
         // - `if (x) async function f(){}`
         return THROW_RANGE('An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tp_async_start, $tp_async_stop);
       }
-      if ($tp_star_start !== 0) {
+      if ($tp_star_type === $PUNC_STAR) {
         // - `if (x) function *f(){}`
         return THROW_RANGE('A generator function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tp_star_start, $tp_star_stop);
       }
@@ -2892,12 +2888,8 @@ function Parser(code, options = {}) {
     }
     else if (isFuncDecl === IS_FUNC_DECL && fdState === FDS_ILLEGAL) {
       // https://tc39.es/ecma262/#prod-LabelledItem
-      // A function declaration is allowed as child of a label, but that case does not allow async/star
       // This case is a "labelled function declaration"
       return THROW_RANGE('Cannot parse a function declaration here, only expecting statements here', $tp_first_start, $tp_function_stop);
-    }
-    else {
-      // This is always fine in es6+
     }
 
     return parseFunctionAfterKeyword(
@@ -3464,7 +3456,7 @@ function Parser(code, options = {}) {
         // However, when parsed as a sub-statement it will always parse a `let` as variable and only in the case where it is
         // followed by an array literal an ASI is forced ("restricted production").
         // Additionally, in strict mode `let` can not be the name of a variable regardless parsing a declaration or statement.
-        if (isLabelled === IS_LABELLED|| fdState === FDS_ILLEGAL || fdState === FDS_IFELSE) {
+        if (isLabelled === IS_LABELLED || fdState === FDS_ILLEGAL || fdState === FDS_IFELSE) {
           // declarations not allowed
           parseLetExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp);
         } else {
