@@ -8703,6 +8703,8 @@ function Parser(code, options = {}) {
     let $tp_op_stop = tok_getStop();
 
     if (leftHandSideExpression === ONLY_LHSE) {
+      // [x]: `class x extends ++y {}`
+      //                       ^^
       return THROW_RANGE('A `' + opName + '` update expression is not allowed here', $tp_op_start, $tp_op_stop);
     }
 
