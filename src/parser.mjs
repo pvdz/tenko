@@ -5373,6 +5373,7 @@ function Parser(code, options = {}) {
     } else {
       parseExpressions(lexerFlags, 'test');
       if (tok_getType() !== $PUNC_SEMI) {
+        // [x]: `for (;a);`
         return THROW_RANGE('Missing second semi in `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
       }
     }
