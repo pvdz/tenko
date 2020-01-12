@@ -9105,7 +9105,7 @@ function Parser(code, options = {}) {
     let destructible = MIGHT_DESTRUCT; // this function checks so many things :(
     let assignable = ASSIGNABLE_UNDETERMINED; // true iif first expr is assignable, always false if the group has a comma
     let toplevelComma = false;
-    let wasSimple = PARAMS_ALL_SIMPLE; // true if only idents and without assignment (so es5 valid)
+    let wasSimple = PARAMS_ALL_SIMPLE; // true if only idents and without assignment (so es5 valid), provided destructable
     let mustBeArrow = false; // special case; a `...` must mean arrow, and a trailing comma must mean arrow as well
 
     while (tok_getType() !== $PUNC_PAREN_CLOSE) { // top-level group loop, list of ident, array, object, rest, and other expressions
@@ -9180,25 +9180,23 @@ function Parser(code, options = {}) {
             // [x]: `(eval) => {}`
             // [x]: `(arguments) => {}`
             destructible |= CANT_DESTRUCT;
-            wasSimple = PARAMS_SOME_COMPLEX; // if we can't assign to it then the name is a keyword of sorts
+            // wasSimple = PARAMS_SOME_COMPLEX; // if we can't assign to it then the name is a keyword of sorts // Only used for arrows but that would throw with cant_destruct
           } else if (
             // https://tc39.github.io/ecma262/#sec-identifiers-static-semantics-early-errors
             isStrictOnlyKeyword($tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_canon)
           ) {
+            // If it was already in strict mode then all cases would throw or miss this branch
+            // - eval, arguments: not assignable in strict mode
+            // - reserved keywords (package etc) and static: throw immediately in strict mode
+            // - let, yield: must be parsed as keywords so are not assignable idents in strict mode
+            ASSERT(hasNoFlag(lexerFlags, LF_STRICT_MODE), 'no keyword would reach this branch in strict mode');
+
             // Mark the args as non-simple such that if the body contains a "use strict" directive, it will still throw
-            // If already in strict mode then make an arrow illegal immediately.
-            wasSimple = PARAMS_SOME_COMPLEX;
-            if (hasAllFlags(lexerFlags, LF_STRICT_MODE) ) {
-              // [x]: `"use strict"; (eval) => { }`
-              // [x]: `"use strict"; (arguments) => { }`
-              destructible |= CANT_DESTRUCT;
-            } else {
-              // [x]: `(eval) => { }`
-              // [x]: `(arguments) => { }`
-              // [x]: `(eval) => { "use strict"; }`
-              // [x]: `(arguments) => { "use strict"; }`
-              wasSimple = PARAMS_SOME_COMPLEX; // Throw if use strict directve is found
-            }
+            // [v]: `(eval) => { }`
+            // [v]: `(package) => { }`
+            // [x]: `(eval) => { "use strict"; }`
+            // [x]: `(package) => { "use strict"; }`
+            wasSimple = PARAMS_SOME_COMPLEX; // Throw if use strict directive is found
           } else {
             // The arg was not special under strict mode
             // [x]: `f = (foo) => { "use strict"; }`
@@ -9210,7 +9208,7 @@ function Parser(code, options = {}) {
           // parse a regular ident expression here
           // - `(typeof x)`
           destructible |= CANT_DESTRUCT;
-          wasSimple = PARAMS_SOME_COMPLEX;
+          // wasSimple = PARAMS_SOME_COMPLEX; // Only used for arrows but that would throw with cant_destruct
         }
       }
       else if (tok_getType() === $PUNC_CURLY_OPEN) {
