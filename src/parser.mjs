@@ -7278,22 +7278,24 @@ function Parser(code, options = {}) {
 
     if (hasAllFlags(assignable, PIGGY_BACK_WAS_ARROW)) return assignable;
 
-    let first = true;
-    while (isNonAssignBinOp(tok_getType(), lexerFlags) || tok_getType() === $PUNC_QMARK) {
+    let repeat = false;
+    do {
+      repeat = false;
       if (tok_getType() === $PUNC_QMARK) {
         let nowAssignable = parseExpressionFromTernaryOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
-      } else {
+        repeat = true;
+      }
+      else if (isNonAssignBinOp(tok_getType(), lexerFlags)) {
         let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
+        repeat = true;
       }
+    } while (repeat);
 
-      // note: this is a nice error message for `5+5=10`
-      if (tok_getType() === $PUNC_EQ) {
-        return THROW_RANGE('Cannot assign a value to non-assignable value', tok_getStart(), tok_getStop());
-      }
-
-      first = false;
+    // note: this is a nice error message for `5+5=10`
+    if (tok_getType() === $PUNC_EQ) {
+      return THROW_RANGE('Cannot assign a value to non-assignable value', tok_getStart(), tok_getStop());
     }
 
     let $tp_maybeOp_start = tok_getStart();
@@ -7460,6 +7462,12 @@ function Parser(code, options = {}) {
   }
 
   function getStrength(type, $tp_tokenStart, $tp_tokenStop) {
+    ASSERT(getStrength.length === arguments.length, 'arg count');
+    ASSERT(type !== $ID_of, 'since `of` is not a regular op it should not go through the binary expression parser');
+    ASSERT(type !== $PUNC_QMARK, 'parseExpressionFromBinaryOp will consume the qmark on its own and not check this function before doing so');
+
+    // Note: this is only called from the binary expression parser. So certain "ops" are never received here.
+
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
     // the spec is super implicit about operator precedent. you can only discover it by tracing the grammar.
     // note: this function doesnt contain all things that have precedent. most of them are also implicitly
@@ -7482,7 +7490,7 @@ function Parser(code, options = {}) {
       case $PUNC_GT_EQ: return 11;
       case $ID_in: return 11;
       case $ID_instanceof: return 11;
-      case $ID_of: return 11;
+      // case $ID_of: return 11;
       case $PUNC_EQ_EQ: return 10;
       case $PUNC_EXCL_EQ: return 10;
       case $PUNC_EQ_EQ_EQ: return 10;
@@ -7492,7 +7500,7 @@ function Parser(code, options = {}) {
       case $PUNC_OR: return 7;
       case $PUNC_AND_AND: return 6;
       case $PUNC_OR_OR: return 5;
-      case $PUNC_QMARK: return 4;
+      // case $PUNC_QMARK: return 4;
     }
 
     THROW_RANGE('Unknown operator', $tp_tokenStart, $tp_tokenStop); // other ops should not be handled by this function. dont think this should be possible in prod (it means lexer allowed a new op)
@@ -8271,7 +8279,7 @@ function Parser(code, options = {}) {
     AST_close($tp_yield_start, $tp_yield_line, $tp_yield_column, 'YieldExpression');
 
     if (tok_getType() === $PUNC_QMARK) {
-      ASSERT(tok_getType() === $PUNC_QMARK, 'just in case more tokens can start with `?`');
+      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === '?', 'just in case more tokens can start with `?`');
       return THROW_RANGE('Can not have a `yield` expression on the left side of a ternary', $tp_yield_start, $tp_yield_stop);
     }
 
