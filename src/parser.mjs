@@ -8361,6 +8361,7 @@ function Parser(code, options = {}) {
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_VALID(allowAssignment === ASSIGN_EXPR_IS_OK, 'arrows are assignment expressions so it should lead to an error if those are not allowed');
     ASSERT(tok_getType() === $PUNC_EQ_GT, 'confirmed at all callsites');
+    ASSERT($tp_ident_type !== $ID_await || hasNoFlag(lexerFlags, LF_IN_ASYNC), 'if async the await ident would parse as an await expression which would not lead here');
 
     let $tp_arrow_start = tok_getStart();
     let $tp_arrow_stop = tok_getStop();
@@ -8424,11 +8425,6 @@ function Parser(code, options = {}) {
     ASSERT(paramScoop._ = 'parenless arrow scope');
     ASSERT(paramScoop._funcName = '(arrow has no name)');
     SCOPE_addLexBinding(paramScoop, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, BINDING_TYPE_ARG, FDS_ILLEGAL);
-
-    if ($tp_ident_type === $ID_await && hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
-      // - `async function f(){ return await => {}; }`
-      return THROW_RANGE('Cannot use `await` as an arrow parameter name inside another async function', $tp_ident_start, $tp_arrow_stop);
-    }
 
     parseArrowFromPunc(lexerFlags, paramScoop, $tp_async_type, allowAssignment, wasSimple);
     AST_close($tp_arrowStart_start, $tp_arrowStart_line, $tp_arrowStart_column, 'ArrowFunctionExpression');
