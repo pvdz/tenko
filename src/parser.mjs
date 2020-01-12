@@ -4854,11 +4854,13 @@ function Parser(code, options = {}) {
       let $tp_await_stop = tok_getStop();
 
       if (!allowAsyncGenerators) {
-        return THROW_RANGE('The `for await` syntax is not supported by the currently targeted language version', $tp_for_start, $tp_await_stop);
+        return THROW_RANGE('`for await` is not supported by the current targeted language version, they were introduced in ES9/ES2018', $tp_for_start, $tp_await_stop);
       }
+
       if (hasNoFlag(lexerFlags, LF_IN_ASYNC)) {
         return THROW_RANGE('Can only use `for-await` inside an async function', $tp_for_start, $tp_await_stop);
       }
+
       ASSERT_skipToParenOpenOrDie($ID_await, lexerFlags);
     } else if (tok_getType() !== $PUNC_PAREN_OPEN) {
       return THROW_RANGE('Missing opening paren of the `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', $tp_for_start, $tp_for_stop);
