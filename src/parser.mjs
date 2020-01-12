@@ -6744,9 +6744,6 @@ function Parser(code, options = {}) {
       ASSERT_skipToExpressionStart('=', lexerFlags); // x(foo=/bar/){}
       paramSimple = PARAM_WAS_COMPLEX_HAD_INIT; // if this is an arg the arg is not "simple"
       if (defaultsOption === ASSIGNMENT_IS_DEFAULT) {
-        if ((paramSimple === PARAM_WAS_SIMPLE || paramSimple === PARAM_WAS_NON_STRICT_SIMPLE) && bindingOrigin === FROM_CATCH) {
-          return THROW_RANGE('The catch clause cannot have a default', tok_getStart(), tok_getStop());
-        }
         // - `try {} catch (a) {}`
         // - `try {} catch ([a]) {}`
         // - `try {} catch ([a] = b) {}`
@@ -6759,7 +6756,7 @@ function Parser(code, options = {}) {
         parseExpression(lexerFlags, 'right');
         AST_close($tp_bindingStart_start, $tp_bindingStart_line, $tp_bindingStart_column, 'AssignmentPattern');
       } else {
-        ASSERT(bindingOrigin !== FROM_CATCH, 'catch is default');
+        ASSERT(bindingOrigin !== FROM_CATCH, 'checked earlier in branch');
         ASSERT(defaultsOption === ASSIGNMENT_IS_INIT, 'two options');
         AST_wrapClosedCustom('declarations', {
           type: 'VariableDeclarator',
