@@ -636,6 +636,7 @@ function Parser(code, options = {}) {
     }
   }
 
+  let allowExponentiation = (targetEsVersion >= VERSION_EXPONENTIATION || targetEsVersion === VERSION_WHATEVER);
   let allowTrailingFunctionComma = targetEsVersion >= VERSION_TRAILING_FUNC_COMMAS || targetEsVersion === VERSION_WHATEVER;
   let allowAsyncFunctions = targetEsVersion >= VERSION_ASYNC || targetEsVersion === VERSION_WHATEVER;
   let allowAsyncGenerators = targetEsVersion >= VERSION_ASYNC_GEN || targetEsVersion === VERSION_WHATEVER;
@@ -7365,7 +7366,6 @@ function Parser(code, options = {}) {
     ASSERT_skipToExpressionStart('?', lexerFlags);
     // you can have an assignment between `?` and `:` but not after `:`
     // the `in` is allowed between as well because there can be no ambiguity
-    // TODO: add testcase where NO_ASI is necessary. Not sure it is but can't determine that it is not. Go fuzzer?
     let midAssignable = parseExpression(sansFlag(lexerFlags, LF_IN_FOR_LHS) | LF_NO_ASI, 'consequent');
     if (tok_getType() !== $PUNC_COLON) {
       if (tok_getType() === $PUNC_COMMA) {
@@ -7431,12 +7431,13 @@ function Parser(code, options = {}) {
     // Find compound ops but ignore comparison ops
 
     if (!hasAllFlags(type, $G_BINOP_ASSIGN)) return false;
+
     if (type !== $PUNC_STAR_STAR_EQ) return true;
 
-    if (targetEsVersion < VERSION_EXPONENTIATION && targetEsVersion !== VERSION_WHATEVER) {
-      // TODO: test case
-      return THROW_RANGE('`**` is not supported in ES' + targetEsVersion, $tp_assign_start, $tp_assign_stop);
+    if (!allowExponentiation) {
+      return THROW_RANGE('`**` was introduced in ES7', $tp_assign_start, $tp_assign_stop);
     }
+
     return true;
   }
   function isNonAssignBinOp(type, lexerFlags) {
@@ -7445,14 +7446,13 @@ function Parser(code, options = {}) {
     if (!hasAllFlags(type, $G_BINOP_NONASSIGN)) return false;
 
     if (type === $PUNC_STAR_STAR) {
-      if (targetEsVersion < VERSION_EXPONENTIATION && targetEsVersion !== VERSION_WHATEVER) {
-        // TODO: test case
-        return THROW_RANGE('`**` is not supported in ES' + targetEsVersion, tok_getStart(), tok_getStop());
+      if (!allowExponentiation) {
+        return THROW_RANGE('`**=` was introduced in ES7', tok_getStart(), tok_getStop());
       }
       return true;
     }
 
-    if (tok_getType() === $ID_in) {
+    if (type === $ID_in) {
       return hasNoFlag(lexerFlags, LF_IN_FOR_LHS);
     }
 
@@ -7495,7 +7495,7 @@ function Parser(code, options = {}) {
       case $PUNC_QMARK: return 4;
     }
 
-    return THROW_RANGE('Unknown operator', $tp_tokenStart, $tp_tokenStop); // other ops should not be handled by this function. dont think this should be possible in prod (it means lexer allowed a new op)
+    THROW_RANGE('Unknown operator', $tp_tokenStart, $tp_tokenStop); // other ops should not be handled by this function. dont think this should be possible in prod (it means lexer allowed a new op)
   }
 
   function parseValue(lexerFlags, allowAssignment, isNewArg, leftHandSideExpression, astProp) {

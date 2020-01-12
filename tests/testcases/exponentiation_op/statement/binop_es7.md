@@ -1,10 +1,11 @@
 # Tenko parser test case
 
-- Path: tests/testcases/exponentiation_op/statement/ES7.md
+- Path: tests/testcases/exponentiation_op/statement/binop_es7.md
 
 > :: exponentiation op : statement
 >
-> ::> ES7
+> ::> binop es7
+## PASS
 
 ## Input
 

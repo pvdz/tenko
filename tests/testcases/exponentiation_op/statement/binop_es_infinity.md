@@ -1,13 +1,15 @@
 # Tenko parser test case
 
-- Path: tests/testcases/exponentiation_op/statement/base_case.md
+- Path: tests/testcases/exponentiation_op/statement/binop_es_infinity.md
 
 > :: exponentiation op : statement
 >
-> ::> base case
+> ::> binop es infinity
 ## PASS
 
 ## Input
+
+- `es = Infinity`
 
 `````js
 2 ** 4

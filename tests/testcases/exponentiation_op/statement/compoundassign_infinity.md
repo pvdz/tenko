@@ -1,16 +1,18 @@
 # Tenko parser test case
 
-- Path: tests/testcases/exponentiation_op/statement/base_case.md
+- Path: tests/testcases/exponentiation_op/statement/compoundassign_infinity.md
 
 > :: exponentiation op : statement
 >
-> ::> base case
+> ::> compoundassign infinity
 ## PASS
 
 ## Input
 
+- `es = Infinity`
+
 `````js
-2 ** 4
+a **= b
 `````
 
 ## Output
@@ -28,26 +30,24 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
       expression: {
-        type: 'BinaryExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
         left: {
-          type: 'Literal',
+          type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          value: 2,
-          raw: '2'
+          name: 'a'
         },
-        operator: '**',
+        operator: '**=',
         right: {
-          type: 'Literal',
-          loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
-          value: 4,
-          raw: '4'
+          type: 'Identifier',
+          loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
+          name: 'b'
         }
       }
     }
@@ -55,7 +55,7 @@ ast: {
 }
 
 tokens (5x):
-       NUMBER_DEC PUNC_STAR_STAR NUMBER_DEC ASI
+       IDENT PUNC_STAR_STAR_EQ IDENT ASI
 `````
 
 ### Strict mode
@@ -87,7 +87,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-2 ** 4;
+a **= b;
 ````
 
 Produces same AST
