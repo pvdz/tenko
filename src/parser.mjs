@@ -6573,8 +6573,14 @@ function Parser(code, options = {}) {
       let $tp_bindingStart_start = tok_getStart();
 
       let wasRest = $tp_bindingStart_type === $PUNC_DOT_DOT_DOT;
+
       // ident or destructuring of object/array or rest arg
       let paramSimple = parseBinding(lexerFlags, $tp_bindingStart_start, $tp_bindingStart_line, $tp_bindingStart_column, scoop, bindingType, bindingOrigin, defaultOptions, exportedNames, exportedBindings, astProp);
+
+      if (wasRest && $tp_set_type === $ID_set) {
+        return THROW_RANGE('A setter can not have a rest arg (unless inside a pattern)', $tp_bindingStart_start, tok_getStart());
+      }
+
       ASSERT([PARAM_UNDETERMINED, PARAM_WAS_SIMPLE, PARAM_WAS_NON_STRICT_SIMPLE, PARAM_WAS_COMPLEX, PARAM_WAS_COMPLEX_HAD_INIT].includes(paramSimple), 'paramSimple enum', paramSimple);
       if (paramSimple === PARAM_WAS_COMPLEX_HAD_INIT) {
         inited = true;
