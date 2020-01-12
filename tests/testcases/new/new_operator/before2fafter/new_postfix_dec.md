@@ -1,15 +1,15 @@
 # Tenko parser test case
 
-- Path: tests/testcases/new/new_operator/before2fafter/can_not_2b2b_a_new_without_prop.md
+- Path: tests/testcases/new/new_operator/before2fafter/new_postfix_dec.md
 
 > :: new : new operator : before2fafter
 >
-> ::> can not 2b2b a new without prop
+> ::> new postfix dec
 
 ## Input
 
 `````js
-new x++
+new x--
 `````
 
 ## Output
@@ -26,11 +26,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot postfix `++` a non-assignable value
+  Cannot postfix `--` a non-assignable value
 
 start@1:0, error@1:5
 ╔══╦════════════════
- 1 ║ new x++
+ 1 ║ new x--
    ║      ^^------- error
 ╚══╩════════════════
 
