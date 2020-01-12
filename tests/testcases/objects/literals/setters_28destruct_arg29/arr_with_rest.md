@@ -5,7 +5,6 @@
 > :: objects : literals : setters 28destruct arg29
 >
 > ::> arr with rest
-
 ## PASS
 
 ## Input

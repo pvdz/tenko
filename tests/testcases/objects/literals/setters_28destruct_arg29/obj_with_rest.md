@@ -5,7 +5,6 @@
 > :: objects : literals : setters 28destruct arg29
 >
 > ::> obj with rest
-
 ## PASS
 
 ## Input

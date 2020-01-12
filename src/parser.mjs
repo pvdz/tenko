@@ -7710,6 +7710,9 @@ function Parser(code, options = {}) {
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(isNewArg === NOT_NEW_ARG || allowAssignment === ASSIGN_EXPR_IS_ERROR, 'new arg does not allow assignments');
     ASSERT_BINDING_TYPE(bindingType);
+    ASSERT([BINDING_TYPE_NONE, BINDING_TYPE_ARG, BINDING_TYPE_VAR, BINDING_TYPE_LET, BINDING_TYPE_CONST, BINDING_TYPE_CATCH_OTHER].includes(bindingType), 'Note: not all bindingTypes are received here');
+    ASSERT(![BINDING_TYPE_FUNC_VAR, BINDING_TYPE_FUNC_STMT, BINDING_TYPE_FUNC_LEX, BINDING_TYPE_CLASS, BINDING_TYPE_CATCH_IDENT].includes(bindingType), 'Note: not all bindingTypes are received here');
+
     // for `new` only a subset is accepted;
     // - `super`
     // - metaproperty (`new.meta`)
@@ -7779,9 +7782,7 @@ function Parser(code, options = {}) {
         }
         return THROW_RANGE('Import keyword only allowed on toplevel or in a dynamic import', $tp_ident_start, $tp_ident_stop);
       case $ID_let:
-        if (bindingType === BINDING_TYPE_CLASS) {
-          return THROW_RANGE('Can not use `let` as a class name', $tp_ident_start, $tp_ident_stop);
-        }
+        ASSERT(bindingType !== BINDING_TYPE_CLASS, 'class ident does not pass through here');
         if (bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_CONST) {
           return THROW_RANGE('Can not use `let` when binding through `let` or `const`', $tp_ident_start, $tp_ident_stop);
         }
@@ -8359,14 +8360,10 @@ function Parser(code, options = {}) {
     ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'async token');
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT_VALID(allowAssignment === ASSIGN_EXPR_IS_OK, 'arrows are assignment expressions so it should lead to an error if those are not allowed');
+    ASSERT(tok_getType() === $PUNC_EQ_GT, 'confirmed at all callsites');
 
     let $tp_arrow_start = tok_getStart();
     let $tp_arrow_stop = tok_getStop();
-
-    if (tok_getType() !== $PUNC_EQ_GT) {
-      // [x]: `function *g() { async yield = {}; }`
-      return THROW_RANGE('An `async` followed by an identifier should lead to an arrow function, found something unexpected', $tp_arrow_start, $tp_arrow_stop);
-    }
 
     if (hasAllFlags(lexerFlags, LF_IN_GENERATOR) && $tp_ident_type === $ID_yield) {
       // [x]: `function *g() { async yield => {}; }`
