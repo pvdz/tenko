@@ -5870,6 +5870,7 @@ function Parser(code, options = {}) {
   function parseLetDeclaration(lexerFlags, $tp_let_start, $tp_let_line, $tp_let_column, scoop, labelSet, fdState, nestedLabels, astProp) {
     ASSERT(arguments.length === parseLetDeclaration.length, 'arg count');
     ASSERT_LABELSET(labelSet);
+    ASSERT(hasNoFlag(lexerFlags, LF_NO_ASI), 'This is a statement so the no_asi flag can not be set here');
 
     let $tp_ident_type = tok_getType();
     let $tp_ident_line = tok_getLine();
@@ -5925,16 +5926,14 @@ function Parser(code, options = {}) {
           [$ID_await, $ID_yield, $ID_arguments, $ID_eval, $ID_implements, $ID_interface, $ID_let, $ID_package, $ID_private, $ID_protected, $ID_public, $ID_static].includes(tok_getType())
         ) {
           // This must be an error now. ASI was not applicable but the var was (still) not a valid binding ident, so *boom*
+          // [x]: `let \n let;`
+          // [x]: `async function f() { let \n await }`
           return THROW_RANGE('Attempted to create a `let` binding on special reserved keyword `' + tok_sliceInput($tp_binding_start, $tp_binding_stop) + '` but: ' + identBindingErrorMsg, $tp_binding_start, $tp_binding_stop);
         }
 
-        if (hasAnyFlag(lexerFlags, LF_NO_ASI)) {
-          return THROW_RANGE('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tok_sliceInput($tp_binding_start, $tp_binding_stop) + '`) and ASI does not apply here', $tp_binding_start, $tp_binding_stop);
-        }
-
+        // [x]: `{ let \n debugger }`
         return THROW_RANGE('`let` must be a declaration in strict mode but the next ident is a reserved keyword (`' + tok_sliceInput($tp_binding_start, $tp_binding_stop) + '`)', $tp_binding_start, $tp_binding_stop);
       }
-
 
       // This is any regular `let` declaration with an ident and no newline but the ident may cause a keyword error
       // - `let foo`
