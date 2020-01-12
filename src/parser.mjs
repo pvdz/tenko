@@ -4061,15 +4061,14 @@ function Parser(code, options = {}) {
     }
   }
   function findLabelForBreak(inputLabelSet, $tp_label_start, $tp_label_stop, $tp_labelName_canon) {
+    ASSERT(findLabelForBreak.length === arguments.length, 'arg count');
+    ASSERT(!!inputLabelSet || inputLabelSet === null, 'label set that doesnt exist must be null');
+
     if (inputLabelSet === null) {
       return THROW_RANGE(`The label (\`${tok_sliceInput($tp_label_start, $tp_label_stop)}\`) for this \`break\` was not defined in the current label set, which is illegal`, $tp_label_start, $tp_label_stop);
     }
 
     let labelSet = inputLabelSet;
-
-    if (!labelSet) {
-      return THROW_RANGE('The label (`' + $tp_labelName_canon + '`) for this `break` was not defined in the current label set, which is illegal', $tp_label_start, $tp_label_stop);
-    }
 
     // Note: the assumption is that the label set only contains valid labels so we don't need to validate the label
     // here. We assume that it must be valid if it is in a label set
