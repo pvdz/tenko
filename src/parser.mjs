@@ -7532,22 +7532,6 @@ function Parser(code, options = {}) {
     let assignable = parseValueHeadBodyAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, NOT_NEW_ARG, allowAssignment, NOT_LHSE, astProp);
     return parseValueTail(lexerFlags, $tp_ident_start, $tp_ident_line, $tp_ident_column, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
-  function parseYieldValueMaybe(lexerFlags, astProp) {
-    ASSERT(parseYieldValueMaybe.length === arguments.length, 'arg count');
-    ASSERT(typeof astProp === 'string', 'astprop string', astProp);
-
-    let $tp_argStart_line = tok_getLine();
-    let $tp_argStart_column = tok_getColumn();
-    let $tp_argStart_start = tok_getStart();
-
-    let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MAYBE, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
-    // TODO: how to properly solve this when there are no tokens? can we even do that? (-> lexer head)
-    if (tok_getStart() === $tp_argStart_start) return YIELD_WITHOUT_VALUE;
-    assignable = parseValueTail(lexerFlags, $tp_argStart_start, $tp_argStart_line, $tp_argStart_column, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
-    // I dont think we need to propagate the await/yield state of the arg of a yield expression, do we?
-    if (isAssignable(assignable)) return WITH_ASSIGNABLE;
-    return WITH_NON_ASSIGNABLE;
-  }
   function parseValueHeadBody(lexerFlags, maybe, isNewArg, allowAssignment, leftHandSideExpression, astProp) {
     ASSERT(arguments.length === parseValueHeadBody.length, 'argcount');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
@@ -7666,12 +7650,9 @@ function Parser(code, options = {}) {
     }
     // currently all callsites that have maybe=PARSE_VALUE_MAYBE will ignore the return value if nothing was consumed
 
-    // <SCRUB DEV>
-    let returnValue = 0;
-    // This return value should be ignored. I want to know when that is not the case.
-    ASSERT(returnValue = new Proxy({}, {getPrototypeOf: () => ASSERT(false, 'poisoned getPrototypeOf'), setPrototypeOf: () => ASSERT(false, 'poisoned setPrototypeOf'), isExtensible: () => ASSERT(false, 'poisoned isExtensible'), preventExtensions: () => ASSERT(false, 'poisoned preventExtensions'), getOwnPropertyDescriptor: () => ASSERT(false, 'poisoned getOwnPropertyDescriptor'), defineProperty: () => ASSERT(false, 'poisoned defineProperty'), has: () => ASSERT(false, 'poisoned has'), get: () => ASSERT(false, 'poisoned get'), set: () => ASSERT(false, 'poisoned set'), deleteProperty: () => ASSERT(false, 'poisoned deleteProperty'), ownKeys: () => ASSERT(false, 'poisoned ownKeys'), apply: () => ASSERT(false, 'poisoned apply'), construct: () => ASSERT(false, 'poisoned construct')}));
-    return returnValue;
-    // </SCRUB DEV>
+    // Note: semantically meaningless but caller should track whether an arg was parsed (compare offset before/after)
+    // Returning NOT_ASSIGNABLE to keep the return type consistent and prevent deopts
+    return NOT_ASSIGNABLE;
   }
   function _parseValueHeadBodyAfterObjArr(wasDestruct) {
     ASSERT(_parseValueHeadBodyAfterObjArr.length === arguments.length, 'argcount');
@@ -8332,15 +8313,23 @@ function Parser(code, options = {}) {
     let $tp_yieldArgStart_start = tok_getStart();
     let $tp_yieldArgStart_stop = tok_getStop();
 
-    // there can be no newline between keyword `yield` and its argument (restricted production)
-    let hadValue = tok_getNlwas() === true ? YIELD_WITHOUT_VALUE : parseYieldValueMaybe(lexerFlags, astProp);
-    if (hadValue === YIELD_WITHOUT_VALUE) {
+    // There can be no newline between keyword `yield` and its argument (restricted production)
+    if (tok_getNlwas() === true) {
       AST_set(astProp, null);
-    } else {
-      // Since this is parsing a yield expression it won't matter whether it also parsed an `await` or `yield`
-      // inside the `yield` (like `yield (await foo)`) since it's invalid in args regardless.
-      parseExpressionFromOp(lexerFlags, $tp_yieldArgStart_start, $tp_yieldArgStart_stop, $tp_yieldArgStart_line, $tp_yieldArgStart_column, hadValue === WITH_ASSIGNABLE ? IS_ASSIGNABLE : NOT_ASSIGNABLE, astProp);
+      return;
     }
+
+    let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MAYBE, NOT_NEW_ARG, ASSIGN_EXPR_IS_OK, NOT_LHSE, astProp);
+
+    if (tok_getStart() === $tp_yieldArgStart_start) {
+      AST_set(astProp, null);
+      return;
+    }
+
+    // We do not need to propagate yield/await state since, per definition, this was a yield. We do need to know whether
+    // the arg is assignable because `yield a=b` is valid and is `yield (a=b)`.
+    assignable = parseValueTail(lexerFlags, $tp_yieldArgStart_start, $tp_yieldArgStart_line, $tp_yieldArgStart_column, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
+    parseExpressionFromOp(lexerFlags, $tp_yieldArgStart_start, $tp_yieldArgStart_stop, $tp_yieldArgStart_line, $tp_yieldArgStart_column, assignable, astProp);
   }
 
   function parseIdentOrParenlessArrow(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, assignable, allowAssignment, astProp) {
