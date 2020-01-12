@@ -4915,24 +4915,22 @@ function Parser(code, options = {}) {
 
     // [v]: `for (let x of y);`
     //                ^
-    if (isIdentToken(tok_getType()) || tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN) {
+    if (isIdentToken(tok_getType())) {
+      // [v]: `for (let x in y);`
+      //                ^
       // [v]: `for (let x of y);`
       //                ^
-      // [v]: `for (let [x] in y);`
-      //                ^
-      // [v]: `for (let {x} of y);`
-      //                ^
-      // [x]: `for (let x of y);`
-      // [x]: `for (let [x] in y);`
-      // [x]: `for (let {x} of y);`
       // [v]: `for (let x;;);`
-      // [v]: `for (let [x] = x;;);`
-      // [v]: `for (let {x} = x;;);`
-
+      //                ^
+      // [v]: `for (let in y);`
+      //                ^
+      // [x]: `for (let of y);`
+      //                ^
       if (tok_getType() === $ID_in) {
         // Edge case makes `let` to be parsed as a var name in sloppy mode
         // TODO: actually, this is probably a syntax error because static semantics are applied after locking in parser choices...
         // [v]: `for (let in x)`
+        //                ^^
         if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
           // Except in strict mode...
           // [x]: `for (let in x)`
@@ -4940,11 +4938,27 @@ function Parser(code, options = {}) {
         }
         AST_setIdent(astProp, $tp_letIdent_start, $tp_letIdent_stop, $tp_letIdent_line, $tp_letIdent_column, $tp_letIdent_canon);
         wasNotDecl = true;
+      } else if (tok_getType() === $ID_of) {
+        // [x]: `for (let of y);`
+        //                ^^
+        return THROW_RANGE('A `for (let of ...)` is always illegal', $tp_for_start, $tp_letArg_stop);
       } else {
         // [v]: `for (let x of y);`
         //                ^
         parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tp_letIdent_start, $tp_letIdent_line, $tp_letIdent_column, scoop, BINDING_TYPE_LET, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
       }
+      assignable = IS_ASSIGNABLE; // decls are assignable (`let` as a var name should be as well)
+    } else if (tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN) {
+      // [v]: `for (let [x] in y);`
+      //                ^
+      // [v]: `for (let {x} of y);`
+      //                ^
+      // [x]: `for (let [x] in y);`
+      // [x]: `for (let {x} of y);`
+      // [v]: `for (let [x] = x;;);`
+      // [v]: `for (let {x} = x;;);`
+      //                ^
+      parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tp_letIdent_start, $tp_letIdent_line, $tp_letIdent_column, scoop, BINDING_TYPE_LET, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
       assignable = IS_ASSIGNABLE; // decls are assignable (`let` as a var name should be as well)
     } else if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
       // In strict mode, `let` must be a keyword, and since we did not see a valid binding token, this is an error
@@ -4980,11 +4994,7 @@ function Parser(code, options = {}) {
 
       ASSERT(tok_getType() !== $PUNC_BRACKET_CLOSE, 'case handled above');
       ASSERT(tok_getType() !== $ID_in, 'case handled above');
-
-      if (tok_getType() === $ID_of) {
-        // [x]: `for (let of y);`
-        return THROW_RANGE('A `for (let of ...)` is always illegal', $tp_for_start, $tp_letArg_stop);
-      }
+      ASSERT(tok_getType() !== $ID_of, 'case handled above');
 
       if (tok_getType() === $PUNC_COMMA) {
         // [x]: `for (let , x;;);`
