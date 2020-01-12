@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Can not use `for-await` with a `for-in`, only `for-of`
+  Can only use `for-await` with a `for-of` loop (and in that case a pattern that as lhs of the `of` must immediately be followed by the `of`)
 
 start@1:0, error@1:36
 ╔══╦═════════════════

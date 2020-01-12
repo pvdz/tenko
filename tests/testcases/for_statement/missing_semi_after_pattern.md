@@ -1,15 +1,17 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/for-in/webcompat3dtrue/regressions_238/for_await_with_obj_destruct_lhs.md
+- Path: tests/testcases/for_statement/missing_semi_after_pattern.md
 
-> :: for statement : for-in : webcompat3dtrue : regressions 238
+> :: for statement
 >
-> ::> for await with obj destruct lhs
+> ::> missing semi after pattern
+>
+> 
 
 ## Input
 
 `````js
-async function f() { for await ({x} in y) {} }
+for ([] = x);
 `````
 
 ## Output
@@ -26,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Can only use `for-await` with a `for-of` loop (and in that case a pattern that as lhs of the `of` must immediately be followed by the `of`)
+  Unknown input followed the left side of a for loop header after assignment
 
-start@1:0, error@1:36
+start@1:0, error@1:11
 ╔══╦═════════════════
- 1 ║ async function f() { for await ({x} in y) {} }
-   ║                                     ^^------- error
+ 1 ║ for ([] = x);
+   ║            ^------- error
 ╚══╩═════════════════
 
 `````

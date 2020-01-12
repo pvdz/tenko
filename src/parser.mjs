@@ -5391,13 +5391,14 @@ function Parser(code, options = {}) {
 
     let assignable = hasAnyFlag(destructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
 
+    let $tp_patternTailStart_type = tok_getType();
     let $tp_patternTailStart_start = tok_getStart();
     let $tp_patternTailStart_stop = tok_getStop();
 
     // Have to make sure this is not a compound assignment to a pattern. And have to do it before the tail (`[].x+=y`)
     // - `for ([] = x;;);`
     // - `for ([] = x in y);`
-    if (tok_getType() !== $PUNC_EQ && isCompoundAssignment(tok_getType(), $tp_patternTailStart_start, $tp_patternTailStart_stop)) {
+    if ($tp_patternTailStart_type !== $PUNC_EQ && isCompoundAssignment($tp_patternTailStart_type, $tp_patternTailStart_start, $tp_patternTailStart_stop)) {
       // - `for ([] += x;;);`
       // - `for ([] /= x in y);`
       return THROW_RANGE('Cannot compound assign to an object or array pattern', $tp_patternTailStart_start, $tp_patternTailStart_stop);
@@ -5449,14 +5450,21 @@ function Parser(code, options = {}) {
       return assignable;
     }
 
+    if (awaitable) {
+      // - `for await ({a} in x);`
+      //                   ^^
+      // - `for await ({a};;);`
+      //                  ^
+      // - `for await ({a} = x of x);`
+      //                   ^
+      // - `for await ([a] in x);`
+      // - `for await ([a];;);`
+      return THROW_RANGE('Can only use `for-await` with a `for-of` loop (and in that case a pattern that as lhs of the `of` must immediately be followed by the `of`)', tok_getStart(), tok_getStop());
+    }
+
     if ($tp_afteLhs_type === $PUNC_SEMI) {
       // - `for ({a};;);`
       // - `for ([a];;);`
-      if (awaitable) {
-        // - `for await ({a};;);`
-        // - `for await ([a];;);`
-        return THROW_RANGE('Can not use `for-await` with a regular `for` loop, only `for-of`', tok_getStart(), tok_getStop());
-      }
 
       return assignable;
     }
@@ -5471,11 +5479,6 @@ function Parser(code, options = {}) {
       // - `for ([x] = y in z);`
       // - `for ([x] = y of z);`
 
-      if (awaitable) {
-        return THROW_RANGE('Can not use `for-await` with a `for-in`, only `for-of`', tok_getStart(), tok_getStop());
-      }
-
-      // TODO: are yield/await relevant here?
       if (notAssignable(assignable)) {
         return THROW_RANGE('The for-header lhs binding pattern is not destructible', tok_getStart(), tok_getStop());
       }
