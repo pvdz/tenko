@@ -4713,58 +4713,19 @@ function Parser(code, options = {}) {
   }
   function parseExportObject(lexerFlags, tmpExportedNames, tmpExportedBindings) {
     ASSERT(parseExportObject.length === arguments.length, 'arg count');
+
     // - `export {...} from 'x'`
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
+
+    // A specifier must start with an ident and may have a trailing comma
     while (isIdentToken(tok_getType())) {
-      // left of the `as`
+      parseExportSpecifier(lexerFlags, tmpExportedNames, tmpExportedBindings);
 
-      let $tp_name_line = tok_getLine();
-      let $tp_name_column = tok_getColumn();
-      let $tp_name_start = tok_getStart();
-      let $tp_name_stop = tok_getStop();
-      let $tp_name_canon = tok_getCanoN(); // left of the `as`
+      if (tok_getType() !== $PUNC_COMMA) break; // Must mean `}` or error
 
-      // right of the `as`, if present at all, otherwise same as name
-
-      let $tp_exportedName_type = tok_getType();
-      let $tp_exportedName_line = tok_getLine();
-      let $tp_exportedName_column = tok_getColumn();
-      let $tp_exportedName_start = tok_getStart();
-      let $tp_exportedName_stop = tok_getStop();
-      let $tp_exportedName_canon = tok_getCanoN(); // right of the `as`, if present at all, otherwise same as name
-
-      ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
-      // while the `$tt_nameToken` should be a valid non-keyword identifier, it also has to be bound and as such we
-      // don't have to check it here since we already apply bind checks anyways and binding would apply this check
-      if (tok_getType() === $ID_as) { // `export {x as y}` NOT `export {x:y}`
-        ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
-        // note: the exported _name_ can be any identifier, keywords included
-
-        $tp_exportedName_type = tok_getType();
-        $tp_exportedName_line = tok_getLine();
-        $tp_exportedName_column = tok_getColumn();
-        $tp_exportedName_start = tok_getStart();
-        $tp_exportedName_stop = tok_getStop();
-        $tp_exportedName_canon = tok_getCanoN();
-
-        ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
-      }
-
-      addNameToExports(tmpExportedNames, $tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
-      addBindingToExports(tmpExportedBindings, $tp_name_canon);
-
-      AST_setNode('specifiers', {
-        type: 'ExportSpecifier',
-        loc: AST_getClosedLoc($tp_name_start, $tp_name_line, $tp_name_column),
-        local: AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon),
-        exported: AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon),
-      });
-
-      if (tok_getType() === $PUNC_COMMA) ASSERT_skipToIdentCurlyClose(',', lexerFlags);
-      else if (tok_getType() !== $PUNC_CURLY_CLOSE) {
-        return THROW_RANGE('Unexpected token while parsing export object', tok_getStart(), tok_getStop());
-      }
+      ASSERT_skipAny(',', lexerFlags);
     }
+
     if (tok_getType() !== $PUNC_CURLY_CLOSE) {
       if (tok_getType() === $PUNC_DOT_DOT_DOT) {
         return THROW_RANGE('Export object cannot have spread', tok_getStart(), tok_getStop());
@@ -4774,7 +4735,66 @@ function Parser(code, options = {}) {
       }
       return THROW_RANGE('Export object can only have "shorthand" `{x}` or "as" `{x as y}', tok_getStart(), tok_getStop());
     }
+
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlags);
+  }
+  function parseExportSpecifier(lexerFlags, tmpExportedNames, tmpExportedBindings) {
+    ASSERT(parseExportSpecifier.length === arguments.length, 'arg count');
+
+    // - `export {a} from 'x'`
+    //            ^
+    // - `export {a,} from 'x'`
+    //            ^
+    // - `export {a as b} from 'x'`
+    //            ^
+    // - `export {a as b,} from 'x'`
+    //            ^
+    // - `export {a, b} from 'x'`
+    //               ^
+
+    // Start with left of the (optional) `as`
+
+    let $tp_name_line = tok_getLine();
+    let $tp_name_column = tok_getColumn();
+    let $tp_name_start = tok_getStart();
+    let $tp_name_stop = tok_getStop();
+    let $tp_name_canon = tok_getCanoN();
+
+    // Exported name is either the right of the `as`, if present at all, and otherwise same as name
+
+    let $tp_exportedName_line = tok_getLine();
+    let $tp_exportedName_column = tok_getColumn();
+    let $tp_exportedName_start = tok_getStart();
+    let $tp_exportedName_stop = tok_getStop();
+    let $tp_exportedName_canon = tok_getCanoN();
+
+    ASSERT_skipAny($G_IDENT, lexerFlags);
+    ASSERT_VALID(tok_getType() === $ID_as || tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE, 'limited options, wanted `as` comma or closing curly');
+
+    // while the `$tt_nameToken` should be a valid non-keyword identifier, it also has to be bound and as such we
+    // don't have to check it here since we already apply bind checks anyways and binding would apply this check
+    if (tok_getType() === $ID_as) { // `export {x as y}` NOT `export {x:y}`
+      ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
+      // note: the exported _name_ can be any identifier, keywords included
+
+      $tp_exportedName_line = tok_getLine();
+      $tp_exportedName_column = tok_getColumn();
+      $tp_exportedName_start = tok_getStart();
+      $tp_exportedName_stop = tok_getStop();
+      $tp_exportedName_canon = tok_getCanoN();
+
+      ASSERT_skipAny($G_IDENT, lexerFlags);
+    }
+
+    addNameToExports(tmpExportedNames, $tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
+    addBindingToExports(tmpExportedBindings, $tp_name_canon);
+
+    AST_setNode('specifiers', {
+      type: 'ExportSpecifier',
+      loc: AST_getClosedLoc($tp_name_start, $tp_name_line, $tp_name_column),
+      local: AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon),
+      exported: AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon),
+    });
   }
 
   function parseForStatement(lexerFlags, scoop, labelSet, astProp) {

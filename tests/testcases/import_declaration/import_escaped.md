@@ -48,7 +48,7 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Unexpected token while parsing export object
+  Export object can only have "shorthand" `{x}` or "as" `{x as y}
 
 start@1:0, error@1:10
 ╔══╦═════════════════

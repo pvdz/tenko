@@ -48,7 +48,7 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Unexpected token while parsing export object
+  Export object uses `as` to alias (`{a as y}`), not colon (`{a: y}`)
 
 start@1:0, error@1:16
 ╔══╦═════════════════
