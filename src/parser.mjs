@@ -2736,14 +2736,7 @@ function Parser(code, options = {}) {
     }
 
     if (isTickToken(tok_getType())) {
-
-      let $tp_tick_type = tok_getType();
-      let $tp_tick_line = tok_getLine();
-      let $tp_tick_column = tok_getColumn();
-      let $tp_tick_start = tok_getStart();
-      let $tp_tick_stop = tok_getStop();
-
-      parseTickStatement(lexerFlags, $tp_tick_start, $tp_tick_stop, $tp_tick_line, $tp_tick_column, $tp_tick_type, astProp);
+      parseTickStatement(lexerFlags, astProp);
       return;
     }
 
@@ -3566,15 +3559,16 @@ function Parser(code, options = {}) {
     AST_close($tp_regex_start, $tp_regex_line, $tp_regex_column, 'ExpressionStatement');
   }
 
-  function parseTickStatement(lexerFlags, $tp_tick_start, $tp_tick_stop, $tp_tick_line, $tp_tick_column, $tp_tick_type, astProp) {
+  function parseTickStatement(lexerFlags, astProp) {
     ASSERT(parseTickStatement.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof astProp === 'string', 'astprop str', astProp);
-    ASSERT($tp_tick_start === tok_getStart(), 'not yet skipped');
 
-    if (isBadTickToken($tp_tick_type)) {
-      return THROW_RANGE('Template contained an illegal escape, illegal in a statement', $tp_tick_start, $tp_tick_start + 1);
-    }
+    let $tp_tick_line = tok_getLine();
+    let $tp_tick_column = tok_getColumn();
+    let $tp_tick_start = tok_getStart();
+    let $tp_tick_stop = tok_getStop();
+
     AST_open(astProp, {
       type: 'ExpressionStatement',
       loc: undefined,
@@ -8451,8 +8445,14 @@ function Parser(code, options = {}) {
 
     if (tok_getType() === $TICK_PURE) {
       parseQuasiPart(lexerFlags, IS_QUASI_TAIL, false);
+
+      AST_close($tp_tick_start, $tp_tick_line, $tp_tick_column, 'TemplateLiteral');
+
+      // - `x${await x}y`
+      return awaitYieldFlagsFromAssignable;
     }
-    else if (tok_getType() === $TICK_HEAD) {
+
+    if (tok_getType() === $TICK_HEAD) {
       parseQuasiPart(lexerFlags, NOT_QUASI_TAIL, false);
 
       let tmpLexerFlags = sansFlag(lexerFlags | LF_IN_TEMPLATE | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
@@ -8463,19 +8463,15 @@ function Parser(code, options = {}) {
         wasTail = tok_getType() === $TICK_TAIL || tok_getType() === $TICK_BAD_TAIL ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
         parseQuasiPart(lexerFlags, wasTail, false);
       } while (wasTail === NOT_QUASI_TAIL);
-    }
-    else {
-      if (isBadTickToken(tok_getType())) {
-        return THROW_RANGE('Template contained bad escape', $tp_tick_start, $tp_tick_stop);
-      }
 
-      return THROW_RANGE('Template should start as head or pure', $tp_tick_start, $tp_tick_stop);
+      AST_close($tp_tick_start, $tp_tick_line, $tp_tick_column, 'TemplateLiteral');
+
+      // - `x${await x}y`
+      return awaitYieldFlagsFromAssignable;
     }
 
-    AST_close($tp_tick_start, $tp_tick_line, $tp_tick_column, 'TemplateLiteral');
-
-    // - `x${await x}y`
-    return awaitYieldFlagsFromAssignable;
+    ASSERT(isBadTickToken(tok_getType()), 'this can not be a $TICK_TAIL or $TICK_BODY (only other cases of the enum) because the lexer can only emit them while parsing a template, which by definition is not at the start of an expression')
+    return THROW_RANGE('Template contained bad escape, which is only valid in _tagged_ templates (and only since ES9/ES2018)', $tp_tick_start, $tp_tick_stop);
   }
 
   function parseQuasiPart(lexerFlags, wasTail, allowBadEscapes) {
