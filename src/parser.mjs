@@ -5731,61 +5731,29 @@ function Parser(code, options = {}) {
     // - `import {...} from 'x'`
     //           ^
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
+
     while (isIdentToken(tok_getType())) {
-      // left of the `as` token
+      parseImportSpecifier(lexerFlags, scoop);
 
-      let $tp_name_line = tok_getLine();
-      let $tp_name_column = tok_getColumn();
-      let $tp_name_start = tok_getStart();
-      let $tp_name_stop = tok_getStop();
-      let $tp_name_canon = tok_getCanoN(); // left of the `as` token
+      if (tok_getType() !== $PUNC_COMMA) break; // Must mean `}` or error
 
-      // The `$tt_localToken` is the right of the `as` token, otherwise same as $tt_nameToken
-
-      let $tp_local_type = tok_getType();
-      let $tp_local_line = tok_getLine();
-      let $tp_local_column = tok_getColumn();
-      let $tp_local_start = tok_getStart();
-      let $tp_local_stop = tok_getStop();
-      let $tp_local_canon = tok_getCanoN(); // right of the `as` token, otherwise same as $tt_nameToken
-
-      ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
-
-      // https://tc39.github.io/ecma262/#sec-createimportbinding
-      // The concrete Environment Record method CreateImportBinding for module Environment Records creates a new initialized
-      // immutable indirect binding for the name N. A binding must not already exist in this Environment Record for N.
-
-      if (tok_getType() === $ID_as) {
-        ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
-
-        $tp_local_type = tok_getType();
-        $tp_local_line = tok_getLine();
-        $tp_local_column = tok_getColumn();
-        $tp_local_start = tok_getStart();
-        $tp_local_stop = tok_getStop();
-        $tp_local_canon = tok_getCanoN();
-
-        ASSERT_skipToCommaCurlyClose($G_IDENT, lexerFlags);
-      }
-      fatalBindingIdentCheck($tp_local_type, $tp_local_start, $tp_local_stop, $tp_local_canon, BINDING_TYPE_CONST, lexerFlags);
-      SCOPE_addLexBinding(scoop, $tp_local_start, $tp_local_stop, $tp_local_canon, BINDING_TYPE_LET, FDS_ILLEGAL); // TODO: confirm `let`
-
-      AST_setNode('specifiers', {
-        type: 'ImportSpecifier',
-        loc: AST_getClosedLoc($tp_name_start, $tp_name_line, $tp_name_column),
-        imported: AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon),
-        local: AST_getIdentNode($tp_local_start, $tp_local_stop, $tp_local_line, $tp_local_column, $tp_local_canon),
-      });
-
-      if (tok_getType() === $PUNC_COMMA) {
-        ASSERT_skipToIdentCurlyClose(',', lexerFlags);
-      }
-      else if (tok_getType() !== $PUNC_CURLY_CLOSE) {
-        return THROW_RANGE('Unexpected character while parsing export object', tok_getStart(), tok_getStop());
-      }
+      ASSERT_skipAny(',', lexerFlags);
     }
 
     if (tok_getType() !== $PUNC_CURLY_CLOSE) {
+      if (tok_getType() === $PUNC_DOT_DOT_DOT) {
+        // - `import {...x} from 'foo'`
+        //            ^^^
+        return THROW_RANGE('Import object cannot have spread', tok_getStart(), tok_getStop());
+      }
+      if (tok_getType() === $PUNC_COLON) {
+        // - `import {x as y} from 'foo'`
+        //              ^^
+        return THROW_RANGE('Import object uses `as` to alias (`{a as y}`), not colon (`{a: y}`)', tok_getStart(), tok_getStop());
+      }
+
+      // - `import {`
+      //            ^
       return THROW_RANGE('Missing import definition closing curly, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
     }
 
@@ -5793,6 +5761,72 @@ function Parser(code, options = {}) {
     //               ^
     ASSERT_skipToFromOrDie($PUNC_CURLY_CLOSE, lexerFlags);
     ASSERT_skipToStringOrDie($ID_from, lexerFlags);
+  }
+  function parseImportSpecifier(lexerFlags, scoop) {
+    // Start with left of the (optional) `as`
+
+    // - `import {a} from 'x'`
+    //            ^
+    // - `import {a,} from 'x'`
+    //            ^
+    // - `import {a as b} from 'x'`
+    //            ^
+    // - `import {a as b,} from 'x'`
+    //            ^
+    // - `import {a, b} from 'x'`
+    //               ^
+
+    let $tp_name_line = tok_getLine();
+    let $tp_name_column = tok_getColumn();
+    let $tp_name_start = tok_getStart();
+    let $tp_name_stop = tok_getStop();
+    let $tp_name_canon = tok_getCanoN();
+
+    // Imported name will bind either to the right of the `as`, if present at all, and otherwise name
+
+    let $tp_local_type = tok_getType();
+    let $tp_local_line = tok_getLine();
+    let $tp_local_column = tok_getColumn();
+    let $tp_local_start = tok_getStart();
+    let $tp_local_stop = tok_getStop();
+    let $tp_local_canon = tok_getCanoN();
+
+    ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
+
+    // https://tc39.github.io/ecma262/#sec-createimportbinding
+    // The concrete Environment Record method CreateImportBinding for module Environment Records creates a new initialized
+    // immutable indirect binding for the name N. A binding must not already exist in this Environment Record for N.
+
+    if (tok_getType() === $ID_as) {
+      // - `import {a as b} from 'x'`
+      //              ^^
+
+      ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
+
+      // - `import {a as b} from 'x'`
+      //                 ^
+
+      // Note: the exported _name_ can be any identifier, keywords included
+
+      $tp_local_type = tok_getType();
+      $tp_local_line = tok_getLine();
+      $tp_local_column = tok_getColumn();
+      $tp_local_start = tok_getStart();
+      $tp_local_stop = tok_getStop();
+      $tp_local_canon = tok_getCanoN();
+
+      ASSERT_skipAny($G_IDENT, lexerFlags);
+    }
+
+    fatalBindingIdentCheck($tp_local_type, $tp_local_start, $tp_local_stop, $tp_local_canon, BINDING_TYPE_CONST, lexerFlags);
+    SCOPE_addLexBinding(scoop, $tp_local_start, $tp_local_stop, $tp_local_canon, BINDING_TYPE_LET, FDS_ILLEGAL);
+
+    AST_setNode('specifiers', {
+      type: 'ImportSpecifier',
+      loc: AST_getClosedLoc($tp_name_start, $tp_name_line, $tp_name_column),
+      imported: AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon),
+      local: AST_getIdentNode($tp_local_start, $tp_local_stop, $tp_local_line, $tp_local_column, $tp_local_canon),
+    });
   }
   function parseImportNamespace(lexerFlags, scoop) {
     ASSERT(parseImportNamespace.length === arguments.length, 'arg count');
