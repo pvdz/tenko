@@ -6264,13 +6264,13 @@ function Parser(code, options = {}) {
 
         parseBinding(lexerFlags | LF_NO_ASI, $tp_binding_start, $tp_binding_line, $tp_binding_column, catchHeadScoop, BINDING_TYPE_CATCH_OTHER, FROM_CATCH, ASSIGNMENT_IS_DEFAULT, UNDEF_EXPORTS, UNDEF_EXPORTS, 'param');
 
+        ASSERT(tok_getType() !== $PUNC_EQ, 'the parseBinding function would throw if the binding ended with an assignment (because from_catch is passed on)')
+
         if (tok_getType() === $PUNC_COMMA) {
           return THROW_RANGE('Catch clause requires exactly one parameter, not more (and no trailing comma)', tok_getStart(), tok_getStop());
         }
-        if (tok_getType() === $PUNC_EQ) {
-          return THROW_RANGE('Catch clause parameter does not support default values', tok_getStart(), tok_getStop());
-        }
         if (tok_getType() !== $PUNC_PAREN_CLOSE) {
+          // [x]: `try {} catch (x`
           return THROW_RANGE('Missing right paren for the catch clause, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
         }
         ASSERT_skipToCurlyOpenOrDie($PUNC_PAREN_CLOSE, lexerFlags);
@@ -6300,6 +6300,7 @@ function Parser(code, options = {}) {
     AST_close($tp_try_start, $tp_try_line, $tp_try_column, 'TryStatement');
 
     if (!hasEither) {
+      // [x]: `try {};`
       return THROW_RANGE('Try must have catch or finally', $tp_try_start, $tp_try_stop);
     }
   }
