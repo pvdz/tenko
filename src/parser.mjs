@@ -8549,7 +8549,7 @@ function Parser(code, options = {}) {
       case $TICK_PURE:
       case $TICK_HEAD:
       case $TICK_BAD_PURE:
-      case $TICK_BAD_HEAD: // niet nodig
+      case $TICK_BAD_HEAD:
         // isTemplateStart
         return _parseValueTailTemplate(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp);
       case $PUNC_PLUS_PLUS:
@@ -8657,34 +8657,35 @@ function Parser(code, options = {}) {
       quasis: [],
     });
 
-    let awaitYieldFlagsFromAssignable = ASSIGNABLE_UNDETERMINED;
-    if (tok_getType() === $TICK_PURE || tok_getType() === $TICK_BAD_PURE) {
-      parseQuasiPart(lexerFlags, IS_QUASI_TAIL, allowBadEscapesInTaggedTemplates);
-    }
-    else if (tok_getType() === $TICK_HEAD || tok_getType() === $TICK_BAD_HEAD) {
-      parseQuasiPart(lexerFlags, NOT_QUASI_TAIL, allowBadEscapesInTaggedTemplates);
-
-      let tmpLexerFlags = sansFlag(lexerFlags | LF_IN_TEMPLATE | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
-      // keep parsing expression+tick until tick-tail
-      let wasTail = IS_QUASI_TAIL;
-      do {
-        awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, 'expressions');
-        wasTail = (tok_getType() === $TICK_TAIL || tok_getType() === $TICK_BAD_TAIL) ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
-        parseQuasiPart(lexerFlags, wasTail, allowBadEscapesInTaggedTemplates);
-      } while (wasTail === NOT_QUASI_TAIL);
-    }
-    else {
-      if (isBadTickToken(tok_getType())) {
-        return THROW_RANGE('Template containd bad escape', tok_getStart(), tok_getStop());
-      }
-
-      return THROW_RANGE('Template should start as head or pure', tok_getStart(), tok_getStop());
-    }
+    _parseValueTailTemplateRest(lexerFlags);
 
     AST_close($tp_Quasi_start, $tp_Quasi_line, $tp_Quasi_column, 'TemplateLiteral');
     AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'TaggedTemplateExpression');
 
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+  }
+  function _parseValueTailTemplateRest(lexerFlags) {
+    ASSERT(_parseValueTailTemplateRest.length === arguments.length, 'arg count');
+    ASSERT([$TICK_PURE, $TICK_BAD_PURE, $TICK_HEAD, $TICK_BAD_HEAD].includes(tok_getType()), 'this func can only be called for the start of a (tagged) template, with or without bad escapes');
+
+    let awaitYieldFlagsFromAssignable = ASSIGNABLE_UNDETERMINED;
+
+    if (tok_getType() === $TICK_PURE || tok_getType() === $TICK_BAD_PURE) {
+      parseQuasiPart(lexerFlags, IS_QUASI_TAIL, allowBadEscapesInTaggedTemplates);
+      return
+    }
+
+    ASSERT(tok_getType() === $TICK_HEAD || tok_getType() === $TICK_BAD_HEAD, 'tick body or tail can only be lexed in proper context so we shouldnt see those here so this must be head (the only enum value left beyond those)');
+    parseQuasiPart(lexerFlags, NOT_QUASI_TAIL, allowBadEscapesInTaggedTemplates);
+
+    let tmpLexerFlags = sansFlag(lexerFlags | LF_IN_TEMPLATE | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_FOR_LHS);
+    // keep parsing expression+tick until tick-tail
+    let wasTail = IS_QUASI_TAIL;
+    do {
+      awaitYieldFlagsFromAssignable |= parseExpressions(tmpLexerFlags, 'expressions');
+      wasTail = (tok_getType() === $TICK_TAIL || tok_getType() === $TICK_BAD_TAIL) ? IS_QUASI_TAIL : NOT_QUASI_TAIL;
+      parseQuasiPart(lexerFlags, wasTail, allowBadEscapesInTaggedTemplates);
+    } while (wasTail === NOT_QUASI_TAIL);
   }
   function _parseValueTailNewArg(assignable) {
     // new rhs only parses a subset of tails
