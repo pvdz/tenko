@@ -3510,7 +3510,7 @@ function Parser(code, options = {}) {
     });
     parseExpressionAfterLiteral(lexerFlags, $tp_number_start, $tp_number_stop, $tp_number_line, $tp_number_column, 'expression');
     if (tok_getType() === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, $tp_number_start, $tp_number_line, $tp_number_column, initNotAssignable(), 'expression');
+      _parseExpressions(lexerFlags, $tp_number_start, $tp_number_line, $tp_number_column, NOT_ASSIGNABLE, 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close($tp_number_start, $tp_number_line, $tp_number_column, 'ExpressionStatement');
@@ -3535,7 +3535,7 @@ function Parser(code, options = {}) {
     });
     parseExpressionAfterLiteral(lexerFlags, $tp_string_start, $tp_string_stop, $tp_string_line, $tp_string_column, 'expression');
     if (tok_getType() === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, $tp_string_start, $tp_string_line, $tp_string_column, initNotAssignable(), 'expression');
+      _parseExpressions(lexerFlags, $tp_string_start, $tp_string_line, $tp_string_column, NOT_ASSIGNABLE, 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close($tp_string_start, $tp_string_line, $tp_string_column, 'ExpressionStatement');
@@ -3559,7 +3559,7 @@ function Parser(code, options = {}) {
     });
     parseExpressionAfterLiteral(lexerFlags, $tp_regex_start, $tp_regex_stop, $tp_regex_line, $tp_regex_column, 'expression');
     if (tok_getType() === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, $tp_regex_start, $tp_regex_line, $tp_regex_column, initNotAssignable(), 'expression');
+      _parseExpressions(lexerFlags, $tp_regex_start, $tp_regex_line, $tp_regex_column, NOT_ASSIGNABLE, 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close($tp_regex_start, $tp_regex_line, $tp_regex_column, 'ExpressionStatement');
@@ -3582,7 +3582,7 @@ function Parser(code, options = {}) {
     parseTickExpression(lexerFlags, $tp_tick_start, $tp_tick_stop, $tp_tick_line, $tp_tick_column, 'expression');
     parseExpressionAfterLiteral(lexerFlags, $tp_tick_start, $tp_tick_stop, $tp_tick_line, $tp_tick_column, 'expression');
     if (tok_getType() === $PUNC_COMMA) {
-      _parseExpressions(lexerFlags, $tp_tick_start, $tp_tick_line, $tp_tick_column, initNotAssignable(), 'expression');
+      _parseExpressions(lexerFlags, $tp_tick_start, $tp_tick_line, $tp_tick_column, NOT_ASSIGNABLE, 'expression');
     }
     parseSemiOrAsi(lexerFlags);
     AST_close($tp_tick_start, $tp_tick_line, $tp_tick_column, 'ExpressionStatement');
@@ -3819,14 +3819,6 @@ function Parser(code, options = {}) {
   }
   function notAssignable(state) {
     return (state & NOT_ASSIGNABLE) === NOT_ASSIGNABLE;
-  }
-  function initAssignable(previous) {
-    ASSERT(arguments.length === 0 || previous === ASSIGNABLE_UNDETERMINED, 'if the previous value was set it should still be 0');
-    return IS_ASSIGNABLE;
-  }
-  function initNotAssignable(previous) {
-    ASSERT(arguments.length === 0 || previous === ASSIGNABLE_UNDETERMINED, 'if the previous value was set it should still be 0');
-    return NOT_ASSIGNABLE;
   }
   function setAssignable(state) {
     // set both flags then unset the one we dont want
@@ -4932,7 +4924,7 @@ function Parser(code, options = {}) {
         //                ^
         parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tp_letIdent_start, $tp_letIdent_line, $tp_letIdent_column, scoop, BINDING_TYPE_LET, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
       }
-      assignable = initAssignable(assignable); // decls are assignable (`let` as a var name should be as well)
+      assignable = IS_ASSIGNABLE; // decls are assignable (`let` as a var name should be as well)
     } else if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
       // In strict mode, `let` must be a keyword, and since we did not see a valid binding token, this is an error
       // [x]: `for (let.x in y);`
@@ -4978,7 +4970,7 @@ function Parser(code, options = {}) {
         //                ^
         // Note: we are inside a for-header so we don't care about assignable or the await/yield flags here
         AST_setIdent(astProp, $tp_letIdent_start, $tp_letIdent_stop, $tp_letIdent_line, $tp_letIdent_column, $tp_letIdent_canon);
-        _parseExpressions(lexerFlags, $tp_letIdent_start, $tp_letIdent_line, $tp_letIdent_column, initNotAssignable(), astProp);
+        _parseExpressions(lexerFlags, $tp_letIdent_start, $tp_letIdent_line, $tp_letIdent_column, NOT_ASSIGNABLE, astProp);
         assignable = NOT_ASSIGNABLE;
 
         AST_wrapClosedCustom(astProp, {
@@ -5325,7 +5317,7 @@ function Parser(code, options = {}) {
       //          ^
       // - `for (a, b in c);`
       // - `for (a, b of c);`
-      _parseExpressions(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column, initNotAssignable(), 'init');
+      _parseExpressions(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column, NOT_ASSIGNABLE, 'init');
     }
 
     if (tok_getType() !== $PUNC_SEMI) {
@@ -5519,7 +5511,7 @@ function Parser(code, options = {}) {
       // Don't care about assignable await/yield flags
       // [v]: `for ([], x;;);`
       //              ^
-      _parseExpressions(lexerFlags, $tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, initNotAssignable(), astProp);
+      _parseExpressions(lexerFlags, $tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, NOT_ASSIGNABLE, astProp);
     }
 
     if (tok_getType() === $PUNC_SEMI) {
@@ -5954,7 +5946,7 @@ function Parser(code, options = {}) {
 
     if (tok_getType() === $PUNC_COMMA) {
       // Don't care about assignable await/yield flags
-      _parseExpressions(lexerFlags, $tp_ident_start, $tp_ident_line, $tp_ident_column, initNotAssignable(), 'expression');
+      _parseExpressions(lexerFlags, $tp_ident_start, $tp_ident_line, $tp_ident_column, NOT_ASSIGNABLE, 'expression');
     }
 
     parseSemiOrAsi(lexerFlags);
@@ -7676,11 +7668,10 @@ function Parser(code, options = {}) {
     // - array / object
     // - function / arrow / async / generator
     // - class
-    let assignable = ASSIGNABLE_UNDETERMINED;
+
     // note: curtok token has been skipped prior to this call.
     switch ($tp_ident_type) {
-      case $ID_arguments:
-        assignable = verifyEvalArgumentsVar(lexerFlags);
+      case $ID_arguments: {
         if (tok_getType() === $PUNC_EQ_GT) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
             return THROW_RANGE('Can not use `arguments` as arg name in strict mode', $tp_ident_start, $tp_ident_stop);
@@ -7688,7 +7679,8 @@ function Parser(code, options = {}) {
           return parseArrowParenlessFromPunc(lexerFlags, $tp_ident_start, $tp_ident_line, $tp_ident_column, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, $UNTYPED, astProp);
         }
         AST_setIdent(astProp, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
-        return assignable;
+        return verifyEvalArgumentsVar(lexerFlags);
+      }
       case $ID_async:
         return parseAsyncExpression(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, isNewArg, NOT_EXPORT, allowAssignment, leftHandSideExpression, astProp);
       case $ID_await:
@@ -7703,8 +7695,7 @@ function Parser(code, options = {}) {
       case $ID_delete:
         ASSERT(leftHandSideExpression === NOT_LHSE, 'checked in skipIdentSafeSlowAndExpensive');
         return _parseUnary(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, 'delete', isNewArg, astProp);
-      case $ID_eval:
-        assignable = verifyEvalArgumentsVar(lexerFlags);
+      case $ID_eval: {
         if (tok_getType() === $PUNC_EQ_GT) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
             // (Is it confusing to point to the ident? The parser already knows this must be a param now but the coder might not realize that yet)
@@ -7714,7 +7705,8 @@ function Parser(code, options = {}) {
           return parseArrowParenlessFromPunc(lexerFlags, $tp_ident_start, $tp_ident_line, $tp_ident_column, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, ASSIGN_EXPR_IS_OK, PARAMS_SOME_COMPLEX, $UNTYPED, astProp);
         }
         AST_setIdent(astProp, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
-        return assignable;
+        return verifyEvalArgumentsVar(lexerFlags);
+      }
       case $ID_false:
         return parseFalseKeyword($tp_ident_start, $tp_ident_line, $tp_ident_column, astProp);
       case $ID_function:
@@ -7739,9 +7731,7 @@ function Parser(code, options = {}) {
           return THROW_RANGE('Can not use `let` as variable name in strict mode', $tp_ident_start, $tp_ident_stop);
         }
 
-        assignable = initAssignable(assignable);
-
-        return parseIdentOrParenlessArrow(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, assignable, allowAssignment, astProp);
+        return parseIdentOrParenlessArrow(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, IS_ASSIGNABLE, allowAssignment, astProp);
       case $ID_new:
         // - `new x`
         // - `new x()`
@@ -7792,9 +7782,8 @@ function Parser(code, options = {}) {
     // - `x` but not `true`
     // - `[x, y, ...z = arr]`
     fatalBindingIdentCheck($tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType, lexerFlags);
-    assignable = initAssignable(assignable);
 
-    return parseIdentOrParenlessArrow(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, assignable, allowAssignment, astProp);
+    return parseIdentOrParenlessArrow(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, IS_ASSIGNABLE, allowAssignment, astProp);
   }
 
   function verifyEvalArgumentsVar(lexerFlags) {
@@ -9829,7 +9818,7 @@ function Parser(code, options = {}) {
       // if this is an async arrow at the statement start then we should allow to parse a sequence here
       if (tok_getType() === $PUNC_COMMA) {
         // Note: since we're parsing expressions inside on the statement level we don't care about the assignable flags
-        _parseExpressions(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, initNotAssignable(), astProp);
+        _parseExpressions(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, NOT_ASSIGNABLE, astProp);
       }
       parseSemiOrAsi(lexerFlags);
     }
@@ -13061,7 +13050,7 @@ function Parser(code, options = {}) {
     let $tp_argStart_stop = tok_getStop();
 
     let destructible = MIGHT_DESTRUCT;
-    let assignable = initAssignable(); // required for parsing the tail of the arg
+    let assignable = IS_ASSIGNABLE; // required for parsing the tail of the arg
     if (isIdentToken(tok_getType())) {
       // - `[...x];`
       // - `[...x/y];`
