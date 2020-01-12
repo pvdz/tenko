@@ -41,6 +41,7 @@ ORG_ARGS="${@}"         # This is used to restart this process with cset for cpu
 STABLE=''               # Used with `./t stable`, `./t ??? --stable`, and `./t ??? --stabled`
 STABLE_ONLY_SETUP=''    # Used with `./t stable` (so not as flag)
 STABLE_NO_SETUP=''      # Used with `./t ??? --stabled`, which skips the setup (still need to restart in `cset` and `crt`)
+WRITE_ONLY=''               # Used in `./t coverag` to prevent generating and opening the html
 
 BOLD="\e[;1;1m";
 BOLD_RED="\e[1;31m";
@@ -106,7 +107,7 @@ Tenko test runner help:
  --nb          Don't actually create a build for cases where this otherwise would happen (prevents sudo trouble :)
  --no-compat   For \`z\`; Replace the compat flags for Acorn and Babel to \`false\` so the minifier eliminates the dead code
  --no-ast      For \`z\`; Strip all AST code when creating a build
- --min         For \`z\`; Run Terser (minifier) on build output (warning: this can significantly degrade performance)
+ --minify      For \`z\`; Run Terser (minifier) on build output (warning: this can significantly degrade performance)
  --no-mangle   For \`z\`; Run Terser but tell it not to mangle identifiers (use together with \`--pretty\`)
  --pretty      For \`z\`; Run prettier on the build afterwards
  --native-symbols For \`z\`; Special build step turns \`PERF_\$\` prefixed functions into \`%\` to enable v8 internal functions.
@@ -123,6 +124,7 @@ Tenko test runner help:
  --input-file <path>   For p6, this overrides the test file to benchmark
  --input-mde <mode>    For p6, this tells the parser in what mode to parse the input file (sloppy, strict, module, web)
  --output-file <path>  For p6, this is where the report is written
+ --write-only  For code coverage, just update the COVERAGE.md file, don't open the html in a browser
  6 ... 11      Parse according to the rules of this particular version of the spec
         "
       exit
@@ -345,6 +347,9 @@ Tenko test runner help:
       shift
       OUTPUT_FILE_ARG=$1
     ;;
+    --write-only)
+      WRITE_ONLY='yes'
+      ;;
 
     6)  ES='--es6'  ;;
     7)  ES='--es7'  ;;
@@ -1074,16 +1079,18 @@ case "${ACTION}" in
       node_modules/.bin/c8 report --reporter text --reports-dir ignore/coverage | sed '1 s/^.*$//' >> COVERAGE.md
       echo "Updated COVERAGE.md"
 
-      python -m SimpleHTTPServer 8005 &
-      LOCAL_SERVER_PID=$!
-      trap "echo '###### killing web server #####'; kill ${LOCAL_SERVER_PID}" SIGINT SIGTERM EXIT
-      xdg-open http://localhost:8005/ignore/coverage/index.html || open http://localhost:8005/ignore/coverage/index.html || start http://localhost:8005/ignore/coverage/index.html
-      set +x
-      echo "ctrl+c to stop webserver"
-      while true;
-      do
-        sleep 10
-      done
+      if [[ -z "${WRITE_ONLY}" ]]; then
+        python -m SimpleHTTPServer 8005 &
+        LOCAL_SERVER_PID=$!
+        trap "echo '###### killing web server #####'; kill ${LOCAL_SERVER_PID}" SIGINT SIGTERM EXIT
+        xdg-open http://localhost:8005/ignore/coverage/index.html || open http://localhost:8005/ignore/coverage/index.html || start http://localhost:8005/ignore/coverage/index.html
+        set +x
+        echo "ctrl+c to stop webserver"
+        while true;
+        do
+          sleep 10
+        done
+      fi
       ;;
 
     doptigate)
