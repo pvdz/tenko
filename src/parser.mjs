@@ -3794,13 +3794,6 @@ function Parser(code, options = {}) {
         astProp = 'expression'
       }
 
-      if (isNewArg === IS_NEW_ARG) {
-        // - `new async();`
-        // - `new async() => x`     (error because arrow is an AssignmentExpression and new does not accept that)
-        // Note that if it turns out to be an arrow, the parser will throw when seeing `=>` unexpectedly
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp);
-      }
-
       let r = parseGroupToplevels(lexerFlags, fromStmtOrExpr, allowAssignment, $ID_async, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, newlineAfterAsync ? IS_ASYNC_PREFIXED : NOT_ASYNC_PREFIXED, leftHandSideExpression, astProp);
 
       if (fromStmtOrExpr === IS_STATEMENT) {
