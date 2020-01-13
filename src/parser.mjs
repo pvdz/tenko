@@ -1899,15 +1899,6 @@ function Parser(code, options = {}) {
     // Since the rest has to check it anyways we don't need to validate it here
     ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_STAR || tok_getType() === $PUNC_CURLY_OPEN, 'not many options, wanted ident * {');
   }
-  function ASSERT_skipToCommaCurlyClose(what, lexerFlags) {
-    skipToCommaCurlyClose(lexerFlags);
-  }
-  function skipToCommaCurlyClose(lexerFlags) {
-    // Next token must be comma or `}`, with maybe some whitespace
-    skipAny(lexerFlags);
-    // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE, 'not many options, wanted , }');
-  }
   function ASSERT_skipToIdentCurlyOpen(what, lexerFlags) {
     skipToIdentCurlyOpen(lexerFlags);
   }
@@ -8900,6 +8891,10 @@ function Parser(code, options = {}) {
         return THROW_RANGE('Block body arrows can not be immediately accessed without a group', $tp_error_start, $tp_error_stop);
       }
       if ($tp_error_nl) {
+        if ($tp_error_type === $PUNC_DIV) {
+          // - `()=>{} \n \ a`
+          return THROW_RANGE('An arrow function can not be part of an operator to the right', $tp_error_start, $tp_error_stop);
+        }
         // ASI will probably happen next
         return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW;
       }
@@ -8912,8 +8907,9 @@ function Parser(code, options = {}) {
       if (isTemplateStart($tp_error_type)) {
         return THROW_RANGE('Block body arrows can not be immediately tagged without a group', $tp_error_start, $tp_error_stop);
       }
-      if ((isCompoundAssignment($tp_error_type, $tp_error_start, $tp_error_stop) || isNonAssignBinOp($tp_error_type, lexerFlags)) && (tok_getNlwas() === false || $tp_error_type === $PUNC_DIV)) {
-        // - `()=>{}+a'
+      if (isCompoundAssignment($tp_error_type, $tp_error_start, $tp_error_stop) || isNonAssignBinOp($tp_error_type, lexerFlags)) {
+        // - `()=>{} + a'
+        // - `()=>{} *= a'
         return THROW_RANGE('An arrow function can not be part of an operator to the right', $tp_error_start, $tp_error_stop);
       }
       if ($tp_error_type === $PUNC_PLUS_PLUS || $tp_error_type === $PUNC_MIN_MIN) {

@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse a value
+  An arrow function can not be part of an operator to the right
 
 start@1:0, error@2:0
 ╔══╦════════════════
