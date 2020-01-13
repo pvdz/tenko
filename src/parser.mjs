@@ -9032,7 +9032,12 @@ function Parser(code, options = {}) {
       // special case; the `()` here must be the arrow header or (possibly) an `async()` function call
 
       if ($tp_async_type === $ID_async) {
-        ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags); // can be `async() / x`     TODO: next must be `=>` or non-binop expr tail or asi continuation
+        // - `async ()`
+        //           ^
+        // - `async () => x`
+        //           ^
+        ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags); // can be `async() / x`
+
         // all async prefixed cases are handled by special async call site
         // - `async ();`
         //            ^
@@ -9047,7 +9052,7 @@ function Parser(code, options = {}) {
         // - `(async \n () => x)`
         // - `(async () \n => x)`
 
-        return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, PARAMS_ALL_SIMPLE, false, newlineAfterAsync, MIGHT_DESTRUCT, true, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, ASSIGNABLE_UNDETERMINED, astProp);
+        return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, PARAMS_ALL_SIMPLE, false, newlineAfterAsync, true, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, ASSIGNABLE_UNDETERMINED, astProp);
       }
 
       ASSERT_skipToArrowOrDie($PUNC_PAREN_CLOSE, lexerFlags);
@@ -9326,13 +9331,15 @@ function Parser(code, options = {}) {
         ASSERT_skipDiv($PUNC_PAREN_CLOSE, lexerFlags);
 
         if ($tp_async_type === $ID_async) {
-          // the next token can not start something that appears in an arrow head so must be an async call
+          // The next token can not start something that appears in an arrow head so must be an async call
+          if (tok_getType() === $PUNC_EQ_GT) {
+            // - `async("foo".bar) => x`
+            //                     ^
+            return THROW_RANGE('The header of this async arrow contained something that is not valid a param', tok_getStart(), tok_getStop());
+          }
           // - `async("foo".bar);`
           //                    ^
-          // - `async("foo".bar) => x`
-          //                     ^
-          // TODO: move this out because worst case you'll still have to do this down below so we shouldnt add repetitive complexity for this edge case
-          return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, CANT_DESTRUCT, false, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, rootAstProp);
+          return parseAfterAsyncGroup(lexerFlagsBeforeParen, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, false, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, rootAstProp);
         }
 
         if (babelCompat && !toplevelComma) {
@@ -9636,12 +9643,14 @@ function Parser(code, options = {}) {
     }
 
     if ($tp_async_type === $ID_async) {
+      ASSERT(!isArrow || hasNoFlag(destructible, CANT_DESTRUCT | DESTRUCT_ASSIGN_ONLY | PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'Note: if arrow, the CANT_DESTRUCT and DESTRUCT_ASSIGN_ONLY will have thrown by now so destructible cannot contain those');
       // `async(a);`
       // `async(a = await x);`
       // `async(a) => x`
       // `async(a = await x) => x`
+      // `async({x}) => x`
       destructible = copyPiggies(destructible, assignable);
-      return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, destructible, false, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, rootAstProp);
+      return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, false, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, rootAstProp);
     }
 
     if (isArrow) {
@@ -9767,9 +9776,8 @@ function Parser(code, options = {}) {
     return assignable;
   }
 
-  function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, groupDestructible, zeroArgs, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, astProp) {
+  function parseAfterAsyncGroup(lexerFlags, paramScoop, fromStmtOrExpr, allowAssignment, wasSimple, toplevelComma, newlineAfterAsync, zeroArgs, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, astProp) {
     ASSERT(parseAfterAsyncGroup.length === arguments.length, 'arg count');
-    ASSERT(typeof groupDestructible === 'number', 'destructible num');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
     // this is called after parsing a group that followed an `async` when it might be an async arrow
@@ -9787,28 +9795,9 @@ function Parser(code, options = {}) {
         //                ^
         // - `async \n (x) => x`
         //                 ^
-        if (allowAsyncFunctions) {
-          // see parseAsync for details on this error
-          return THROW_RANGE('A newline after async is always a syntax error if the rhs turns to be an arrow function', $tp_arrow_start, $tp_arrow_stop);
-        }
-
-        // In <=ES7 the parser would force to parse a call, not knowing that a newline after `async` might trigger
-        // ASI. As such this case is still an error but for different reasons; It's parsed as `async(); => x`.
-        return THROW_RANGE('Encountered unexpected arrow; <=ES7 the `async \\n (x) => x` case was always parsed as `async(x); => x`', $tp_arrow_start, $tp_arrow_stop);
-      }
-
-      if (hasAnyFlag(groupDestructible, CANT_DESTRUCT | DESTRUCT_ASSIGN_ONLY)) {
-        // - `async (...x, y) => x`            (rest must be last element and spread cannot be in arrow head)
-        //                    ^
-        // - `async ({x=z}, y) => x;`          (shorthand default only valid as assign, never valid here)
-        //                     ^
-        if (tok_getType() === $PUNC_EQ_GT) {
-          // - `async (a, ...b=fail) => a;`
-          return THROW_RANGE('The group was not destructible and yet the next token is an arrow', $tp_arrow_start, $tp_arrow_stop);
-        }
-
-        ASSERT(false, 'unreachable..?');
-        return THROW_RANGE('Unknown error. Did not think input could reach this place :(', $tp_arrow_start, $tp_arrow_stop);
+        ASSERT(allowAsyncFunctions, 'this check was applied elsewhere when the newline was found after `async`');
+        // see parseAsync for details on this error
+        return THROW_RANGE('A newline after async is always a syntax error if the rhs turns to be an arrow function', $tp_arrow_start, $tp_arrow_stop);
       }
 
       if (zeroArgs) {
@@ -9816,19 +9805,12 @@ function Parser(code, options = {}) {
         //             ^
         parseArrowAfterAsyncNoArgGroup(lexerFlags, paramScoop, $tp_async_start, $tp_async_line, $tp_async_column, allowAssignment, astProp);
       }
-      else if (hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_AWAIT)) {
-        // - `async (foo = await x) => foo`            (fail)
-        //                          ^
-        // - `async await => foo`                      (fail)
-        //                ^
-        // have to check both assignable and destructible for the state flags
-
-        return THROW_RANGE('Async arrow arg defaults can not contain `await` expressions', $tp_arrow_start, $tp_arrow_stop);
-      }
       else {
-        // If this had a yield violation then the call sites should have taken care of it already
-        ASSERT(!(hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE) && hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD)), 'Call sites should have thrown for yield in arrow args in invalid context');
-        ASSERT(!hasAnyFlag(assignable | groupDestructible, PIGGY_BACK_SAW_YIELD), 'caller should have dealt with `yield` in arrow args');
+        // If this had an await or yield violation then the call sites should have taken care of it already
+        ASSERT(hasNoFlag(assignable, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'these are checked and will throw in the main group parser if it was an arrow, before calling here');
+        ASSERT(!(hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE) && hasAnyFlag(assignable, PIGGY_BACK_SAW_YIELD)), 'Call sites should have thrown for yield in arrow args in invalid context');
+        ASSERT(!hasAnyFlag(assignable, PIGGY_BACK_SAW_YIELD), 'caller should have dealt with `yield` in arrow args');
+
         // - `async (foo) => foo`
         //                ^
         parseArrowAfterGroup(lexerFlags, paramScoop, wasSimple, toplevelComma, $ID_async, $tp_async_start, $tp_async_line, $tp_async_column, allowAssignment, astProp);
