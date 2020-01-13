@@ -5261,7 +5261,7 @@ function Parser(code, options = {}) {
     //          ^
 
     if (tok_getType() === $ID_of) {
-      return parseForFromIn(lexerFlags, $tp_for_start, awaitable, assignable, astProp);
+      return parseForFromOf(lexerFlags, $tp_for_start, awaitable, assignable, astProp);
     }
 
     if (awaitable) {
@@ -5269,7 +5269,7 @@ function Parser(code, options = {}) {
     }
 
     if (tok_getType() === $ID_in) {
-      return parseForFromOf(lexerFlags, $tp_for_start, assignable, astProp);
+      return parseForFromIn(lexerFlags, $tp_for_start, assignable, astProp);
     }
 
     AST_wrapClosedCustom(astProp, {
@@ -5292,8 +5292,8 @@ function Parser(code, options = {}) {
 
     return parseForFromSemi(lexerFlags, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column);
   }
-  function parseForFromIn(lexerFlags, $tp_for_start, awaitable, assignable, astProp) {
-    ASSERT(parseForFromIn.length === arguments.length, 'arg count');
+  function parseForFromOf(lexerFlags, $tp_for_start, awaitable, assignable, astProp) {
+    ASSERT(parseForFromOf.length === arguments.length, 'arg count');
 
     if (notAssignable(assignable)) {
       // I think it's fine to include the `for` and `of` in the error pointer. Anything else will be ugly anyways.
@@ -5315,8 +5315,8 @@ function Parser(code, options = {}) {
     // Note that this rhs is an AssignmentExpression, _not_ a SequenceExpression
     parseExpression(lexerFlags, 'right');
   }
-  function parseForFromOf(lexerFlags, $tp_for_start, assignable, astProp) {
-    ASSERT(parseForFromOf.length === arguments.length, 'arg count');
+  function parseForFromIn(lexerFlags, $tp_for_start, assignable, astProp) {
+    ASSERT(parseForFromIn.length === arguments.length, 'arg count');
 
     if (notAssignable(assignable)) {
       // I think it's fine to include the `for` and `of` in the error pointer. Anything else will be ugly anyways.
