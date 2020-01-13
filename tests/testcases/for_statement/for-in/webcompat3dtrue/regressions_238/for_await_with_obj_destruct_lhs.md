@@ -26,12 +26,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Can only use `for-await` with a `for-of` loop (and in that case a pattern that as lhs of the `of` must immediately be followed by the `of`)
+  `for await` only accepts the `for-of` type
 
-start@1:0, error@1:36
+start@1:0, error@1:21
 ╔══╦═════════════════
  1 ║ async function f() { for await ({x} in y) {} }
-   ║                                     ^^------- error
+   ║                      ^^^^^^^^^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````
