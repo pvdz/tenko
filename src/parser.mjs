@@ -10222,11 +10222,10 @@ function Parser(code, options = {}) {
 
         let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_BRACKET_CLOSE, bindingType, $UNTYPED, exportedNames, exportedBindings, astProp);
         destructible |= subDestruct;
-        if (tok_getType() !== $PUNC_COMMA && tok_getType() !== $PUNC_BRACKET_CLOSE) {
-          return THROW_RANGE('Encountered unexpected token after parsing spread/rest argument', tok_getStart(), tok_getStop());
-        }
 
+        ASSERT(tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_BRACKET_CLOSE, 'this is confirme din parseArrowableSpreadOrRest so we dont have to check it here');
         ASSERT(tok_getType() !== $PUNC_COMMA || hasAllFlags(subDestruct, CANT_DESTRUCT), 'if comma then cannot destruct, should be dealt with in spread-parsing function');
+
         // if there are any other elements after this then this cannot be a destructible since that demands rest as last
         if (spreadStage === NO_SPREAD) spreadStage = LAST_SPREAD;
       }
