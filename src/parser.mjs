@@ -13109,11 +13109,22 @@ function Parser(code, options = {}) {
       }
       assignable = parseValueAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, ASSIGN_EXPR_IS_OK, astProp);
       ASSERT(!assignBefore || tok_getType() === $PUNC_EQ, 'parseValueAfterIdent should not consume the assignment');
-      let assignAfter = tok_getType() === $PUNC_EQ;
+
+      // [v]: `export let [...x] = y`
+      //                       ^
+
       if (tok_getType() !== $PUNC_COMMA && tok_getType() !== closingPuncType) {
-        if (assignAfter) {
-          // - `async (a, ...b=fail) => a;`
-          // - `[x, y, ...z = arr]`
+        // - `(...x + y) => x`
+        //          ^
+        // - `async (a, ...b=fail) => a;`
+        //                  ^
+        if (tok_getType() === $PUNC_EQ) {
+          // [v]: `[...[{a: b}.c]] = [];`
+          //                  ^
+          // [x]: `async (a, ...b=fail) => a;`
+          //                     ^
+          // [v]: `[x, y, ...z = arr]`
+          //                   ^
           if (notAssignable(assignable)) {
             // - `async (a, ...true=fail) => a;`
             return THROW_RANGE('Tried to assign to a value that was not assignable in arr/obj lit/patt', tok_getStart(), tok_getStop());
@@ -13124,6 +13135,7 @@ function Parser(code, options = {}) {
         destructible |= CANT_DESTRUCT;
         assignable = parseExpressionFromOp(lexerFlags, $tp_argStart_start, $tp_argStart_stop, $tp_argStart_line, $tp_argStart_column, assignable, astProp);
       }
+
       if (notAssignable(assignable)) {
         // `[...a+b]`
         destructible |= CANT_DESTRUCT;
@@ -13175,7 +13187,6 @@ function Parser(code, options = {}) {
       // - `({...[][x]} = x);`
       // - `([...[][x]] = x);`
       let nowDestruct = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
-      ASSERT(tok_getType() !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
       if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         // - `({...[].x} = x);`
         destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_argStart_start, $tp_argStart_stop, $tp_argStart_line, $tp_argStart_column, assignable, nowDestruct, closingPuncType, astProp);
