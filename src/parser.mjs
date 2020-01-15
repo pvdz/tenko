@@ -11637,6 +11637,7 @@ function Parser(code, options = {}) {
       destructible |= CANT_DESTRUCT;
 
       if ($tp_propLeadingIdent_type !== $ID_get && $tp_propLeadingIdent_type !== $ID_set && $tp_propLeadingIdent_type !== $ID_async) {
+        // - `({set 15(x){}});`
         return THROW_RANGE('Expected to parse the start of a property but found an unknown modifier', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
       }
 
