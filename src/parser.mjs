@@ -9215,7 +9215,24 @@ function Parser(code, options = {}) {
       else if (tok_getType() === $PUNC_DOT_DOT_DOT) {
         // top level group dots kinda have to be rest but there is an `async` edge case where it could be spread
         wasSimple = PARAMS_SOME_COMPLEX;
-        destructible |= parseArrowableTopRest(lexerFlags, paramScoop, $tp_async_type, astProp);
+
+        // rest (can not be spread)
+        // a `...` at the top-level of a group means this has to be an arrow header unless async'ed
+        // a `...[x+y]` at the toplevel is an error
+
+        // - (...x) => x
+        // - (...[destruct]) => x
+        // - (...{destruct}) => x
+        // - async(...ident) => x
+        // - async(...[destruct]) => x
+        // - async(...{destruct}) => x
+        // - async(...<expr>);            // :(
+
+        let subDestruct = parseArrowableSpreadOrRest(lexerFlags, paramScoop, $PUNC_PAREN_CLOSE, BINDING_TYPE_ARG, $tp_async_type, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
+
+        // Invalidate stuff like `(...x=y)=>x`
+        destructible |= subDestruct;
+
         if ($tp_async_type === $ID_async) {
           // - `async(...x);`
           // - `async(...x,)`
@@ -9232,6 +9249,15 @@ function Parser(code, options = {}) {
             // - `async(...x) => x`
           }
         } else {
+          if ((hasAllFlags(subDestruct, CANT_DESTRUCT) || tok_getType() === $PUNC_COMMA)) {
+            return THROW_RANGE('The ... argument must be destructible in an arrow header, found something that was not destructible', tok_getStart(), tok_getStop());
+          }
+
+          // Legacy `async` call cases allow for many occurrences of `...` that regular arrows can not.
+          ASSERT(tok_getType() !== $PUNC_EQ, 'if the arg had an assignment then the destruct would be CANT_DESTRUCT which would have thrown in the previous branch');
+          ASSERT(tok_getType() !== $PUNC_COMMA, 'if the arg had a comma then the destruct would be CANT_DESTRUCT which would have thrown in the previous branch');
+          ASSERT(tok_getType() === $PUNC_PAREN_CLOSE, 'if the next wasnt paren close then another part would throw by now');
+
           // Note: `...` in toplevel of group can only mean rest, meaning an arrow must follow the group
           // This must also be the last element of the arrow header (can not have trailing comma)
           // - `(...x);`
@@ -9908,44 +9934,6 @@ function Parser(code, options = {}) {
     parseArrowFromPunc(lexerFlags, paramScoop, $tp_async_type, allowAssignment, wasSimple);
 
     AST_close($tp_arrowStart_start, $tp_arrowStart_line, $tp_arrowStart_column, 'ArrowFunctionExpression');
-  }
-  function parseArrowableTopRest(lexerFlags, scoop, $tp_async_type, astProp) {
-    ASSERT(parseArrowableTopRest.length === arguments.length, 'arg count');
-    ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'isAsync enum');
-
-    // rest (can not be spread)
-    // a `...` at the top-level of a group means this has to be an arrow header unless async'ed
-    // a `...[x+y]` at the toplevel is an error
-
-    // - (...x) => x
-    // - (...[destruct]) => x
-    // - (...{destruct}) => x
-    // - async(...ident) => x
-    // - async(...[destruct]) => x
-    // - async(...{destruct}) => x
-    // - async(...<expr>);            // :(
-
-    let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_PAREN_CLOSE, BINDING_TYPE_ARG, $tp_async_type, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
-    if ($tp_async_type === $UNTYPED) {
-      // Legacy `async` call cases allow for many occurrences of `...` that regular arrows can not.
-      if (hasAllFlags(subDestruct, CANT_DESTRUCT) || tok_getType() === $PUNC_COMMA) {
-        return THROW_RANGE('The ... argument must be destructible in an arrow header, found something that was not destructible', tok_getStart(), tok_getStop());
-      }
-
-      if (tok_getType() === $PUNC_EQ) {
-        return THROW_RANGE('Cannot set a default on a rest value', tok_getStart(), tok_getStop());
-      }
-
-      if (tok_getType() === $PUNC_COMMA) {
-        return THROW_RANGE('Rest arg cannot have a trailing comma', tok_getStart(), tok_getStop());
-      }
-
-      if (tok_getType() !== $PUNC_PAREN_CLOSE) {
-        return THROW_RANGE('Rest arg must be last but did not find closing paren', tok_getStart(), tok_getStop());
-      }
-    }
-    // have to return it to invalidate stuff like `(...x=y)=>x`
-    return subDestruct;
   }
 
   function parseArrayOuter(lexerFlagsBeforeParen, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp) {
