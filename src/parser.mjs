@@ -11698,6 +11698,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
       let assignablePiggies = parseExpression(lexerFlags, astProp);
       assignable = mergeAssignable(assignablePiggies, assignable);
+      HITS()
       if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
         return THROW_RANGE('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
       }
@@ -12012,16 +12013,15 @@ function Parser(code, options = {}) {
 
     // note: generator and async state is not reset because computed method names still use the outer state
     // Note: this `assignable` is relevant for passing back await/yield flags
-    assignable |= parseClassBody(innerLexerFlags, outerLexerFlags, originalOuterLexerFlags, BINDING_TYPE_NONE, isExpression, 'body');
+    assignable |= parseClassBody(innerLexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, 'body');
 
     return assignable;
   }
-  function parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, bindingType, isExpression, astProp) {
+  function parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, astProp) {
     ASSERT(parseClassBody.length === arguments.length, 'expecting all args');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
     ASSERT(typeof originalOuterLexerFlags === 'number', 'originalOuterLexerFlags number');
-    ASSERT_BINDING_TYPE(bindingType);
     ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'must have asserted to be at the opening curly of the class body');
 
     let $tp_curly_line = tok_getLine();
@@ -12033,12 +12033,12 @@ function Parser(code, options = {}) {
       loc: undefined,
       body: [],
     });
-    let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, bindingType, isExpression, 'body');
+    let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, 'body');
     AST_close($tp_curly_start, $tp_curly_line, $tp_curly_column, 'ClassBody');
     // Note: returning `assignable` is relevant for passing back await/yield flags that could occur in computed key exprs
     return assignable;
   }
-  function _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, bindingType, isExpression, astProp) {
+  function _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, astProp) {
     ASSERT(_parseClassBody.length === arguments.length, 'arg count');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
@@ -12068,7 +12068,7 @@ function Parser(code, options = {}) {
       let $tp_memberStart_start = tok_getStart();
       let $tp_memberStart_stop = tok_getStop();
 
-      let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, bindingType, astProp);
+      let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, astProp);
       if (hasAnyFlag(destructNow, PIGGY_BACK_WAS_CONSTRUCTOR)) {
         if (hasConstructor) {
           // TODO: we can juggle this "has constructor" state into the class parsers and throw there with a better loc
@@ -12106,14 +12106,13 @@ function Parser(code, options = {}) {
 
     return destructibleForPiggies;
   }
-  function parseClassMethod(lexerFlags, outerLexerFlags, bindingType, astProp) {
+  function parseClassMethod(lexerFlags, outerLexerFlags, astProp) {
     // parseProperty parseMethod
     ASSERT(parseClassMethod.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
-    ASSERT_BINDING_TYPE(bindingType);
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'right?');
 
-    let destructible = bindingType === BINDING_TYPE_NONE ? MIGHT_DESTRUCT : MUST_DESTRUCT;
+    let destructible = MIGHT_DESTRUCT;
     let assignable = ASSIGNABLE_UNDETERMINED; // propagate the await/yield state flags, if any (because `(x={a:await f})=>x` should be an error)
 
     // - `class x {ident(){}}`
