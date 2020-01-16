@@ -34,7 +34,7 @@ throws: Parser error!
 start@1:0, error@1:6
 ╔══╦════════════════
  1 ║ wrap({async foo(){}, bar(){}});
-   ║       ^^^^^------- error
+   ║       ^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

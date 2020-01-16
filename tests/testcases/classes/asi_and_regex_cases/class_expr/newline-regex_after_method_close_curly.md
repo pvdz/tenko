@@ -29,11 +29,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
-start@1:0, error@2:1
+start@1:0, error@1:2
 ╔══╦════════════════
  1 ║ let c = class x { y() {}
+   ║   ^^^^^^^^^^^^^^^^^^^^^^^^^------- error
  2 ║  /foo/ }
-   ║  ^------- error
 ╚══╩════════════════
 
 `````

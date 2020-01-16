@@ -29,11 +29,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Invalid objlit key character after generator star
 
-start@1:0, error@2:1
+start@1:0, error@1:1
 ╔══╦════════════════
  1 ║ class x { *
+   ║  ^^^^^^^^^^^^^^------- error
  2 ║  /foo/ }
-   ║  ^------- error
 ╚══╩════════════════
 
 `````

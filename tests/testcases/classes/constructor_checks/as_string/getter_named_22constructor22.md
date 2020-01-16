@@ -30,11 +30,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Class constructors can not be getters
 
-start@1:0, error@1:10
-╔══╦═════════════════
+start@1:0, error@1:1
+╔══╦════════════════
  1 ║ class x { get "constructor"(){} }
-   ║           ^^^^^^^^^^^^^^^^^------- error
-╚══╩═════════════════
+   ║  ^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
 
 `````
 

@@ -28,11 +28,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Static class methods can not be called `prototype`
 
-start@1:0, error@1:10
-╔══╦═════════════════
+start@1:0, error@1:1
+╔══╦════════════════
  1 ║ class x { static async prototype(){} }
-   ║           ^^^^^^^^^^^^^^^^^^^^^^------- error
-╚══╩═════════════════
+   ║  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
 
 `````
 
