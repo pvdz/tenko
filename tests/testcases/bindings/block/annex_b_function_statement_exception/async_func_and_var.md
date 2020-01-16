@@ -40,7 +40,7 @@ start@1:0, error@3:12
  1 ║ function f(){
  2 ║   var f = 123;
  3 ║   if (true) async function f(){}
-   ║             ^^^^^------- error
+   ║             ^^^^^^^^^^^^^^------- error
  4 ║ }
 ╚══╩═════════════════
 

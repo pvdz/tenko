@@ -39,7 +39,7 @@ start@1:0, error@3:8
  1 ║ function g(){
  2 ║   var f = 123;
  3 ║   oops: async function f(){}
-   ║         ^^^^^------- error
+   ║         ^^^^^^^^^^^^^^------- error
  4 ║ }
 ╚══╩════════════════
 

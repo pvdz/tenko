@@ -32,7 +32,7 @@ throws: Parser error!
 start@1:0, error@1:5
 ╔══╦════════════════
  1 ║ foo: async function f() {}
-   ║      ^^^^^------- error
+   ║      ^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

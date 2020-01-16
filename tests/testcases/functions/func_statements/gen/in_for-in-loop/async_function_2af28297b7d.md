@@ -33,7 +33,7 @@ throws: Parser error!
 start@1:0, error@1:13
 ╔══╦═════════════════
  1 ║ for (a in b) async function *f(){}
-   ║              ^^^^^^^^^^^^^^------- error
+   ║              ^^^^^^^^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````

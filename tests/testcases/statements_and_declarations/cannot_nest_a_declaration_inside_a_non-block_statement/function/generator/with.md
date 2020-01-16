@@ -32,7 +32,7 @@ throws: Parser error!
 start@1:0, error@1:8
 ╔══╦════════════════
  1 ║ with(x) function * f() {}
-   ║         ^^^^^^^^------- error
+   ║         ^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

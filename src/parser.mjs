@@ -2742,7 +2742,7 @@ function Parser(code, options = {}) {
 
   // ### functions
 
-  function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, $tp_async_type, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_function_start, $tp_function_line, $tp_function_column, $tp_first_start, $tp_function_stop, optionalIdent, isLabelled, fdState, astProp) {
+  function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, $tp_async_type, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_function_start, $tp_function_line, $tp_function_column, $tp_funcHead_start, $tp_funcHead_stop, optionalIdent, isLabelled, fdState, astProp) {
     ASSERT(parseFunctionDeclaration.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerflags number');
     ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'async token');
@@ -2787,19 +2787,14 @@ function Parser(code, options = {}) {
     ASSERT_skipToIdentStarParenOpen($ID_function, lexerFlags); // TODO: why is this called for an async generator expression? maybe rename this func?
 
     let $tp_star_type = $UNTYPED;
-    let $tp_star_start = 0;
-    let $tp_star_stop = 0;
-
     if (tok_getType() === $PUNC_STAR) {
-
       $tp_star_type = $PUNC_STAR;
-      $tp_star_start = tok_getStart();
-      $tp_star_stop = tok_getStop();
+      $tp_funcHead_stop = tok_getStop();
 
       ASSERT_skipToIdentParenOpen('*', lexerFlags);
 
       if ($tp_async_type === $ID_async && !allowAsyncGenerators) {
-        return THROW_RANGE('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018', $tp_async_start, $tp_async_stop);
+        return THROW_RANGE('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018', $tp_funcHead_start, $tp_funcHead_stop);
       }
     }
 
@@ -2830,19 +2825,19 @@ function Parser(code, options = {}) {
         // - `while (x) foo: function f(){}`
         // - `for (;;) foo: function f(){}`
         // - `with (x) foo: function f(){}`
-        return THROW_RANGE('A "labelled function declaration" is not allowed in this situation', $tp_first_start, $tp_function_stop);
+        return THROW_RANGE('A "labelled function declaration" is not allowed in this situation', $tp_funcHead_start, $tp_funcHead_stop);
       }
       if ($tp_async_type === $ID_async) {
         // - `foo: async function f(){}`
-        return THROW_RANGE('A "labelled function declaration" can not be async', $tp_async_start, $tp_async_stop);
+        return THROW_RANGE('A "labelled function declaration" can not be async', $tp_funcHead_start, $tp_funcHead_stop);
       }
       if ($tp_star_type === $PUNC_STAR) {
         // - `foo: function *f(){}`
-        return THROW_RANGE('A "labelled function declaration" can not be a generator', $tp_star_start, $tp_star_stop);
+        return THROW_RANGE('A "labelled function declaration" can not be a generator', $tp_funcHead_start, $tp_funcHead_stop);
       }
       // Put the generic webcompat error last to make all modes as similar as possible
       if (options_webCompat === WEB_COMPAT_OFF || hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
-        return THROW_RANGE('A "labelled function declaration" is only allowed in sloppy web compat mode', $tp_first_start, $tp_function_stop);
+        return THROW_RANGE('A "labelled function declaration" is only allowed in sloppy web compat mode', $tp_funcHead_start, $tp_funcHead_stop);
       }
     }
     else if (fdState === FDS_IFELSE) {
@@ -2850,17 +2845,17 @@ function Parser(code, options = {}) {
 
       if ($tp_async_type === $ID_async) {
         // - `if (x) async function f(){}`
-        return THROW_RANGE('An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tp_async_start, $tp_async_stop);
+        return THROW_RANGE('An async function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tp_funcHead_start, $tp_funcHead_stop);
       }
       if ($tp_star_type === $PUNC_STAR) {
         // - `if (x) function *f(){}`
-        return THROW_RANGE('A generator function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tp_star_start, $tp_star_stop);
+        return THROW_RANGE('A generator function declaration in web compat mode is still not allowed as `if-else` child, only plain func decls are allowed there', $tp_funcHead_start, $tp_funcHead_stop);
       }
       // Put the generic webcompat error last to make all modes as similar as possible
       if (options_webCompat === WEB_COMPAT_OFF || hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
         // - `while (x) function f(){}`
         // - `with (x) function f(){}`
-        return THROW_RANGE('A function declaration can only be the child of an `if`/`else` in sloppy web compat mode', $tp_first_start, $tp_function_stop);
+        return THROW_RANGE('A function declaration can only be the child of an `if`/`else` in sloppy web compat mode', $tp_funcHead_start, $tp_funcHead_stop);
       }
 
       // Labelled func decls do not leak their name into global space (but they do for a label in a block!)
@@ -2874,7 +2869,7 @@ function Parser(code, options = {}) {
     else if (isFuncDecl === IS_FUNC_DECL && fdState === FDS_ILLEGAL) {
       // https://tc39.es/ecma262/#prod-LabelledItem
       // This case is a "labelled function declaration"
-      return THROW_RANGE('Cannot parse a function declaration here, only expecting statements here', $tp_first_start, $tp_function_stop);
+      return THROW_RANGE('Cannot parse a function declaration here, only expecting statements here', $tp_funcHead_start, $tp_funcHead_stop);
     }
 
     return parseFunctionAfterKeyword(
@@ -2885,9 +2880,7 @@ function Parser(code, options = {}) {
       optionalIdent,
       NOT_CONSTRUCTOR,
       NOT_METHOD,
-      $tp_async_type,
-      $tp_async_start,
-      $tp_async_stop,
+      $tp_async_type, 0, 0,
       $tp_star_type,
       $UNTYPED,
       $UNTYPED,

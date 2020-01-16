@@ -32,7 +32,7 @@ throws: Parser error!
 start@1:0, error@1:13
 ╔══╦═════════════════
  1 ║ if (x); else async function f() {}
-   ║              ^^^^^------- error
+   ║              ^^^^^^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````
