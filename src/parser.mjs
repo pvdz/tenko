@@ -12287,12 +12287,8 @@ function Parser(code, options = {}) {
       }
       ASSERT(tok_getType() !== $PUNC_EQ, 'this struct can not have an init');
     }
-    else if (tok_getType() === $PUNC_SEMI) {
-      // - `class x {;}`
-      // these semi's dont contribute anything to the AST (lossy)
-      ASSERT_skipAny(';', lexerFlags);
-    }
     else {
+      ASSERT(tok_getType() !== $PUNC_SEMI, 'Leading semis are parsed before this function is called, trailing semis are parsed immediately, so we shouldnt see a semi here');
       // - `class x {<?>`
       return THROW_RANGE('Unexpected token, wanted to parse a start of a property in an class literal/pattern', tok_getStart(), tok_getStop());
     }
@@ -12452,6 +12448,11 @@ function Parser(code, options = {}) {
         astProp
       );
     } else if (isNumberStringToken(tok_getType())) {
+      // - `class x {get 300(){}}`
+      //                 ^^^
+      // - `class x {async * "foo"(){}}`
+      //                     ^^^^^
+
       destructible |= parseClassMethodLiteralKey(
         lexerFlags,
         $tp_static_type,
@@ -12814,7 +12815,7 @@ function Parser(code, options = {}) {
         case $ID_async:
           $tp_async_type = $ID_async;
           break;
-        case '*':
+        case $PUNC_STAR:
           $tp_star_type = $PUNC_STAR;
           break;
       }
