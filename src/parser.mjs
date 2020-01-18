@@ -2742,7 +2742,7 @@ function Parser(code, options = {}) {
 
   // ### functions
 
-  function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, $tp_async_type, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_function_start, $tp_function_line, $tp_function_column, $tp_funcHead_start, $tp_funcHead_stop, optionalIdent, isLabelled, fdState, astProp) {
+  function parseFunctionDeclaration(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, $tp_async_type, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, $tp_funcHead_start, $tp_funcHead_stop, optionalIdent, isLabelled, fdState, astProp) {
     ASSERT(parseFunctionDeclaration.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerflags number');
     ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'async token');
@@ -2872,24 +2872,7 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Cannot parse a function declaration here, only expecting statements here', $tp_funcHead_start, $tp_funcHead_stop);
     }
 
-    return parseFunctionAfterKeyword(
-      lexerFlags,
-      scoop,
-      isFuncDecl,
-      isRealFuncExpr,
-      optionalIdent,
-      NOT_CONSTRUCTOR,
-      NOT_METHOD,
-      $tp_async_type, 0, 0,
-      $tp_star_type,
-      $UNTYPED,
-      $UNTYPED,
-      $tp_async_type === $ID_async ? $tp_async_start : $tp_function_start,
-      $tp_async_type === $ID_async ? $tp_async_line : $tp_function_line,
-      $tp_async_type === $ID_async ? $tp_async_column : $tp_function_column,
-      fdState,
-      astProp
-    );
+    return parseFunctionAfterKeyword(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, optionalIdent, NOT_CONSTRUCTOR, NOT_METHOD, $tp_async_type, $tp_star_type, $UNTYPED, $UNTYPED, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, fdState, astProp);
   }
   function parseFunctionExpression(lexerFlags, $tp_function_start, $tp_function_line, $tp_function_column, astProp) {
     ASSERT(parseFunctionExpression.length === arguments.length, 'arg count');
@@ -2907,8 +2890,6 @@ function Parser(code, options = {}) {
       NOT_CONSTRUCTOR,
       NOT_METHOD,
       $UNTYPED,
-      0,
-      0,
       $UNTYPED,
       $UNTYPED,
       $UNTYPED,
@@ -2934,8 +2915,6 @@ function Parser(code, options = {}) {
       NOT_CONSTRUCTOR,
       NOT_METHOD,
       $UNTYPED,
-      0,
-      0,
       $PUNC_STAR,
       $UNTYPED,
       $UNTYPED,
@@ -2946,13 +2925,10 @@ function Parser(code, options = {}) {
       astProp
     );
   }
-  function parseAsyncFunctionDecl(lexerFlags, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp) {
+  function parseAsyncFunctionDecl(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp) {
     ASSERT(parseAsyncFunctionDecl.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $ID_function, 'already checked, not yet consumed');
 
-    let $tp_function_line = tok_getLine();
-    let $tp_function_column = tok_getColumn();
-    let $tp_function_start = tok_getStart();
     let $tp_function_stop = tok_getStop();
 
     let canonName = parseFunctionDeclaration(
@@ -2961,8 +2937,7 @@ function Parser(code, options = {}) {
       fromStmtOrExpr === IS_EXPRESSION ? NOT_FUNC_DECL : IS_FUNC_DECL,
       fromStmtOrExpr === IS_EXPRESSION ? IS_FUNC_EXPR : NOT_FUNC_EXPR,
       $ID_async,
-      $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column,
-      $tp_function_start, $tp_function_line, $tp_function_column,
+      $tp_async_start, $tp_async_line, $tp_async_column,
       $tp_async_start, $tp_function_stop, // TODO: this must potentially be export ...
       (isExport === IS_EXPORT || fromStmtOrExpr === IS_EXPRESSION) ? IDENT_OPTIONAL : IDENT_REQUIRED,
       isLabelled,
@@ -2981,7 +2956,7 @@ function Parser(code, options = {}) {
 
     return NOT_ASSIGNABLE;
   }
-  function parseFunctionAfterKeyword(lexerFlags, outerScoop, isFuncDecl, isRealFuncExpr, optionalIdent, isClassConstructor, isMethod, $tp_async_type, $tp_async_start, $tp_async_stop, $tp_star_type, $tp_get_type, $tp_set_type, $tp_first_start, $tp_first_line, $tp_first_column, fdState, astProp) {
+  function parseFunctionAfterKeyword(lexerFlags, outerScoop, isFuncDecl, isRealFuncExpr, optionalIdent, isClassConstructor, isMethod, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, fdState, astProp) {
     // $tt_firstToken, // for range in AST, `function` or `async` or method name/modifiers
     // fdState, // for errors and scoping
 
@@ -3156,7 +3131,8 @@ function Parser(code, options = {}) {
     );
 
     if (!babelCompat || isMethod === NOT_METHOD) { // Babel extends the Function node to be a ClassMethod, rather than .value
-      AST_close($tp_first_start, $tp_first_line, $tp_first_column, isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression');
+      // The start is either `async` or `function` (but not `export`)
+      AST_close($tp_astRange_start, $tp_astRange_line, $tp_astRange_column, isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression');
     }
 
     return canonName;
@@ -3411,7 +3387,7 @@ function Parser(code, options = {}) {
 
       case $ID_function:
         ASSERT(scoop, 'should have a scoop at this point');
-        parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $UNTYPED, 0, 0, 0, 0, $tp_ident_start, $tp_ident_line, $tp_ident_column, $tp_ident_start, $tp_ident_stop, IDENT_REQUIRED, isLabelled, fdState, astProp);
+        parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $UNTYPED, $tp_ident_start, $tp_ident_line, $tp_ident_column, $tp_ident_start, $tp_ident_stop, IDENT_REQUIRED, isLabelled, fdState, astProp);
         return;
 
       case $ID_if:
@@ -3708,7 +3684,7 @@ function Parser(code, options = {}) {
           return THROW_RANGE('An async function expression is not allowed here', $tp_async_start, $tp_ident_stop);
         }
 
-        return parseAsyncFunctionDecl(lexerFlags, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp);
+        return parseAsyncFunctionDecl(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp);
       }
 
       // if (tok_getType() === $ID_of) TODO // should this be special cased?
@@ -4337,7 +4313,7 @@ function Parser(code, options = {}) {
       let $tp_function_start = tok_getStart();
       let $tp_function_stop = tok_getStop();
 
-      let $tp_exportedName_canon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $UNTYPED, 0, 0, 0, 0, $tp_function_start, $tp_function_line, $tp_function_column, $tp_export_start, $tp_function_stop, IDENT_OPTIONAL, NOT_LABELLED, FDS_VAR, 'declaration');
+      let $tp_exportedName_canon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $UNTYPED, $tp_function_start, $tp_function_line, $tp_function_column, $tp_export_start, $tp_function_stop, IDENT_OPTIONAL, NOT_LABELLED, FDS_VAR, 'declaration');
 
       addBindingToExports(exportedBindings, $tp_exportedName_canon);
       // no semi
@@ -4548,7 +4524,7 @@ function Parser(code, options = {}) {
 
       let $tp_function_stop = tok_getStop();
 
-      let $tp_exportedName_canon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $UNTYPED, 0, 0, 0, 0, $tp_exportValueStart_start, $tp_exportValueStart_line, $tp_exportValueStart_column, $tp_export_start, $tp_function_stop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
+      let $tp_exportedName_canon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $UNTYPED, $tp_exportValueStart_start, $tp_exportValueStart_line, $tp_exportValueStart_column, $tp_export_start, $tp_function_stop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
 
       addNameToExports(exportedNames, $tp_exportValueStart_start, $tp_exportValueStart_stop, $tp_exportedName_canon);
       addBindingToExports(exportedBindings, $tp_exportedName_canon);
@@ -4579,12 +4555,10 @@ function Parser(code, options = {}) {
         return THROW_RANGE('Async can not be followed by a newline as it results in `export async;`, which is not valid (and probably not what you wanted)', $tp_export_start, $tp_async_stop);
       }
 
-      let $tp_function_line = tok_getLine();
-      let $tp_function_column = tok_getColumn();
       let $tp_function_start = tok_getStart();
       let $tp_function_stop = tok_getStop();
 
-      let $tp_exportedName_canon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $ID_async, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_function_start, $tp_function_line, $tp_function_column, $tp_export_start, $tp_function_stop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
+      let $tp_exportedName_canon = parseFunctionDeclaration(lexerFlags, scoop, IS_FUNC_DECL, NOT_FUNC_EXPR, $ID_async, $tp_async_start, $tp_async_line, $tp_async_column, $tp_export_start, $tp_function_stop, IDENT_REQUIRED, NOT_LABELLED, FDS_LEX, 'declaration');
 
       addNameToExports(exportedNames, $tp_function_start, $tp_function_stop, $tp_exportedName_canon);
       addBindingToExports(exportedBindings, $tp_exportedName_canon);
@@ -7168,12 +7142,11 @@ function Parser(code, options = {}) {
       if (notAssignable(assignable)) {
         return THROW_RANGE('Cannot assign to lhs (starting with `' + tok_sliceInput($tp_firstExpr_start, $tp_firstExpr_stop) + '`) because it is not a valid assignment target', $tp_maybeOp_start, $tp_maybeOp_stop);
       }
-      assignable = parseExpressionFromAssignmentOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, assignable, astProp);
-    } else {
-      assignable = parseExpressionFromBinaryOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, assignable, astProp)
+
+      return parseExpressionFromAssignmentOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, assignable, astProp);
     }
 
-    return assignable;
+    return parseExpressionFromBinaryOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, assignable, astProp)
   }
   function parseExpressionFromAssignmentOp(lexerFlags, $tp_firstAssignment_start, $tp_firstAssignment_line, $tp_firstAssignment_column, lhsAssignable, astProp) {
     ASSERT(parseExpressionFromAssignmentOp.length === arguments.length, 'arg count');
@@ -11765,10 +11738,6 @@ function Parser(code, options = {}) {
               ($tp_methodStart_start = $tp_key_start, $tp_methodStart_line = $tp_key_line, $tp_methodStart_column = $tp_key_column) :
               ($tp_methodStart_start = $tp_bracketOpen_start, $tp_methodStart_line = $tp_bracketOpen_line, $tp_methodStart_column = $tp_bracketOpen_column);
 
-    let $tp_paren_line = tok_getLine();
-    let $tp_paren_column = tok_getColumn();
-    let $tp_paren_start = tok_getStart();
-
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
@@ -11807,26 +11776,17 @@ function Parser(code, options = {}) {
     // - `let o = {async await(){}}`
     // - `let o = {async *await(){}}`
     // - `({set break(x){}});`
-    parseFunctionAfterKeyword(
-      lexerFlags,
-      DO_NOT_BIND,
-      NOT_FUNC_DECL,
-      NOT_FUNC_EXPR,
-      IDENT_OPTIONAL,
-      NOT_CONSTRUCTOR,
-      IS_METHOD,
-      $tp_async_type,
-      $tp_async_start,
-      $tp_async_stop,
-      $tp_star_type,
-      $tf_getToken_start === 0 ? $UNTYPED : $ID_get,
-      $tf_setToken_start === 0 ? $UNTYPED : $ID_set,
-      acornCompat ? $tp_paren_start : $tp_methodStart_start,
-      acornCompat ? $tp_paren_line : $tp_methodStart_line,
-      acornCompat ? $tp_paren_column : $tp_methodStart_column,
-      FDS_ILLEGAL,
-      'value',
-    );
+
+    if (acornCompat) {
+      let $tp_paren_line = tok_getLine();
+      let $tp_paren_column = tok_getColumn();
+      let $tp_paren_start = tok_getStart();
+
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_start === 0 ? $UNTYPED : $ID_get, $tf_setToken_start === 0 ? $UNTYPED : $ID_set, $tp_paren_start, $tp_paren_line, $tp_paren_column, FDS_ILLEGAL, 'value');
+    } else {
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_start === 0 ? $UNTYPED : $ID_get, $tf_setToken_start === 0 ? $UNTYPED : $ID_set, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, FDS_ILLEGAL, 'value');
+    }
+
     AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_OBJECT);
     ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
   }
@@ -12105,9 +12065,6 @@ function Parser(code, options = {}) {
     ASSERT(typeof astProp === 'string', 'astprop string');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'right?');
 
-    let destructible = MIGHT_DESTRUCT;
-    let assignable = ASSIGNABLE_UNDETERMINED; // propagate the await/yield state flags, if any (because `(x={a:await f})=>x` should be an error)
-
     // - `class x {ident(){}}`
     // - `class x {'foo'(){}}`        (or double quotes)
     // - `class x {200(){}}`          (could also be .5)
@@ -12136,9 +12093,9 @@ function Parser(code, options = {}) {
     let $tp_methodStart_column = tok_getColumn();
     let $tp_methodStart_start = tok_getStart();
 
-    let $tp_static_type = $UNTYPED;
+    let isStatic = false;
 
-    if (isIdentToken(tok_getType()) && tok_getType() === $ID_static) {
+    if (tok_getType() === $ID_static) {
       // In the following cases, "key" can be substituted with any of the four keys (ident, string, number, computed)
       // - `class x {static get key(){}}`
       //             ^
@@ -12152,7 +12109,8 @@ function Parser(code, options = {}) {
       //             ^
       // - `class x {static get constructor(){}}`
 
-      $tp_static_type = $ID_static;
+      isStatic = true;
+
       let $tp_static_line = tok_getLine();
       let $tp_static_column = tok_getColumn();
       let $tp_static_start = tok_getStart();
@@ -12166,41 +12124,42 @@ function Parser(code, options = {}) {
         // The `static` ident here is the name of a method, not a modifier
         // - `class x {static(){}}`
         //                   ^
-        destructible |= _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, $tp_static_type, $tp_static_start, $tp_static_stop, $tp_static_line, $tp_static_column, $tp_static_canon, astProp);
-        return destructible;
+        return _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, false, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, $tp_static_start, $tp_static_stop, $tp_static_line, $tp_static_column, $tp_static_canon, astProp);
       }
     }
 
-    if (isIdentToken(tok_getType())) {
-      ASSERT(tok_getType() !== $ID_static || $tp_static_type === $ID_static, 'methods named "static" are caught elsewhere');
-      destructible = parseClassMethodFromIdent(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, astProp);
+    // let destructible = MIGHT_DESTRUCT;
+    // let assignable = ASSIGNABLE_UNDETERMINED; // propagate the await/yield state flags, if any (because `(x={a:await f})=>x` should be an error)
+
+    let $tp_afterStaticMaybe_type = tok_getType();
+
+    if (isIdentToken($tp_afterStaticMaybe_type)) {
+      ASSERT(isStatic || $tp_afterStaticMaybe_type !== $ID_static, 'methods named "static" are caught elsewhere');
+      return parseClassMethodFromIdent(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, astProp);
     }
-    else if (isNumberStringToken(tok_getType())) {
+
+    if (isNumberStringToken($tp_afterStaticMaybe_type)) {
       // property names can also be strings and numbers but these cannot be shorthanded
       // number/string keys can still destructure just fine (`({"foo": x} = y)`)
       // - `class x {"abc"(){}};`
       // - `class x {15(){}};`
 
-      destructible |= parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp);
+      return parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp);
     }
-    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
+
+    if ($tp_afterStaticMaybe_type === $PUNC_BRACKET_OPEN) {
       // Computed method key
       // - `class x {[foo](){}}`
 
-      destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp);
+      return parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp);
     }
-    else if (tok_getType() === $PUNC_STAR) {
+
+    if ($tp_afterStaticMaybe_type === $PUNC_STAR) {
       // - `class x {*ident(){}}`
       //             ^
       // - `class x {*"str"(){}}`
       // - `class x {*15(){}}`
       // - `class x {*[expr](){}}`
-
-      let $tp_star_type = tok_getType();
-      let $tp_star_line = tok_getLine();
-      let $tp_star_column = tok_getColumn();
-      let $tp_star_start = tok_getStart();
-      let $tp_star_stop = tok_getStop();
 
       ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
 
@@ -12212,40 +12171,40 @@ function Parser(code, options = {}) {
         // - `class x {*set(){}}`       // ok (not a setter!)
         // - `class x {*async(){}}`     // NOT an async generator! it's a generatr
 
-        destructible |= parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, astProp);
+        return parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $UNTYPED, $PUNC_STAR, $UNTYPED, $UNTYPED, astProp);
       }
-      else if (isNumberStringToken(tok_getType())) {
+
+      if (isNumberStringToken(tok_getType())) {
         // - `({*"str"(){}})`
         // - `({*15(){}})`
-        destructible |= parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, astProp);
+        return parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $UNTYPED, $PUNC_STAR, $UNTYPED, $UNTYPED, astProp);
       }
-      else if (tok_getType() === $PUNC_BRACKET_OPEN) {
+
+      if (tok_getType() === $PUNC_BRACKET_OPEN) {
         // - `{*[expr](){}} = x`
-        destructible |= parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, astProp);
+        return parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $UNTYPED, $PUNC_STAR, $UNTYPED, $UNTYPED, astProp);
       }
-      else {
-        return THROW_RANGE('Invalid objlit key character after generator star', $tp_methodStart_line, tok_getStop());
-      }
-      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct can not have an init');
-    }
-    else {
-      ASSERT(tok_getType() !== $PUNC_SEMI, 'Leading semis are parsed before this function is called, trailing semis are parsed immediately, so we shouldnt see a semi here');
-      // - `class x {<?>`
-      return THROW_RANGE('Unexpected token, wanted to parse a start of a property in an class literal/pattern', $tp_methodStart_line, tok_getStop());
+
+      return THROW_RANGE('Invalid objlit key character after generator star', $tp_methodStart_line, tok_getStop());
     }
 
-    // pick up the flags from assignable and put them in destructible
-    // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
-    // - `function *g(){ (x = {[yield]: 1}) }`
-    // - `{ (x = {[yield]: 1}) }`
-    // - `s = {"foo": await = x} = x`
-    return copyPiggies(destructible, assignable);
+    ASSERT($tp_afterStaticMaybe_type !== $PUNC_SEMI, 'Leading semis are parsed before this function is called, trailing semis are parsed immediately, so we shouldnt see a semi here');
+    // - `class x {<?>`
+    return THROW_RANGE('Unexpected token, wanted to parse a start of a property in an class literal/pattern', $tp_methodStart_line, tok_getStop());
   }
-  function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, astProp) {
+  function parseClassMethodFromIdent(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, astProp) {
     ASSERT(parseClassMethodFromIdent.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
-    ASSERT($tp_static_type === $UNTYPED || $tp_static_type === $ID_static, 'static token');
     ASSERT(isIdentToken(tok_getType()));
+
+    // - `class x {key(){}}`
+    //             ^^^
+    // - `class x {async key(){}}`
+    //             ^^^^^
+    // - `class x {get key(){}}`
+    //             ^^^
+    // - `class x {set key(x){}}`
+    //             ^^^
 
     let $tp_ident_type = tok_getType();
     let $tp_ident_line = tok_getLine();
@@ -12256,14 +12215,11 @@ function Parser(code, options = {}) {
 
     ASSERT_skipAny($G_IDENT, lexerFlags);
 
-    if (allowAsyncFunctions) {
-      if (tok_getType() !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && $tp_ident_type === $ID_async) {
-        // - `{async \n key(){}}`
-        //              ^
-        // Always an error due to async being a restricted production
-        // Note that `{async(){}}` is legal so we must check the current token
-        return THROW_RANGE('Async methods are a restricted production and cannot have a newline following it', $tp_methodStart_line, tok_getStart());
-      }
+    if (tok_getType() === $PUNC_PAREN_OPEN) {
+      // Simple method shorthand
+      // - `class x {ident(){}}`
+      //                  ^
+      return _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, astProp);
     }
 
     // The "key" in the next is one of ident, string, number, or computed property
@@ -12283,31 +12239,26 @@ function Parser(code, options = {}) {
     // - `class x {static async key(){}}`
     // - `class x {static async *key(){}}`
 
-    if (tok_getType() === $PUNC_PAREN_OPEN) {
-      // Simple method shorthand
-      // - `class x {ident(){}}`
-      //                  ^
-      return _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, astProp);
-    }
-
-    let destructible = MIGHT_DESTRUCT;
-    let assignable = ASSIGNABLE_UNDETERMINED; // Propagate await/yield state flags to caller
-
     // The syntactic order of modifiers is
-    // { [[async [*]]|get|set] key(){} }
+    // [export [default]] class [ident] { [[async] [*]|get|set] key(){} }
 
+    let $tp_async_type = $UNTYPED;
     let $tp_star_type = $UNTYPED;
+    let $tp_get_type = $UNTYPED;
+    let $tp_set_type = $UNTYPED;
 
     switch ($tp_ident_type) {
       case $ID_get:
         // The next token may now only be the key
         // - `class x {get key(){}}`
         //                 ^
+        $tp_get_type = $ID_get;
         break;
       case $ID_set:
         // The next token may now only be the key
         // - `class x {get key(){}}`
         //                 ^
+        $tp_set_type = $ID_set;
         break;
       case $ID_async:
         // - `class x {async key(){}})
@@ -12315,12 +12266,30 @@ function Parser(code, options = {}) {
         // - `class x {async *key(){}})
         //                   ^
 
+        if (!allowAsyncFunctions) {
+          return THROW_RANGE('Async functions are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
+        }
+
+        if (tok_getNlwas() === true) {
+          // - `class x {async \n key(){}}`
+          //              ^
+          // Always an error due to async being a restricted production
+          // Note that `{async(){}}` is legal so we must check the current token
+          return THROW_RANGE('Async methods are a restricted production and cannot have a newline following it', $tp_methodStart_line, tok_getStart());
+        }
+
+        $tp_async_type = $ID_async;
+
         // Might be followed by star
         if (tok_getType() === $PUNC_STAR) {
           // - `class x {async *key(){}})
           //                   ^
 
-          $tp_star_type = tok_getType();
+          if (!allowAsyncGenerators) {
+            return THROW_RANGE('Async generators are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
+          }
+
+          $tp_star_type = $PUNC_STAR;
 
           ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
         }
@@ -12348,60 +12317,28 @@ function Parser(code, options = {}) {
     // - `class x {static async key(){}}`
 
     if (tok_getType() === $PUNC_BRACKET_OPEN) {
-      destructible |= parseClassMethodComputedKey(
-        lexerFlags, outerLexerFlags,
-        $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start,
-        $tp_static_type,
-        $tp_ident_type === $ID_async ? $ID_async : $UNTYPED,
-        $tp_star_type,
-        $tp_ident_type === $ID_get ? $ID_get : $UNTYPED,
-        $tp_ident_type === $ID_set ? $ID_set : $UNTYPED,
-        astProp
-      );
-    } else if (isNumberStringToken(tok_getType())) {
+      return parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp);
+    }
+
+    if (isNumberStringToken(tok_getType())) {
       // - `class x {get 300(){}}`
       //                 ^^^
       // - `class x {async * "foo"(){}}`
       //                     ^^^^^
-
-      destructible |= parseClassMethodLiteralKey(
-        lexerFlags,
-        $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start,
-        $tp_static_type,
-        $tp_ident_type === $ID_async ? $ID_async : $UNTYPED,
-        $tp_star_type,
-        $tp_ident_type === $ID_get ? $ID_get : $UNTYPED,
-        $tp_ident_type === $ID_set ? $ID_set : $UNTYPED,
-        astProp
-      );
-    } else if (isIdentToken(tok_getType())) {
-      destructible |= parseClassMethodIdentKey(
-        lexerFlags,
-        $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start,
-        $tp_static_type,
-        $tp_ident_type === $ID_async ? $ID_async : $UNTYPED,
-        $tp_star_type,
-        $tp_ident_type === $ID_get ? $ID_get : $UNTYPED,
-        $tp_ident_type === $ID_set ? $ID_set : $UNTYPED,
-        astProp
-      );
-    } else {
-      // Stuff like incompatible modifiers, obj lit syntax, invalid tokens, etc
-      return THROW_RANGE('Expected to parse the modified key of a class method but could not parse one', tok_getStart(), tok_getStop());
+      return parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp);
     }
 
-    // Pick up the flags from assignable and put them in destructible
-    // - `result = [...{ x = yield }] = y;`
-    // - `function* g() {   [...{ x = yield }] = y   }`
-    // - `result = [...{ x = await }] = y;`
-    // - `async r => result = [...{ x = await x }] = y;`
-    return copyPiggies(destructible, assignable);
+    if (isIdentToken(tok_getType())) {
+      return parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp);
+    }
+
+    // Stuff like incompatible modifiers, obj lit syntax, invalid tokens, etc
+    return THROW_RANGE('Expected to parse the modified key of a class method but could not parse one', tok_getStart(), tok_getStop());
   }
-  function parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
+  function parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
     ASSERT(parseClassMethodIdentKey.length === arguments.length, 'arg count');
     ASSERT(isIdentToken(tok_getType()), 'current is ident');
 
-    let $tp_key_type = tok_getType();
     let $tp_key_line = tok_getLine();
     let $tp_key_column = tok_getColumn();
     let $tp_key_start = tok_getStart();
@@ -12409,132 +12346,26 @@ function Parser(code, options = {}) {
     let $tp_key_canon = tok_getCanoN(); // Note: constructor is tested elsewhere
 
     ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-    return _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon, astProp);
+    return _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon, astProp);
   }
-  function _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon, astProp) {
+  function _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon, astProp) {
     ASSERT(_parseClassMethodIdentKey.length === arguments.length, 'arg count');
 
     AST_setIdent(astProp, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon);
 
-    // - `class A {async get foo(){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, $tp_key_canon, astProp);
-    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple"');
-    // - `(class A extends B { constructor() { super() } })`
-    return destructPiggies; // Can have constructor piggy
-  }
-  function parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
-    ASSERT(parseClassMethodLiteralKey.length === arguments.length, 'arg count');
-    ASSERT(isNumberStringToken(tok_getType()));
-
-    let $tp_lit_type = tok_getType();
-    let $tp_lit_line = tok_getLine();
-    let $tp_lit_column = tok_getColumn();
-    let $tp_lit_start = tok_getStart();
-    let $tp_lit_stop = tok_getStop();
-    let $tp_lit_canon = tok_getCanoN();
-
-    ASSERT_skipToParenOpenOrDie(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
-    AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
-
-    // [v]: `class A {"x"(){}}`
-    // [v]: `class A {1(){}}`
-    // [v]: `class A {static 2(){}}`
-    // [v]: `class A {async 3(){}}`
-    // [v]: `class A {*4(){}}`
-    // [v]: `class A {async * 34(){}}`
-    // [v]: `class A {get 5(){}}`
-    // [v]: `class A {static get 6(){}}`
-    // [v]: `class A {set 9(x){}}`
-    // [v]: `class A {static set 10(x){}}`
-    let destructPiggies = parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_lit_type, $tp_lit_canon, astProp);
-    ASSERT(!hasAnyFlag(destructPiggies, PIGGY_BACK_SAW_AWAIT | PIGGY_BACK_SAW_YIELD), 'yield/await cases are caught before this point (yield/await keyword always illegal in func arg, yield/await as param considered "non-simple")');
-    // - `class A {"constructor"(){}}`
-    return destructPiggies; // Can have constructor piggy
-  }
-  function parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
-    // skip computed key part first because we need to figure out whether we're parsing a method
-    ASSERT(parseClassMethodComputedKey.length === arguments.length, 'arg count');
-
-    // - `class {[foo](){}}`
-    //           ^
-
-    ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-
-    // Note: the expression of computed keys of class methods are parsed with the context before the class
-    // So the context is not guaranteed to be strict, async, or anything else.
-    // We have to propagate the piggies in case the parent turns out to be a function param / default.
-    let nowAssignable = parseExpression(outerLexerFlags, astProp);
-
-    // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
-    // - `(fail = class A {[await](){}; "x"(){}}) => {}`
-    // - `function *f(){  class x{[yield foo](a){}}  }`
-    // - `(fail = class A {[await](){}; "x"(){}}) => {}`
-    if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-      return THROW_RANGE('Missing right square bracket for computed member, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+    if (isStatic && $tp_key_canon === 'prototype') {
+      return THROW_RANGE('Static class methods can not be called `prototype`', $tp_methodStart_line, tok_getStop());
     }
 
-    ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
-
-    // The piggies for parsing the function after the key are not relevant (constructor / arrowness / await / yield)
-    // - `{[foo](){}}`
-    //          ^
-    // - `class {[foo](){}}`
-    // - `class x {[x]z){}}`
-    // - `async function f(){  (fail = class A {[x](y=await z){}}) => {}  }`        (throws inside the next call)
-    parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, 0, '', astProp);
-
-    // Note: we don't care about piggies here. `yield` is always illegal due to class auto-strict-mode, `await` is
-    // The `nowAssignable` piggies matter for the case where await is used as part of a computed method key when the
-    // class is the default value of an arrow parameter (I know):
-    // - `async function f(){ class c { [await x](){} } }`                                 // This is fine
-    // - `async function f(){ let arrow = (param = class { [await x](){} }) => param; }`   // This is error
-    return copyPiggies(CANT_DESTRUCT | nowAssignable);
-  }
-  function parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_static_type, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, $tp_key_canon, astProp) {
-    ASSERT(parseClassMethodAfterKey.length === arguments.length, 'arg count');
-    ASSERT($tp_static_type === $UNTYPED || $tp_static_type === $ID_static, 'get token');
-    ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'get token');
-    ASSERT($tp_star_type === $UNTYPED || $tp_star_type === $PUNC_STAR, 'get token');
-    ASSERT($tp_get_type === $UNTYPED || $tp_get_type === $ID_get, 'get token');
-    ASSERT($tp_set_type === $UNTYPED || $tp_set_type === $ID_set, 'set token');
-    ASSERT($tp_key_type === $UNTYPED || (isIdentToken($tp_key_type) || isNumberStringToken($tp_key_type)), 'keyToken is a number, string or ident');
-    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
-
-    verifyGeneralMethodState($tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, true);
-
-    let $tp_paren_line = tok_getLine();
-    let $tp_paren_column = tok_getColumn();
-    let $tp_paren_start = tok_getStart();
-
-    // [x]: `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
-
-    if ($tp_key_type !== $UNTYPED && $tp_static_type === $ID_static) {
-      if ((isIdentToken($tp_key_type) || isStringToken($tp_key_type)) && $tp_key_canon === 'prototype') {
-        return THROW_RANGE('Static class methods can not be called `prototype`', $tp_methodStart_line, tok_getStop());
-      }
-    }
-
-    let destructible = CANT_DESTRUCT; // this is mostly for piggy flags like detecting duplicate constructors
-
+    let kind = 'method'; // a literal key can still be a proper constructor
     let isClassConstructor = NOT_CONSTRUCTOR;
-    let kind = 'method';
+
     if (
-      $tp_key_type !== $UNTYPED &&          // Not computed
-      $tp_static_type === $UNTYPED &&       // Not static
-      (
-        // https://tc39.github.io/ecma262/#sec-identifier-names-static-semantics-stringvalue
-        // Note: the "constructor" check is determined by the "StringValue" of ident, which is the canonical value
-        (
-          isIdentToken($tp_key_type) ||
-          // > LiteralPropertyName: StringLiteral
-          // >   Return the String value whose code units are the SV of the StringLiteral.
-          // In other words; `class x{"constructor"(){}}` is also a proper constructor
-          // https://tc39.github.io/ecma262/#sec-string-literals-static-semantics-stringvalue
-          // And for strings it is the unquoted canonical value of the string (so "constructor" and 'constructor' + escapes)
-          isStringToken($tp_key_type)
-        ) &&
-        $tp_key_canon === 'constructor'
-      )
+      // A proper constructor is not static
+      !isStatic &&
+      // https://tc39.github.io/ecma262/#sec-identifier-names-static-semantics-stringvalue
+      // Note: the "constructor" check is determined by the "StringValue" of ident, which is the canonical value
+      $tp_key_canon === 'constructor'
     ) {
       // This is a proper class constructor
       isClassConstructor = IS_CONSTRUCTOR;
@@ -12553,43 +12384,180 @@ function Parser(code, options = {}) {
       if ($tp_set_type === $ID_set) {
         return THROW_RANGE('Class constructors can not be setters', $tp_methodStart_line, tok_getStop());
       }
-
-      // This is a constructor method. We need to signal the caller that we parsed one to dedupe them
-      // In order to signal the caller we piggy back on the destructible mechanism which is already a bit-field
-      destructible |= PIGGY_BACK_WAS_CONSTRUCTOR;
+    } else if ($tp_get_type === $ID_get) {
+      // - `class A {get foo(){}}`
+      kind = 'get';
+    } else if ($tp_set_type === $ID_set) {
+      // - `class A {set foo(x){}}`
+      kind = 'set';
     } else {
-      if ($tp_get_type === $ID_get) {
-        // - `class A {get foo(){}}`
-        kind = 'get';
-      } else if ($tp_set_type === $ID_set) {
-        // - `class A {set foo(x){}}`
-        kind = 'set';
-      } else {
-        // [v]: `class x { foo(){ }}`
-      }
+      // [v]: `class x { foo(){ }}`
     }
+
+    // - `class A {async get foo(){}}`
+    return parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, kind, isClassConstructor, false, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp);
+  }
+  function parseClassMethodLiteralKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
+    ASSERT(parseClassMethodLiteralKey.length === arguments.length, 'arg count');
+    ASSERT(isNumberStringToken(tok_getType()));
+
+    let $tp_lit_type = tok_getType();
+    let $tp_lit_line = tok_getLine();
+    let $tp_lit_column = tok_getColumn();
+    let $tp_lit_start = tok_getStart();
+    let $tp_lit_stop = tok_getStop();
+    let $tp_lit_canon = tok_getCanoN();
+
+    // This will check for numbers as well but those can never pass a "prototpype" check and are so uncommon I dun care
+    if (isStatic && $tp_lit_canon === 'prototype') {
+      return THROW_RANGE('Static class methods can not be called `prototype`', $tp_methodStart_line, tok_getStop());
+    }
+
+    let kind = 'method'; // a literal key can still be a proper constructor
+    let isClassConstructor = NOT_CONSTRUCTOR;
+
+    // This will check for numbers as well but those can never pass a "constructor" check and are so uncommon I dun care
+    if (
+      // A proper constructor is not static
+      !isStatic &&
+      // A proper constructor is not static
+      // https://tc39.github.io/ecma262/#sec-identifier-names-static-semantics-stringvalue
+      // Note: the "constructor" check is determined by the "StringValue" of ident, which is the canonical value
+      // > LiteralPropertyName: StringLiteral
+      // >   Return the String value whose code units are the SV of the StringLiteral.
+      // In other words; `class x{"constructor"(){}}` is also a proper constructor
+      // https://tc39.github.io/ecma262/#sec-string-literals-static-semantics-stringvalue
+      // And for strings it is the unquoted canonical value of the string (so "constructor" and 'constructor' + escapes)
+      $tp_lit_canon === 'constructor'
+    ) {
+      // This is a proper class constructor
+      isClassConstructor = IS_CONSTRUCTOR;
+      kind = 'constructor';
+
+      // Constructors can't have get/set/*/async but can be static
+      if ($tp_async_type === $ID_async) {
+        return THROW_RANGE('Class constructors can not be async', $tp_methodStart_line, tok_getStop());
+      }
+      if ($tp_star_type === $PUNC_STAR) {
+        return THROW_RANGE('Class constructors can not be generators', $tp_methodStart_line, tok_getStop());
+      }
+      if ($tp_get_type === $ID_get) {
+        return THROW_RANGE('Class constructors can not be getters', $tp_methodStart_line, tok_getStop());
+      }
+      if ($tp_set_type === $ID_set) {
+        return THROW_RANGE('Class constructors can not be setters', $tp_methodStart_line, tok_getStop());
+      }
+    } else if ($tp_get_type === $ID_get) {
+      // - `class A {get "x"(){}}`
+      kind = 'get';
+    } else if ($tp_set_type === $ID_set) {
+      // - `class A {set 43(x){}}`
+      kind = 'set';
+    } else {
+      // [v]: `class x { "y"(){ }}`
+    }
+
+    ASSERT_skipToParenOpenOrDie(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
+
+    AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
+
+    // [v]: `class A {"x"(){}}`
+    // [v]: `class A {1(){}}`
+    // [v]: `class A {static 2(){}}`
+    // [v]: `class A {async 3(){}}`
+    // [v]: `class A {*4(){}}`
+    // [v]: `class A {async * 34(){}}`
+    // [v]: `class A {get 5(){}}`
+    // [v]: `class A {static get 6(){}}`
+    // [v]: `class A {set 9(x){}}`
+    // [v]: `class A {static set 10(x){}}`
+    return  parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, kind, isClassConstructor, false, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp);
+  }
+  function parseClassMethodComputedKey(lexerFlags, outerLexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
+    // skip computed key part first because we need to figure out whether we're parsing a method
+    ASSERT(parseClassMethodComputedKey.length === arguments.length, 'arg count');
+
+    // - `class {[foo](){}}`
+    //           ^
+
+    ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
+
+    // Note: the expression of computed keys of class methods are parsed with the context before the class
+    // So the context is not guaranteed to be strict, async, or anything else.
+    // We have to propagate the piggies in case the parent turns out to be a function param / default.
+    let assignable_forPiggies = parseExpression(outerLexerFlags, astProp);
+
+    // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
+    // - `(fail = class A {[await](){}; "x"(){}}) => {}`
+    // - `function *f(){  class x{[yield foo](a){}}  }`
+    // - `(fail = class A {[await](){}; "x"(){}}) => {}`
+    if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+      return THROW_RANGE('Missing right square bracket for computed member, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+    }
+
+    ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
+
+    let kind = 'method';
+
+    if ($tp_get_type === $ID_get) {
+      // - `class A {get [y](){}}`
+      kind = 'get';
+    } else if ($tp_set_type === $ID_set) {
+      // - `class A {set [y](x){}}`
+      kind = 'set';
+    } else {
+      // [v]: `class x { [y](){ }}`
+    }
+
+    // The piggies for parsing the function after the key are not relevant (constructor / arrowness / await / yield)
+    // - `{[foo](){}}`
+    //          ^
+    // - `class {[foo](){}}`
+    // - `class x {[x]z){}}`
+    // - `async function f(){  (fail = class A {[x](y=await z){}}) => {}  }`        (throws inside the next call)
+    parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, kind, NOT_CONSTRUCTOR, true, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp);
+
+    // Note: await/yield piggies of the params affect the method, not the parent, and don't need propagation
+    // We do need to propagate the await/yield piggies for the computed expression:
+    // - `async function f(){ class c { [await x](){} } }`                                 // This is fine
+    // - `async function f(){ let arrow = (param = class { [await x](){} }) => param; }`   // This is error
+    return assignable_forPiggies;
+  }
+  function parseClassMethodAfterKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, kind, isClassConstructor, isComputedKey, isStatic, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, astProp) {
+    ASSERT(parseClassMethodAfterKey.length === arguments.length, 'arg count');
+    ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'get token');
+    ASSERT($tp_star_type === $UNTYPED || $tp_star_type === $PUNC_STAR, 'get token');
+    ASSERT($tp_get_type === $UNTYPED || $tp_get_type === $ID_get, 'get token');
+    ASSERT($tp_set_type === $UNTYPED || $tp_set_type === $ID_set, 'set token');
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
+
+    let $tp_paren_line = tok_getLine();
+    let $tp_paren_column = tok_getColumn();
+    let $tp_paren_start = tok_getStart();
+
+    // [x]: `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
 
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_CLASS,
         loc: undefined,
         key: undefined,
-        static: $tp_static_type === $ID_static,
-        computed: $tp_key_type === $UNTYPED, // Key is set if it was a regular ident, not an expr
+        static: isStatic, // `class x {static foo(){}}`
+        computed: isComputedKey, // `class x {[foo](){}}`
         async: undefined,
         generator: undefined,
         id: undefined,
         params: [],
-        kind: kind,
+        kind: kind, // method constructor get set
       }, 'key');
     } else {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_CLASS,
         loc: undefined,
         key: undefined,
-        static: $tp_static_type === $ID_static,
-        computed: $tp_key_type === $UNTYPED, // Key is set if it was a regular ident, not an expr
-        kind: kind,
+        static: isStatic, // `class x {static foo(){}}`
+        computed: isComputedKey, // `class x {[foo](){}}`
+        kind: kind, // method constructor get set
         value: undefined,
       }, 'key');
     }
@@ -12605,8 +12573,6 @@ function Parser(code, options = {}) {
       isClassConstructor,
       IS_METHOD,
       $tp_async_type,
-      0,
-      0,
       $tp_star_type,
       $tp_get_type,
       $tp_set_type,
@@ -12619,7 +12585,12 @@ function Parser(code, options = {}) {
 
     AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_CLASS);
 
-    return destructible;
+    if (isClassConstructor === IS_CONSTRUCTOR) {
+      // - `class A { constructor() { super() } })`
+      // - `class A {"constructor"(){ super() }}`
+      return PIGGY_BACK_WAS_CONSTRUCTOR;
+    }
+    return CANT_DESTRUCT;
   }
 
   function verifyGeneralMethodState($tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, isClass) {
@@ -12631,7 +12602,7 @@ function Parser(code, options = {}) {
     ASSERT(typeof isClass === 'boolean', 'isclass bool', isClass);
 
     if (tok_getType() !== $PUNC_PAREN_OPEN) {
-      // - `{[foo] * 5}`
+      // - `{[foo] * 5}`D
       //           ^
       // - `class x {async f * 5}`
       //                     ^
@@ -13282,10 +13253,6 @@ function Parser(code, options = {}) {
   function parseObjectLikeMethodAfterKey(lexerFlags, computed, $tp_star_type, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, astProp) {
     ASSERT(parseObjectLikeMethodAfterKey.length === arguments.length, 'arg count');
 
-    let $tp_paren_line = tok_getLine();
-    let $tp_paren_column = tok_getColumn();
-    let $tp_paren_start = tok_getStart();
-
     if (babelCompat) {
       AST_wrapClosedCustom(astProp, {
         type: NODE_NAME_METHOD_OBJECT,
@@ -13319,26 +13286,18 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Expected to parse a paren of the method now but found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
     }
 
-    parseFunctionAfterKeyword(
-      lexerFlags,
-      DO_NOT_BIND,
-      NOT_FUNC_DECL,
-      NOT_FUNC_EXPR,
-      IDENT_OPTIONAL,
-      NOT_CONSTRUCTOR,
-      IS_METHOD,
-      $UNTYPED,
-      0,
-      0,
-      $tp_star_type,
-      $UNTYPED,
-      $UNTYPED,
-      acornCompat ? $tp_paren_start : $tp_methodStart_start,
-      acornCompat ? $tp_paren_line : $tp_methodStart_line,
-      acornCompat ? $tp_paren_column : $tp_methodStart_column,
-      FDS_ILLEGAL,
-      'value'
-    );
+    // [v]: `{x(){}}`
+    //         ^
+
+    if (acornCompat) {
+      let $tp_paren_line = tok_getLine();
+      let $tp_paren_column = tok_getColumn();
+      let $tp_paren_start = tok_getStart();
+
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, $tp_paren_start, $tp_paren_line, $tp_paren_column, FDS_ILLEGAL, 'value');
+    } else {
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, FDS_ILLEGAL, 'value');
+    }
 
     AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_OBJECT);
 
