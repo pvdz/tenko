@@ -2317,8 +2317,8 @@ function Parser(code, options = {}) {
       if (currScoop.names === HAS_NO_BINDINGS) {
         currScoop.names = new Map;
       } else if (currScoop.names.has($tp_bindingIdent_canon)) {
-        let value = currScoop.names.get($tp_bindingIdent_canon);
-        verifyDuplicateVarBinding(lexerFlags, value, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon);
+        let bindingType = currScoop.names.get($tp_bindingIdent_canon);
+        verifyDuplicateVarBinding(lexerFlags, bindingType, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon);
       }
       currScoop.names.set($tp_bindingIdent_canon, bindingType);
       currScoop = currScoop.parent;
@@ -2326,7 +2326,7 @@ function Parser(code, options = {}) {
   }
   function verifyDuplicateVarBinding(lexerFlags, value, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon) {
     switch (value) {
-      case BINDING_TYPE_NONE:
+      case BINDING_TYPE_NONE: // This one is unused (almost by definition), filler to make a jump table start at 0
       case BINDING_TYPE_ARG:
       case BINDING_TYPE_VAR:
       case BINDING_TYPE_FUNC_VAR:
@@ -5310,16 +5310,14 @@ function Parser(code, options = {}) {
     let assignable = hasAnyFlag(destructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
 
     let $tp_patternTailStart_type = tok_getType();
-    let $tp_patternTailStart_start = tok_getStart();
-    let $tp_patternTailStart_stop = tok_getStop();
 
     // Have to make sure this is not a compound assignment to a pattern. And have to do it before the tail (`[].x+=y`)
     // - `for ([] = x;;);`
     // - `for ([] = x in y);`
-    if ($tp_patternTailStart_type !== $PUNC_EQ && isCompoundAssignment($tp_patternTailStart_type, $tp_patternTailStart_start, $tp_patternTailStart_stop)) {
+    if ($tp_patternTailStart_type !== $PUNC_EQ && isAnyAssignmentOp()) {
       // - `for ([] += x;;);`
       // - `for ([] /= x in y);`
-      return THROW_RANGE('Cannot compound assign to an object or array pattern', $tp_patternTailStart_start, $tp_patternTailStart_stop);
+      return THROW_RANGE('Cannot compound assign to an object or array pattern', tok_getStart(), tok_getStop());
     }
 
     // - `for ({}`
@@ -7135,12 +7133,9 @@ function Parser(code, options = {}) {
     ASSERT(parseExpressionFromOp.length === arguments.length, 'arg count');
     ASSERT(typeof assignable === 'number', 'assignable num');
 
-    let $tp_maybeOp_start = tok_getStart();
-    let $tp_maybeOp_stop = tok_getStop();
-
-    if (isCompoundAssignment(tok_getType(), $tp_maybeOp_start, $tp_maybeOp_stop)) {
+    if (isAnyAssignmentOp()) {
       if (notAssignable(assignable)) {
-        return THROW_RANGE('Cannot assign to lhs (starting with `' + tok_sliceInput($tp_firstExpr_start, $tp_firstExpr_stop) + '`) because it is not a valid assignment target', $tp_maybeOp_start, $tp_maybeOp_stop);
+        return THROW_RANGE('Cannot assign to lhs (starting with `' + tok_sliceInput($tp_firstExpr_start, $tp_firstExpr_stop) + '`) because it is not a valid assignment target', tok_getStart(), tok_getStop());
       }
       return parseExpressionFromAssignmentOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, assignable, astProp);
     }
@@ -7180,32 +7175,26 @@ function Parser(code, options = {}) {
 
     if (hasAllFlags(assignable, PIGGY_BACK_WAS_ARROW)) return assignable;
 
+    let $tp_next_type = tok_getType();
     let repeat = false;
     do {
       repeat = false;
-      if (tok_getType() === $PUNC_QMARK) {
+      if ($tp_next_type === $PUNC_QMARK) {
         let nowAssignable = parseExpressionFromTernaryOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
         repeat = true;
       }
-      else if (isNonAssignBinOp(tok_getType(), lexerFlags)) {
+      else if (isNonAssignBinOp($tp_next_type, lexerFlags)) {
         let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
         repeat = true;
       }
+      $tp_next_type = tok_getType();
     } while (repeat);
 
-    // note: this is a nice error message for `5+5=10`
-    if (tok_getType() === $PUNC_EQ) {
-      return THROW_RANGE('Cannot assign a value to non-assignable value', tok_getStart(), tok_getStop());
-    }
-
-    let $tp_maybeOp_start = tok_getStart();
-    let $tp_maybeOp_stop = tok_getStop();
-
-    if (isCompoundAssignment(tok_getType(), $tp_maybeOp_start, $tp_maybeOp_stop)) {
+    if (isAnyAssignmentOp()) {
       // [x]: `[]=n/f>>=v`
-      return THROW_RANGE('Can not have an assignment after a non-assignment operator', $tp_maybeOp_start, $tp_maybeOp_stop);
+      return THROW_RANGE('Can not have an assignment after a non-assignment operator', tok_getStart(), tok_getStop());
     }
     return assignable;
   }
@@ -7329,17 +7318,18 @@ function Parser(code, options = {}) {
     return setNotAssignable(assignableForPiggies);
   }
 
-  function isCompoundAssignment(type, $tp_assign_start, $tp_assign_stop) {
-    ASSERT(isCompoundAssignment.length === arguments.length, 'arg count');
+  function isAnyAssignmentOp() {
+    // isAssignmentOp
+    ASSERT(isAnyAssignmentOp.length === arguments.length, 'arg count');
 
     // Find compound ops but ignore comparison ops
 
-    if (!hasAllFlags(type, $G_BINOP_ASSIGN)) return false;
+    if (!hasAllFlags(tok_getType(), $G_BINOP_ASSIGN)) return false;
 
-    if (type !== $PUNC_STAR_STAR_EQ) return true;
+    if (tok_getType() !== $PUNC_STAR_STAR_EQ) return true;
 
     if (!allowExponentiation) {
-      return THROW_RANGE('`**` was introduced in ES7', $tp_assign_start, $tp_assign_stop);
+      return THROW_RANGE('`**` was introduced in ES7', tok_getStart(), tok_getStop());
     }
 
     return true;
@@ -7748,17 +7738,12 @@ function Parser(code, options = {}) {
   function verifyEvalArgumentsVar(lexerFlags) {
     if (hasNoFlag(lexerFlags, LF_STRICT_MODE)) return IS_ASSIGNABLE;
 
-    let $tp_maybeOp_start = tok_getStart();
-    let $tp_maybeOp_stop = tok_getStop();
-
-    if (isCompoundAssignment(tok_getType(), $tp_maybeOp_start, $tp_maybeOp_stop)) {
-      return THROW_RANGE('Cannot assign to `eval` and `arguments` in strict mode', $tp_maybeOp_start, $tp_maybeOp_stop);
+    if (isAnyAssignmentOp()) {
+      return THROW_RANGE('Cannot assign to `eval` and `arguments` in strict mode', tok_getStart(), tok_getStop());
     }
 
-    switch (tok_getType()) {
-      case $PUNC_PLUS_PLUS:
-      case $PUNC_MIN_MIN:
-        return THROW_RANGE('Cannot assign to `eval` and `arguments` in strict mode', $tp_maybeOp_start, $tp_maybeOp_stop);
+    if (tok_getType() === $PUNC_PLUS_PLUS || tok_getType() === $PUNC_MIN_MIN) {
+      return THROW_RANGE('Cannot assign to `eval` and `arguments` in strict mode', tok_getStart(), tok_getStop());
     }
 
     return NOT_ASSIGNABLE;
@@ -8873,7 +8858,7 @@ function Parser(code, options = {}) {
       if (isTemplateStart($tp_error_type)) {
         return THROW_RANGE('Block body arrows can not be immediately tagged without a group', $tp_error_start, $tp_error_stop);
       }
-      if (isCompoundAssignment($tp_error_type, $tp_error_start, $tp_error_stop) || isNonAssignBinOp($tp_error_type, lexerFlags)) {
+      if (isAnyAssignmentOp() || hasAllFlags($tp_error_type, $G_BINOP_NONASSIGN)) {
         // - `()=>{} + a'
         // - `()=>{} *= a'
         return THROW_RANGE('An arrow function can not be part of an operator to the right', $tp_error_start, $tp_error_stop);
@@ -11532,75 +11517,77 @@ function Parser(code, options = {}) {
     ASSERT(typeof astProp === 'string', 'astProp string', astProp);
     verifyDestructible(destructible);
 
-    let $tp_op_start = tok_getStart();
-    let $tp_op_stop = tok_getStop();
-
-    if (tok_getType() === $PUNC_EQ) {
-      // Note: this might be something like `([x]=await y)=>z` which is illegal so we must propagate await/yield flags
-      // - `[x]=y`
-      // - `[x=y]=z`
-      // - `[x=await y]=z`
-      // - `[x=y]=await z`
-      // - `[...{a = b} = c] = x`
-      // - `{x} = y`
-
-      if (hasAllFlags(destructible, CANT_DESTRUCT)) {
-        // - `({a:(b) = c} = 1)`
-        return THROW_RANGE('Tried to destructure something that is not destructible', $tp_op_start, $tp_op_stop);
-      }
-
-      // for example; `({a = b})` must destruct because of the shorthand. `[...a=b]` can't destruct because rest is only
-      // legal on a simple identifier. So combining them you get `[...{a = b} = c]` where the inside must destruct and
-      // the outside cannot. (there's a test)
-
-      // If the object or array had MUST_DESTRUCT set, we have to reset this to MIGHT_DESTRUCT
-      // For example, `({a = b})` and `[{a = b}]` have to be destructured because of the init, which
-      // is not allowed for objlits (`let x = {y=z}` and `let x = {y=z} => d` are errors while
-      // `let x = {y=z} = d` and `let x = ({y=z}) => d` and `let x = ({y=z}=e) => d` are valid)
-      // but make sure the assign flag is retained (`([x.y]=z) => z` is an error!)
-
-      // This is an assignment, so if the lhs was a MUST_DESTRUCT pattern then we can drop that flag now
-      // Also remove the piggy because the proto rule does not apply for destructuring assignments
-      // [v]: `result = [...{ x = await }] = y;`
-      // [v]: `async r => result = [...{ x = await x }] = y;`
-      // [v]: `result = [...{ x = yield }] = y;`
-      // [v]: `function* g() {   [...{ x = yield }] = y   }`
-      // [v]: `([{x = y}] = z)`
-      // [v]: `[{x = y}] = z`
-      // [v]: `foo({c=3} = {})`
-      // [v]: `async({c=3} = {})`
-      // [v]: `yield({c=3} = {})`
-      // [v]: `log({foo: [bar]} = obj);`
-      // [v]: `({a:(b) = c} = 1)`
-      // [v]: `for ({x} = z;;);`
-      // [v]: `({...[].x} = x);`
-      // [x]: `x = {__proto__: a, __proto__: b} = y`
-      // TODO: not sure about PIGGY_BACK_WAS_PROTO (but "free" so not wasting time for a test case right now)
-      destructible = sansFlag(destructible, MUST_DESTRUCT | PIGGY_BACK_WAS_PROTO);
-
-      // the array MUST now be a pattern. Does not need to be an arrow.
-      // the outer-most assignment is an expression, the inner assignments become patterns too.
-      AST_destruct(astProp);
-      AST_wrapClosedCustom(astProp, {
-        type: 'AssignmentExpression',
-        loc: undefined,
-        left: undefined,
-        operator: '=',
-        right: undefined,
-      }, 'left');
-      ASSERT_skipToExpressionStart('=', lexerFlags); // a forward slash after = has to be a division
-      // pick up the flags from assignable and put them in destructible
-      // - `({x} = await bar) => {}`
-      // - `async function a(){     ({r} = await bar) => {}     }`
-      // - `({x} = yield) => {}`
-      // - `function *f(){ ({x} = yield) => {} }`
-      destructible |= parseExpression(lexerFlags, 'right');
-      AST_close($tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, 'AssignmentExpression');
-    } else if (isCompoundAssignment(tok_getType(), $tp_op_start, $tp_op_stop)) {
-      // - `[x] += y`
-      // - `{x} += y`
-      return THROW_RANGE('Cannot compound-assign to an array literal', $tp_op_start, $tp_op_stop);
+    if (!isAnyAssignmentOp()) {
+      return destructible;
     }
+
+    if (tok_getType() !== $PUNC_EQ) {
+      // - `[x] += y`
+      // - `{x} *= y`
+      return THROW_RANGE('Cannot compound-assign to an array literal', tok_getStart(), tok_getStop());
+    }
+
+    // Note: this might be something like `([x]=await y)=>z` which is illegal so we must propagate await/yield flags
+    // - `[x]=y`
+    // - `[x=y]=z`
+    // - `[x=await y]=z`
+    // - `[x=y]=await z`
+    // - `[...{a = b} = c] = x`
+    // - `{x} = y`
+
+    if (hasAllFlags(destructible, CANT_DESTRUCT)) {
+      // - `({a:(b) = c} = 1)`
+      return THROW_RANGE('Tried to destructure something that is not destructible', tok_getStart(), tok_getStop());
+    }
+
+    // for example; `({a = b})` must destruct because of the shorthand. `[...a=b]` can't destruct because rest is only
+    // legal on a simple identifier. So combining them you get `[...{a = b} = c]` where the inside must destruct and
+    // the outside cannot. (there's a test)
+
+    // If the object or array had MUST_DESTRUCT set, we have to reset this to MIGHT_DESTRUCT
+    // For example, `({a = b})` and `[{a = b}]` have to be destructured because of the init, which
+    // is not allowed for objlits (`let x = {y=z}` and `let x = {y=z} => d` are errors while
+    // `let x = {y=z} = d` and `let x = ({y=z}) => d` and `let x = ({y=z}=e) => d` are valid)
+    // but make sure the assign flag is retained (`([x.y]=z) => z` is an error!)
+
+    // This is an assignment, so if the lhs was a MUST_DESTRUCT pattern then we can drop that flag now
+    // Also remove the piggy because the proto rule does not apply for destructuring assignments
+    // [v]: `result = [...{ x = await }] = y;`
+    // [v]: `async r => result = [...{ x = await x }] = y;`
+    // [v]: `result = [...{ x = yield }] = y;`
+    // [v]: `function* g() {   [...{ x = yield }] = y   }`
+    // [v]: `([{x = y}] = z)`
+    // [v]: `[{x = y}] = z`
+    // [v]: `foo({c=3} = {})`
+    // [v]: `async({c=3} = {})`
+    // [v]: `yield({c=3} = {})`
+    // [v]: `log({foo: [bar]} = obj);`
+    // [v]: `({a:(b) = c} = 1)`
+    // [v]: `for ({x} = z;;);`
+    // [v]: `({...[].x} = x);`
+    // [x]: `x = {__proto__: a, __proto__: b} = y`
+    // TODO: not sure about PIGGY_BACK_WAS_PROTO (but "free" so not wasting time for a test case right now)
+    destructible = sansFlag(destructible, MUST_DESTRUCT | PIGGY_BACK_WAS_PROTO);
+
+    // the array MUST now be a pattern. Does not need to be an arrow.
+    // the outer-most assignment is an expression, the inner assignments become patterns too.
+    AST_destruct(astProp);
+    AST_wrapClosedCustom(astProp, {
+      type: 'AssignmentExpression',
+      loc: undefined,
+      left: undefined,
+      operator: '=',
+      right: undefined,
+    }, 'left');
+    ASSERT_skipToExpressionStart('=', lexerFlags); // a forward slash after = has to be a division
+    // pick up the flags from assignable and put them in destructible
+    // - `({x} = await bar) => {}`
+    // - `async function a(){     ({r} = await bar) => {}     }`
+    // - `({x} = yield) => {}`
+    // - `function *f(){ ({x} = yield) => {} }`
+    destructible |= parseExpression(lexerFlags, 'right');
+    AST_close($tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, 'AssignmentExpression');
+
     return destructible;
   }
 

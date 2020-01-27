@@ -1,12 +1,14 @@
 # Tenko parser test case
 
-- Path: tests/testcases/await/arg_default/arg/in_async/arrow_complex/class_method_computed_key_param_default_await_async.md
+- Path: tests/testcases/await/arg_default/arg/in_async/arrow_complex/class_method_computed_key_param_default_await_async_semi.md
 
 > :: await : arg default : arg : in async : arrow complex
 >
-> ::> class method computed key param default await async
+> ::> class method computed key param default await async semi
 >
 > The `await` ident in param default is only an error in module goal since that's the only place where `await` is a keyword. The varname `await` is fine in param default.
+>
+> This is a regression case where the semi-colon triggered an assert
 
 ## Input
 
@@ -16,7 +18,7 @@ async function f(){
     [x](y=await){}; 
     "x"(){}
   }) => {
-  }
+  };
 }
 `````
 
@@ -54,7 +56,7 @@ ast: {
         body: [
           {
             type: 'ExpressionStatement',
-            loc:{start:{line:2,column:2},end:{line:6,column:3},source:''},
+            loc:{start:{line:2,column:2},end:{line:6,column:4},source:''},
             expression: {
               type: 'ArrowFunctionExpression',
               loc:{start:{line:2,column:2},end:{line:6,column:3},source:''},
@@ -176,7 +178,7 @@ tokens (36x):
        PUNC_CURLY_OPEN PUNC_CURLY_CLOSE PUNC_SEMI STRING_DOUBLE
        PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_CURLY_OPEN
        PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE PUNC_PAREN_CLOSE PUNC_EQ_GT
-       PUNC_CURLY_OPEN PUNC_CURLY_CLOSE ASI PUNC_CURLY_CLOSE
+       PUNC_CURLY_OPEN PUNC_CURLY_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -201,7 +203,7 @@ start@1:0, error@3:15
    ║                ^------- error
  4 ║     "x"(){}
  5 ║   }) => {
- 6 ║   }
+ 6 ║   };
  7 ║ }
 ╚══╩═════════════════
 
