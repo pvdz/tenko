@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Missing closing square bracket for computed property member name, found `` instead (at EOF)
+  Missing closing square bracket for computed property name, found `` instead (at EOF)
 
 start@1:0, error@1:11
 ╔══╦═════════════════

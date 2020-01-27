@@ -30,15 +30,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse an opening paren, found `case`
+  Object members can not be "static"
 
-start@1:0, error@2:13
-╔══╦═════════════════
+start@1:0, error@2:2
+╔══╦════════════════
  1 ║ ({
  2 ║   static set case(x){}
-   ║              ^^^^------- error
+   ║   ^^^^^^^^^^------- error
  3 ║ });
-╚══╩═════════════════
+╚══╩════════════════
 
 `````
 

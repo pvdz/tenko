@@ -27,13 +27,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot assign to lhs (starting with `true`) because it is not a valid assignment target
+  The lhs was not assignable so this is an error
 
-start@1:0, error@1:13
-╔══╦═════════════════
+start@1:0, error@1:8
+╔══╦════════════════
  1 ║ s = {s: true = x}
-   ║              ^------- error
-╚══╩═════════════════
+   ║         ^^^^^^------- error
+╚══╩════════════════
 
 `````
 

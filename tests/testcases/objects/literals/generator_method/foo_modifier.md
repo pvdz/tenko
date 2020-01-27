@@ -27,12 +27,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The only modifier that is valid before a star is `async`, found `foo` instead
+  Unexpected token `*` after start of property `foo` while trying to parse an object property/method
 
 start@1:0, error@1:2
 ╔══╦════════════════
  1 ║ ({foo * bar(){})
-   ║   ^^^------- error
+   ║   ^^^^^------- error
 ╚══╩════════════════
 
 `````

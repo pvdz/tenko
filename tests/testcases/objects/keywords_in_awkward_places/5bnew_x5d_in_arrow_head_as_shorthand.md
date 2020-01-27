@@ -26,12 +26,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse an opening paren, found `}`
+  Unexpected token `x` after start of property `new` while trying to parse an object property/method
 
-start@1:0, error@1:7
+start@1:0, error@1:2
 ╔══╦════════════════
  1 ║ ({new x}) => x;
-   ║        ^------- error
+   ║   ^^^^^------- error
 ╚══╩════════════════
 
 `````

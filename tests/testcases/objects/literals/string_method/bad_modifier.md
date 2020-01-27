@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse the start of a property but found an unknown modifier
+  Unexpected token `"a b c"` after start of property `fail` while trying to parse an object property/method
 
 start@1:0, error@2:4
 ╔══╦════════════════
  1 ║ ({
  2 ║     fail "a b c"(){}
-   ║     ^^^^------- error
+   ║     ^^^^^^^^^^^^------- error
  3 ║ })
 ╚══╩════════════════
 

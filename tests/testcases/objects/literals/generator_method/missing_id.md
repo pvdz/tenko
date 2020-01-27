@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Invalid objlit key character after generator star
+  Expected to parse an object method key, found `(` instead
 
 start@1:0, error@2:3
 ╔══╦════════════════

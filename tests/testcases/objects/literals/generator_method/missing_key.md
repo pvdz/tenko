@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse the key of a generator method but found something unexpected
+  Expected to parse an object method key, found `(` instead
 
 start@1:0, error@1:13
 ╔══╦═════════════════

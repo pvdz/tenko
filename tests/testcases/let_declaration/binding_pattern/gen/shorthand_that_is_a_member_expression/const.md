@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected character after object literal property name
+  Unexpected token `.` after start of property `a` while trying to parse an object property/method
 
-start@1:0, error@1:8
+start@1:0, error@1:7
 ╔══╦════════════════
  1 ║ const {a.b} = v
-   ║         ^------- error
+   ║        ^^------- error
 ╚══╩════════════════
 
 `````

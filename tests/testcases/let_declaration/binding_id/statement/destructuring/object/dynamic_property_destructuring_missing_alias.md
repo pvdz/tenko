@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  A computed property name must be followed by a colon or paren
+  Object literal; computed property must be followed by a colon (property) paren (method), found `}' instead'
 
 start@1:0, error@1:8
 ╔══╦════════════════

@@ -9,6 +9,8 @@
 > Regression with `eval` as a shorthand in the lhs of a `for`.
 >
 > The `eval` would be a read and write and a write to `eval` is illegal in strict mode.
+>
+> (The error is a bit confusing because the parser already knows this _must_ be a destructuring assignment, or `in` or `of`, so it emits a premature error about `eval` not being assignable. For the code, a more appropriate error would be to state that the object literal must be a pattern and is invalid in the current conext of a regular for loop. But oh well.)
 
 ## Input
 
@@ -44,13 +46,23 @@ start@1:0, error@1:5
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot use this name (`eval`) as a variable name because: Cannot create a binding named `eval` in strict mode
+
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ for ({ eval = 0 } ;;) ;
+   ║        ^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+_Output same as strict mode._
 
 ### Sloppy mode with AnnexB
 
@@ -62,4 +74,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as strict mode._

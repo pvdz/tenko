@@ -38,12 +38,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Can not use `let` when binding through `let` or `const`
+  The lhs was not assignable so this is an error
 
 start@1:0, error@1:10
 ╔══╦═════════════════
  1 ║ let {foo: let = y} = x;
-   ║           ^^^------- error
+   ║           ^^^^^------- error
 ╚══╩═════════════════
 
 `````

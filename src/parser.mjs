@@ -651,6 +651,7 @@ function Parser(code, options = {}) {
   if (getLexer) getLexer(tok);
 
   function THROW_RANGE(desc, tokenStart, tokenStop, ...args) {
+    if (arguments.length < 3) throw new Error('Expecting 3 args for THROW_RANGE, received ' + arguments.length);
     if (tokenStart > tokenStop) throw new Error('range should be >=0, was [' + tokenStart + ', ' + tokenStop + ']');
 
     $log('\n');
@@ -1558,7 +1559,7 @@ function Parser(code, options = {}) {
     ASSERT(typeof what === 'number' || typeof what === 'string', 'what number/string');
     ASSERT(hasNoFlag(lexerFlags, LF_FOR_REGEX), 'regex flag should not be set or propagated inside the parser');
     if (typeof what === 'string') {
-      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === what, 'expecting to skip token with certain value');
+      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === what, 'expecting to skip token with certain value', 'expected:', what, 'current token:', tok_sliceInput(tok_getStart(), tok_getStop()));
     } else {
       if (ALL_TOKEN_GROUPS.includes(what)) {
         // Check for a group type of token
@@ -1953,15 +1954,12 @@ function Parser(code, options = {}) {
     // processing the ident for special cases that normally determine whether the next token is a div, regex, or any
     // this check is relatively slow but there's a plan to make these enums, which would improve things
 
-    let $tp_ident_start = tok_getStart();
-    let $tp_ident_stop = tok_getStop();
-
     switch (tok_getType()) {
       case $ID_delete:
       case $ID_typeof:
       case $ID_void:
         if (leftHandSideExpression === ONLY_LHSE) {
-          return THROW_RANGE('A unary expression is not allowed here', $tp_ident_start, $tp_ident_stop);
+          return THROW_RANGE('A unary expression is not allowed here', tok_getStart(), tok_getStop());
         }
         // These are keywords that wrap expressions which start with regexes
         ASSERT_skipToExpressionStart($G_IDENT, lexerFlags);
@@ -1974,24 +1972,25 @@ function Parser(code, options = {}) {
       case $ID_await:
         if (goalMode === GOAL_MODULE || hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
           if (leftHandSideExpression === ONLY_LHSE) {
-            return THROW_RANGE('An `await` expression is not allowed here', $tp_ident_start, $tp_ident_stop);
+            return THROW_RANGE('An `await` expression is not allowed here', tok_getStart(), tok_getStop());
           }
           ASSERT_skipToExpressionStart($G_IDENT, lexerFlags);
-          return
+          return;
         }
-        ASSERT_skipDiv($ID_await, lexerFlags); // TODO: bin-op or tail-op or asi-continuation or `)` `]` `}`
-        return;
+        ASSERT_skipDiv($ID_await, lexerFlags);
+        return MIGHT_DESTRUCT;
       case $ID_yield:
         if (hasAnyFlag(lexerFlags, LF_IN_GENERATOR | LF_STRICT_MODE)) {
           if (leftHandSideExpression === ONLY_LHSE) {
-            return THROW_RANGE('A `yield` expression is not allowed here', $tp_ident_start, $tp_ident_stop);
+            return THROW_RANGE('A `yield` expression is not allowed here', tok_getStart(), tok_getStop());
           }
           ASSERT_skipRex($G_IDENT, lexerFlags); // Next is expr start or `*` or asi-continuation
           return;
         }
-        ASSERT_skipDiv($ID_yield, lexerFlags); // TODO: bin-op or tail-op or asi-continuation or `)` `]` `}`
+        ASSERT_skipDiv($ID_yield, lexerFlags);
         return;
     }
+
     ASSERT_skipDiv($G_IDENT, lexerFlags);
   }
 
@@ -2794,7 +2793,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToIdentParenOpen('*', lexerFlags);
 
       if ($tp_async_type === $ID_async && !allowAsyncGenerators) {
-        return THROW_RANGE('Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018', $tp_funcHead_start, $tp_funcHead_stop);
+        return THROW_RANGE('Async generators are not supported by the currently targeted language version, they were introduced in ES9/ES2018', $tp_funcHead_start, $tp_funcHead_stop);
       }
     }
 
@@ -6961,6 +6960,7 @@ function Parser(code, options = {}) {
     let $tp_start_stop = tok_getStop();
 
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
+
     return parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, assignable, astProp);
   }
   function parseExpressionAfterLiteral(lexerFlags, $tp_literal_start, $tp_literal_stop, $tp_literal_line, $tp_literal_column, astProp) {
@@ -7142,7 +7142,6 @@ function Parser(code, options = {}) {
       if (notAssignable(assignable)) {
         return THROW_RANGE('Cannot assign to lhs (starting with `' + tok_sliceInput($tp_firstExpr_start, $tp_firstExpr_stop) + '`) because it is not a valid assignment target', $tp_maybeOp_start, $tp_maybeOp_stop);
       }
-
       return parseExpressionFromAssignmentOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, assignable, astProp);
     }
 
@@ -7422,6 +7421,7 @@ function Parser(code, options = {}) {
     let $tp_start_start = tok_getStart();
 
     let assignable = parseValueHeadBody(lexerFlags, PARSE_VALUE_MUST, isNewArg, allowAssignment, leftHandSideExpression, astProp);
+
     // isNewArg is relevant for tail because call parens should be parsed by the new-parser, not call-parser
     // eg. `new foo()` should NOT be `new (foo())` / `(new foo)()` but we do allow `new foo.bar()`
     return parseValueTail(lexerFlags, $tp_start_start, $tp_start_line, $tp_start_column, assignable, isNewArg, leftHandSideExpression, astProp);
@@ -9113,7 +9113,10 @@ function Parser(code, options = {}) {
           } else {
             // The arg was not special under strict mode
             // [x]: `f = (foo) => { "use strict"; }`
+            //               ^
             // [x]: `f = (async) => { "use strict"; }`
+            // [x]: `({a:(b) = 0} = 1)`
+            //             ^
           }
         }
         else {
@@ -10009,7 +10012,7 @@ function Parser(code, options = {}) {
         let $tp_ident_stop = tok_getStop();
         let $tp_ident_canon = tok_getCanoN();
 
-        skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // will properly deal with div/rex cases
+        skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // Always skips _one_ token. Properly deals with div/rex
 
         let nextIsAssignment = tok_getType() === $PUNC_EQ;
         let nextIsCommaOrEnd = tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_BRACKET_CLOSE;
@@ -10134,7 +10137,7 @@ function Parser(code, options = {}) {
         let $tp_objOpen_start = tok_getStart();
         let $tp_objOpen_stop = tok_getStop();
 
-        let objDestructible = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, astProp);
+        let objDestructible = parseObjectAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, astProp);
         destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_objOpen_start, $tp_objOpen_stop, $tp_objOpen_line, $tp_objOpen_column, hasAllFlags(objDestructible, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, objDestructible, $PUNC_BRACKET_CLOSE, astProp);
       }
       else if (tok_getType() === $PUNC_BRACKET_OPEN) {
@@ -10336,12 +10339,12 @@ function Parser(code, options = {}) {
 
     // This function makes it easier to search for places that parse an object literal/pattern, without recursive bits
 
-    let destructible = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp);
+    let destructible = parseObjectAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp);
     return destructible;
   }
-  function parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp) {
+  function parseObjectAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp) {
     // returns whether this object is destructible
-    ASSERT(parseObjectLiteralPatternAndAssign.length === arguments.length, 'expecting all args');
+    ASSERT(parseObjectAndAssign.length === arguments.length, 'expecting all args');
     ASSERT(skipInit === SKIP_INIT || skipInit === PARSE_INIT, 'skipInit is enum', skipInit);
     ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'not yet consumed');
 
@@ -10372,8 +10375,11 @@ function Parser(code, options = {}) {
       loc: undefined,
       properties: [],
     });
-    let destructible = parseObjectLikePatternSansAssign(lexerFlags | LF_NO_ASI, scoop, bindingType, exportedNames, exportedBindings, 'properties');
+
+    let destructible = parseObjectSansAssign(lexerFlags | LF_NO_ASI, scoop, bindingType, exportedNames, exportedBindings, 'properties');
+
     AST_close($tp_curly_start, $tp_curly_line, $tp_curly_column, 'ObjectExpression');
+
     // this is immediately after the top-level object literal closed that we started parsing
     if (skipInit === PARSE_INIT) {
       destructible = parsePatternAssignMaybe(lexerFlags, $tp_curly_start, $tp_curly_line, $tp_curly_column, destructible, astProp);
@@ -10381,8 +10387,8 @@ function Parser(code, options = {}) {
 
     return destructible;
   }
-  function parseObjectLikePatternSansAssign(outerLexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp) {
-    ASSERT(parseObjectLikePatternSansAssign.length === arguments.length, 'arg count');
+  function parseObjectSansAssign(outerLexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp) {
+    ASSERT(parseObjectSansAssign.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'should have asserted to be at the curly open of an objlit or pattern here...');
     // parse the body of something that looks like an object literal (obj lit, class body)
 
@@ -10396,37 +10402,40 @@ function Parser(code, options = {}) {
     // Initializers. So we don't have to track all properties of object literals to check for dupes, however, we still
     // need to confirm this for annex B web-compat __proto__.
 
-    let hasThunderProto = false;
-    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
+    let hasThunderProto = false; // Yes, "I know", that's the joke.
+
+    do {
       if (tok_getType() === $PUNC_COMMA) {
         // - `{,}`
         //     ^
+        // - `{a,,b}`
+        //       ^
         return THROW_RANGE('Objects cant have comma without something preceding it', tok_getStart(), tok_getStop());
       }
+      let currentDestruct = parseObjectPart(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
+      if (hasAnyFlag(currentDestruct, PIGGY_BACK_WAS_PROTO)) {
+        ASSERT(options_webCompat === WEB_COMPAT_ON, 'this piggy should not appear if the web compat flag wasnt set');
+        currentDestruct ^= PIGGY_BACK_WAS_PROTO; // Since the bit was set, this should unset it without further checks
 
-      let currentDestruct = parseObjectLikePart(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
-      if (options_webCompat === WEB_COMPAT_ON) {
-        if (hasAnyFlag(currentDestruct, PIGGY_BACK_WAS_PROTO)) {
-          // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
-          // When ObjectLiteral appears in a context where ObjectAssignmentPattern is required the Early Error rule is not applied.
-          // As per https://github.com/tc39/test262/issues/2344 this is only the case if it actually is a pattern.
-          if (hasThunderProto) {
-            // [x]: `x = {__proto__: 1, __proto__: 2}`
-            // [x]: `x = {'__proto__': 1, "__proto__": 2}`
-            // [x]: `x = [{__proto__: 1, __proto__: 2}]`
-            // [x]: `x = [{'__proto__': 1, "__proto__": 2}]`
-            // TODO: I don't like this because the final error is very obscure. However it's a bit too complex to have
-            // that propagated through the system right now. So maybe later. For now it'll throw generic destruct errors.
-            destructible |= MUST_DESTRUCT; // Double proto rule is ignored if it occurs in a pattern
-          }
-          hasThunderProto = true;
+        // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+        // When ObjectLiteral appears in a context where ObjectAssignmentPattern is required the Early Error rule is not applied.
+        // As per https://github.com/tc39/test262/issues/2344 this is only the case if it actually is a pattern.
+        if (hasThunderProto) {
+          // [x]: `x = {__proto__: 1, __proto__: 2}`
+          // [x]: `x = {'__proto__': 1, "__proto__": 2}`
+          // [x]: `x = [{__proto__: 1, __proto__: 2}]`
+          // [x]: `x = [{'__proto__': 1, "__proto__": 2}]`
+          // TODO: I don't like this because the final error is very obscure. However it's a bit too complex to have
+          // that propagated through the system right now. So maybe later. For now it'll throw generic destruct errors.
+          destructible |= MUST_DESTRUCT; // Double proto rule is ignored if it occurs in a pattern
         }
+        hasThunderProto = true;
       }
       destructible |= currentDestruct;
 
       if (tok_getType() !== $PUNC_COMMA) break;
       ASSERT_skipAny(',', lexerFlags);
-    }
+    } while (tok_getType() !== $PUNC_CURLY_CLOSE);
 
     // restore in/template flags (`x${+{}}` would fail if you didn't do this before parsing the closing curly)
     lexerFlags = outerLexerFlags;
@@ -10437,32 +10446,33 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($PUNC_CURLY_CLOSE, lexerFlags); // ({...} / foo)
 
-    return sansFlag(destructible, PIGGY_BACK_WAS_PROTO);
+    return destructible;
   }
-  function parseObjectLikePart(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp) {
+  function parseObjectPart(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp) {
     // parseProperty parseMethod
-    // This function is recursively called for static members
-    ASSERT(parseObjectLikePart.length === arguments.length, 'arg count');
+    ASSERT(parseObjectPart.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
+
 
     let $tp_startOfKey_type = tok_getType();
     let $tp_startOfKey_line = tok_getLine();
     let $tp_startOfKey_column = tok_getColumn();
     let $tp_startOfKey_start = tok_getStart();
-    let $tp_startOfKey_stop = tok_getStop();
 
+    // Either parse a colon-property, a shorthand-property, or a shorthand-method
+    // Shorthand-property must be ident, the others keys is one of ident, string, number, or computed property
 
-    let destructible = bindingType === BINDING_TYPE_ARG || bindingType === BINDING_TYPE_NONE ? MIGHT_DESTRUCT : MUST_DESTRUCT;
-    let assignableForPiggies = ASSIGNABLE_UNDETERMINED; // propagate the await/yield state flags, if any (because `(x={a:await f})=>x` should be an error)
+    // An objlit property has quite a few goals
+    // - 4 types of key (ident, string, number, computed)
+    // - regular property value ({a:b})
+    // - shorthand property ({a}), only works on ident keys, ident can not be a keyword
+    // - shorthand method, with four potential modifiers (a(){} with async, star, get, set, or async star)
+    // - spread ({...a})
 
-    // An objlit property has quite a few (though limited) valid goals
-
-    // Note that "key" is one of ident, string, number, or computed property;
-    // - `{key: x}`
-    // - `{ident: x}`
-    // - `{"foo": x}`
-    // - `{300: x}`
-    // - `{[expr]: x}`
+    // All goals that are not methods have special cases of object literal vs object pattern
+    // - shorthands with init must be patterns {a=b}
+    // - a shorthand cannot be eval, arguments, or yield in strict mode (({eval}=x) -> eval = x.eval)
+    // - a only non-ident rest arg that are member expressions can be pattern ({...a.b}=c)
 
     // Valid syntaxes (all can have trailing comma except for rest)
     // - `{}`
@@ -10479,216 +10489,79 @@ function Parser(code, options = {}) {
     // - `{...value}`      (this seems to be able to allow any value token including regexes, literals, idents)
 
     if (isIdentToken($tp_startOfKey_type)) {
-      // (This branch is the only case that can lead to objlit prop shorthand iif the next char is `}` or `,` or `=`)
-      // All forms can have trailing comma but it will lead to an error in a rest pattern
+      // - `({key: expr})`
+      //      ^^^
+      // - `({ident})`
+      //      ^^^^^
+      // - `({key(){}})`
+      //      ^^^
+      // - `({async key(){}})`
+      //      ^^^^^
+      // - `({async * key(){}})`
+      //      ^^^^^
+      // - `({key: a.b} = c)`
+      //      ^^^
 
-      // - `{key:expr}`
-      //     ^
-      // - `{ident,}`
-      // - `{ident,}`
-      // - `{key(){}`
-      // - `{get key(){}`
-      // - `{set key(){}`
-      // - `{async key(){}`
-      // - `{*key(){}`
-      // - `{async *key(){}`
-      // - `{async *ident(){}`
-      // - `{static static(){}`   (static is not a legal modifier in objlits)
-      // - `let {x:o.f=1}=a`      (member expressions are not legal in binding patterns, only assign patterns)
-      // - `({await})=>x`         (PIGGY_BACK_SAW_AWAIT)
-      // - `async({await})=>x`    (the error case which requires PIGGY_BACK_SAW_AWAIT)
-      // - `({yield})=>x`
-
-      destructible = parseObjectLikePartFromIdent(lexerFlags, $tp_startOfKey_start, $tp_startOfKey_stop, $tp_startOfKey_line, $tp_startOfKey_column, scoop, bindingType, exportedNames, exportedBindings, astProp);
+      return parseObjectPartFromIdent(lexerFlags, $tp_startOfKey_type, scoop, bindingType, exportedNames, exportedBindings, astProp);
     }
-    else if (isNumberStringToken($tp_startOfKey_type)) {
+
+    if ($tp_startOfKey_type === $PUNC_CURLY_CLOSE) {
+      // ` `({})`
+      //      ^
+      return MIGHT_DESTRUCT;
+    }
+
+    if (isNumberStringToken($tp_startOfKey_type)) {
       // Property names can also be strings and numbers but these cannot be shorthanded
       // Number/string keys can still destructure just fine (`({"foo": x} = y)`)
-      // - `{"foo": bar}`
-      //     ^
-      // - `{"foo"(){}}`
-      // - `({"foo": bar}) => x`
-      // - `{15: bar}`
-      // - `{15(){}}`
-      //     ^
-      // - `({15: bar}) => x`
 
-      let $tp_lit_type = tok_getType();
-      let $tp_lit_line = tok_getLine();
-      let $tp_lit_column = tok_getColumn();
-      let $tp_lit_start = tok_getStart();
-      let $tp_lit_stop = tok_getStop();
-      let $tp_lit_canon = tok_getCanoN();
+      // - `({"key": expr})`
+      //      ^^^^^
+      // - `({"key"(){}})`
+      //      ^^^^^
+      // - `({"key": a.b} = c)`
+      //      ^^^^^
 
-      ASSERT_skipToColonParenOpen(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
+      // - `({123: expr})`
+      //      ^^^
+      // - `({123(){}})`
+      //      ^^^
+      // - `({123: a.b} = c)`
+      //      ^^^
 
-      if (tok_getType() === $PUNC_COLON) {
-        // Any key-colon combo is destructible, the "value" determines assign/binding/both destructibility:
-        // - `{key: ident}`
-        //        ^
-        // - `{300: x}`
-        // - `{"foo": x}`
-        // - `{key: expr.ident}`
-        // - `{key: member[expr]}`
-        // - `{key: <array destruct>}`
-        // - `{key: <object destruct>}`
-        // - `{key: expr = init}`          // destructibility depends on expr
+      // Note: this path can not parse getters/setters/async/generator because the first token of the property head
+      // was already the literal and these modifiers must precede the id.
 
-        // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
-        // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
-        if (options_webCompat === WEB_COMPAT_ON) {
-          if (tok_sliceInput($tp_lit_start + 1, $tp_lit_stop - 1) === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
-        }
-
-        destructible |= parseObjectPropertyValueAfterColon(
-          lexerFlags,
-          $tp_startOfKey_start,
-          $tp_startOfKey_line,
-          $tp_startOfKey_column,
-          $tp_lit_type,
-          $tp_lit_start,
-          $tp_lit_stop,
-          $tp_lit_line,
-          $tp_lit_column,
-          $tp_lit_canon,
-          bindingType,
-          assignableForPiggies,
-          destructible,
-          scoop,
-          exportedNames,
-          exportedBindings,
-          astProp
-        );
-        ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
-      }
-      else if (tok_getType() === $PUNC_PAREN_OPEN) {
-        // Method shorthand
-        // - `{5(){}}`
-        // - `{'foo'(){}}`
-        AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
-
-        parseObjectLikeMethodAfterKey(lexerFlags, false, $UNTYPED, $tp_lit_start, $tp_lit_line, $tp_lit_column, astProp);
-
-        destructible |= CANT_DESTRUCT;
-      }
-      else {
-        return THROW_RANGE('Object literal keys that are strings or numbers must be a method or have a colon', tok_getStart(), tok_getStop());
-      }
-
-      ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the expression');
+      return parseObjectPartFromLiteral(lexerFlags, scoop, exportedNames, exportedBindings, bindingType, astProp);
     }
-    else if ($tp_startOfKey_type === $PUNC_DOT_DOT_DOT) {
-      if (targetEsVersion < VERSION_OBJECTSPREAD && targetEsVersion !== VERSION_WHATEVER) {
-        return THROW_RANGE('Object spread/rest requires the requested version to be ES9+', tok_getStart(), tok_getStop());
-      }
-      // rest/spread (supported in objects since es9)
-      // unlike arrays it can appear in any property index in an object
-      // note that an object spread, if the last element, CAN have a trailing comma
-      // if binding, if spread arg is not array/object/ident then it is not destructible
-      // if not binding, it is also destructible if arg is member expression
-      // - ({...x});                  (this is valid)
-      // - ({...x=y});                (spread wraps the assignment (!))
-      // - ({...x+=y});               (spread wraps the assignment (!))
-      // - ({...x+y});                (spread wraps any expression)
-      // - ({...x, y});               (spread does not need to be last)
-      // - ({...x, ...y});            (spread can appear more than once)
-      // - ({...x}) => x
-      // - ({x, ...y}) => x
-      // - ({...x.y} = z)             (ok)
-      // - ({...x.y}) => z            (bad)
-      // - ({...x.y} = z) => z        (bad)
-      // - (z = {...x.y}) => z        (ok)
-      // - (z = {...x.y} = z) => z    (ok)
-      let subDestruct = parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_CURLY_CLOSE, bindingType, $UNTYPED, exportedNames, exportedBindings, astProp);
-      ASSERT(typeof subDestruct === 'number', 'should be number');
-      destructible |= subDestruct;
-      ASSERT(tok_getType() === $EOF || (tok_getType() !== $PUNC_COMMA || hasAllFlags(subDestruct, CANT_DESTRUCT)), 'if comma then cannot destruct, should be dealt with in function');
-      ASSERT(tok_getType() === $EOF || (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE), 'abstraction should parse whole rest/spread goal; ');
+
+    if ($tp_startOfKey_type === $PUNC_BRACKET_OPEN) {
+      // - `({[key]: expr})`
+      //      ^^^^^
+      // - `({[key](){}})`
+      //      ^^^^^
+      // - `({[key]: a.b} = c)`
+      //      ^^^^^
+
+      // Note: this path can not parse getters/setters/async/generator because the first token of the property head
+      // was already the literal and these modifiers must precede the id.
+
+      return parseObjectPartFromComputed(lexerFlags, scoop, exportedNames, exportedBindings, bindingType, astProp);
     }
-    else if ($tp_startOfKey_type === $PUNC_BRACKET_OPEN) {
-      // computed property (is valid in destructuring assignment!)
-      // - `({[foo]: x} = y)`
-      // - `({[foo]() {}} = y)`            fail
-      // - `const {[x]: y} = z;`
-      // - `({[x]: y}) => z;`
-      // - `function f({[x]: {y = z}}) {}`
 
-      let $tp_curly_line = tok_getLine();
-      let $tp_curly_column = tok_getColumn();
-      let $tp_curly_start = tok_getStart();
-
-      // skip computed key part first because we need to figure out whether we're parsing a method
-      ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-      let nowAssignable = parseExpression(lexerFlags, astProp);
-      // pass yield/await flags here (note that the assignability itself is irrelevant for this expr)
-      // TODO: find a testcase where the setNotAssignable state fails...
-      assignableForPiggies = setNotAssignable(nowAssignable | assignableForPiggies);
-      if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-        return THROW_RANGE('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-      }
-      ASSERT_skipToColonParenOpen($PUNC_BRACKET_CLOSE, lexerFlags);
-
-      if (tok_getType() === $PUNC_COLON) {
-        // Computed keys do not affect destructibility
-        // - `({[foo]: bar} = baz)`
-        // - `({[foo]: bar()} = baz)`
-        // - `({[foo]: a + b} = baz)`
-        // - `({[foo]: bar}) => baz`
-        // - `({[foo]: bar()}) => baz`
-        // - `({[foo]: a + b}) => baz`
-        // - `let {[foo]: bar} = baz`
-        // - `let {[foo]: bar()} = baz`
-        // - `let {[foo]: a + b} = baz`
-        // - `let {[foo]: [bar]} = baz`
-        // - `[a, {[b]:d}, c] = obj`
-        // - `function f({[x]: {y = z}}) {}`
-
-        if (babelCompat) {
-          AST_wrapClosedCustom(astProp, {
-            type: NODE_NAME_PROPERTY,
-            loc: undefined,
-            key: undefined,
-            method: false,
-            computed: true,
-            value: undefined,
-            shorthand: false,
-          }, 'key');
-        } else {
-          AST_wrapClosedCustom(astProp, {
-            type: NODE_NAME_PROPERTY,
-            loc: undefined,
-            key: undefined,
-            kind: 'init',
-            method: false,
-            computed: true,
-            value: undefined,
-            shorthand: false,
-          }, 'key');
-        }
-
-        ASSERT_skipToExpressionStart(':', lexerFlags); // skip after so the end-column is correct
-        destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $UNTYPED, bindingType, IS_ASSIGNABLE, destructible, scoop, UNDEF_EXPORTS, UNDEF_EXPORTS);
-        AST_close($tp_startOfKey_start, $tp_startOfKey_line, $tp_startOfKey_column, NODE_NAME_PROPERTY);
-      }
-      else if (tok_getType() === $PUNC_PAREN_OPEN) {
-        // [x]: `async function f(){    async function f(){   (a= {[await foo](){}, "x"(){}} ) => a    }    }`
-        // [v]: `({[x](){}});`
-        // [x]: `({[x](){}} = z);`
-        // [v]: `wrap({get [foo](){}, [bar](){}});`
-        // [v]: `wrap({[foo](){}, get [bar](){}});`
-        // [v]: `wrap({set [foo](c){}, [bar](){}});`
-        // [v]: `wrap({[foo](){}, set [bar](e){}});`
-        // [x]: `({[foo]() {}} = y)`
-        parseObjectLikeMethodAfterKey(lexerFlags, true, $UNTYPED, $tp_curly_start, $tp_curly_line, $tp_curly_column, astProp);
-
-        destructible |= CANT_DESTRUCT;
-      }
-      else {
-        // - `{[foo] * 5}`
-        return THROW_RANGE('A computed property name must be followed by a colon or paren', tok_getStart(), tok_getStop());
-      }
+    if ($tp_startOfKey_type === $PUNC_DOT_DOT_DOT) {
+      // - `({...key})`
+      //      ^^^
+      // - `({...key}) => x`
+      //      ^^^
+      // - `({...key = x})`
+      //      ^^^
+      // - `({...key.prop} = x)`
+      //      ^^^
+      return parseObjectRestSpread(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
     }
-    else if ($tp_startOfKey_type === $PUNC_STAR) {
+
+    if ($tp_startOfKey_type === $PUNC_STAR) {
       // Generator shorthand method (invalid for bindings), the next token must be the id
 
       // - `{*ident(){}} = x`
@@ -10697,104 +10570,966 @@ function Parser(code, options = {}) {
       // - `{*15(){}} = x`
       // - `{*[expr](){}} = x`
 
-      destructible |= CANT_DESTRUCT;
+      ASSERT_skipAny('*', lexerFlags);
 
-      let $tp_star_type = tok_getType();
-      let $tp_star_line = tok_getLine();
-      let $tp_star_column = tok_getColumn();
-      let $tp_star_start = tok_getStart();
-      let $tp_star_stop = tok_getStop();
-
-      ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
-
-      if (isIdentToken(tok_getType())) {
-        // - `({*ident(){}})`
-
-        let $tp_ident_line = tok_getLine();
-        let $tp_ident_column = tok_getColumn();
-        let $tp_ident_start = tok_getStart();
-        let $tp_ident_stop = tok_getStop();
-        let $tp_ident_canon = tok_getCanoN();
-
-        ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-
-        // - `({*ident(){}})`
-        // - `({*get(){}})`       // ok (not a getter!)
-        // - `({*set(){}})`       // ok (not a setter!)
-        // - `({*async(){}})`     // NOT an async generator! it's a generator
-        AST_setIdent(astProp, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
-
-        parseObjectLikeMethodAfterKey(lexerFlags, false, $PUNC_STAR, $tp_star_stop, $tp_star_line, $tp_star_column, astProp);
-      }
-      else if (isNumberStringToken(tok_getType())) {
-        // - `({*"str"(){}})`
-        // - `({*15(){}})`
-
-        let $tp_lit_type = tok_getType();
-        let $tp_lit_line = tok_getLine();
-        let $tp_lit_column = tok_getColumn();
-        let $tp_lit_start = tok_getStart();
-        let $tp_lit_stop = tok_getStop();
-        let $tp_lit_canon = tok_getCanoN();
-
-        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
-
-        AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
-
-        parseObjectLikeMethodAfterKey(lexerFlags, false, $PUNC_STAR, $tp_star_stop, $tp_star_line, $tp_star_column, astProp);
-      }
-      else if (tok_getType() === $PUNC_BRACKET_OPEN) {
-        // - `{*[expr](){}} = x`
-
-        let $tp_bracketOpen_line = tok_getLine();
-        let $tp_bracketOpen_column = tok_getColumn();
-        let $tp_bracketOpen_start = tok_getStart();
-
-        // skip dynamic part first because we need to assert that we're parsing a method
-        ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-        let assignablePiggies1 = parseExpression(lexerFlags, astProp);
-        if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-          return THROW_RANGE('Missing closing square bracket for computed property member name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-        }
-        ASSERT_skipToColonParenOpen($PUNC_BRACKET_CLOSE, lexerFlags);
-
-        let assignablePiggies2 = parseObjectMethod(
-          lexerFlags,
-          $UNTYPED, 0, 0, 0, 0,
-          $tp_star_type, $tp_star_start, $tp_star_stop, $tp_star_line, $tp_star_column,
-          0, 0, 0,
-          0, 0, 0,
-          $UNTYPED, 0, 0, 0,
-          $tp_bracketOpen_start,
-          $tp_bracketOpen_line,
-          $tp_bracketOpen_column,
-          astProp
-        );
-
-        assignableForPiggies = mergeAssignable(assignablePiggies1, assignableForPiggies);
-        assignableForPiggies = mergeAssignable(assignablePiggies2, assignableForPiggies);
-      }
-      else {
-        return THROW_RANGE('Invalid objlit key character after generator star', tok_getStart(), tok_getStop());
-      }
-      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct can not have an init');
-    }
-    else {
-      // ({<?>
-      return THROW_RANGE('Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
+      return parseObjectMethodFromKey(lexerFlags, $tp_startOfKey_start, $tp_startOfKey_line, $tp_startOfKey_column, 'init', true, $UNTYPED, $PUNC_STAR, $UNTYPED, $UNTYPED, astProp);
     }
 
-    // pick up the flags from assignable and put them in destructible
-    // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
-    // - `function *g(){ (x = {[yield]: 1}) }`
-    // - `{ (x = {[yield]: 1}) }`
-    // - `s = {"foo": await = x} = x`
-    return copyPiggies(destructible, assignableForPiggies);
+    // ({<?>
+    return THROW_RANGE('Unexpected token, wanted to parse a start of a property in an object literal/pattern, got `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
   }
+  function parseObjectMethodFromKey(lexerFlags, $tp_startOfProp_start, $tp_startOfProp_line, $tp_startOfProp_column, kind, isRealMethod, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, astProp) {
+    ASSERT(parseObjectMethodFromKey.length === arguments.length, 'arg count');
+
+    // Parse a key (ident, string, number, computed) and then the method from params
+    // Note: this path is taken when we already know it _must_ be a method, so a modifier was parsed already
+
+    // - `({get key(){})`
+    //          ^^^
+    // - `({set 577(x){})`
+    //          ^^^
+    // - `({* "key"(){})`
+    //        ^^^^^
+    // - `({async * [key](){})`
+    //              ^
+
+    // To be clear, keyStart !== startOfProp
+    let $tp_keyStart_type = tok_getType();
+    let $tp_keyStart_line = tok_getLine();
+    let $tp_keyStart_column = tok_getColumn();
+    let $tp_keyStart_start = tok_getStart();
+    let $tp_keyStart_stop = tok_getStop();
+    let $tp_keyStart_canon = tok_getCanoN();
+
+    if (isIdentToken($tp_keyStart_type)) {
+      // - `({get key(){})`
+      //          ^^^
+
+      ASSERT_skipAny($G_IDENT, lexerFlags); // regex irrelevant because div must lead to an error
+
+      AST_setIdent(astProp, $tp_keyStart_start, $tp_keyStart_stop, $tp_keyStart_line, $tp_keyStart_column, $tp_keyStart_canon);
+
+      if (tok_getType() !== $PUNC_PAREN_OPEN) {
+        return THROW_RANGE('Expected to parse an opening paren, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop())
+      }
+
+      return parseObjectMethod(lexerFlags, $tp_startOfProp_start, $tp_startOfProp_line, $tp_startOfProp_column, kind, false, isRealMethod, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, astProp)
+    }
+
+    if (isNumberStringToken($tp_keyStart_type)) {
+      // - `({set 577(x){})`
+      //          ^^^
+      // - `({* "key"(){})`
+      //        ^^^^^
+
+      ASSERT_skipAny(isNumberToken($tp_keyStart_type) ? $G_NUMBER : $G_STRING, lexerFlags); // regex irrelevant because div must lead to an error
+
+      AST_setLiteral(astProp, $tp_keyStart_type, $tp_keyStart_start, $tp_keyStart_stop, $tp_keyStart_line, $tp_keyStart_column, $tp_keyStart_canon);
+
+      if (tok_getType() !== $PUNC_PAREN_OPEN) {
+        return THROW_RANGE('Expected to parse an opening paren, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop())
+      }
+
+      return parseObjectMethod(lexerFlags, $tp_startOfProp_start, $tp_startOfProp_line, $tp_startOfProp_column, kind, false, isRealMethod, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, astProp)
+    }
+
+    if ($tp_keyStart_type === $PUNC_BRACKET_OPEN) {
+      // - `({async * [key](){})`
+      //              ^
+
+      ASSERT_skipRex('[', lexerFlags); // Regex _is_ relevant because `({get [/foo/](){})` is legit
+      parseExpression(lexerFlags, astProp);
+      if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+        return THROW_RANGE('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop())
+      }
+      ASSERT_skipAny(']', lexerFlags); // Regex irrelevant because div must lead to an error
+
+      if (tok_getType() !== $PUNC_PAREN_OPEN) {
+        return THROW_RANGE('Expected to parse an opening paren, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop())
+      }
+
+      return parseObjectMethod(lexerFlags, $tp_startOfProp_start, $tp_startOfProp_line, $tp_startOfProp_column, kind, true, isRealMethod, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, astProp)
+    }
+
+    // [x]: `({set * bar(x){})`
+    //             ^
+    THROW_RANGE('Expected to parse an object method key, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+  }
+  function parseObjectPartFromIdent(lexerFlags, $tp_propLeadingIdent_type, scoop, bindingType, exportedNames, exportedBindings, astProp) {
+    ASSERT(parseObjectPartFromIdent.length === arguments.length, 'arg count');
+    ASSERT(isIdentToken(tok_getType()), 'should be at ident');
+    ASSERT(typeof astProp === 'string', 'astprop string');
+
+    // - `{ident,}`
+    // - `{ident,}`
+    // - `{key(){}`
+    // - `{get key(){}`
+    // - `{set key(){}`
+    // - `{async key(){}`
+    // - `{*key(){}`
+    // - `{async *key(){}`
+    // - `{async *ident(){}`
+    // - `{static static(){}`   (static is not a legal modifier in objlits)
+    // - `let {x:o.f=1}=a`      (member expressions are not legal in binding patterns, only assign patterns)
+    // - `({await})=>x`         (PIGGY_BACK_SAW_AWAIT)
+    // - `async({await})=>x`    (the error case which requires PIGGY_BACK_SAW_AWAIT)
+    // - `({yield})=>x`
+
+    ASSERT(tok_getType() === $tp_propLeadingIdent_type, 'should be curtok');
+    let $tp_propLeadingIdent_line = tok_getLine();
+    let $tp_propLeadingIdent_column = tok_getColumn();
+    let $tp_propLeadingIdent_start = tok_getStart();
+    let $tp_propLeadingIdent_stop = tok_getStop();
+    let $tp_propLeadingIdent_canon = tok_getCanoN();
+
+    ASSERT_skipAny($G_IDENT, lexerFlags);
+
+    let $tp_afterIdent_type = tok_getType();
+
+    if ($tp_afterIdent_type === $PUNC_COLON) {
+      // Regular property key
+      // - `({ ident: x })`
+      //            ^
+
+      AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
+
+      let destructible = MIGHT_DESTRUCT;
+      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
+        destructible = PIGGY_BACK_WAS_PROTO;
+      }
+
+      return destructible | parseObjectPropertyFromColon(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, scoop, exportedNames, exportedBindings, bindingType, false, astProp);
+    }
+
+    if ($tp_afterIdent_type === $PUNC_PAREN_OPEN) {
+      // Regular object method without modifiers
+      // - `({ ident() { } })`
+      //            ^
+
+      AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
+
+      let destructible = MIGHT_DESTRUCT;
+      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
+        destructible = PIGGY_BACK_WAS_PROTO;
+      }
+
+      return destructible | parseObjectMethod(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'init', false, true, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp)
+    }
+
+    if ($tp_afterIdent_type === $PUNC_COMMA || $tp_afterIdent_type === $PUNC_CURLY_CLOSE) {
+      // Property shorthand without init
+      // - `({ a, b: x })`
+      //        ^
+      // - `({ ident })`
+      //             ^
+      // - `(x = {eval})`
+      // - `({eval} = x)`
+
+      let destructible = MIGHT_DESTRUCT;
+      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
+        destructible = PIGGY_BACK_WAS_PROTO;
+      }
+
+      return destructible | parseObjectShorthand(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
+    }
+
+    if ($tp_afterIdent_type === $PUNC_EQ) {
+      // Property shorthand with initializer, must be pattern (because of the init)
+      // - `({ident = x} = y)`
+      //            ^
+
+      let destructible = MIGHT_DESTRUCT;
+      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
+        destructible = PIGGY_BACK_WAS_PROTO;
+      }
+
+      return destructible | parseObjectShorthandWithInit(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
+    }
+
+    // Must be parsing some form of object method WITH modifier now
+
+    if ($tp_propLeadingIdent_type === $ID_async) {
+      // - `({ async x() {} })`
+      // - `({ async *x() {} })`
+      // - `({ async 500() {} })`
+      // - `({ async "str"() {} })`
+      // - `({ async [foo]() {} })`
+
+      if (!allowAsyncFunctions) {
+        return THROW_RANGE('Async functions are not supported in the currently targeted language version', $tp_propLeadingIdent_start, tok_getStop());
+      }
+
+      // Note: `{async\n(){}}` is legal in sloppy so we do have to check the paren
+      if (tok_getNlwas() === true) {
+        // - `({async \n key(){}})`
+        //              ^
+        // Always an error due to async being a restricted production
+        return THROW_RANGE('Async methods are a restricted production and cannot have a newline following it', $tp_propLeadingIdent_start, tok_getStart());
+      }
+
+      if (tok_getType() === $PUNC_STAR) {
+        if (!allowAsyncGenerators) {
+          return THROW_RANGE('Async generator methods are not supported in the currently targeted language version', $tp_propLeadingIdent_start, tok_getStop());
+        }
+
+        ASSERT_skipAny('*', lexerFlags);
+
+        return parseObjectMethodFromKey(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'init', true, $ID_async, $PUNC_STAR, $UNTYPED, $UNTYPED, astProp);
+      }
+
+      return parseObjectMethodFromKey(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'init', true, $ID_async, $UNTYPED, $UNTYPED, $UNTYPED, astProp);
+    }
+
+    if ($tp_propLeadingIdent_type === $ID_get) {
+      // - `({ get x() {} })`
+      // - `({ get 500() {} })`
+      // - `({ get "str"() {} })`
+      // - `({ get [foo]() {} })`
+
+      return parseObjectMethodFromKey(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'get', false, $UNTYPED, $UNTYPED, $ID_get, $UNTYPED, astProp);
+    }
+
+    if ($tp_propLeadingIdent_type === $ID_set) {
+      // - `({ set x(a) {} })`
+      // - `({ set 500(b) {} })`
+      // - `({ set "str"(c) {} })`
+      // - `({ set [foo](d) {} })`
+
+      return parseObjectMethodFromKey(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'set', false, $UNTYPED, $UNTYPED, $UNTYPED, $ID_set, astProp);
+    }
+
+    if ($tp_propLeadingIdent_type === $ID_static) {
+      return THROW_RANGE('Object members can not be "static"', $tp_propLeadingIdent_start, tok_getStop());
+    }
+
+    // [x]: `({foo += bar})`
+    return THROW_RANGE('Unexpected token `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` after start of property `' + $tp_propLeadingIdent_canon + '` while trying to parse an object property/method', $tp_propLeadingIdent_start, tok_getStop());
+  }
+  function parseObjectPropertyFromColon(lexerFlags, $tp_startOfKey_start, $tp_startOfKey_line, $tp_startOfKey_column, scoop, exportedNames, exportedBindings, bindingType, isComputed, astProp) {
+    ASSERT(parseObjectPropertyFromColon.length === arguments.length, 'arg count');
+    ASSERT(tok_getType() === $PUNC_COLON);
+
+    // - `o = {x: foo}`
+    //          ^
+
+    ASSERT_skipRex(':', lexerFlags); // `({x: /foo/})`
+
+    if (babelCompat) {
+      AST_wrapClosedCustom(astProp, {
+        type: NODE_NAME_PROPERTY,
+        loc: undefined,
+        key: undefined,
+        method: false,
+        computed: isComputed,
+        value: undefined,
+        shorthand: false,
+      }, 'key');
+    } else {
+      AST_wrapClosedCustom(astProp, {
+        type: NODE_NAME_PROPERTY,
+        loc: undefined,
+        key: undefined,
+        kind: 'init',
+        method: false,
+        computed: isComputed,
+        value: undefined,
+        shorthand: false,
+      }, 'key');
+    }
+
+    let destructible = _parseObjectPropertyFromColon(lexerFlags, scoop, exportedNames, exportedBindings, bindingType);
+
+    AST_close($tp_startOfKey_start, $tp_startOfKey_line, $tp_startOfKey_column, NODE_NAME_PROPERTY);
+
+    return destructible;
+  }
+  function _parseObjectPropertyFromColon(lexerFlags, scoop, exportedNames, exportedBindings, bindingType) {
+    ASSERT(_parseObjectPropertyFromColon.length === arguments.length, 'arg count');
+
+    if (isIdentToken(tok_getType())) {
+      // - `o = {x: foo}`
+      //            ^^^
+      return parseObjectPropertyValueFromIdent(lexerFlags, scoop, exportedNames, exportedBindings, bindingType);
+    }
+
+    let $tp_start_line = tok_getLine();
+    let $tp_start_column = tok_getColumn();
+    let $tp_start_start = tok_getStart();
+    let $tp_start_stop = tok_getStop();
+
+    if (tok_getType() === $PUNC_CURLY_OPEN) {
+      // [v]: `({a: {b} = 0})`
+      //            ^
+      // [v]: `({a: {b: c} = 0})`
+      // [v]: `({a: {a: b.x} = 0})`
+      // [v]: `({a: {b} = 0}) => x`
+      // [v]: `({a: {b: c} = 0}) => x`
+      // [x]: `({a: {a: b.x} = 0}) => x`
+
+      let destructible = parseObjectOuter(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
+      let objAssignable = (destructible & CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
+
+      if (tok_getType() === $PUNC_EQ) {
+        // [v]: `({a: [b] = c})`
+        //                ^
+        // [v]: `({a: [b] = c} = d)`
+        //                ^
+        // [v]: `({a: [b] = c}) => d`
+        //                ^
+        let exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, objAssignable, 'value');
+        return copyPiggies(destructible, exprAssignable);
+      }
+
+      if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE) {
+        // [v]: `({a: [b]})`
+        //               ^
+        // [v]: `({a: [b], c})`
+        //               ^
+        return destructible;
+      }
+
+      if (MUST_DESTRUCT & destructible) {
+        // [x]: `({a:{x = y}.z} = x);`
+        //                   ^
+        //           ^^^^^^^ because a shorthand with init must be a pattern
+        return THROW_RANGE('Object pattern contained parts cause it not to be valid as a regular object literal so the next token `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` is illegal', tok_getStart(), tok_getStop());
+      }
+
+      // Value must have a tail and it is not (immediately) an assignment. At this point, only assign or cant destruct.
+      let exprAssignable = parseValueTail(lexerFlags, $tp_start_start, $tp_start_line, $tp_start_column, objAssignable, NOT_NEW_ARG, NOT_LHSE, 'value');
+      let wasAssignment = tok_getType() === $PUNC_EQ; // An assignment is destructible
+      exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, exprAssignable, 'value');
+
+      if (wasAssignment || isAssignable(exprAssignable)) {
+        return copyPiggies(DESTRUCT_ASSIGN_ONLY, exprAssignable);
+      }
+
+      return copyPiggies(CANT_DESTRUCT, exprAssignable);
+    }
+
+    if (tok_getType() === $PUNC_BRACKET_OPEN) {
+      // [v]: `({a: [b] = 0})`
+      //            ^
+      // [v]: `({a: [b.x] = 0})`
+      // [v]: `({a: [b] = 0}) => x`
+      // [v]: `({a: [b.x] = 0}) => x`
+
+      let destructible = parseArrayOuter(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
+      let objAssignable = (destructible & CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
+
+      if (tok_getType() === $PUNC_EQ) {
+        // [v]: `({[b] = c})`
+        //             ^
+        // [v]: `({[b] = c} = d)`
+        //             ^
+        // [v]: `({[b] = c}) => d`
+        //             ^
+        let exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, objAssignable, 'value');
+        return copyPiggies(destructible, exprAssignable);
+      }
+
+      if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE) {
+        // [v]: `({[b]}})`
+        //            ^
+        // [v]: `({[b], x})`
+        //            ^
+        return destructible;
+      }
+
+      if (MUST_DESTRUCT & destructible) {
+        // [x]: `[{a = b}].x`
+        //                ^
+        //        ^^^^^^^ because the nested object must be a pattern
+        return THROW_RANGE('Object pattern contained parts cause it not to be valid as a regular object literal so the next token `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` is illegal', tok_getStart(), tok_getStop());
+      }
+
+      // Value must have a tail and it is not (immediately) an assignment. At this point, only assign or cant destruct.
+      let exprAssignable = parseValueTail(lexerFlags, $tp_start_start, $tp_start_line, $tp_start_column, objAssignable, NOT_NEW_ARG, NOT_LHSE, 'value');
+      let wasAssignment = tok_getType() === $PUNC_EQ; // An assignment is destructible
+      exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, exprAssignable, 'value');
+
+      if (wasAssignment || isAssignable(exprAssignable)) {
+        return copyPiggies(DESTRUCT_ASSIGN_ONLY, exprAssignable);
+      }
+
+      return copyPiggies(CANT_DESTRUCT, exprAssignable);
+    }
+
+    // A value that starts with anything except an ident cannot be a binding pattern but could still be an assignment
+    // pattern (like `o = {x: "foo".bar}`).
+
+    // Parse value but not the assignment
+    // Remember; this value did not start with an ident!
+
+    // [v]: `({a: (b) = 0})`
+    //            ^
+    // [v]: `({a: (b.x) = 0})`
+    // [v]: `({a: (b) = 0} = 1)`
+    // [v]: `({a: (b.x) = 0} = 1)`
+    // [x]: `({a: (b) = 0} = 1) => x`
+    // [x]: `({a: (b.x) = 0} = 1) => x`
+
+    let valueAssignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, 'value');
+
+    // Whatever the value, it may have a tail (like a property or call) which we must validate first
+
+    let wasAssignment = tok_getType() === $PUNC_EQ; // An assignment is destructible
+
+    valueAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, valueAssignable, 'value');
+
+    // At this point, an assignment implies the whole thing can at best be a destruct assignment (but no longer
+    // an arrow for example). If it wasn't an assignment and it wasn't assignable, then it's also not destructible.
+
+    if (wasAssignment || isAssignable(valueAssignable)) {
+      return copyPiggies(DESTRUCT_ASSIGN_ONLY, valueAssignable);
+    }
+
+    return copyPiggies(CANT_DESTRUCT, valueAssignable);
+  }
+  function parseObjectPropertyValueFromIdent(lexerFlags, scoop, exportedNames, exportedBindings, bindingType) {
+    ASSERT(parseObjectPropertyValueFromIdent.length === arguments.length, 'arg count');
+
+    // - `{ident: ident}`
+    //            ^
+    // - `{12: ident ...`
+    // - `{"foo": ident ...`
+    // - `{key: ident,...}`
+    // - `{key: ident.ident} = x`
+    // - `{key: ident = ...}`
+    // - `{key: ident + rest`        // not destructible, so confirm token after ident
+    // - `{key: yield}`
+    // - `{key: yield foo}`
+    // - `{key: new}`                // error
+    // - `{key: new foo}`            // not destructible
+    // - `{key: true}`
+    // - `{key: yield / bar}
+    // - `{key: await foo}
+
+    // property value or label, some are destructible, trailing commas can be significant:
+    //                                      literal, assign pattern, binding pattern
+    // - `({ident: ident,})`                [v]      [v]             [v]
+    // - `({ident: (ident)})`               [v]      [v]             [ ]
+    // - `({ident: a.b}`                    [v]      [v]             [ ]
+    // - `({ident: a[b]}`                   [v]      [v]             [ ]
+    // - `({ident: a(b)}`                   [v]      [ ]             [ ]
+    // - `({ident: a`b`}`                   [v]      [ ]             [ ]
+    // - `({ident: [],}`                    [v]      [v]             [v]
+    // - `({ident: {},}`                    [v]      [v]             [v]
+    // - `({ident: ident = expr}`           [v]      [v]             [v]
+    // - `({ident: (ident) = expr}`         [v]      [v]             [ ]
+    // - `({ident: a.b = expr}`             [v]      [v]             [ ]
+    // - `({ident: a[b] = expr}`            [v]      [v]             [ ]
+    // - `({ident: a(b) = expr}`            [v]      [ ]             [ ]
+    // - `({ident: a`b` = expr}`            [v]      [ ]             [ ]
+    // - `({ident: [] = expr,}`             [v]      [v]             [v]
+    // - `({ident: {} = expr,}`             [v]      [v]             [v]
+    // anything else as value is non-destructible
+
+    // use the rhs of the colon as $tt_identToken now
+
+    let $tp_ident_type = tok_getType();
+    let $tp_ident_line = tok_getLine();
+    let $tp_ident_column = tok_getColumn();
+    let $tp_ident_start = tok_getStart();
+    let $tp_ident_stop = tok_getStop();
+    let $tp_ident_canon = tok_getCanoN();
+
+    // - `{key: bar}`
+    //          ^
+    // - `{key: bar/x`
+    // - `{key: delete a.b`
+    // - `{key: await /foo}`
+    // - `{key: await /foo/}`
+    // - `{key: await /foo/g}`
+
+    // Always skips _one_ token. Properly deals with div/rex
+    // Even if this is followed by comma or curly we still need to verify stuff like `{x: true}` and `{x: typeof}`
+    skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE);
+
+    // - `o = {key: bar = x}`
+    //                  ^
+    // - `o = {key: bar + x}`            // literal only
+    //                  ^
+    // - `o = {key: bar + x = y}`        // error
+    // - `o = {key: bar.foo = x}`        // literal or assignment pattern (but not binding)
+    //                 ^
+    // - `o = {key: bar.foo + x}`        // literal only
+    // - `o = {key: bar.foo + x = y}`    // error
+    // part delimiters; comma, curly close
+
+    // Now first validate the `{key: ident}` cases, which can lead to simple patterns cases
+
+    let $tp_afterExpr_type = tok_getType();
+
+    if ($tp_afterExpr_type === $PUNC_COMMA || $tp_afterExpr_type === $PUNC_CURLY_CLOSE) {
+      // Note: only one token was skipped and that token was an ident. I would guess this is the most common case.
+      // - `o = {key: bar}`
+      //                 ^
+      // - `o = {key: bar, y}`
+      //                 ^
+      // - `o = {a: b} = d`
+      //             ^
+
+      let assignableOrErrorMsg = nonFatalBindingIdentCheck($tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType, lexerFlags);
+      ASSERT(typeof assignableOrErrorMsg === 'string', 'func should always return string');
+
+      if (assignableOrErrorMsg.length !== 0) {
+        // This was a keyword of sorts. It may still be valid (like `eval` or `true`) or it may be a syntax error like
+        // `typeof` or `function`. We "lazily" call the value parser to let that decide. It's a little overhead.
+
+        let valueAssignable = parseValueAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
+
+        return copyPiggies(CANT_DESTRUCT, valueAssignable);
+      }
+
+      AST_setIdent('value', $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
+
+      // Since this was an assignable identifier, it should be fine to be a pattern and since we've already asserted
+      // the next token to be a comma or curly, this should be legal and the end of the property.
+
+      SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType);
+      // If this is not an export declaration, the calls below will be noops
+      addNameToExports(exportedNames, $tp_ident_start, $tp_ident_stop, $tp_ident_canon);
+      addBindingToExports(exportedBindings, $tp_ident_canon);
+
+      // As it stands we don't care about `yield` or `await` as a keyword, so don't care about those piggies.
+      // Also the constructor, proto, and arrow piggies are not relevant here.
+      // Always destructible
+      return MIGHT_DESTRUCT;
+    }
+
+    if ($tp_afterExpr_type === $PUNC_EQ) {
+      // `x = {x: a}`
+      //           ^
+      // Property with a value of a single ident followed by `=`
+      // This case is valid if and only if the value was assignable.
+
+      let assignableOrErrorMsg = nonFatalBindingIdentCheck($tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType, lexerFlags);
+      ASSERT(typeof assignableOrErrorMsg === 'string', 'func should always return string');
+
+      if (assignableOrErrorMsg.length !== 0) {
+        // - `o = {key: true = a}`
+        //                   ^
+        // - `o = {key: typeof = a}`
+        //                     ^
+        // - `o = {key: eval = a}`
+        //                   ^
+        return THROW_RANGE('The lhs was not assignable so this is an error', $tp_ident_start, tok_getStop());
+      }
+
+      // Since this was an assignable identifier, it should be fine to be a pattern and since we've already asserted
+      // the next token to be the equal sign, this should be a legal end of an assignment expression, maybe pattern.
+
+      SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType);
+      // If this is not an export declaration, the calls below will be noops
+      addNameToExports(exportedNames, $tp_ident_start, $tp_ident_stop, $tp_ident_canon);
+      addBindingToExports(exportedBindings, $tp_ident_canon);
+
+      AST_setIdent('value', $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
+
+      let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, IS_ASSIGNABLE, 'value');
+
+      // As it stands we don't care about `yield` or `await` as a keyword, so don't care about those piggies.
+      // Also the constructor, proto, and arrow piggies are not relevant here.
+      // - `o = {key: bar = a}`
+      //                  ^
+      // Always destructible
+      return copyPiggies(MIGHT_DESTRUCT, rhsAssignable);
+    }
+
+    // This ident is not the end of the property value so it's not a simple binding pattern.
+    // It may still be an assignment expression, if the parsed value ends up being assignable.
+
+    let valueAssignable = parseValueAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
+
+    if (notAssignable(valueAssignable)) {
+      // [v]: `({foo: true / false});`
+      //                   ^
+
+      let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, valueAssignable, 'value');
+
+      return copyPiggies(CANT_DESTRUCT, rhsAssignable);
+    }
+
+    if ($tp_afterExpr_type === $PUNC_COMMA || $tp_afterExpr_type === $PUNC_CURLY_CLOSE) {
+      // [v]: `({foo: a.b});`
+      //                 ^
+      // [v]: `({foo: a.b, x});`
+      //                 ^
+
+      // Always assignment destructible iif assignable
+      // As it stands we don't care about `yield` or `await` as a keyword, so don't care about those piggies.
+      // Also the constructor, proto, and arrow piggies are not relevant here.
+      return copyPiggies(DESTRUCT_ASSIGN_ONLY, valueAssignable); // Example: `foo(yield x)` needs to propagate piggy
+    }
+
+    let wasAssign = tok_getType() === $PUNC_EQ;
+
+    let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, valueAssignable, 'value');
+
+    if (wasAssign || isAssignable(rhsAssignable)) {
+      return copyPiggies(DESTRUCT_ASSIGN_ONLY, rhsAssignable);
+    }
+
+    return copyPiggies(CANT_DESTRUCT, rhsAssignable);
+  }
+  function parseObjectShorthand(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp) {
+    ASSERT(parseObjectShorthand.length === arguments.length, 'arg count');
+    ASSERT(isIdentToken($tp_propLeadingIdent_type), 'only idents can be shorthand');
+    ASSERT(tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE);
+
+    // Property shorthand without init
+    // - `({ a, b: x })`
+    //        ^
+    // - `({ ident })`
+    //             ^
+    // - `({true})`           illegal
+    // - `({eval})`           ok as it is not a "reserved word"
+    // - `({eval} = x)`       illegal in strict mode
+    // - `({await})`          "depends"
+    // - `({await} = x)`      "depends"
+
+    // https://tc39.github.io/ecma262/#prod-ObjectLiteral
+    // https://tc39.github.io/ecma262/#prod-PropertyDefinitionList
+    // https://tc39.github.io/ecma262/#prod-PropertyDefinition
+    // https://tc39.github.io/ecma262/#prod-IdentifierReference
+    // https://tc39.github.io/ecma262/#prod-Identifier
+    // Identifier : IdentifierName but not ReservedWord
+
+    // ({eval});         // ok, even in strict
+    // ({eval} = x);     // bad in strict mode
+    // {{eval}) => x;    // bad in strict mode
+
+    // must throw for reserved words but binding check also checks for `eval`
+    // and `arguments` which are not reserved and which would be allowed here
+    // Since this is an assignment the `yield` and `await` checks are implicitly done when doing binding name checks
+    let report = nonFatalBindingIdentCheck($tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon, bindingType, lexerFlags);
+    // The `eval` and `arguments` idents are exceptions that we need to propagate back up before being able to determine
+    // their validity. This makes the difference between `({x}=y)` and `y={x}` work.
+    if (report.length > 0 && $tp_propLeadingIdent_type !== $ID_eval && $tp_propLeadingIdent_type !== $ID_arguments) {
+      return THROW_RANGE(report, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
+    }
+
+    // If this isn't a binding, this is a noop
+    // If this is inside a group, this is a noop if it turns out not to be an arrow
+    // TODO: add test case for catch shadow
+    SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon, bindingType);
+    // If this is not an export declaration, the calls below will be noops
+    addNameToExports(exportedNames, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon);
+    addBindingToExports(exportedBindings, $tp_propLeadingIdent_canon);
+
+    // AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
+
+    if (babelCompat) {
+      AST_open(astProp, {
+        type: NODE_NAME_PROPERTY,
+        loc: undefined,
+        key: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        method: false, // only the {x(){}} shorthand gets true here, this is {x}
+        computed: false,
+        value: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        shorthand: true,
+        extra: {shorthand: true},
+      });
+    } else {
+      AST_open(astProp, {
+        type: NODE_NAME_PROPERTY,
+        loc: undefined,
+        key: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        kind: 'init', // only getters/setters get special value here
+        method: false, // only the {x(){}} shorthand gets true here, this is {x}
+        computed: false,
+        value: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        shorthand: true,
+      });
+    }
+
+    AST_close($tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, NODE_NAME_PROPERTY);
+
+    if ($tp_propLeadingIdent_type === $ID_await) {
+      // Must be a var, but must also be valid as a var (that's checked above), and
+      // must also not be an async arrow parameter name (that's why we return the piggy)
+      // - `x = {await}`
+      // - `({await}) => x`
+      // - `async ({await}) => x`
+      // - `async ({await})`
+      return (report.length > 0 ? CANT_DESTRUCT : MIGHT_DESTRUCT) | PIGGY_BACK_SAW_AWAIT;
+    }
+
+    // In strict mode, this makes the difference between `(x = {eval})` and `({eval} = x)`
+    return report.length > 0 ? CANT_DESTRUCT : MIGHT_DESTRUCT; // No piggy
+  }
+  function parseObjectShorthandWithInit(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp) {
+    ASSERT(parseObjectShorthandWithInit.length === arguments.length, 'arg count');
+
+    // Property shorthand with initializer, must be pattern (because of the init)
+    // - `({ident = x} = y)`
+    //            ^
+    // - `({true = x} = y)`           illegal
+    // - `({eval = x} = y)`           ok as it is not a "reserved word"
+    // - `({await = x} = y)`          "depends"
+
+    // https://tc39.github.io/ecma262/#prod-ObjectLiteral
+    // https://tc39.github.io/ecma262/#prod-PropertyDefinitionList
+    // https://tc39.github.io/ecma262/#prod-PropertyDefinition
+    // https://tc39.github.io/ecma262/#prod-IdentifierReference
+    // https://tc39.github.io/ecma262/#prod-Identifier
+    // Identifier : IdentifierName but not ReservedWord
+
+    // ({eval = x});     // bad, missing assignment to pattern
+    // ({eval} = x);     // bad in strict mode
+    // {{eval}) => x;    // bad in strict mode
+
+    // must throw for reserved words but binding check also checks for `eval`
+    // and `arguments` which are not reserved and which would be allowed here
+    // Since this is an assignment the `yield` and `await` checks are implicitly done when doing binding name checks
+    fatalBindingIdentCheck($tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon, bindingType, lexerFlags);
+
+    // If this isn't a binding, this is a noop
+    // If this is inside a group, this is a noop if it turns out not to be an arrow
+    // TODO: add test case for catch shadow
+    SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon, bindingType);
+    // If this is not an export declaration, the calls below will be noops
+    addNameToExports(exportedNames, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon);
+    addBindingToExports(exportedBindings, $tp_propLeadingIdent_canon);
+
+    if (babelCompat) {
+      AST_open(astProp, {
+        type: NODE_NAME_PROPERTY,
+        loc: undefined,
+        key: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        method: false, // only the {x(){}} shorthand gets true here, this is {x}
+        computed: false,
+        value: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        shorthand: true,
+        extra: {shorthand: true},
+      });
+    } else {
+      AST_open(astProp, {
+        type: NODE_NAME_PROPERTY,
+        loc: undefined,
+        key: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        kind: 'init', // only getters/setters get special value here
+        method: false, // only the {x(){}} shorthand gets true here, this is {x}
+        computed: false,
+        value: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
+        shorthand: true,
+      });
+    }
+
+    AST_wrapClosedCustom('value', {
+      type: 'AssignmentExpression',
+      loc: undefined,
+      left: undefined,
+      operator: '=',
+      right: undefined,
+    }, 'left');
+    ASSERT_skipToExpressionStart('=', lexerFlags); // a forward slash after = has to be a regex
+
+    let nowAssignable = parseExpression(lexerFlags, 'right');
+
+    AST_close($tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'AssignmentExpression');
+
+    AST_close($tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, NODE_NAME_PROPERTY);
+
+    // - `({foo = 10})`
+    // the shorthand only forces MUST_DESTRUCT when an initializer follows it immediately
+    // (consider `({foo = 10})` vs `({foo: bar = 10})`)
+
+    if ($tp_propLeadingIdent_type === $ID_await) {
+      // Must be a var, but must also be valid as a var (that's checked above), and
+      // must also not be an async arrow parameter name (that's why we return the piggy)
+      // - `x = {await}`
+      // - `({await}) => x`
+      // - `async ({await}) => x`
+      // - `async ({await})`
+      return copyPiggies(MUST_DESTRUCT | PIGGY_BACK_SAW_AWAIT, nowAssignable);
+    }
+
+    return copyPiggies(MUST_DESTRUCT, nowAssignable);
+  }
+  function parseObjectPartFromLiteral(lexerFlags, scoop, exportedNames, exportedBindings, bindingType, astProp) {
+    ASSERT(parseObjectPartFromLiteral.length === arguments.length, 'arg count');
+
+    let $tp_lit_type = tok_getType();
+    let $tp_lit_line = tok_getLine();
+    let $tp_lit_column = tok_getColumn();
+    let $tp_lit_start = tok_getStart();
+    let $tp_lit_stop = tok_getStop();
+    let $tp_lit_canon = tok_getCanoN();
+
+    ASSERT_skipToColonParenOpen(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
+
+    AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
+
+    if (tok_getType() === $PUNC_COLON) {
+      // Any key-colon combo is destructible, the "value" determines assign/binding/both destructibility:
+      // - `{key: ident}`
+      //        ^
+      // - `{300: x}`
+      // - `{"foo": x}`
+      // - `{key: expr.ident}`
+      // - `{key: member[expr]}`
+      // - `{key: <array destruct>}`
+      // - `{key: <object destruct>}`
+      // - `{key: expr = init}`          // destructibility depends on expr
+
+      let destructible_forPiggies = MIGHT_DESTRUCT;
+
+      // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
+      if (options_webCompat === WEB_COMPAT_ON && $tp_lit_canon === '__proto__') {
+        destructible_forPiggies |= PIGGY_BACK_WAS_PROTO;
+      }
+
+      return destructible_forPiggies | parseObjectPropertyFromColon(lexerFlags, $tp_lit_start, $tp_lit_line, $tp_lit_column, scoop, exportedNames, exportedBindings, bindingType, false, astProp);
+    }
+
+    if (tok_getType() !== $PUNC_PAREN_OPEN) {
+      return THROW_RANGE('Object literal keys that are strings or numbers must be a method or have a colon', tok_getStart(), tok_getStop());
+    }
+
+    // Method shorthand
+    // - `{5(){}}`
+    // - `{'foo'(){}}`
+
+    // TODO: does this need the __proto__ check? It might, actually :)
+
+    return parseObjectMethod(lexerFlags, $tp_lit_start, $tp_lit_line, $tp_lit_column, 'init', false, true, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp)
+  }
+  function parseObjectPartFromComputed(lexerFlags, scoop, exportedNames, exportedBindings, bindingType, astProp) {
+    ASSERT(parseObjectPartFromComputed.length === arguments.length, 'arg count');
+    ASSERT(tok_getType() === $PUNC_BRACKET_OPEN);
+
+    // computed property (is valid in destructuring assignment!)
+    // - `({[foo]: x} = y)`
+    //      ^
+    // - `({[foo]() {}} = y)`            fail
+    // - `const {[x]: y} = z;`
+    // - `({[x]: y}) => z;`
+    // - `function f({[x]: {y = z}}) {}`
+
+    let $tp_keyStart_line = tok_getLine();
+    let $tp_keyStart_column = tok_getColumn();
+    let $tp_keyStart_start = tok_getStart();
+
+    ASSERT_skipToExpressionStart('[', lexerFlags);
+    let assignable_forPiggies = parseExpression(lexerFlags, astProp);
+    if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+      if (tok_getType() === $PUNC_COMMA) {
+        return THROW_RANGE('The expression of a computed property key can not be a comma expression', tok_getStart(), tok_getStop())
+      }
+      return THROW_RANGE('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop())
+    }
+    ASSERT_skipToColonParenOpen(']', lexerFlags);
+
+    let $tp_afterKey_type = tok_getType();
+
+    if ($tp_afterKey_type === $PUNC_COLON) {
+      let assignable = parseObjectPropertyFromColon(lexerFlags, $tp_keyStart_start, $tp_keyStart_line, $tp_keyStart_column, scoop, exportedNames, exportedBindings, bindingType, true, astProp);
+      // [x]: `async function f(){    async function f(){   (a= {[await foo]: x} ) => a    }    }`
+      return copyPiggies(assignable, assignable_forPiggies);
+    }
+
+    if ($tp_afterKey_type === $PUNC_PAREN_OPEN) {
+      let assignable = parseObjectMethod(lexerFlags, $tp_keyStart_start, $tp_keyStart_line, $tp_keyStart_column, 'init', true, true, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp)
+      // [x]: `async function f(){    async function f(){   (a= {[await foo](){}} ) => a    }    }`
+      return copyPiggies(assignable, assignable_forPiggies);
+    }
+
+    THROW_RANGE('Object literal; computed property must be followed by a colon (property) paren (method), found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + `' instead'`, tok_getStart(), tok_getStop());
+  }
+  function parseObjectRestSpread(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp) {
+    ASSERT(parseObjectRestSpread.length === arguments.length, 'arg count');
+
+    if (targetEsVersion < VERSION_OBJECTSPREAD && targetEsVersion !== VERSION_WHATEVER) {
+      return THROW_RANGE('Object spread/rest requires the requested version to be ES9+', tok_getStart(), tok_getStop());
+    }
+    // rest/spread (supported in objects since es9)
+    // unlike arrays it can appear in any property index in an object
+    // note that an object spread, if the last element, CAN have a trailing comma
+    // if binding, if spread arg is not array/object/ident then it is not destructible
+    // if not binding, it is also destructible if arg is member expression
+    // - ({...x});                  (this is valid)
+    // - ({...x=y});                (spread wraps the assignment (!))
+    // - ({...x+=y});               (spread wraps the assignment (!))
+    // - ({...x+y});                (spread wraps any expression)
+    // - ({...x, y});               (spread does not need to be last)
+    // - ({...x, ...y});            (spread can appear more than once)
+    // - ({...x}) => x
+    // - ({x, ...y}) => x
+    // - ({...x.y} = z)             (ok)
+    // - ({...x.y}) => z            (bad)
+    // - ({...x.y} = z) => z        (bad)
+    // - (z = {...x.y}) => z        (ok)
+    // - (z = {...x.y} = z) => z    (ok)
+    return parseArrowableSpreadOrRest(lexerFlags, scoop, $PUNC_CURLY_CLOSE, bindingType, $UNTYPED, exportedNames, exportedBindings, astProp);
+  }
+  function parseObjectMethod(lexerFlags, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, kind, isComputed, isRealMethod, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, astProp) {
+    ASSERT(parseObjectMethod.length === arguments.length, 'arg count');
+    ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'async token');
+    ASSERT($tp_star_type === $UNTYPED || $tp_star_type === $PUNC_STAR, 'gen token');
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
+
+    // - `{*[expr](){}} = x`
+    //            ^
+
+    if (babelCompat) {
+      AST_wrapClosedCustom(astProp, {
+        type: NODE_NAME_METHOD_OBJECT,
+        loc: undefined,
+        key: undefined,
+        // Method: getters and setters are not methods but properties
+        method: isRealMethod, // $tf_getToken_type === $UNTYPED && $tf_setToken_type === $UNTYPED, // alternative would be `$tf_getToken_type === $tf_setToken_type` since they can't both legally be set and are both $UNTYPED if unset
+        generator: undefined,
+        async: undefined,
+        id: undefined,
+        params: [],
+        // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
+        kind: kind === 'init' ? 'method' : kind, // $tf_getToken_start !== 0 ? 'get' : $tf_setToken_start !== 0 ? 'set' : 'method',
+        computed: isComputed,
+        body: undefined,
+      }, 'key');
+    } else {
+      // Acorn uses the parenthesis open as start of method while tenko/babel uses the start of the first modifier and otherwise the id
+      AST_wrapClosedCustom(astProp, {
+        type: NODE_NAME_METHOD_OBJECT,
+        loc: undefined,
+        key: undefined,
+        // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
+        kind: kind, // $tf_getToken_start !== 0 ? 'get' : $tf_setToken_start !== 0 ? 'set' : 'init',
+        // Method: getters and setters are not methods but properties
+        method: isRealMethod, // $tf_getToken_start === 0 && $tf_setToken_start === 0,
+        computed: isComputed,
+        value: undefined,
+        shorthand: false, // not for babel
+      }, 'key');
+    }
+
+    // - `foo = { get x(){  "use strict"; (break = "sentinal 79845134");   }}`
+    // - `let o = {async await(){}}`
+    // - `let o = {async *await(){}}`
+    // - `({set break(x){}});`
+
+    if (acornCompat) {
+      let $tp_paren_line = tok_getLine();
+      let $tp_paren_column = tok_getColumn();
+      let $tp_paren_start = tok_getStart();
+
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, $tp_paren_start, $tp_paren_line, $tp_paren_column, FDS_ILLEGAL, 'value');
+    } else {
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, FDS_ILLEGAL, 'value');
+    }
+
+    AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_OBJECT);
+    ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
+
+    return CANT_DESTRUCT;
+  }
+
   function parsePatternAssignMaybe(lexerFlags, $tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, destructible, astProp) {
     ASSERT(parsePatternAssignMaybe.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astProp string', astProp);
-    // TODO: this is used for arrays only
     verifyDestructible(destructible);
 
     let $tp_op_start = tok_getStart();
@@ -10867,928 +11602,6 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Cannot compound-assign to an array literal', $tp_op_start, $tp_op_stop);
     }
     return destructible;
-  }
-  function parseObjectPropertyValueAfterColon(lexerFlags, $tp_startOfKey_start, $tp_startOfKey_line, $tp_startOfKey_column, $tp_key_type, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings, astProp) {
-    ASSERT(parseObjectPropertyValueAfterColon.length === arguments.length, 'arg count');
-    // property value or label, some are destructible:
-    // - ({ident: ident,}
-    //          ^
-    // - ({35: ident,}
-    // - ({"aye": ident,}
-    // - ({key: <array destruct>,}
-    // - ({key: <object destruct>,}
-    // - ({key: ident = expr}
-    // - ({key: <array destruct> = expr,}
-    // - ({key: <object destruct> = expr,}
-    // anything else as value is non-destructible
-    // - `(x={y: await z}) => t`                    (propagate await/yield to invalidate this case)
-    // - `({x: b = await c}) => d`                  (propagate await/yield to invalidate this case)
-    ASSERT(tok_getType() === $PUNC_COLON, 'should not skip colon yet because that breaks end column');
-    ASSERT(isIdentToken($tp_key_type) || isNumberStringToken($tp_key_type), 'an objlit key is either an ident, a string, or a number');
-
-    if (babelCompat) {
-      AST_open(astProp, {
-        type: NODE_NAME_PROPERTY,
-        loc: undefined,
-        key: undefined,
-        method: false, // only the {x(){}} shorthand gets true here, this is {x}
-        computed: false,
-        value: undefined,
-        shorthand: false,
-      });
-    } else {
-      AST_open(astProp, {
-        type: NODE_NAME_PROPERTY,
-        loc: undefined,
-        key: undefined,
-        kind: 'init', // only getters/setters get special value here
-        method: false, // only the {x(){}} shorthand gets true here, this is {x}
-        computed: false,
-        value: undefined,
-        shorthand: false,
-      });
-    }
-    if (isIdentToken($tp_key_type)) {
-      AST_setIdent('key', $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon);
-    } else {
-      AST_setLiteral('key', $tp_key_type, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon);
-    }
-    ASSERT_skipToExpressionStart(':', lexerFlags);
-
-    destructible = _parseObjectPropertyValueAfterColon(lexerFlags, $tp_key_type, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop,exportedNames, exportedBindings);
-
-    AST_close($tp_startOfKey_start, $tp_startOfKey_line, $tp_startOfKey_column, NODE_NAME_PROPERTY);
-
-    return destructible;
-  }
-  function _parseObjectPropertyValueAfterColon(lexerFlags, $tp_key_type, bindingType, assignableOnlyForYieldAwaitFlags, destructible, scoop, exportedNames, exportedBindings) {
-    ASSERT(_parseObjectPropertyValueAfterColon.length === arguments.length, 'arg count');
-
-    let $tp_valueFirst_line = tok_getLine();
-    let $tp_valueFirst_column = tok_getColumn();
-    let $tp_valueFirst_start = tok_getStart();
-    let $tp_valueFirst_stop = tok_getStop();
-
-    if (isIdentToken(tok_getType())) {
-      // - `{ident: ident}`
-      //            ^
-      // - `{12: ident ...`
-      // - `{"foo": ident ...`
-      // - `{key: ident,...}`
-      // - `{key: ident.ident} = x`
-      // - `{key: ident = ...}`
-      // - `{key: ident + rest`        // not destructible, so confirm token after ident
-      // - `{key: yield}`
-      // - `{key: yield foo}`
-      // - `{key: new}`                // error
-      // - `{key: new foo}`            // not destructible
-      // - `{key: true}`
-      // - `{key: yield / bar}
-      // - `{key: await foo}
-
-      // use the rhs of the colon as $tt_identToken now
-
-      let $tp_ident_type = tok_getType();
-      let $tp_ident_line = tok_getLine();
-      let $tp_ident_column = tok_getColumn();
-      let $tp_ident_start = tok_getStart();
-      let $tp_ident_stop = tok_getStop();
-      let $tp_ident_canon = tok_getCanoN();
-
-      // `[...{a: function=x} = c]`
-      // let identAssignableOrErrMsg = nonFatalBindingIdentCheck($tt_identToken, bindingType, lexerFlags);
-      // if (typeof identAssignableOrErrMsg === 'string') TODO
-
-      // - `{key: bar}`
-      //          ^
-      // - `{key: bar/x`
-      // - `{key: delete a.b`
-      // - `{key: await /foo}`
-      // - `{key: await /foo/}`
-      // - `{key: await /foo/g}`
-      skipIdentSafeSlowAndExpensive(lexerFlags, NOT_LHSE); // will properly deal with div/rex cases
-
-      // - `{key: bar = x}`
-      // - `{key: bar + x}`
-      // - `{key: bar.foo = x}`
-      // - `{key: bar.foo + x}`
-      let wasAssign = tok_getType() === $PUNC_EQ;
-      // - `{key: bar}`
-      // - `{key: bar, koo: baa}`
-      // - `{[key]: bar}`
-      let commaOrEnd = tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE;
-      let valueAssignable = parseValueAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
-      assignableOnlyForYieldAwaitFlags |= valueAssignable;
-
-      if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE) {
-        // - `({a: b} = d)`
-        //          ^
-        // - `({a: b = x} = d)`
-        //           ^
-        if (wasAssign || commaOrEnd) { // "did this have no tail?"
-          // - `({a: b} = d)`
-          //          ^
-          // - `({[a]: b} = d)`
-          //            ^
-          // - `({a: b = d})`
-          // - `({a: b, c: d})`
-          if (notAssignable(valueAssignable)) {
-            // - `({[a]: true} = d)`
-            //               ^
-            // - `[...{a: true} = c]`
-            // - `({ *g1() {   return {x: yield}  }})`
-            // - `({x:function(){"use strict";}})`
-            destructible |= CANT_DESTRUCT;
-          } else if (isIdentToken($tp_key_type)) {
-            // "valid exports"
-            // - `[a, {b:d}, c] = obj`
-            // If this isn't an export of some kind then the exportedNames and bindings are null so don't worry :)
-            // Skip binding check because this may end up being not a binding
-
-            // If this isn't a binding, this is a noop
-            // If this is inside a group, this is a noop if it turns out not to be an arrow
-            // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType);
-            // If this is not an export declaration, the calls below will be noops
-            addNameToExports(exportedNames, $tp_ident_start, $tp_ident_stop, $tp_ident_canon);
-            addBindingToExports(exportedBindings, $tp_ident_canon);
-          } else {
-            // non-ident prop with a single ident as value, assignable, destructible. but cant be part of an export decl
-            // - `({"a": b})`
-            //            ^
-            // - `({[a]: b})`
-            //            ^
-            // - `({15: b})`
-            // Skip dupe check because this may not be about a binding
-
-            // If this isn't a binding, this is a noop
-            // If this is inside a group, this is a noop if it turns out not to be an arrow
-            // TODO: add test case for catch shadow
-            SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType);
-            // If this is not an export declaration, the calls below will be noops
-            // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-            addNameToExports(exportedNames, $tp_ident_start, $tp_ident_stop, $tp_ident_canon);
-            addBindingToExports(exportedBindings, $tp_ident_canon);
-          }
-        }
-        else {
-          // - `({a: b.c} = d)`
-          //            ^
-          // - `({[a]: b()} = d)`
-          //              ^
-          // So something that had a tail but no ops. Assign destructible if it is assignable.
-          if (isAssignable(valueAssignable)) {
-            // - `({[a]: a.b} = d)`
-            //              ^
-            // - `[a, {15: d[x]}, c] = obj`
-            //              ^
-            // - `[...{a: b.b} = c]`
-            //               ^
-            destructible |= DESTRUCT_ASSIGN_ONLY;
-          } else {
-            // - `({[a]: a()} = d)`
-            //              ^
-            destructible |= CANT_DESTRUCT;
-          }
-        }
-      }
-      else if (tok_getType() === $PUNC_EQ) {
-        // - `({a: b = x} = d)`
-        //           ^
-        if (notAssignable(valueAssignable)) {
-          // A value that is not assignable cannot be destructed
-          // - `let {x: true = 1} = z`
-          //                 ^
-          // - `let {x: f() = 1} = z`
-          //                ^
-          destructible |= CANT_DESTRUCT;
-        } else if (!wasAssign) {
-          // There was a tail between the ident and the assign, this is not bindable destructible, but assignable
-          // - `let {x: a.b = 1} = z`
-          //                ^
-          destructible |= DESTRUCT_ASSIGN_ONLY;
-        } else {
-          // This is fine. There was no tail between ident and `=`. This is still perhaps binding destructible
-          // - `let {x: o = 1} = z`
-          //              ^
-          // - `({[a]: b = c} = d)`
-          //             ^
-
-          // If this isn't a binding, this is a noop
-          // If this is inside a group, this is a noop if it turns out not to be an arrow
-          // TODO: add test case for catch shadow
-          SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType);
-          // If this is not an export declaration, the calls below will be noops
-          // TODO: add test case for the exports because that wasnt here before (or assert this cant be reached from an export)
-          addNameToExports(exportedNames, $tp_ident_start, $tp_ident_stop, $tp_ident_canon);
-          addBindingToExports(exportedBindings, $tp_ident_canon);
-        }
-
-        // The assignment itself cannot affect destructibility so just parse the rest
-        let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_stop, $tp_valueFirst_line, $tp_valueFirst_column, valueAssignable, 'value');
-        assignableOnlyForYieldAwaitFlags |= rhsAssignable;
-      }
-      else {
-        // - `({[a]: b + c} = d)`
-        //             ^
-        // - `({a: b * c} = d)`
-        //           ^
-        // - `({a: x.y / c} = d)`
-        //             ^
-        // - `({x: y; a: b})`
-        //          ^
-        destructible |= CANT_DESTRUCT;
-        let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_stop, $tp_valueFirst_line, $tp_valueFirst_column, valueAssignable, 'value');
-        assignableOnlyForYieldAwaitFlags |= rhsAssignable;
-      }
-    }
-    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
-      // - `({ident: []}`
-      //             ^
-      // - `({ident: <array destruct>`
-      // - `({500: <array destruct>`
-      // - `({"str": <array destruct>`
-      // - `({key: [foo, bar].join('')} = x)`        -- error
-      // - `({key: [foo].length} = x)`               -- ok
-      // - `({key: [foo, bar].join('') = x} = x)`    -- error
-      // - `({key: [foo].length = x} = x)`           -- ok
-      // - `({key: [x].foo})`
-      // - `({key: [x].foo})`
-
-      let $tp_arrStart_line = tok_getLine();
-      let $tp_arrStart_column = tok_getColumn();
-      let $tp_arrStart_start = tok_getStart();
-      let $tp_arrStart_stop = tok_getStop();
-
-      let nowDestruct = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_arrStart_start, $tp_arrStart_stop, $tp_arrStart_line, $tp_arrStart_column, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
-    }
-    else if (tok_getType() === $PUNC_CURLY_OPEN) {
-      // - `({ident: {})`
-      //             ^
-      // - `({ident: <object destruct>`
-      // - `({500: <object destruct>`
-      // - `({"str": <object destruct>`
-      // - `({key: {} += x})`                 -- error
-      // - `({key: {}.food()} = x)`           -- error
-      // - `({key: {}.length} = x)`           -- ok
-      // - `({key: {}.food() + x} = x)`       -- error
-      // - `({key: {}.length = x} = x)`       -- ok
-      // - `({key: {x}.foo})`
-      // - `({key: {x}.foo})`
-
-      let $tp_objStart_line = tok_getLine();
-      let $tp_objStart_column = tok_getColumn();
-      let $tp_objStart_start = tok_getStart();
-      let $tp_objStart_stop = tok_getStop();
-
-      let nowDestruct = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_objStart_start, $tp_objStart_stop, $tp_objStart_line, $tp_objStart_column, hasAllFlags(nowDestruct, CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
-    }
-    else {
-      // - `{x: 15}`
-      //        ^
-      // - `{"str": 15}`
-      // - `{key: "foo"}`
-      // - `{key: /foo/ }`
-      // - `{key: 15..foo}=x`
-      // - `{key: 15..foo()}=x`
-      // - `((x={15: (await foo)}) => x`
-      // - `{x: 15.foo}=x`
-      // - `{x: 15.foo()}=x`
-
-      let $tp_valueFirst_line = tok_getLine();
-      let $tp_valueFirst_column = tok_getColumn();
-      let $tp_valueFirst_start = tok_getStart();
-      let $tp_valueFirst_stop = tok_getStop();
-
-      let nowAssignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, 'value');
-
-      let nowDestruct = isAssignable(nowAssignable) ? MIGHT_DESTRUCT : CANT_DESTRUCT; // fixes `[(a)] = x`
-      assignableOnlyForYieldAwaitFlags |= nowAssignable;
-      if (isAssignable(nowAssignable)) {
-        destructible |= DESTRUCT_ASSIGN_ONLY;
-      } else {
-        destructible |= CANT_DESTRUCT;
-      }
-      destructible |= parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_stop, $tp_valueFirst_line, $tp_valueFirst_column, nowAssignable, nowDestruct, $PUNC_CURLY_CLOSE, 'value');
-    }
-
-    ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
-
-    // There are tests that will catch these
-    // - `async function a(){     (foo = [{m: 5 + t(await bar)}]) => {}     }`
-    // - `function *f({x: x}) { function f({x: yield}) {} }`
-    // - `({ *g1() {   return {x: yield}  }})`
-    // - `({xxxx:await}) => null`
-    return copyPiggies(destructible, assignableOnlyForYieldAwaitFlags);
-  }
-  function parseObjectLikePartFromIdent(lexerFlags, $tp_startOfProp_start, $tp_startOfProp_stop, $tp_startOfProp_line, $tp_startOfProp_column, scoop, bindingType, exportedNames, exportedBindings, astProp) {
-    ASSERT(parseObjectLikePartFromIdent.length === arguments.length, 'arg count');
-    ASSERT(isIdentToken(tok_getType()), 'should be at ident');
-    ASSERT(typeof astProp === 'string', 'astprop string');
-
-    let $tp_propLeadingIdent_type = tok_getType();
-    let $tp_propLeadingIdent_line = tok_getLine();
-    let $tp_propLeadingIdent_column = tok_getColumn();
-    let $tp_propLeadingIdent_start = tok_getStart();
-    let $tp_propLeadingIdent_stop = tok_getStop();
-    let $tp_propLeadingIdent_canon = tok_getCanoN();
-
-    ASSERT_skipAny($G_IDENT, lexerFlags);
-
-    if (allowAsyncFunctions) {
-      // Note: `{async\n(){}}` is legal in sloppy so we do have to check the paren
-      if (tok_getType() !== $PUNC_PAREN_OPEN && tok_getNlwas() === true && $tp_propLeadingIdent_type === $ID_async) {
-        // - `{async \n key(){}}`
-        //              ^
-        // Always an error due to async being a restricted production
-        // Note that `{async(){}}` is legal so we must check the current token
-        return THROW_RANGE('Async methods are a restricted production and cannot have a newline following it', $tp_propLeadingIdent_start, tok_getStart());
-      }
-    }
-
-    // note: if this part started with `static` then identToken will always be the NEXT token and isstatic=true
-    // - `{ident,`
-    // - `{ident:ident`
-    // - `{ident:expr`
-    // - `{ident(){}`         as follows;
-    //   - `{x(){}`
-    //   - `{async x(){}`
-    //   - `{get x(){}`
-    //   - `{set x(y){}`
-    //   - `{async [x](){}`
-    //   - `{get [x](){}`
-    //   - `{set [x](y){}`
-    //   - `{async 8(){}`
-    //   - `{get 8(){}`
-    //   - `{set 8(y){}`
-    //   - `{async "x"(){}`
-    //   - `{get "x"(){}`
-    //   - `{set "x"(y){}`
-    //   - `{static x(){}`
-    //   - `{static async x(){}`
-    //   - `{static get x(){}`
-    //   - `{static set x(y){}`
-    //   - `{static async [x](){}`
-    //   - `{static get [x](){}`
-    //   - `{static set [x](y){}`
-    //   - `{static async 8(){}`
-    //   - `{static get 8(){}`
-    //   - `{static set 8(y){}`
-    //   - `{static async "x"(){}`
-    //   - `{static get "x"(){}`
-    //   - `{static set "x"(y){}`
-
-    let destructible = MIGHT_DESTRUCT;
-    let assignable = ASSIGNABLE_UNDETERMINED; // Propagate await/yield state flags to caller
-
-    if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE || tok_getType() === $PUNC_EQ) {
-      // property shorthand; `{ident}=x` is valid, x={y} is also valid
-      // - `{ident}`
-      // - `{ident = expr}`
-      // - `{true}`           illegal
-      // - `{eval}`           ok as it is not a "reserved word"
-      // - `{await}`          "depends"
-
-      // https://tc39.github.io/ecma262/#prod-ObjectLiteral
-      // https://tc39.github.io/ecma262/#prod-PropertyDefinitionList
-      // https://tc39.github.io/ecma262/#prod-PropertyDefinition
-      // https://tc39.github.io/ecma262/#prod-IdentifierReference
-      // https://tc39.github.io/ecma262/#prod-Identifier
-      // Identifier : IdentifierName but not ReservedWord
-      if ($tp_propLeadingIdent_type === $ID_eval || $tp_propLeadingIdent_type === $ID_arguments) {
-        // ({eval});         // ok
-        // ({eval} = x);     // bad in strict mode
-        // {{eval}) => x;    // bad in strict mode
-        if (hasAnyFlag(lexerFlags, LF_STRICT_MODE)) {
-          destructible |= CANT_DESTRUCT;
-        }
-      } else {
-        // must throw for reserved words but binding check also checks for `eval`
-        // and `arguments` which are not reserved and which would be allowed here
-        // Since this is an assignment the `yield` and `await` checks are implicitly done when doing binding name checks
-        fatalBindingIdentCheck($tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon, bindingType, lexerFlags);
-      }
-
-      if ($tp_propLeadingIdent_type === $ID_await) {
-        // TODO: yield as well
-        // Must be a var, but must also be valid as a var (that's checked above), and
-        // must also not be an async arrow parameter name (that's why we return the piggy)
-        // - `x = {await}`
-        // - `({await}) => x`
-        // - `async ({await}) => x`
-        // - `async ({await})`
-        destructible |= PIGGY_BACK_SAW_AWAIT;
-      }
-
-      // If this isn't a binding, this is a noop
-      // If this is inside a group, this is a noop if it turns out not to be an arrow
-      // TODO: add test case for catch shadow
-      SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_startOfProp_start, $tp_startOfProp_stop, $tp_propLeadingIdent_canon, bindingType);
-      // If this is not an export declaration, the calls below will be noops
-      addNameToExports(exportedNames, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_canon);
-      addBindingToExports(exportedBindings, $tp_propLeadingIdent_canon);
-
-      if (babelCompat) {
-        AST_open(astProp, {
-          type: NODE_NAME_PROPERTY,
-          loc: undefined,
-          key: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
-          method: false, // only the {x(){}} shorthand gets true here, this is {x}
-          computed: false,
-          value: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
-          shorthand: true,
-          extra: {shorthand: true},
-        });
-      } else {
-        AST_open(astProp, {
-          type: NODE_NAME_PROPERTY,
-          loc: undefined,
-          key: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
-          kind: 'init', // only getters/setters get special value here
-          method: false, // only the {x(){}} shorthand gets true here, this is {x}
-          computed: false,
-          value: AST_getIdentNode($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon),
-          shorthand: true,
-        });
-      }
-      if (tok_getType() === $PUNC_EQ) {
-        // - `({foo = 10})`
-        // the shorthand only forces MUST_DESTRUCT when an initializer follows it immediately
-        // (consider `({foo = 10})` vs `({foo: bar = 10})`)
-        destructible |= MUST_DESTRUCT; // shorthand + _init_ is only allowed in Pattern
-
-        AST_wrapClosedCustom('value', {
-          type: 'AssignmentExpression',
-          loc: undefined,
-          left: undefined,
-          operator: '=',
-          right: undefined,
-        }, 'left');
-        ASSERT_skipToExpressionStart('=', lexerFlags); // a forward slash after = has to be a regex
-        let nowAssignable = parseExpression(lexerFlags, 'right');
-        assignable = mergeAssignable(nowAssignable, assignable);
-        AST_close($tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'AssignmentExpression');
-      }
-      AST_close($tp_startOfProp_start, $tp_startOfProp_line, $tp_startOfProp_column, NODE_NAME_PROPERTY);
-
-      ASSERT(tok_getType() !== $PUNC_EQ, 'further assignments should be parsed as part of the rhs expression');
-    }
-    else if (tok_getType() === $PUNC_COLON) {
-      // property value or label, some are destructible:
-      // - ({ident: ident,}
-      // - ({ident: (ident)}
-      // - ({ident: a.b}
-      // - ({ident: a[b]}
-      // - ({ident: a(b)}
-      // - ({ident: a`b`}
-      // - ({ident: <array destruct>,}
-      // - ({ident: <object destruct>,}
-      // - ({ident: ident = expr}
-      // - ({ident: (ident) = expr}
-      // - ({ident: a.b = expr}
-      // - ({ident: a[b] = expr}
-      // - ({ident: a(b) = expr}
-      // - ({ident: a`b` = expr}
-      // - ({ident: <array destruct> = expr,}
-      // - ({ident: <object destruct> = expr,}
-      // anything else as value is non-destructible
-      if (options_webCompat === WEB_COMPAT_ON) {
-        if ($tp_propLeadingIdent_canon === '__proto__') destructible |= PIGGY_BACK_WAS_PROTO;
-      }
-
-      destructible |= parseObjectPropertyValueAfterColon(
-        lexerFlags,
-        // start of key
-        $tp_propLeadingIdent_start,
-        $tp_propLeadingIdent_line,
-        $tp_propLeadingIdent_column,
-        $tp_propLeadingIdent_type,
-        // start of key token
-        $tp_propLeadingIdent_start,
-        $tp_propLeadingIdent_stop,
-        $tp_propLeadingIdent_line,
-        $tp_propLeadingIdent_column,
-        $tp_propLeadingIdent_canon,
-        bindingType,
-        assignable,
-        destructible,
-        scoop,
-        exportedNames,
-        exportedBindings,
-        astProp
-      );
-      ASSERT(tok_getType() !== $PUNC_EQ, 'assignments should be parsed as part of the rhs expression');
-    }
-    else if (tok_getType() === $PUNC_PAREN_OPEN) {
-      // Method shorthand, no modifier
-      // - ({ident(){}})
-
-      destructible |= CANT_DESTRUCT;
-
-      AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
-
-      parseObjectMethod(
-        lexerFlags,
-        $UNTYPED, 0, 0, 0, 0,
-        $UNTYPED, 0, 0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-        0, 0, 0,
-        astProp
-      );
-
-      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
-    }
-    else if (isIdentToken(tok_getType())) {
-      // getter/setter/async shorthand method
-      // - ({async ident(){}})
-      // - ({get ident(){}})
-      // - ({set ident(ident){}})
-
-      let $tp_secondIdent_type = tok_getType();
-      let $tp_secondIdent_line = tok_getLine();
-      let $tp_secondIdent_column = tok_getColumn();
-      let $tp_secondIdent_start = tok_getStart();
-      let $tp_secondIdent_stop = tok_getStop();
-      let $tp_secondIdent_canon = tok_getCanoN();
-
-      ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-      AST_setIdent(astProp, $tp_secondIdent_start, $tp_secondIdent_stop, $tp_secondIdent_line, $tp_secondIdent_column, $tp_secondIdent_canon);
-
-      if ($tp_propLeadingIdent_type === $ID_get) {
-        parseObjectMethod(
-          lexerFlags,
-          $UNTYPED, 0, 0, 0, 0,
-          $UNTYPED, 0, 0, 0, 0,
-          $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-          0, 0, 0,
-          $tp_secondIdent_type, $tp_secondIdent_start, $tp_secondIdent_line, $tp_secondIdent_column,
-          0, 0, 0,
-          astProp
-        );
-        return CANT_DESTRUCT;
-      }
-
-      if ($tp_propLeadingIdent_type === $ID_set) {
-        parseObjectMethod(
-          lexerFlags,
-          $UNTYPED, 0, 0, 0, 0,
-          $UNTYPED, 0, 0, 0, 0,
-          0, 0, 0,
-          $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-          $tp_secondIdent_type, $tp_secondIdent_start, $tp_secondIdent_line, $tp_secondIdent_column,
-          0, 0, 0,
-          astProp);
-        return CANT_DESTRUCT;
-      }
-
-      if ($tp_propLeadingIdent_type === $ID_async) {
-        parseObjectMethod(
-          lexerFlags,
-          $ID_async, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-          $UNTYPED, 0, 0, 0, 0,
-          0, 0, 0,
-          0, 0, 0,
-          $tp_secondIdent_type, $tp_secondIdent_start, $tp_secondIdent_line, $tp_secondIdent_column,
-          0, 0, 0,
-          astProp
-        );
-        return CANT_DESTRUCT;
-      }
-
-      return THROW_RANGE('Expected to parse the start of a property but found an unknown modifier', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
-    }
-    else if (tok_getType() === $PUNC_STAR) {
-      // async with generator
-      // note that only async can actually be a generator, getters/setters cannot
-      // - `({async *ident(){}})`
-      // - `({async *5(){}})`
-      // - `({async *'x'(){}})`
-      // - `({async *[x](){}})`
-
-      destructible |= CANT_DESTRUCT;
-
-      if ($tp_propLeadingIdent_type !== $ID_async) { // TODO: should it read from canon?
-        // This is an error path
-
-        // - `{get *foo(){}}`
-        //         ^
-        // - `{set *foo(){}}`
-        // - `{static *foo(){}}`
-        // - `{bogus *foo(){}}`
-
-        if ($tp_propLeadingIdent_type === $ID_get) {
-          return THROW_RANGE('A getter can not be a generator', $tp_propLeadingIdent_start, tok_getStop());
-        }
-
-        if ($tp_propLeadingIdent_type === $ID_set) {
-          return THROW_RANGE('A setter can not be a generator', $tp_propLeadingIdent_start, tok_getStop());
-        }
-
-        if ($tp_propLeadingIdent_type === $ID_static) {
-          // We couldn't tell before the star whether `static` was going to be the property/method name or not
-          return THROW_RANGE('Object members can not be "static"', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
-        }
-
-        return THROW_RANGE('The only modifier that is valid before a star is `async`, found `' + tok_sliceInput($tp_propLeadingIdent_start, $tp_propLeadingIdent_stop) + '` instead', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
-      }
-
-      if (!allowAsyncFunctions) {
-        return THROW_RANGE('Async functions are not supported by the current targeted language version', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
-      }
-
-      if (!allowAsyncGenerators) {
-        return THROW_RANGE('Async generators are not supported by the current targeted language version', $tp_propLeadingIdent_start, tok_getStop());
-      }
-
-      let $tp_star_type = tok_getType();
-      let $tp_star_line = tok_getLine();
-      let $tp_star_column = tok_getColumn();
-      let $tp_star_start = tok_getStart();
-      let $tp_star_stop = tok_getStop();
-
-      // Skip the star
-      ASSERT_skipToIdentStringNumberSquareOpen('*', lexerFlags);
-
-      if (isIdentToken(tok_getType())) {
-        // `{   async *foo(){}   }`
-        //             ^^^
-        // `{   async *prototype(){}   }`
-
-        let $tp_secondIdent_type = tok_getType();
-        let $tp_secondIdent_line = tok_getLine();
-        let $tp_secondIdent_column = tok_getColumn();
-        let $tp_secondIdent_start = tok_getStart();
-        let $tp_secondIdent_stop = tok_getStop();
-        let $tp_secondIdent_canon = tok_getCanoN();
-
-        ASSERT_skipToParenOpenOrDie($G_IDENT, lexerFlags);
-        AST_setIdent(astProp, $tp_secondIdent_start, $tp_secondIdent_stop, $tp_secondIdent_line, $tp_secondIdent_column, $tp_secondIdent_canon);
-        parseObjectMethod(
-          lexerFlags,
-          $ID_async, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-          $tp_star_type, $tp_star_start, $tp_star_stop, $tp_star_line, $tp_star_column,
-          0, 0, 0,
-          0, 0, 0,
-          $tp_secondIdent_type, $tp_secondIdent_start, $tp_secondIdent_line, $tp_secondIdent_column,
-          0, 0, 0,
-          astProp
-        );
-      } else if (isNumberStringToken(tok_getType())) {
-        // `{   async *300(){}   }`
-        // `{   async *"foo"(){}   }`
-
-        let $tp_lit_type = tok_getType();
-        let $tp_lit_line = tok_getLine();
-        let $tp_lit_column = tok_getColumn();
-        let $tp_lit_start = tok_getStart();
-        let $tp_lit_stop = tok_getStop();
-        let $tp_lit_canon = tok_getCanoN();
-
-        ASSERT_skipToParenOpenOrDie(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
-        AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
-        parseObjectMethod(
-          lexerFlags,
-          $ID_async, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-          $tp_star_type, $tp_star_start, $tp_star_stop, $tp_star_line, $tp_star_column,
-          0, 0, 0,
-          0, 0, 0,
-          $tp_lit_type, $tp_lit_start, $tp_lit_line, $tp_lit_column,
-          0, 0, 0,
-          astProp
-        );
-      } else if (tok_getType() === $PUNC_BRACKET_OPEN) {
-        // `{   async *[foo](){}   }`
-
-        let $tp_bracketOpen_line = tok_getLine();
-        let $tp_bracketOpen_column = tok_getColumn();
-        let $tp_bracketOpen_start = tok_getStart();
-
-        ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-        let assignablePiggies = parseExpression(lexerFlags, astProp);
-        assignable = mergeAssignable(assignablePiggies, assignable);
-        if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-          return THROW_RANGE('Missing right square bracket for computed property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-        }
-        ASSERT_skipToParenOpenOrDie($PUNC_BRACKET_CLOSE, lexerFlags);
-        parseObjectMethod(
-          lexerFlags,
-          $ID_async, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column,
-          $tp_star_type, $tp_star_start, $tp_star_stop, $tp_star_line, $tp_star_column,
-          0, 0, 0,
-          0, 0, 0,
-          $UNTYPED, 0, 0, 0,
-          $tp_bracketOpen_start, $tp_bracketOpen_line, $tp_bracketOpen_column,
-          astProp
-        );
-      } else {
-        return THROW_RANGE('Expected to parse the key of a generator method but found something unexpected', tok_getStart(), tok_getStop());
-      }
-
-      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
-    }
-    else if (isNumberStringToken(tok_getType())) {
-      // property names can also be strings and numbers but these cannot be shorthanded
-      // number/string keys can still destructure just fine (`({"foo": x} = y)`)
-      // - `({async "a b c"(){}});`
-      // - `({async 15(){}});`
-      // - `({get "a b c"(){}});`
-      // - `({get 15(){}});`
-      // - `({set "a b c"(x){}});`
-      // - `({set 15(x){}});`
-
-      destructible |= CANT_DESTRUCT;
-
-      if ($tp_propLeadingIdent_type !== $ID_get && $tp_propLeadingIdent_type !== $ID_set && $tp_propLeadingIdent_type !== $ID_async) {
-        // - `({set 15(x){}});`
-        return THROW_RANGE('Expected to parse the start of a property but found an unknown modifier', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
-      }
-
-      let $tp_lit_type = tok_getType();
-      let $tp_lit_line = tok_getLine();
-      let $tp_lit_column = tok_getColumn();
-      let $tp_lit_start = tok_getStart();
-      let $tp_lit_stop = tok_getStop();
-      let $tp_lit_canon = tok_getCanoN();
-
-      ASSERT_skipToParenOpenOrDie(tok_sliceInput($tp_lit_start, $tp_lit_stop), lexerFlags);
-      AST_setLiteral(astProp, $tp_lit_type, $tp_lit_start, $tp_lit_stop, $tp_lit_line, $tp_lit_column, $tp_lit_canon);
-
-      parseObjectMethod(
-        lexerFlags,
-        $tp_propLeadingIdent_type === $ID_async ? $ID_async : $UNTYPED,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_start : 0,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_stop : 0,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_line : 0,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_column : 0,
-        $UNTYPED, 0, 0, 0, 0,
-        $tp_propLeadingIdent_type === $ID_get ? $tp_propLeadingIdent_start : 0,
-        $tp_propLeadingIdent_type === $ID_get ? $tp_propLeadingIdent_line : 0,
-        $tp_propLeadingIdent_type === $ID_get ? $tp_propLeadingIdent_column : 0,
-        $tp_propLeadingIdent_type === $ID_set ? $tp_propLeadingIdent_start : 0,
-        $tp_propLeadingIdent_type === $ID_set ? $tp_propLeadingIdent_line : 0,
-        $tp_propLeadingIdent_type === $ID_set ? $tp_propLeadingIdent_column : 0,
-        $tp_lit_type, $tp_lit_start, $tp_lit_line, $tp_lit_column,
-        0, 0, 0,
-        astProp
-      );
-      ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
-    }
-    else if (tok_getType() === $PUNC_BRACKET_OPEN) {
-      // (this is the part after the first ident of the part (or two if there is a "static" prefix)
-      // - ({static [expr](){}
-      //            ^
-      // - ({get [expr](){}
-      // - ({set [expr](ident){}
-      // - ({async [expr](){}
-      // - ({static get [expr](){}
-      //                ^
-      // - ({static set [expr](ident){}
-      // - ({static async [expr](){}
-
-      destructible |= CANT_DESTRUCT;
-
-      if ($tp_propLeadingIdent_type !== $ID_get && $tp_propLeadingIdent_type !== $ID_set && $tp_propLeadingIdent_type !== $ID_async) {
-        return THROW_RANGE('Expected to parse the start of a property but found an unknown modifier', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
-      }
-
-      // skip dynamic part first because we need to assert that we're parsing a method
-
-      let $tp_bracketOpen_line = tok_getLine();
-      let $tp_bracketOpen_column = tok_getColumn();
-      let $tp_bracketOpen_start = tok_getStart();
-
-      ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
-      let assignablePiggies = parseExpression(lexerFlags, astProp);
-      assignable = mergeAssignable(assignablePiggies, assignable);
-      HITS()
-      if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-        return THROW_RANGE('Missing closing square bracket for computed property name, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-      }
-      ASSERT_skipToColonParenOpen($PUNC_BRACKET_CLOSE, lexerFlags);
-
-      parseObjectMethod(
-        lexerFlags,
-        $tp_propLeadingIdent_type === $ID_async ? $ID_async : $UNTYPED,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_start : 0,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_stop : 0,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_line : 0,
-        $tp_propLeadingIdent_type === $ID_async ? $tp_propLeadingIdent_column : 0,
-        $UNTYPED,
-        0, 0, 0, 0,
-        $tp_propLeadingIdent_type === $ID_get ? $tp_propLeadingIdent_start : 0,
-        $tp_propLeadingIdent_type === $ID_get ? $tp_propLeadingIdent_line : 0,
-        $tp_propLeadingIdent_type === $ID_get ? $tp_propLeadingIdent_column : 0,
-        $tp_propLeadingIdent_type === $ID_set ? $tp_propLeadingIdent_start : 0,
-        $tp_propLeadingIdent_type === $ID_set ? $tp_propLeadingIdent_line : 0,
-        $tp_propLeadingIdent_type === $ID_set ? $tp_propLeadingIdent_column : 0,
-        $UNTYPED, 0, 0, 0,
-        $tp_bracketOpen_start,
-        $tp_bracketOpen_line,
-        $tp_bracketOpen_column,
-        astProp
-      );
-    }
-    else {
-      // this is most likely an error
-      // - `({x+=y})`
-      return THROW_RANGE('Unexpected character after object literal property name', tok_getStart(), tok_getStop());
-    }
-
-    // pick up the flags from assignable and put them in destructible
-    // - `result = [...{ x = yield }] = y;`
-    // - `function* g() {   [...{ x = yield }] = y   }`
-    // - `result = [...{ x = await }] = y;`
-    // - `async r => result = [...{ x = await x }] = y;`
-    return copyPiggies(destructible, assignable);
-  }
-  function parseObjectMethod(
-    lexerFlags,
-    $tp_async_type, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column,
-    $tp_star_type, $tp_star_start, $tp_star_stop, $tp_star_line, $tp_star_column,
-    $tf_getToken_start, $tf_getToken_line, $tf_getToken_column,
-    $tf_setToken_start, $tf_setToken_line, $tf_setToken_column,
-    $tp_key_type, $tp_key_start, $tp_key_line, $tp_key_column,
-    $tp_bracketOpen_start, $tp_bracketOpen_line, $tp_bracketOpen_column,
-    astProp
-  ) {
-    ASSERT(parseObjectMethod.length === arguments.length, 'arg count');
-    ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'async token');
-    ASSERT($tp_star_type === $UNTYPED || $tp_star_type === $PUNC_STAR, 'gen token');
-    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'Should be at the start of the method parameter definition');
-
-    // - `{*[expr](){}} = x`
-    //            ^
-
-    let $tp_methodStart_start = 0;
-    let $tp_methodStart_line = 0;
-    let $tp_methodStart_column = 0;
-    $tp_async_type === $ID_async ?
-      ($tp_methodStart_start = $tp_async_start, $tp_methodStart_line = $tp_async_line, $tp_methodStart_column = $tp_async_column) :
-      $tp_star_type === $PUNC_STAR ?
-        ($tp_methodStart_start = $tp_star_start, $tp_methodStart_line = $tp_star_line, $tp_methodStart_column = $tp_star_column) :
-        $tf_getToken_start !== 0 ?
-          ($tp_methodStart_start = $tf_getToken_start, $tp_methodStart_line = $tf_getToken_line, $tp_methodStart_column = $tf_getToken_column) :
-          $tf_setToken_start !== 0 ?
-            ($tp_methodStart_start = $tf_setToken_start, $tp_methodStart_line = $tf_setToken_line, $tp_methodStart_column = $tf_setToken_column) :
-            $tp_bracketOpen_start === 0 ?
-              ($tp_methodStart_start = $tp_key_start, $tp_methodStart_line = $tp_key_line, $tp_methodStart_column = $tp_key_column) :
-              ($tp_methodStart_start = $tp_bracketOpen_start, $tp_methodStart_line = $tp_bracketOpen_line, $tp_methodStart_column = $tp_bracketOpen_column);
-
-    if (babelCompat) {
-      AST_wrapClosedCustom(astProp, {
-        type: NODE_NAME_METHOD_OBJECT,
-        loc: undefined,
-        key: undefined,
-        // Method: getters and setters are not methods but properties
-        method: $tf_getToken_start === 0 && $tf_setToken_start === 0,
-        generator: undefined,
-        async: undefined,
-        id: undefined,
-        params: [],
-        // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
-        kind: $tf_getToken_start !== 0 ? 'get' : $tf_setToken_start !== 0 ? 'set' : 'method',
-        computed: $tp_key_type === $UNTYPED,
-        body: undefined,
-      }, 'key');
-    } else {
-      // Acorn uses the parenthesis open as start of method while tenko/babel uses the start of the first modifier and otherwise the id
-      AST_wrapClosedCustom(astProp, {
-        type: NODE_NAME_METHOD_OBJECT,
-        loc: undefined,
-        key: undefined,
-        // Kind: only getters/setters get special value here, "init" for the others. In the Babel AST the "other" kind is "method" instead.
-        kind: $tf_getToken_start !== 0 ? 'get' : $tf_setToken_start !== 0 ? 'set' : 'init',
-        // Method: getters and setters are not methods but properties
-        method: $tf_getToken_start === 0 && $tf_setToken_start === 0,
-        computed: $tp_key_type === $UNTYPED,
-        value: undefined,
-        shorthand: false, // not for babel
-      }, 'key');
-    }
-
-    verifyGeneralMethodState($tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_async_type === $ID_async ? $ID_async : $UNTYPED, $tp_star_type, $tf_getToken_start === 0 ? $UNTYPED : $ID_get, $tf_setToken_start === 0 ? $UNTYPED : $ID_set, $tp_key_type, false);
-
-    // - `foo = { get x(){  "use strict"; (break = "sentinal 79845134");   }}`
-    // - `let o = {async await(){}}`
-    // - `let o = {async *await(){}}`
-    // - `({set break(x){}});`
-
-    if (acornCompat) {
-      let $tp_paren_line = tok_getLine();
-      let $tp_paren_column = tok_getColumn();
-      let $tp_paren_start = tok_getStart();
-
-      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_start === 0 ? $UNTYPED : $ID_get, $tf_setToken_start === 0 ? $UNTYPED : $ID_set, $tp_paren_start, $tp_paren_line, $tp_paren_column, FDS_ILLEGAL, 'value');
-    } else {
-      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_start === 0 ? $UNTYPED : $ID_get, $tf_setToken_start === 0 ? $UNTYPED : $ID_set, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, FDS_ILLEGAL, 'value');
-    }
-
-    AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_OBJECT);
-    ASSERT(tok_getType() !== $PUNC_EQ, 'this struct does not allow init/defaults');
   }
 
   function parseClassDeclaration(lexerFlags, scoop, optionalIdent, isLabelled, fdState, astProp) {
@@ -12267,7 +12080,7 @@ function Parser(code, options = {}) {
         //                   ^
 
         if (!allowAsyncFunctions) {
-          return THROW_RANGE('Async functions are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
+          return THROW_RANGE('Async methods are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
         }
 
         if (tok_getNlwas() === true) {
@@ -12286,7 +12099,7 @@ function Parser(code, options = {}) {
           //                   ^
 
           if (!allowAsyncGenerators) {
-            return THROW_RANGE('Async generators are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
+            return THROW_RANGE('Async generator methods are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
           }
 
           $tp_star_type = $PUNC_STAR;
@@ -12591,75 +12404,6 @@ function Parser(code, options = {}) {
       return PIGGY_BACK_WAS_CONSTRUCTOR;
     }
     return CANT_DESTRUCT;
-  }
-
-  function verifyGeneralMethodState($tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_key_type, isClass) {
-    ASSERT(verifyGeneralMethodState.length === arguments.length, 'arg count');
-    ASSERT($tp_async_type === $UNTYPED || $tp_async_type === $ID_async, 'async token type');
-    ASSERT($tp_star_type === $UNTYPED || $tp_star_type === $PUNC_STAR, 'gen token');
-    ASSERT($tp_get_type === $UNTYPED || $tp_get_type === $ID_get, 'get token', $tp_get_type);
-    ASSERT($tp_set_type === $UNTYPED || $tp_set_type === $ID_set, 'set token', $tp_set_type);
-    ASSERT(typeof isClass === 'boolean', 'isclass bool', isClass);
-
-    if (tok_getType() !== $PUNC_PAREN_OPEN) {
-      // - `{[foo] * 5}`D
-      //           ^
-      // - `class x {async f * 5}`
-      //                     ^
-      // - `({async get foo(){}});`
-      //                ^
-
-      // This is an error branch.
-      // Trying to give a more sensible error for `async get foo(){}` :
-
-      switch ($tp_key_type) {
-        case $ID_get:
-          $tp_get_type = $ID_get;
-          break;
-        case $ID_set:
-          $tp_set_type = $ID_set;
-          break;
-        case $ID_async:
-          $tp_async_type = $ID_async;
-          break;
-        case $PUNC_STAR:
-          $tp_star_type = $PUNC_STAR;
-          break;
-      }
-
-      if (($tp_async_type === $ID_async || $tp_star_type === $PUNC_STAR) && ($tp_get_type !== $UNTYPED || $tp_set_type !== $UNTYPED)) {
-        return THROW_RANGE('A getter or setter can not be async or a generator as well', tok_getStart(), tok_getStop()); // TODO: after token rewrite, use Math.min(async,star), Math.max(get,set)
-      }
-
-      if (isClass) {
-        return THROW_RANGE('Class members must be methods so was expect an opening parenthesis after number/string literal key', tok_getStart(), tok_getStop());
-      }
-
-      return THROW_RANGE('Objects with certain modifiers must be methods', tok_getStart(), tok_getStop());
-    }
-
-    ASSERT(!(($tp_async_type === $ID_async || $tp_star_type === $PUNC_STAR) && ($tp_get_type === $ID_get || $tp_set_type === $ID_set)), 'code paths should not allow this state');
-
-    if ($tp_async_type === $ID_async) {
-      if (!allowAsyncFunctions) {
-        return THROW_RANGE('Async functions are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
-      }
-
-      if ($tp_star_type === $PUNC_STAR && !allowAsyncGenerators) {
-        return THROW_RANGE('Async generators are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
-      }
-    }
-
-    if (($tp_async_type === $ID_async || $tp_star_type === $PUNC_STAR) && ($tp_get_type === $ID_get || $tp_set_type === $ID_set)) {
-      // - `{async set foo(x){}}`
-      // - `{get *foo(){}}`
-      return THROW_RANGE('A getter or setter can not be async or a generator', tok_getStart(), tok_getStop());
-    }
-    if ($tp_get_type === $ID_get && $tp_set_type === $ID_set) {
-      // (This would throw an error for the param arity check, anyways)
-      // - `{get set foo(x){}}`
-      return THROW_RANGE('A getter can not also be a setter', tok_getStart(), tok_getStop()); // TODO: after replacing tokens, use min/max with tokens (because we don't know whether get or set is earlier)
-    }
   }
 
   function verifyDestructible(destructible) {
@@ -13036,7 +12780,7 @@ function Parser(code, options = {}) {
       let $tp_curly_start = tok_getStart();
       let $tp_curly_stop = tok_getStop();
 
-      let nowDestruct = parseObjectLiteralPatternAndAssign(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
+      let nowDestruct = parseObjectAndAssign(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
       ASSERT(tok_getType() !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
       if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
         // - `({ ...{}.x } = x);`
@@ -13249,59 +12993,6 @@ function Parser(code, options = {}) {
     // - `[...yield]`
     // destructible because the `...` is at the end of the structure and its arg is an ident/array/object and has no tail
     return copyPiggies(destructible, assignable);
-  }
-  function parseObjectLikeMethodAfterKey(lexerFlags, computed, $tp_star_type, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, astProp) {
-    ASSERT(parseObjectLikeMethodAfterKey.length === arguments.length, 'arg count');
-
-    if (babelCompat) {
-      AST_wrapClosedCustom(astProp, {
-        type: NODE_NAME_METHOD_OBJECT,
-        loc: undefined,
-        key: undefined,
-        method: true,
-        generator: undefined,
-        async: undefined,
-        id: undefined,
-        params: [],
-        kind: 'method', // in babel kind is method without get/set as well
-        computed: computed, // $tp_key_start === 0, // Key cannot start at zero so zero means "no key"
-        body: undefined,
-      }, 'key');
-    } else {
-      AST_wrapClosedCustom(astProp, {
-        type: NODE_NAME_METHOD_OBJECT,
-        loc: undefined,
-        key: undefined,
-        kind: 'init', // only getters/setters are special
-        method: true,
-        computed: computed, // $tp_key_start === 0, // Key cannot start at zero so zero means "no key"
-        value: undefined,
-        shorthand: false,
-      }, 'key');
-    }
-
-    if (tok_getType() !== $PUNC_PAREN_OPEN) {
-      // [x]: `{get 123: x}`
-      // [x]: `{async foo: x}`
-      return THROW_RANGE('Expected to parse a paren of the method now but found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
-    }
-
-    // [v]: `{x(){}}`
-    //         ^
-
-    if (acornCompat) {
-      let $tp_paren_line = tok_getLine();
-      let $tp_paren_column = tok_getColumn();
-      let $tp_paren_start = tok_getStart();
-
-      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, $tp_paren_start, $tp_paren_line, $tp_paren_column, FDS_ILLEGAL, 'value');
-    } else {
-      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $UNTYPED, $tp_star_type, $UNTYPED, $UNTYPED, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, FDS_ILLEGAL, 'value');
-    }
-
-    AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_OBJECT);
-
-    return CANT_DESTRUCT; // FIXME: fix call sites and remove this return value entirely
   }
 
   let initialLexerFlags = sansFlag(INITIAL_LEXER_FLAGS | ((options_strictMode || goalMode === GOAL_MODULE) ? LF_STRICT_MODE : 0), LF_FOR_REGEX);

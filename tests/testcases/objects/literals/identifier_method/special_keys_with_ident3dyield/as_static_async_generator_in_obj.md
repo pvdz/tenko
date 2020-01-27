@@ -28,13 +28,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse an opening paren, found `*`
+  Object members can not be "static"
 
-start@1:0, error@1:15
-╔══╦═════════════════
+start@1:0, error@1:2
+╔══╦════════════════
  1 ║ ({static async * yield(){}});
-   ║                ^------- error
-╚══╩═════════════════
+   ║   ^^^^^^^^^^^^------- error
+╚══╩════════════════
 
 `````
 

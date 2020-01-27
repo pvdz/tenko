@@ -5,6 +5,7 @@
 > :: assigns : destruct
 >
 > ::> assignment destructuring with noop-group with double default being non-assignable
+## PASS
 
 ## Input
 

@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Missing closing square bracket for computed property name, found `,` instead
+  The expression of a computed property key can not be a comma expression
 
 start@1:0, error@1:23
 ╔══╦═════════════════

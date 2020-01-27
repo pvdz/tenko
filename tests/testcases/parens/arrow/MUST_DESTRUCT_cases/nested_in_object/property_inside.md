@@ -27,13 +27,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Found something that had to be a Pattern but had to parse more, which is an error
+  Object pattern contained parts cause it not to be valid as a regular object literal so the next token `.` is illegal
 
-start@1:0, error@1:5
-╔══╦════════════════
+start@1:0, error@1:12
+╔══╦═════════════════
  1 ║ ({a: {x = y}.z})
-   ║      ^^^^^^^------- error
-╚══╩════════════════
+   ║             ^------- error
+╚══╩═════════════════
 
 `````
 

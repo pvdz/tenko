@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Async generators are not supported by the current targeted language version, they were introduced in ES9/ES2018
+  Async generators are not supported by the currently targeted language version, they were introduced in ES9/ES2018
 
 start@1:0, error@1:0
 ╔══╦════════════════

@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse the start of a property but found an unknown modifier
+  Unexpected token `[` after start of property `let` while trying to parse an object property/method
 
 start@1:0, error@1:6
 ╔══╦════════════════
  1 ║ a = { let [x] }
-   ║       ^^^------- error
+   ║       ^^^^^------- error
 ╚══╩════════════════
 
 `````

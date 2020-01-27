@@ -27,12 +27,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse a value
+  The lhs was not assignable so this is an error
 
-start@1:0, error@1:41
+start@1:0, error@1:35
 ╔══╦═════════════════
  1 ║ async function g() {   s = {"foo": await = x} = x   }
-   ║                                          ^------- error
+   ║                                    ^^^^^^^------- error
 ╚══╩═════════════════
 
 `````
