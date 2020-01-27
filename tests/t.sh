@@ -64,7 +64,7 @@ Tenko test runner help:
  Shortcuts for common test runner setups I use:
 
  i <code>      Run test with custom input, by default only runs sloppy script
- f <path>      Run a specific .md parser test file, by default only runs sloppy script
+ f <path>      Run a specific .md parser test file, by default only runs sloppy script (a diff a/ b/ prefix is checked)
  F <path>      Run a specific file and consider its entire contents to be test input
  g             Regenerate _all_ auto generated files
  G             Autogenerate only files that don't already exist
@@ -141,6 +141,14 @@ Tenko test runner help:
       ACTION='-f'
       shift
       ARG=$1
+
+      # I frequently get file names from git diff, which prefixes the paths with a/ and b/ so this fixed that problem :)
+      echo "Checking input file ${ARG}"
+      if [[ ! -f "${ARG}" && ( "${ARG}" == a/* || "${ARG}" == b/* ) && -f "${ARG:2}" ]]; then
+        ARG="${ARG:2}"
+        echo "Assuming the file name is prefixed with a/ or b/ from a git diff, slicing off the first two chars"
+        echo "Will use input file: ${ARG}"
+      fi
       ;;
     F)
       # Use (entire) contents of given file as input
