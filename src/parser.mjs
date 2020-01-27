@@ -7341,7 +7341,7 @@ function Parser(code, options = {}) {
 
     if (type === $PUNC_STAR_STAR) {
       if (!allowExponentiation) {
-        return THROW_RANGE('`**=` was introduced in ES7', tok_getStart(), tok_getStop());
+        return THROW_RANGE('`**` was introduced in ES7', tok_getStart(), tok_getStop());
       }
       return true;
     }

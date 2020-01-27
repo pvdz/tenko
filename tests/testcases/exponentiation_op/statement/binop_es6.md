@@ -29,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  `**=` was introduced in ES7
+  `**` was introduced in ES7
 
 start@1:0, error@1:2
 ╔══╦════════════════
