@@ -7230,9 +7230,12 @@ function Parser(code, options = {}) {
     // If the next op is stronger than this one go deeper now. Only the `**` non-assign binary op also does this
     // for if the previous op was also `**` (and we don't need other checks because it is the strongest binary op).
     // TODO: dedupe the op check which now happens here and at the higher level again
-    while ((isNonAssignBinOp(tok_getType(), lexerFlags) && getStrength(tok_getType(), tok_getStart(), tok_getStop()) > getStrength($tp_op_type, $tp_op_start, $tp_op_stop)) || tok_getType() === $PUNC_STAR_STAR) {
+    let otherStrength = getStrength($tp_op_type, $tp_op_start, $tp_op_stop);
+    let $tp_next_type = tok_getType();
+    while ((isNonAssignBinOp($tp_next_type, lexerFlags) && getStrength($tp_next_type, tok_getStart(), tok_getStop()) > otherStrength) || $tp_next_type === $PUNC_STAR_STAR) {
       let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column,'right');
       assignable = mergeAssignable(nowAssignable, assignable);
+      $tp_next_type = tok_getType();
     }
 
     AST_close($tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, AST_nodeName);
