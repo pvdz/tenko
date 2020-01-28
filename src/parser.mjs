@@ -7229,18 +7229,14 @@ function Parser(code, options = {}) {
 
     // If the next op is stronger than this one go deeper now. Only the `**` non-assign binary op also does this
     // for if the previous op was also `**` (and we don't need other checks because it is the strongest binary op).
-    // TODO: dedupe the op check which now happens here and at the higher level again
     let otherStrength = getStrength($tp_op_type, $tp_op_start, $tp_op_stop);
-    let $tp_next_type = tok_getType();
-    while ((isNonAssignBinOp($tp_next_type, lexerFlags) && getStrength($tp_next_type, tok_getStart(), tok_getStop()) > otherStrength) || $tp_next_type === $PUNC_STAR_STAR) {
-      let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column,'right');
-      assignable = mergeAssignable(nowAssignable, assignable);
-      $tp_next_type = tok_getType();
+    while (continueParsingBinOp(lexerFlags, otherStrength)) {
+      assignable |= parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column,'right');
     }
 
     AST_close($tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, AST_nodeName);
 
-    return assignable;
+    return setNotAssignable(assignable);
   }
   function parseExpressionFromTernaryOp(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp) {
     // parseTernary
@@ -7399,6 +7395,61 @@ function Parser(code, options = {}) {
     }
 
     THROW_RANGE('Unknown operator', $tp_tokenStart, $tp_tokenStop); // other ops should not be handled by this function. dont think this should be possible in prod (it means lexer allowed a new op)
+  }
+
+  function continueParsingBinOp(lexerFlags, otherStrength) {
+    ASSERT(continueParsingBinOp.length === arguments.length, 'arg count');
+
+    // TODO: this is check worth it?
+    // if (!hasAllFlags($tp_next_type, $G_BINOP_NONASSIGN)) return false;
+
+    // Note: this is only called from the binary expression parser. So certain "ops" are never received here.
+
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
+    // the spec is super implicit about operator precedent. you can only discover it by tracing the grammar.
+    // note: this function doesnt contain all things that have precedent. most of them are also implicitly
+    // determined by parsing mechanisms. stuff here is mostly about disambiguating binary ops.
+    // (note that unary ops simply don't consume further binary ops AST-wise so they dont appear in this table)
+
+    switch (tok_getType()) {
+      case $PUNC_EQ_EQ: return 10 > otherStrength;
+      case $PUNC_EXCL_EQ: return 10 > otherStrength;
+      case $PUNC_EQ_EQ_EQ: return 10 > otherStrength;
+      case $PUNC_EXCL_EQ_EQ: return 10 > otherStrength;
+      case $PUNC_AND_AND: return 6 > otherStrength;
+      case $PUNC_OR_OR: return 5 > otherStrength;
+      case $PUNC_PLUS: return 13 > otherStrength;
+      case $PUNC_MIN: return 13 > otherStrength;
+      case $PUNC_LT: return 11 > otherStrength;
+      case $PUNC_GT: return 11 > otherStrength;
+      case $PUNC_LT_EQ: return 11 > otherStrength;
+      case $PUNC_GT_EQ: return 11 > otherStrength;
+      case $PUNC_STAR: return 14 > otherStrength;
+      case $PUNC_DIV: return 14 > otherStrength;
+      case $PUNC_PERCENT: return 14 > otherStrength;
+      case $PUNC_LT_LT: return 12 > otherStrength;
+      case $PUNC_GT_GT: return 12 > otherStrength;
+      case $PUNC_GT_GT_GT: return 12 > otherStrength;
+      case $ID_in:
+        if (hasAllFlags(lexerFlags, LF_IN_FOR_LHS)) {
+          return false;
+        }
+        return 11 > otherStrength;
+      case $ID_instanceof: return 11 > otherStrength;
+      // case $ID_of: return 11;
+      case $PUNC_AND: return 9 > otherStrength;
+      case $PUNC_CARET: return 8 > otherStrength;
+      case $PUNC_OR: return 7 > otherStrength;
+      // case $PUNC_QMARK: return 4;
+      case $PUNC_STAR_STAR:
+        if (!allowExponentiation) {
+          return THROW_RANGE('`**` was introduced in ES7', tok_getStart(), tok_getStop());
+        }
+        return true; // No binop beats **
+      // return 15 >= otherStrength; // right assoc, so >=
+    }
+
+    return false;
   }
 
   function parseValue(lexerFlags, allowAssignment, isNewArg, leftHandSideExpression, astProp) {
