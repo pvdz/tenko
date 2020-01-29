@@ -9,9 +9,65 @@ if (!(process.version.slice(1, 3) >= 10)) throw new Error('Requires node 10+, di
 
 Error.stackTraceLimit = Infinity; // TODO: cut off at node boundary...
 
+import fs from 'fs';
+import path from 'path';
+import {execSync} from 'child_process';
+
+import {
+  ASSERT as _ASSERT,
+  astToString,
+  decodeUnicode,
+  encodeUnicode,
+  getTestFiles,
+  parseTestFile,
+  PROJECT_ROOT_DIR,
+  promiseToWriteFile,
+  readFiles,
+  Tob,
+  toPrint,
+  _LOG,
+  yn,
+
+  INPUT_HEADER,
+  OUTPUT_HEADER,
+  OUTPUT_HEADER_SLOPPY,
+  OUTPUT_HEADER_SLOPPY_ANNEXB,
+  OUTPUT_HEADER_STRICT,
+  // OUTPUT_HEADER_STRICT_ANNEXB,
+  OUTPUT_HEADER_MODULE,
+  OUTPUT_HEADER_MODULE_ANNEXB,
+  OUTPUT_QUINTICK,
+  OUTPUT_QUINTICKJS,
+} from './utils.mjs';
+import {
+  generateTestFile,
+} from './generate_test_file.mjs';
+import {
+  reduceAndExit,
+} from './test_case_reducer.mjs';
+import {
+  compareBabel,
+  ignoreTenkoTestForBabel,
+  processBabelResult,
+} from './parse_babel.mjs';
+import {
+  compareAcorn,
+  ignoreTenkoTestForAcorn,
+  processAcornResult,
+} from './parse_acorn.mjs';
+import {walker} from "../src/tools/walker.mjs";
+import {testPrinter} from "./run_printer.mjs";
+
+let LOG = _LOG; // I want to be able to override this and imports are constants
+let ASSERT = (...args) => {
+  if (NO_FATALS) try { _ASSERT(...args); } catch (e) { console.error('Assertion error (squashed by NO_FATALS):', e.stack); }
+  else _ASSERT(...args);
+};
+
+
 console.log('Start of Tenko test suite');
 
-const INPUT_OVERRIDE = process.argv.includes('-F') ? fs.readFileSync(process.argv[process.argv.indexOf('-F') + 1], 'utf8') : process.argv.includes('-i') ? process.argv[process.argv.indexOf('-i') + 1] : '';
+const INPUT_OVERRIDE = decodeUnicode(process.argv.includes('-F') ? fs.readFileSync(process.argv[process.argv.indexOf('-F') + 1], 'utf8') : process.argv.includes('-i') ? process.argv[process.argv.indexOf('-i') + 1] : '');
 const TARGET_FILE = process.argv.includes('-f') ? process.argv[process.argv.indexOf('-f') + 1] : '';
 const SEARCH = process.argv.includes('-s');
 const TEST262 = process.argv.includes('-t');
@@ -110,64 +166,6 @@ if (FORCED_ES_TARGET) console.log('Forcing target version: ES' + FORCED_ES_TARGE
 
 if (AUTO_UPDATE && (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE)) throw new Error('Cannot use auto update and auto generate together');
 if (AUTO_UPDATE && (a || b || c)) throw new Error('Cannot use --sloppy (etc) together with -u');
-
-import fs from 'fs';
-import path from 'path';
-import util from 'util';
-import {execSync} from 'child_process';
-
-import {
-  ASSERT as _ASSERT,
-  astToString,
-  decodeUnicode,
-  encodeUnicode,
-  getTestFiles,
-  parseTestFile,
-  PROJECT_ROOT_DIR,
-  promiseToWriteFile,
-  readFiles,
-  Tob,
-  toPrint,
-  _LOG,
-  yn,
-
-  INPUT_HEADER,
-  OUTPUT_HEADER,
-  OUTPUT_HEADER_SLOPPY,
-  OUTPUT_HEADER_SLOPPY_ANNEXB,
-  OUTPUT_HEADER_STRICT,
-  // OUTPUT_HEADER_STRICT_ANNEXB,
-  OUTPUT_HEADER_MODULE,
-  OUTPUT_HEADER_MODULE_ANNEXB,
-  OUTPUT_QUINTICK,
-  OUTPUT_QUINTICKJS,
-} from './utils.mjs';
-let LOG = _LOG; // I want to be able to override this and imports are constants
-let ASSERT = (...args) => {
-  if (NO_FATALS) try { _ASSERT(...args); } catch (e) { console.error('Assertion error (squashed by NO_FATALS):', e.stack); }
-  else _ASSERT(...args);
-};
-
-import {
-  generateTestFile,
-} from './generate_test_file.mjs';
-import {
-  reduceAndExit,
-} from './test_case_reducer.mjs';
-
-import {
-  compareBabel,
-  ignoreTenkoTestForBabel,
-  processBabelResult,
-} from './parse_babel.mjs';
-import {
-  compareAcorn,
-  ignoreTenkoTestForAcorn,
-  processAcornResult,
-} from './parse_acorn.mjs';
-
-import {walker} from "../src/tools/walker.mjs";
-import {testPrinter} from "./run_printer.mjs";
 
 // Lazily loaded
 let COLLECT_TOKENS_NONE;
