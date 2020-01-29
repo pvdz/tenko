@@ -477,27 +477,22 @@ import {
   VALID_DOUBLE_CHAR,
 } from './enum_lexer.mjs';
 
-// TODO: instantiate these lazily; most inputs won't need them so we can skip on the startup overhead and init in a slow path
 let ID_START_REGEX = undefined;
 function getIdStartRegexSuperSlow() {
   if (ID_START_REGEX) return ID_START_REGEX;
-
-  try {
-    return ID_START_REGEX = new RegExp('^\\p{ID_Start}$','u');
-  } catch(e) {
-    console.warn('Tenko: Unable to create regexes with unicode property escapes; unicode support disabled (' + e.message + ')');
-    return ID_START_REGEX = /|/;
-  }
+  return ID_START_REGEX = createUnicodeRegex('^\\p{ID_Start}$');
 }
 let ID_CONTINUE_REGEX = undefined;
 function getIdRestRegexSuperSlow() {
   if (ID_CONTINUE_REGEX) return ID_CONTINUE_REGEX;
-
+  return ID_CONTINUE_REGEX = createUnicodeRegex('^\\p{ID_Continue}$');
+}
+function createUnicodeRegex(pattern) {
   try {
-    return ID_CONTINUE_REGEX = new RegExp('^\\p{ID_Continue}$','u');
+    return new RegExp(pattern,'u');
   } catch(e) {
-    console.warn('Tenko: Unable to create regexes with unicode property escapes; unicode support disabled (' + e.message + ')');
-    return ID_CONTINUE_REGEX = /|/;
+    console.warn('Tenko: Current nodejs version does not suppport unicode regexes or regex property escapes; Input contains unicode that requires it so Tenko is unable to properly parse input (' + e.message + ')');
+    return /|/;
   }
 }
 
