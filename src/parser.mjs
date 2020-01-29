@@ -10777,12 +10777,9 @@ function Parser(code, options = {}) {
       // - `({ident = x} = y)`
       //            ^
 
-      let destructible = MIGHT_DESTRUCT;
-      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
-        destructible = PIGGY_BACK_WAS_PROTO;
-      }
+      // Note: __proto__ is irrelevant because it does not count against patterns. Since this must be a pattern ... meh.
 
-      return destructible | parseObjectShorthandWithInit(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
+      return parseObjectShorthandWithInit(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
     }
 
     // Must be parsing some form of object method WITH modifier now
