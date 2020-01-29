@@ -1,20 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/string/escapes/2029.md
+- Path: tests/testcases/string/escapes/crlf.md
 
 > :: string : escapes
 >
-> ::> 2029
+> ::> crlf
 >
-> An escaped 2028 is a line continuation (which does not add anything to the string value)
->
-> Templates also support line continuations.
+> 
 
 ## Input
 
 `````js
 before
-'\@{x2029}@'
+"\@{xd}@
+"
 after
 `````
 
@@ -51,7 +50,7 @@ ast: {
         type: 'Literal',
         loc:{start:{line:2,column:0},end:{line:3,column:1},source:''},
         value: '',
-        raw: "'\\@{x2029}@'"
+        raw: '"\\\r\n"'
       }
     },
     {
@@ -67,7 +66,7 @@ ast: {
 }
 
 tokens (7x):
-       IDENT ASI STRING_SINGLE ASI IDENT ASI
+       IDENT ASI STRING_DOUBLE ASI IDENT ASI
 `````
 
 ### Strict mode
@@ -100,7 +99,8 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 before;
-('\@{x2029}@');
+("\@{xd}@
+");
 after;
 ````
 
