@@ -574,8 +574,6 @@ function Parser(code, options = {}) {
     collectTokens = options_collectTokens;
   }
 
-  let failForRegexAssertIfPass = '';
-
   let NODE_NAME_PROPERTY = babelCompat ? 'ObjectProperty' : 'Property';
   let NODE_NAME_METHOD_OBJECT = babelCompat ? 'ObjectMethod' : 'Property';
   let NODE_NAME_METHOD_CLASS = babelCompat ? 'ClassMethod' : 'MethodDefinition';
@@ -9190,6 +9188,7 @@ function Parser(code, options = {}) {
           // Fixes `async ({} + 1) => x;`
           destructible |= CANT_DESTRUCT;
         }
+
         assignable = parseAfterPatternInGroup(lexerFlags, $tp_startOfPattern_start, $tp_startOfPattern_stop, $tp_startOfPattern_line, $tp_startOfPattern_column, assignable, destructible, astProp);
         wasSimple = PARAMS_SOME_COMPLEX;
       }
@@ -10378,8 +10377,7 @@ function Parser(code, options = {}) {
 
     // This function makes it easier to search for places that parse an object literal/pattern, without recursive bits
 
-    let destructible = parseObjectAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp);
-    return destructible;
+    return parseObjectAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp);
   }
   function parseObjectAndAssign(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp) {
     // returns whether this object is destructible
@@ -11164,18 +11162,6 @@ function Parser(code, options = {}) {
       return copyPiggies(CANT_DESTRUCT, rhsAssignable);
     }
 
-    if ($tp_afterExpr_type === $PUNC_COMMA || $tp_afterExpr_type === $PUNC_CURLY_CLOSE) {
-      // [v]: `({foo: a.b});`
-      //                 ^
-      // [v]: `({foo: a.b, x});`
-      //                 ^
-
-      // Always assignment destructible iif assignable
-      // As it stands we don't care about `yield` or `await` as a keyword, so don't care about those piggies.
-      // Also the constructor, proto, and arrow piggies are not relevant here.
-      return copyPiggies(DESTRUCT_ASSIGN_ONLY, valueAssignable); // Example: `foo(yield x)` needs to propagate piggy
-    }
-
     let wasAssign = tok_getType() === $PUNC_EQ;
 
     let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, valueAssignable, 'value');
@@ -11260,13 +11246,14 @@ function Parser(code, options = {}) {
     AST_close($tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, NODE_NAME_PROPERTY);
 
     if ($tp_propLeadingIdent_type === $ID_await) {
-      // Must be a var, but must also be valid as a var (that's checked above), and
+      HITS()
+      // Must be a var, but must also be valid as a var (that's already checked above), and
       // must also not be an async arrow parameter name (that's why we return the piggy)
       // - `x = {await}`
       // - `({await}) => x`
       // - `async ({await}) => x`
       // - `async ({await})`
-      return (report.length > 0 ? CANT_DESTRUCT : MIGHT_DESTRUCT) | PIGGY_BACK_SAW_AWAIT;
+      return MIGHT_DESTRUCT | PIGGY_BACK_SAW_AWAIT;
     }
 
     // In strict mode, this makes the difference between `(x = {eval})` and `({eval} = x)`
@@ -12110,7 +12097,7 @@ function Parser(code, options = {}) {
 
         // Might be followed by star
         if (tok_getType() === $PUNC_STAR) {
-          // - `class x {async *key(){}})
+          // - `class x {async *key(){}}`
           //                   ^
 
           if (!allowAsyncGenerators) {
@@ -13018,15 +13005,12 @@ function Parser(code, options = {}) {
     return THROW_RANGE('Unexpected further input', tok_getStart(), tok_getStop());
   }
 
-  if (failForRegexAssertIfPass !== '') {
-    // We assume that when we call skipAny that we don't expect the next token to be legally start with a forward slash
-    // But there may still be explicit test cases that assert illegal forward slashes are throwing gracefully
-    ASSERT(false,'Calling skipAny should not legally return a token starting with `/`, but it did; token = ' + failForRegexAssertIfPass);
-  }
+  // <SCRUB ASSERTS TO COMMENT>
   if (assertExpectedFail !== '') {
     // An invariant was broken that should hold in valid input, yet no syntax error was reported by the parser.
     return THROW_RANGE('Assertion fail (when valid): ' + assertExpectedFail, $tp_assertExpected_start, $tp_assertExpected_stop);
   }
+  // </SCRUB ASSERTS TO COMMENT>
 
   // <SCRUB AST>
   _tree.loc = AST_getCloseLoc(0, 1, 0, tok_prevEndPointer(), tok_getLine(), tok_getColumn());
