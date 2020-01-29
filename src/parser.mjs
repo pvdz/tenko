@@ -10901,25 +10901,13 @@ function Parser(code, options = {}) {
       // [v]: `({a: {b} = 0}) => x`
       // [v]: `({a: {b: c} = 0}) => x`
       // [x]: `({a: {a: b.x} = 0}) => x`
-
       let destructible = parseObjectOuter(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
       let objAssignable = (destructible & CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
 
-      if (tok_getType() === $PUNC_EQ) {
-        // [v]: `({a: [b] = c})`
-        //                ^
-        // [v]: `({a: [b] = c} = d)`
-        //                ^
-        // [v]: `({a: [b] = c}) => d`
-        //                ^
-        let exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, objAssignable, 'value');
-        return copyPiggies(destructible, exprAssignable);
-      }
-
       if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE) {
-        // [v]: `({a: [b]})`
+        // [v]: `({a: {b}})`
         //               ^
-        // [v]: `({a: [b], c})`
+        // [v]: `({a: {b}, c})`
         //               ^
         return destructible;
       }
@@ -10952,17 +10940,6 @@ function Parser(code, options = {}) {
 
       let destructible = parseArrayOuter(lexerFlags, scoop, bindingType, PARSE_INIT, exportedNames, exportedBindings, 'value');
       let objAssignable = (destructible & CANT_DESTRUCT) ? NOT_ASSIGNABLE : IS_ASSIGNABLE;
-
-      if (tok_getType() === $PUNC_EQ) {
-        // [v]: `({[b] = c})`
-        //             ^
-        // [v]: `({[b] = c} = d)`
-        //             ^
-        // [v]: `({[b] = c}) => d`
-        //             ^
-        let exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, objAssignable, 'value');
-        return copyPiggies(destructible, exprAssignable);
-      }
 
       if (tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE) {
         // [v]: `({[b]}})`
