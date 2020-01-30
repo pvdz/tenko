@@ -1905,9 +1905,10 @@ function Lexer(
     // - next char is not found in the trie
 
     let trieObjlit = KEYWORD_TRIE_OBJLIT[c - $$A_61];
+    ASSERT(trieObjlit !== undefined, 'the switch to determine `c` should not return KEY for letters that do not start a keyword, so in this step the first lookup MUST be a hit');
+
     let start = pointer - 1; // c was peekSkipped
     let n = start + 1;
-    if (trieObjlit === undefined) return parseIdentifierRest(slice(start, n), n - start);
     do {
       if (n >= len) return eofAfterPotentialKeywordTrieMap(trieObjlit, n, start);
       let d = input.charCodeAt(n++);
@@ -1919,8 +1920,8 @@ function Lexer(
       trieObjlit = trieObjlit[d - $$A_61];
       if (trieObjlit === undefined) return parseIdentRestNotKeywordObjTrie(d, n, start);
     } while (true);
+
     ASSERT(false, 'unreachable');
-    // }
   }
   function endOfPotentialKeywordTrieMap(trieObjlit, d, n, start) {
     ASSERT(endOfPotentialKeywordTrieMap.length === arguments.length, 'arg count');
