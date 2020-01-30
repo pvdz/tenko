@@ -2198,20 +2198,8 @@ function Lexer(
     return uflagStatus;
   }
 
-  function readNextCodepointAsStringExpensive(c, offset) {
-    ASSERT(readNextCodepointAsStringExpensive.length === arguments.length, 'arg count');
-    ASSERT(typeof c === 'number', 'cnum', c);
-    // 0xDC00–0xDFFF is the surrogate pair range and means the next character is required to form the full unicode
-    // character (hence, "pair"). In that case we defer to more expensive codePointAt/fromCodePoint calls.
-    if (offset === CODEPOINT_FROM_ESCAPE) {
-      return String.fromCodePoint(c);
-    }
-    if (c <= 0xD7FF || (c >= 0xE000 && c <= 0xFFFF)) {
-      ASSERT(String.fromCodePoint(input.codePointAt(offset)) === input[offset], 'single char should still yield the same result in slow path');
-      return input[offset];
-    }
-    ASSERT(c <= 0xffff, 'I think the surrogate pair chars 0xD800~0xDFFF should not validate to reach this point, not even escaped', offset, c);
-    return String.fromCodePoint(input.codePointAt(offset));
+  function toStringExpensive(c) {
+    return String.fromCodePoint(c);
   }
 
   function codepointLen(c, offsetOfC) {
@@ -3096,12 +3084,12 @@ function Lexer(
       c = parseRegexCharClassUnicodeEscape(); // will check EOF first, consume a valid unicode escape, else bail
       let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
       if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
-      if (c === INVALID_IDENT_CHAR || c === REGEX_CHARCLASS_BAD) {
-        return regexSyntaxError('Found invalid quad unicode escape');
-      }
       if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
         uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Encountered extended unicode escape (`\\u{}`) or surrogate pair unicode quads (`\\uxxxx\\uxxxx`) which is only valid with u-flag');
         c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+      }
+      if (c === INVALID_IDENT_CHAR || c === REGEX_CHARCLASS_BAD) {
+        return regexSyntaxError('Found invalid quad unicode escape');
       }
 
       let wide = isIdentStart(c, CODEPOINT_FROM_ESCAPE);
@@ -3129,10 +3117,10 @@ function Lexer(
         //                 ^
         // [x]: `/(?<x>foo)\k<\u0020ame>xyz/``
         //                          ^
-        return regexSyntaxError('Named capturing group named contained an invalid unicode escaped char', '`' + readNextCodepointAsStringExpensive(c, CODEPOINT_FROM_ESCAPE) + '`', c);
+        return regexSyntaxError('Named capturing group named contained an invalid unicode escaped char', c);
       }
 
-      let firstCharStr = readNextCodepointAsStringExpensive(c, CODEPOINT_FROM_ESCAPE);
+      let firstCharStr = toStringExpensive(c);
       ASSERT(typeof firstCharStr === 'string', 'readNextCodepointAsStringExpensive should return a string', firstCharStr, c, CODEPOINT_FROM_ESCAPE, false);
 
       if (peeky($$GT_3E)) {
@@ -3240,7 +3228,7 @@ function Lexer(
     }
 
     if (eof()) {
-      return regexSyntaxError('Missing closing angle bracket of name of capturing group', eof() || ('`' + readNextCodepointAsStringExpensive(peek(), pointer) + '`'), eof() || peek());
+      return regexSyntaxError('Missing closing angle bracket of name of capturing group');
     }
 
     if (!peeky($$GT_3E)) {
