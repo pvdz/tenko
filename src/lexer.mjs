@@ -2113,80 +2113,91 @@ function Lexer(
     // into an error token.
     if (fromStart === FIRST_CHAR && isIdentStart(r, CODEPOINT_FROM_ESCAPE) !== INVALID_IDENT_CHAR) {
       return parseIdentifierRest(prevStr, prevLen);
-    } else if (fromStart === NON_START && isIdentRestChr(r, CODEPOINT_FROM_ESCAPE) !== INVALID_IDENT_CHAR) {
-      return parseIdentifierRest(prevStr, prevLen);
-    } else {
-      lastCanonizedInput = prevStr;
-      lastCanonizedInputLen = prevLen;
-      if (!lastReportableLexerError) lastReportableLexerError = 'Identifier escape did not yield a valid identifier character';
-      return $ERROR;
     }
+
+    if (fromStart === NON_START && isIdentRestChr(r, CODEPOINT_FROM_ESCAPE) !== INVALID_IDENT_CHAR) {
+      return parseIdentifierRest(prevStr, prevLen);
+    }
+
+    lastCanonizedInput = prevStr;
+    lastCanonizedInputLen = prevLen;
+    if (!lastReportableLexerError) lastReportableLexerError = 'Identifier escape did not yield a valid identifier character';
+    return $ERROR;
   }
   function parseRegexIdentifierRest(prevStr, uflagStatus) {
     // Returns a uflagStatus enum. See parseIdentifierRest for non-regex idents.
     ASSERT(parseRegexIdentifierRest.length === arguments.length, 'arg count');
     ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty', prevStr);
 
-    if (neof()) {
-      let c = peek();
-      do {
-        if (c === $$BACKSLASH_5C) {
-          // This ident is part of a regex. If the backslash is invalid or the escaped codepoint not valid for the
-          // identifier then the ALWAYS_BAD flag should be returned. If the escape is "es6 unicode escape" then the
-          // flag must be set to require the uflag. Note that the escape is evaluated as the canonical value in any
-          // case (including surrogate pairs), so `a\u0062c` equals `abc`.
-          if (eofd(1)) return regexSyntaxError('Early EOF while parsing escape inside group name identifier');
-          if (peekd(1) === $$U_75) {
-            ASSERT_skip($$BACKSLASH_5C);
-            ASSERT_skip($$U_75);
-            c = parseRegexCharClassUnicodeEscape();
-            let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
-            if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
-            if (c === INVALID_IDENT_CHAR || c === REGEX_CHARCLASS_BAD) {
-              return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
-            }
-            if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
-              uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found "es6" unicode escape (`\\u{..}`) or surrogate pair quads (`\\uxxxx\\uxxxx`) in regex ident, which is only valid with u-flag in regex');
-              c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
-            }
-            ASSERT(!(c & REGEX_CHARCLASS_BAD_WITH_U_FLAG), 'regex idents cant be bad with u-flag? I think', c, uflagStatus);
-            let wide = isIdentRestChr(c, CODEPOINT_FROM_ESCAPE);
-            if (wide === INVALID_IDENT_CHAR) {
-              return regexSyntaxError('An escape that might be part of an identifier cannot be anything else so if it is invalid it must be an error');
-            }
-            if (wide === VALID_SINGLE_CHAR) {
-              ASSERT(!wasDoubleQuad, 'The first quad of a valid surrogate pair cannot yield a valid single ident character');
-              prevStr += String.fromCharCode(c);
-            } else {
-              ASSERT(!wasDoubleQuad || (isIdentRestChr(codePointToSurrogateHead(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR && isIdentRestChr(codePointToSurrogateTail(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR), 'The first quad of a surrogate pair cannot yield a valid single rest ident rest character')
-              prevStr += String.fromCodePoint(c);
-              if (wasDoubleQuad) {
-                uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag');
-              }
-            }
-          } else {
-            return regexSyntaxError('Only unicode escapes are legal in identifier names');
+    if (eof()) {
+      lastCanonizedInput = prevStr;
+      lastCanonizedInputLen = prevStr.length;
+      return uflagStatus;
+    }
+
+    let c = peek();
+    do {
+      if (c === $$BACKSLASH_5C) {
+        // This ident is part of a regex. If the backslash is invalid or the escaped codepoint not valid for the
+        // identifier then the ALWAYS_BAD flag should be returned. If the escape is "es6 unicode escape" then the
+        // flag must be set to require the uflag. Note that the escape is evaluated as the canonical value in any
+        // case (including surrogate pairs), so `a\u0062c` equals `abc`.
+        if (eofd(1)) return regexSyntaxError('Early EOF while parsing escape inside group name identifier');
+        if (peekd(1) === $$U_75) {
+          ASSERT_skip($$BACKSLASH_5C);
+          ASSERT_skip($$U_75);
+          c = parseRegexCharClassUnicodeEscape();
+          let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
+          if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
+
+          if (c === REGEX_CHARCLASS_BAD) {
+            return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
           }
+          if (c === INVALID_IDENT_CHAR) {
+            return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
+          }
+          if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
+            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found "es6" unicode escape (`\\u{..}`) or surrogate pair quads (`\\uxxxx\\uxxxx`) in regex ident, which is only valid with u-flag in regex');
+            c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+          }
+          ASSERT(!(c & REGEX_CHARCLASS_BAD_WITH_U_FLAG), 'regex idents cant be bad with u-flag? I think', c, uflagStatus);
+          let wide = isIdentRestChr(c, CODEPOINT_FROM_ESCAPE);
+          if (wide === INVALID_IDENT_CHAR) {
+            return regexSyntaxError('An escape that might be part of an identifier cannot be anything else so if it is invalid it must be an error');
+          }
+          if (wide === VALID_SINGLE_CHAR) {
+            ASSERT(!wasDoubleQuad, 'The first quad of a valid surrogate pair cannot yield a valid single ident character');
+            prevStr += String.fromCharCode(c);
+          } else {
+            ASSERT(!wasDoubleQuad || (isIdentRestChr(codePointToSurrogateHead(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR && isIdentRestChr(codePointToSurrogateTail(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR), 'The first quad of a surrogate pair cannot yield a valid single rest ident rest character')
+            prevStr += String.fromCodePoint(c);
+            if (wasDoubleQuad) {
+              uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag');
+            }
+          }
+        } else {
+          return regexSyntaxError('Only unicode escapes are legal in identifier names');
+        }
+      }
+      else {
+        let wide = isIdentRestChr(c, pointer);
+        if (wide === INVALID_IDENT_CHAR) break;
+        if (wide === VALID_DOUBLE_CHAR) {
+          uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'name contained a character that is only a valid identifier with u-flag');
+          prevStr += slice(pointer, pointer + 2); // we could try to get the ord and fromCodePoint for perf
+          skipFastWithoutUpdatingCache();
+          skip();
         }
         else {
-          let wide = isIdentRestChr(c, pointer);
-          if (wide === INVALID_IDENT_CHAR) break;
-          if (wide === VALID_DOUBLE_CHAR) {
-            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'name contained a character that is only a valid identifier with u-flag');
-            prevStr += slice(pointer, pointer + 2); // we could try to get the ord and fromCodePoint for perf
-            skipFastWithoutUpdatingCache();
-            skip();
-          }
-          else {
-            ASSERT(wide === VALID_SINGLE_CHAR, 'wide enum');
-            ASSERT_skip(c);
-            prevStr += String.fromCharCode(c); // TODO: if this affects perf we can try a slice after the loop
-          }
+          ASSERT(wide === VALID_SINGLE_CHAR, 'wide enum');
+          ASSERT_skip(c);
+          prevStr += String.fromCharCode(c); // TODO: if this affects perf we can try a slice after the loop
         }
-        if (eof()) break;
-        c = peek();
-      } while (true);
-    }
+      }
+      if (eof()) break;
+      c = peek();
+    } while (true);
+
     lastCanonizedInput = prevStr;
     lastCanonizedInputLen = prevStr.length;
     return uflagStatus;
@@ -3209,6 +3220,11 @@ function Lexer(
       }
 
       let firstCharStr = (wide === VALID_DOUBLE_CHAR) ? slice(pointer - 2, pointer) : String.fromCharCode(c);
+
+      if (eof()) {
+        // `/(?<a`
+        return regexSyntaxError('Early EOF after parsing first char of an ident in regex');
+      }
 
       if (peeky($$GT_3E)) {
         // name is one character

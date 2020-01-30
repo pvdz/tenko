@@ -11246,7 +11246,6 @@ function Parser(code, options = {}) {
     AST_close($tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, NODE_NAME_PROPERTY);
 
     if ($tp_propLeadingIdent_type === $ID_await) {
-      HITS()
       // Must be a var, but must also be valid as a var (that's already checked above), and
       // must also not be an async arrow parameter name (that's why we return the piggy)
       // - `x = {await}`
