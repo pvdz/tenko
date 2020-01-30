@@ -1548,7 +1548,18 @@ function Lexer(
     return r;
   }
   function _parseLeadingZero(lexerFlags) {
-    // 0 0. 0.<digits> 0<digits> 0x<hex> 0b<bin> 0o<octal>
+    // - `0`
+    // - `0.`       Dot can trail
+    // - `0.0`
+    // - `0e1`      Exponent
+    // - `0E1`      Capital is ok too
+    // - `0x1`      Hex
+    // - `0X1`
+    // - `0b1`      Binary
+    // - `0B1`
+    // - `0o1`      Octal
+    // - `0O1`
+    // - `0n`       Bigint
 
     if (eof()) return $NUMBER_DEC;
 
@@ -1558,42 +1569,61 @@ function Lexer(
     if (isAsciiNumber(c)) {
       skip();
       if (neof()) skipDigits();
+
       if ((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
         if (!lastReportableLexerError) lastReportableLexerError = '"Illegal" octal escape in strict mode';
         return $ERROR;
       }
+
       if (neof()) {
         let e = peek();
         if (e === $$E_UC_45 || e === $$E_65) {
           if (!lastReportableLexerError) lastReportableLexerError = 'An exponent is not allowed after a legacy octal number and an ident after number must be separated by some whitespace so this is an error';
           return $ERROR;
         }
+
         if (e === $$N_6E) {
           if (!supportBigInt) {
             return THROW('BigInt suffix is not supported on legacy octals; use the `0o` prefix notation for that', startForError, pointer + 1);
           }
         }
+
         // The dot may still lead to valid (though obscure) code: `01.foo` is the same as `1..foo`
         // if (e === $$DOT_2E) {
         //   if (!lastReportableLexerError) lastReportableLexerError = 'A dot fraction is not allowed after a legacy number octal';
         //   return $ERROR;
         // }
       }
+
       return $NUMBER_OLD;
-    } else if (c === $$DOT_2E) {
+    }
+
+    if (c === $$DOT_2E) {
       parseFromFractionDot();
-    } else if (c === $$X_78 || c === $$X_UC_58) {
+      return $NUMBER_DEC;
+    }
+
+    if (c === $$X_78 || c === $$X_UC_58) {
       ASSERT_skip(c);
       return parseHex();
-    } else if (c === $$O_6F || c === $$O_UC_4F) {
+    }
+
+    if (c === $$O_6F || c === $$O_UC_4F) {
       ASSERT_skip(c);
       return parseOctal();
-    } else if (c === $$B_62 || c === $$B_UC_42) {
+    }
+
+    if (c === $$B_62 || c === $$B_UC_42) {
       ASSERT_skip(c);
       return parseBinary();
-    } else if (c === $$E_65|| c === $$E_UC_45) {
+    }
+
+    if (c === $$E_65|| c === $$E_UC_45) {
       parseExponentMaybe(c);
-    } else if (c === $$N_6E) {
+      return $NUMBER_DEC;
+    }
+
+    if (c === $$N_6E) {
       // [v] `0n`
       if (!supportBigInt) {
         return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
@@ -1602,31 +1632,46 @@ function Lexer(
       return $NUMBER_BIG_DEC;
     }
 
+    // Just a zero
     return $NUMBER_DEC;
   }
   function parseDecimal() {
     // Start parsing from 1-9 (so cannot have started with a dot or zero)
-    if (neof()) {
-      // optionally skip digits now. we dont care if that actually happens (we already know there was at least one)
-      let c = skipDigits();
-      if (eof()) return $NUMBER_DEC;
-
-      // optional fraction
-      if (c === $$DOT_2E) {
-        parseFromFractionDot();
-      } else if (c === $$N_6E) {
-        // BigInt (ES2020 / ES11)
-        // [v] `5464354354353n`
-        if (!supportBigInt) {
-          return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer);
-        }
-        ASSERT_skip($$N_6E);
-        verifyCharAfterNumber();
-        return $NUMBER_BIG_DEC;
-      } else {
-        parseExponentMaybe(c);
-      }
+    if (eof()) {
+      // verifyCharAfterNumber(); // No need ;)
+      return $NUMBER_DEC;
     }
+
+    // optionally skip digits now. we dont care if that actually happens (we already know there was at least one)
+    let c = skipDigits();
+    if (eof()) {
+      // verifyCharAfterNumber(); // No need ;)
+      return $NUMBER_DEC;
+    }
+
+    // optional fraction
+    if (c === $$DOT_2E) {
+      parseFromFractionDot();
+
+      verifyCharAfterNumber();
+      return $NUMBER_DEC;
+    }
+
+    if (c === $$N_6E) {
+      // BigInt (ES2020 / ES11)
+      // [v] `5464354354353n`
+      if (!supportBigInt) {
+        return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer);
+      }
+
+      ASSERT_skip($$N_6E);
+
+      verifyCharAfterNumber();
+      return $NUMBER_BIG_DEC;
+    }
+
+    parseExponentMaybe(c);
+
     verifyCharAfterNumber();
     return $NUMBER_DEC;
   }
@@ -1642,38 +1687,58 @@ function Lexer(
   function parseExponentMaybe(c) {
     // this part is a little tricky. if an `e` follows, an optional +- may follow but at least one digit must follow regardless
     // note that if we parse anything at all, it will be at least two bytes (hence the len-1 part)
-    if (neofd(1) && c === $$E_65 || c === $$E_UC_45) {
-      let d = peekd(1);
-      let e = d;
-      if (d === $$DASH_2D || d === $$PLUS_2B) {
-        if (eofd(2)) {
-          // we cant parse an exponent. the parser will deal with the inevitable error
-          return;
-        }
-        e = peekd(2);
-      }
 
-      if (isAsciiNumber(e)) {
-        // ok, we've confirmed the exponent part is legit. consume the peeks.
-        ASSERT(peek() === $$E_65 || peek() === $$E_UC_45, 'should skip an e');
-        skipFastWithoutUpdatingCache();
-        if (d === $$DASH_2D || d === $$PLUS_2B) {
-          ASSERT(ASSERT_peekUncached() === $$DASH_2D || ASSERT_peekUncached() === $$PLUS_2B, 'should skip + or -', ASSERT_peekUncached());
-          skipFastWithoutUpdatingCache();
-        }
-        ASSERT(isAsciiNumber(e), 'should be digit');
-        skip();
-        if (neof()) skipDigits();
-      }
+    if (c !== $$E_65 && c !== $$E_UC_45) return;
+
+    if (eofd(1)) return; // Need at least two more chars, a number cannot end with an `e`
+
+    // A number can not end with `e`
+    let d = peekd(1);
+
+    if (d === $$DASH_2D || d === $$PLUS_2B) {
+      // A number can not end with `e+`
+      if (eofd(2)) return; // we cant parse an exponent. the parser will deal with the inevitable error
+
+      let e = peekd(2);
+
+      if (!isAsciiNumber(e)) return; // We just wasted two peeks. But it'll lead to a syntax error, so who cares :)
+
+      // ok, we've confirmed the exponent part is legit. consume the peeks.
+      ASSERT(peek() === $$E_65 || peek() === $$E_UC_45, 'should skip an e');
+      skipFastWithoutUpdatingCache();
+
+      // Skip the sign
+      ASSERT(ASSERT_peekUncached() === $$DASH_2D || ASSERT_peekUncached() === $$PLUS_2B, 'should skip + or -', ASSERT_peekUncached());
+      skipFastWithoutUpdatingCache();
+
+      skip();
+
+      if (eof()) return;
+
+      skipDigits();
+
+      return;
     }
+
+    if (!isAsciiNumber(d)) return; // We just wasted a peek. But it'll lead to a syntax error, so who cares :)
+
+    // ok, we've confirmed the exponent part is legit. consume the peeks.
+    ASSERT(peek() === $$E_65 || peek() === $$E_UC_45, 'should skip an e');
+    skipFastWithoutUpdatingCache();
+
+    skip();
+
+    if (eof()) return;
+
+    skipDigits();
   }
   function parseFromFractionDot() {
     ASSERT_skip($$DOT_2E);
     // optionally skip digits now. we dont care if that actually happens. trailing dot is allowed on decimals
-    if (neof()) {
-      let c = skipDigits();
-      parseExponentMaybe(c);
-    }
+    if (eof()) return;
+
+    let c = skipDigits(); // No need to check EOF. If `c` is not `e` or `E` then it stops anyways.
+    parseExponentMaybe(c);
   }
   function parseHex() {
     if (eof()) {
