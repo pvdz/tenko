@@ -2128,12 +2128,7 @@ function Lexer(
     // Returns a uflagStatus enum. See parseIdentifierRest for non-regex idents.
     ASSERT(parseRegexIdentifierRest.length === arguments.length, 'arg count');
     ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty', prevStr);
-
-    if (eof()) {
-      lastCanonizedInput = prevStr;
-      lastCanonizedInputLen = prevStr.length;
-      return uflagStatus;
-    }
+    ASSERT(neof(), 'call site should take care of this');
 
     let c = peek();
     do {
@@ -2142,41 +2137,41 @@ function Lexer(
         // identifier then the ALWAYS_BAD flag should be returned. If the escape is "es6 unicode escape" then the
         // flag must be set to require the uflag. Note that the escape is evaluated as the canonical value in any
         // case (including surrogate pairs), so `a\u0062c` equals `abc`.
-        if (eofd(1)) return regexSyntaxError('Early EOF while parsing escape inside group name identifier');
-        if (peekd(1) === $$U_75) {
-          ASSERT_skip($$BACKSLASH_5C);
-          ASSERT_skip($$U_75);
-          c = parseRegexCharClassUnicodeEscape();
-          let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
-          if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
-
-          if (c === REGEX_CHARCLASS_BAD) {
-            return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
-          }
-          if (c === INVALID_IDENT_CHAR) {
-            return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
-          }
-          if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
-            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found "es6" unicode escape (`\\u{..}`) or surrogate pair quads (`\\uxxxx\\uxxxx`) in regex ident, which is only valid with u-flag in regex');
-            c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
-          }
-          ASSERT(!(c & REGEX_CHARCLASS_BAD_WITH_U_FLAG), 'regex idents cant be bad with u-flag? I think', c, uflagStatus);
-          let wide = isIdentRestChr(c, CODEPOINT_FROM_ESCAPE);
-          if (wide === INVALID_IDENT_CHAR) {
-            return regexSyntaxError('An escape that might be part of an identifier cannot be anything else so if it is invalid it must be an error');
-          }
-          if (wide === VALID_SINGLE_CHAR) {
-            ASSERT(!wasDoubleQuad, 'The first quad of a valid surrogate pair cannot yield a valid single ident character');
-            prevStr += String.fromCharCode(c);
-          } else {
-            ASSERT(!wasDoubleQuad || (isIdentRestChr(codePointToSurrogateHead(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR && isIdentRestChr(codePointToSurrogateTail(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR), 'The first quad of a surrogate pair cannot yield a valid single rest ident rest character')
-            prevStr += String.fromCodePoint(c);
-            if (wasDoubleQuad) {
-              uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag');
-            }
-          }
-        } else {
+        if (eofd(1)) {
+          return regexSyntaxError('Early EOF while parsing escape inside group name identifier');
+        }
+        if (peekd(1) !== $$U_75) {
           return regexSyntaxError('Only unicode escapes are legal in identifier names');
+        }
+
+        ASSERT_skip($$BACKSLASH_5C);
+        ASSERT_skip($$U_75);
+        c = parseRegexCharClassUnicodeEscape();
+        let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
+        if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
+
+        if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
+          uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found "es6" unicode escape (`\\u{..}`) or surrogate pair quads (`\\uxxxx\\uxxxx`) in regex ident, which is only valid with u-flag in regex');
+          c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+        }
+        if (c === REGEX_CHARCLASS_BAD) {
+          return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
+        }
+        ASSERT(!(c & REGEX_CHARCLASS_BAD_WITH_U_FLAG), 'regex idents cant be bad with u-flag? I think', c, uflagStatus);
+        let wide = isIdentRestChr(c, CODEPOINT_FROM_ESCAPE);
+        if (wide === INVALID_IDENT_CHAR) {
+          return regexSyntaxError('An escape that might be part of an identifier cannot be anything else so if it is invalid it must be an error');
+        }
+        if (wide === VALID_SINGLE_CHAR) {
+          // - `/(?<a\u00aa>.)/u`
+          ASSERT(!wasDoubleQuad, 'The first quad of a valid surrogate pair cannot yield a valid single ident character');
+          prevStr += String.fromCharCode(c);
+        } else {
+          ASSERT(!wasDoubleQuad || (isIdentRestChr(codePointToSurrogateHead(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR && isIdentRestChr(codePointToSurrogateTail(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR), 'The first quad of a surrogate pair cannot yield a valid single rest ident rest character')
+          prevStr += String.fromCodePoint(c);
+          if (wasDoubleQuad) {
+            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag');
+          }
         }
       }
       else {
@@ -2252,7 +2247,7 @@ function Lexer(
     if (s === START_ZERO) return VALID_SINGLE_CHAR;
     if (s !== START_UNICODE) return INVALID_IDENT_CHAR;
     return isIdentRestChrUnicode(c, offsetOfC);
-    }
+  }
   function isIdentRestChrUnicode(c, offsetOfC) {
     // https://tc39.github.io/ecma262/#sec-unicode-format-control-characters
     // U+200C (ZERO WIDTH NON-JOINER) and U+200D (ZERO WIDTH JOINER) are format-control characters that are used to
