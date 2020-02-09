@@ -1923,7 +1923,7 @@ ASSERT(ALL_TOKEN_TYPES = [
 ]);
 // </SCRUB ASSERTS TO COMMENT>
 
-let MAX_START_VALUE = 26; // For quick check difference START or token type
+let MAX_START_VALUE = 25; // For quick check difference START or token type
 let __$flag_start = 0; // This name is hardcoded in the build script...
 const START_SPACE = __$flag_start++;
 const START_ID = __$flag_start++;
@@ -1948,11 +1948,10 @@ const START_CARET = __$flag_start++;
 const START_LT = __$flag_start++;
 const START_GT = __$flag_start++;
 const START_OR = __$flag_start++;
-const START_UNICODE = __$flag_start++;
 const START_BSLASH = __$flag_start++;
 const START_ERROR = __$flag_start++;
 // <SCRUB ASSERTS TO COMMENT>
-ASSERT(__$flag_start === MAX_START_VALUE, 'keep in sync');
+ASSERT(__$flag_start === MAX_START_VALUE, 'keep in sync (update if START symbols were added/removed)');
 ASSERT(ALL_GEES.every(type => type > __$flag_start), 'the G start at bit 7 or whatever so should all be larger because this is how we distinct a single-char-token hit from a start-needs-refinement result');
 ASSERT(ALL_TOKEN_TYPES.every(type => type > __$flag_start), 'all tokens must be higher than the start numbers because they are all combinations with at least one G. this is important so we can distinguish them when reading the token start');
 // </SCRUB ASSERTS TO COMMENT>
@@ -3094,15 +3093,15 @@ let stringEscapeStartJumpTable = [
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
-ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, START_STRING, START_ZERO, START_DECIMAL, START_TEMPLATE, START_ID, START_KEY, START_PERCENT, START_AND, START_STAR, START_PLUS, START_MIN, START_DOT, START_DIV, START_CARET, START_LT, START_EQ, START_GT, START_BSLASH, START_OR, START_CURLY_CLOSE, START_UNICODE, START_ERROR]);
+ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, START_STRING, START_ZERO, START_DECIMAL, START_TEMPLATE, START_ID, START_KEY, START_PERCENT, START_AND, START_STAR, START_PLUS, START_MIN, START_DOT, START_DIV, START_CARET, START_LT, START_EQ, START_GT, START_BSLASH, START_OR, START_CURLY_CLOSE, START_ERROR]);
 // </SCRUB ASSERTS TO COMMENT>
 
 function getTokenStart(c) {
   ASSERT(getTokenStart.length === arguments.length, 'arg count');
   ASSERT(typeof c === 'number' &&c >= 0, 'nothing generates negatives for chars');
   ASSERT(Number.isInteger(c), 'all numbers should be ints, and not NaN or Infinite (subsumed)');
+  ASSERT(c <= 0x7e && c >= 0, 'should be checked before calling this', c);
 
-  if (c > 0x7e) return START_UNICODE;
   let s = tokenStartJumpTable[c];
 
   ASSERT(s <= __$flag_start ? ALL_START_TYPES.includes(s) : ALL_TOKEN_TYPES.includes(s), 'confirm the jump table is returning correct values');
@@ -3357,7 +3356,6 @@ export {
   START_LT,
   START_GT,
   START_OR,
-  START_UNICODE,
   START_BSLASH,
   START_ERROR,
 

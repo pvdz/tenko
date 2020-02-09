@@ -330,7 +330,6 @@ import {
   START_LT,
   START_GT,
   START_OR,
-  START_UNICODE,
   START_BSLASH,
   START_ERROR,
 
@@ -782,6 +781,10 @@ function Lexer(
     let c = peek();
     skip();
 
+    if (c > 0x7e) {
+      return parseOtherUnicode(c);
+    }
+
     let s = getTokenStart(c);
     if (s > MAX_START_VALUE) {
       // This means c must be a single char token, like `(` or `:`
@@ -839,8 +842,6 @@ function Lexer(
         return parseGtPunctuator(); // > >> >>> >= >>= >>>=
       case START_OR:
         return parseSameOrCompound($$OR_7C); // | || |=
-      case START_UNICODE:
-        return parseOtherUnicode(c);
       case START_BSLASH:
         return parseBackslash(); // An ident that starts with a unicode escape can be valid
     }
@@ -1926,16 +1927,8 @@ function Lexer(
   function endOfPotentialKeywordTrieMap(trieObjlit, d, n, start) {
     ASSERT(endOfPotentialKeywordTrieMap.length === arguments.length, 'arg count');
 
-    let s = getTokenStart(d);
-    // Only valid "starts" for ident are id, key, numbers, and certain unicodes
-    if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
-      pointer = n - 1;
-      cache = d;
-      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
-    }
-
     let hit = trieObjlit.hit;
-    if (s === START_UNICODE) {
+    if (d > 0x7e) {
       // maybe rest id
       pointer = n - 1;
       cache = d;
@@ -1954,6 +1947,16 @@ function Lexer(
         lastCanonizedInput = canon;
         return hit;
       }
+      return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
+    }
+
+
+    let s = getTokenStart(d);
+
+    // Only valid "starts" for ident are id, key, numbers, and certain unicodes
+    if (s === START_ID || s === START_DECIMAL || s === START_ZERO) {
+      pointer = n - 1;
+      cache = d;
       return parseIdentifierRest(slice(start, n - 1), (n - 1) - start);
     }
 
@@ -2221,20 +2224,24 @@ function Lexer(
   }
   function isIdentStart(c, offsetOfC) {
     ASSERT(isIdentStart.length === arguments.length, 'all args');
+    if (c > 0x7e) {
+      // now we have to do an expensive... but proper unicode check
+      return veryExpensiveUnicodeCheck(c, offsetOfC, getIdStartRegexSuperSlow());
+    }
     let s = getTokenStart(c);
     if (s === START_ID || s === START_KEY) return VALID_SINGLE_CHAR;
-    if (s !== START_UNICODE) return INVALID_IDENT_CHAR;
-    // now we have to do an expensive... but proper unicode check
-    return veryExpensiveUnicodeCheck(c, offsetOfC, getIdStartRegexSuperSlow());
+    return INVALID_IDENT_CHAR;
   }
   function isIdentRestChr(c, offsetOfC) {
     ASSERT(isIdentRestChr.length === arguments.length, 'all args');
+    if (c > 0x7e) {
+      return isIdentRestChrUnicode(c, offsetOfC);
+    }
     let s = getTokenStart(c);
     if (s === START_ID || s === START_KEY) return VALID_SINGLE_CHAR;
     if (s === START_DECIMAL) return VALID_SINGLE_CHAR;
     if (s === START_ZERO) return VALID_SINGLE_CHAR;
-    if (s !== START_UNICODE) return INVALID_IDENT_CHAR;
-    return isIdentRestChrUnicode(c, offsetOfC);
+    return INVALID_IDENT_CHAR;
   }
   function isIdentRestChrUnicode(c, offsetOfC) {
     // https://tc39.github.io/ecma262/#sec-unicode-format-control-characters
@@ -5237,7 +5244,6 @@ function START(type) {
     case START_LT: return 'START_LT';
     case START_GT: return 'START_GT';
     case START_OR: return 'START_OR';
-    case START_UNICODE: return 'START_UNICODE';
     case START_BSLASH: return 'START_BSLASH';
     case START_ERROR: return 'START_ERROR';
   }
