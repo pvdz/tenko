@@ -1,17 +1,17 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/atom_escapes/u-flag/1E4B.md
+- Path: tests/testcases/regexes/c-escape/eof.md
 
-> :: regexes : atom escapes : u-flag
+> :: regexes : c-escape
 >
-> ::> 1E4B
+> ::> eof
 >
-> "LATIN SMALL LETTER N WITH CIRCUMFLEX BELOW"
+> 
 
 ## Input
 
 `````js
-/\@{x1e4b}@/u
+/\c
 `````
 
 ## Output
@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Cannot escape this regular identifier character [ord=7755][@{x1e4b}@]
+    Regex: Encountered early EOF while parsing char escape
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /\@{x1e4b}@/u
-   ║ ^^^^------- error
+ 1 ║ /\c
+   ║ ^^^------- error
 ╚══╩════════════════
 
 `````
@@ -54,20 +54,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-throws: Lexer error!
-    Regex: Atom escape can only escape certain syntax chars with u-flag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
-
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /\@{x1e4b}@/u
-   ║ ^^^^^------- error
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
+_Output same as sloppy mode._

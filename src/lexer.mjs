@@ -3397,12 +3397,17 @@ function Lexer(
       case REGATOM_ESC_c:
         // char escapes
         ASSERT_skip($$C_63);
-        if (eof()) return regexSyntaxError('Encountered early EOF while parsing char escape');
+
+        if (eof()) {
+          return regexSyntaxError('Encountered early EOF while parsing char escape');
+        }
+
         let d = peek();
         if (isAsciiLetter(d)) {
           ASSERT_skip(d);
           return REGEX_ALWAYS_GOOD;
         }
+
         let reason = 'Illegal char escape char (ord=' + d + ')';
         if (webCompat === WEB_COMPAT_ON) {
           // this is now an `IdentityEscape` and just parses the `c` itself
@@ -3411,24 +3416,13 @@ function Lexer(
         return regexSyntaxError(reason);
 
       case REGATOM_ESC_pP:
-        // Unicode property escapes \p{<?...?>} \P{<?...?>}
+        // Unicode property escapes
+        // - `/\p{name}`
+        // - `/\P{name}`
+        // - `/\p{name=value}`
+        // - `/\P{name=value}`
         const NOT_FROM_CHAR_CLASS = false;
-        let regexPropState = parseRegexPropertyEscape(c, NOT_FROM_CHAR_CLASS);
-        if (regexPropState === REGEX_ALWAYS_BAD) {
-          ASSERT(regexPropState !== REGEX_ALWAYS_BAD || lastReportableLexerError, 'if not good then error should be set');
-          return REGEX_ALWAYS_BAD;
-        } else if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
-          ASSERT(lastPotentialRegexError, 'potential error should have been processed by now');
-          // semantically ignored without u-flag, syntactically only okay in web-compat / Annex B mode
-          if (webCompat === WEB_COMPAT_ON) return regexPropState;
-          return regexSyntaxError('(assertion fail)');
-        } else if (regexPropState !== REGEX_ALWAYS_GOOD) {
-          ASSERT(regexPropState === REGEX_GOOD_WITH_U_FLAG, 'regexPropState enum');
-          if (webCompat === WEB_COMPAT_ON) return TODO,REGEX_ALWAYS_GOOD; // confirm when a with-uflag is overturned by webcompat
-          return REGEX_GOOD_WITH_U_FLAG;
-        } else {
-          return REGEX_ALWAYS_GOOD;
-        }
+        return parseRegexPropertyEscape(c, NOT_FROM_CHAR_CLASS);
 
       case REGATOM_ESC_0:
         ASSERT_skip($$0_30);
@@ -4384,7 +4378,8 @@ function Lexer(
     if (eofd(1)) return regexSyntaxError('Early EOF while parsing regex property escape');
 
     // skip the p and assert it is immediately followed by a curly
-    if (ASSERT_skipPeek(c === $$P_70 ? $$P_70 : $$P_UC_50) !== $$CURLY_L_7B) {
+    ASSERT_skip(c);
+    if (peek() !== $$CURLY_L_7B) { // Note: we did eofd(1) above
       let reason = 'Property escape \\p must be followed by a curly bracket (and would be illegal without u-flag)';
       if (webCompat === WEB_COMPAT_ON) return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
       return regexSyntaxError(reason);
