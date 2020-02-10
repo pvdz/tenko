@@ -2533,8 +2533,8 @@ function Lexer(
 
   let nCapturingParens = 0;
   let largestBackReference = 0;
-  let declGroupName = ','; // List of comma concatenated declared group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
-  let refGroupName = ','; // List of comma concatenated referenced group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
+  let declaredGroupNames = ','; // List of comma concatenated declared group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
+  let reffedGroupNames = ','; // List of comma concatenated referenced group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
   let kCharClassEscaped = false; // If one was missing but there was at least one group name then it's always an error
   let foundValidGroupName = false; // used for +N post-regex check
   let foundInvalidGroupName = false; // used for +N post-regex check
@@ -2542,8 +2542,8 @@ function Lexer(
     nCapturingParens = 0;
     largestBackReference = 0;
     lastPotentialRegexError = '';
-    declGroupName = ',';
-    refGroupName = ',';
+    declaredGroupNames = ',';
+    reffedGroupNames = ',';
     kCharClassEscaped = false;
     foundValidGroupName = false;
     foundInvalidGroupName = false;
@@ -2572,19 +2572,19 @@ function Lexer(
     let ustatusFlags = parseRegexFlags();
 
     if (kCharClassEscaped) {
-      if (declGroupName !== ',') {
+      if (declaredGroupNames !== ',') { // "is the group name non-empty"
         ustatusBody = regexSyntaxError('Found `\\k` in a char class but the regex also had a group name so this is illegal');
         return $ERROR;
       } else if (webCompat === WEB_COMPAT_OFF || ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
         ustatusBody = regexSyntaxError('Found `\\k` in a char class but this is only allowed in webcompat mode and without u-flag');
       }
     }
-    if (refGroupName !== ',') {
+    if (reffedGroupNames !== ',') {
       // Other than above we don't care about whether group names were declared (by named capturing groups). We do need
       // to validate the referenced group names with `\k` atom escapes.
       // This is a fairly unused functionality so I'm going to do this in a slow path for now.
-      refGroupName.split(',').filter(Boolean).forEach(name => {
-        if (!declGroupName.includes(',' + name + ',')) {
+      reffedGroupNames.split(',').filter(Boolean).forEach(name => {
+        if (!declaredGroupNames.includes(',' + name + ',')) {
           // Not even webcompat will save you now. This would only be valid if there were no names but by definition,
           // this is a name so that exception has already been voided.
           // edit: except that a test262 case thinks otherwise
@@ -3255,10 +3255,10 @@ function Lexer(
     if (lastCanonizedInputLen > 0) {
       // This enables +N mode, meaning `\k` is now disallowed in char classes in webcompat mode too
       if (forGroup) {
-        declGroupName += lastCanonizedInput + ',';
+        declaredGroupNames += lastCanonizedInput + ',';
       } else {
         // We can only verify existence after completing the body
-        refGroupName += lastCanonizedInput + ',';
+        reffedGroupNames += lastCanonizedInput + ',';
       }
     }
 
