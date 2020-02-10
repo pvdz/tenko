@@ -3335,14 +3335,13 @@ function Lexer(
         //
         // Note: SyntaxCharacter and `/` is already checked in the switch above, so we focus on the ~U step
 
-        if (c === $$PS_2028 || c === $$LS_2029) {
-          // Line continuation is not supported in regex and the escape is explicitly disallowed
-          // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
-          ASSERT_skip(c);
-          return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
-        }
+        // There are three cases to consider;
+        // - u-flag: only a handful of syntax characters can be escaped validly
+        // - without u-flag, strict: a subset of `id_continue` chars and anything not in `id_continue`
+        // - web compat: only disallows `c`, and if a named capturing group is used anywhere then `k` as well
 
         let wide = isIdentRestChr(c, pointer);
+
         if (wide === VALID_DOUBLE_CHAR) {
           // The regex is already invalid with u-flag but (still?) valid without u-flag because the code _point_ is a
           // id_continue while the code _unit_ is just a surrogate head, which by itself is not an id_continue. So it
@@ -3351,19 +3350,45 @@ function Lexer(
           c = input.codePointAt(pointer);
           skipFastWithoutUpdatingCache();
           skip();
-        } else if (wide === VALID_SINGLE_CHAR) {
-          // backslash is parsed, c is peeked
+
+          if (webCompat === WEB_COMPAT_OFF) {
+            return regexSyntaxError('Cannot use a surrogate pair as atom escape (' + c + ', `' + String.fromCodePoint(c) + '`)');
+          }
+
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
+        }
+
+        if (wide === VALID_SINGLE_CHAR) {
+          ASSERT(c >= 0x7f && c <= 0xffff, 'regular ascii chars should not hit the unicode branch');
           // This means the code unit is a valid unicode continue character, which is not legal with or without u-flag
           // In webcompat mode it is still legal as long as it isn't a `c` or, with +N, a `k`.
 
           ASSERT_skip(c);
+
           if (webCompat === WEB_COMPAT_OFF) {
+            // Note that this case branch means it's a code unit in range of 0x007f ~ 0xffff, all illegal here
             return regexSyntaxError('Cannot escape this regular identifier character [ord=' + c + '][' + String.fromCharCode(c) + ']');
           }
-        } else {
-          ASSERT(wide === INVALID_IDENT_CHAR, 'wide enum (4)');
-          // Illegal ident chars are fine to escape, apparently.
-          ASSERT_skip(c);
+
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
+        }
+
+        ASSERT(wide === INVALID_IDENT_CHAR, 'wide enum (4)');
+        // Illegal ident chars are (only) fine to escape in web compat, apparently.
+        ASSERT_skip(c);
+
+        if (c === $$PS_2028 || c === $$LS_2029) {
+          // https://tc39.es/ecma262/#sec-line-terminators
+          // > A line terminator cannot occur within any token except a StringLiteral, Template, or TemplateSubstitutionTail.
+
+          // Line continuation is not supported in regex and the escape is explicitly disallowed
+          // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+          return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
+        }
+
+        if (webCompat === WEB_COMPAT_OFF) {
+          // Note that this case branch means it's a code unit in range of 0x007f ~ 0xffff, all illegal here
+          return regexSyntaxError('Cannot escape this non-identifier character [ord=' + c + '][' + String.fromCharCode(c) + ']');
         }
 
         // Ok, atom escape was acceptable but only without u-flag
@@ -3452,6 +3477,10 @@ function Lexer(
       case REGATOM_ESC_NL:
         // Line continuation is not supported in regex and the escape is explicitly disallowed
         // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+
+        // https://tc39.es/ecma262/#sec-line-terminators
+        // > A line terminator cannot occur within any token except a StringLiteral, Template, or TemplateSubstitutionTail.
+
         ASSERT_skip(c);
         return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
 
