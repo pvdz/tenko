@@ -2733,7 +2733,7 @@ function Lexer(
                   wasUnfixableAssertion = true;
                 } else if (!supportRegexNamedGroups) {
                   ASSERT_skip(c);
-                  return regexSyntaxError('The lookbehind group `(?<` must be followed by `=` or `!` but wasnt [ord=' + c + ']');
+                  return regexSyntaxError('The lookbehind group `(?<` must be `(?<=` or `(?<!` because named groups are not supported in the currently targeted ES version, next char after `<` is `' + String.fromCharCode(c) + '`');
                 } else {
                   // parseRegexNamedGroup, parseNamedCapturingGroup
                   // [v]: `/(?<name>content)/`
