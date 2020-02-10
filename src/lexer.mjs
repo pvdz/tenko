@@ -2547,62 +2547,69 @@ function Lexer(
     kCharClassEscaped = false;
     foundValidGroupName = false;
     foundInvalidGroupName = false;
+
     let ustatusBody = parseRegexBody(c);
     if (ustatusBody === REGEX_ALWAYS_BAD) {
       ASSERT(lastReportableLexerError, 'last error should be set', lastReportableLexerError, lastPotentialRegexError);
       return $ERROR;
     }
-    if (ustatusBody !== REGEX_ALWAYS_GOOD) {
-      ASSERT(lastPotentialRegexError, 'last potential error should be set', lastReportableLexerError, lastPotentialRegexError);
-    }
+
+    ASSERT(ustatusBody === REGEX_ALWAYS_GOOD || lastPotentialRegexError, 'last potential error should be set if there was a potential problem', lastReportableLexerError, lastPotentialRegexError);
+
+    // Don't parse the flag if a hard error was found because it's probably before the second `/`
+    let ustatusFlags = parseRegexFlags();
+
     if (nCapturingParens < largestBackReference) {
       let errmsg = 'Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode)';
-      if (webCompat === WEB_COMPAT_ON) {
-        // skip this check
-        ustatusBody = updateRegexUflagIsIllegal(ustatusBody, errmsg);
-      } else {
-        ustatusBody = regexSyntaxError(errmsg);
+      if (webCompat === WEB_COMPAT_OFF) {
+        regexSyntaxError(errmsg);
+        return $ERROR;
       }
+
+      // skip this check
+      ustatusBody = updateRegexUflagIsIllegal(ustatusBody, errmsg);
     }
 
     if (foundInvalidGroupName && foundValidGroupName) {
-      ustatusBody = regexSyntaxError('Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error');
+      regexSyntaxError('Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error');
+      return $ERROR;
     }
 
-    let ustatusFlags = parseRegexFlags();
+    if (ustatusFlags === REGEX_ALWAYS_BAD) {
+      ASSERT(lastReportableLexerError, 'any regex flag syntax error should set this var');
+      return $ERROR;
+    }
 
     if (kCharClassEscaped) {
-      if (declaredGroupNames !== ',') { // "is the group name non-empty"
-        ustatusBody = regexSyntaxError('Found `\\k` in a char class but the regex also had a group name so this is illegal');
+      if (declaredGroupNames !== ',') { // "non-empty"
+        // - `/(?<foo>.)[\k]\k<foo>/`
+        regexSyntaxError('Found `\\k` in a char class but the regex also had a group name so this is illegal');
         return $ERROR;
-      } else if (webCompat === WEB_COMPAT_OFF || ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
-        ustatusBody = regexSyntaxError('Found `\\k` in a char class but this is only allowed in webcompat mode and without u-flag');
+      }
+
+      if (webCompat === WEB_COMPAT_OFF || ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
+        regexSyntaxError('Found `\\k` in a char class but this is only allowed in webcompat mode and without u-flag');
+        return $ERROR;
       }
     }
-    if (reffedGroupNames !== ',') {
-      // Other than above we don't care about whether group names were declared (by named capturing groups). We do need
-      // to validate the referenced group names with `\k` atom escapes.
+
+    // According to test262 the next exception is not applied to web compat mode:
+    //   test262/test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js
+    if (webCompat === WEB_COMPAT_OFF && reffedGroupNames !== ',') { // "not empty"
+      // Other than above we don't care about whether group names were declared (by named capturing groups).
+      // We do need to validate the referenced group names with `\k` atom escapes.
       // This is a fairly unused functionality so I'm going to do this in a slow path for now.
+      let bad = false;
       reffedGroupNames.split(',').filter(Boolean).forEach(name => {
         if (!declaredGroupNames.includes(',' + name + ',')) {
-          // Not even webcompat will save you now. This would only be valid if there were no names but by definition,
-          // this is a name so that exception has already been voided.
-          // edit: except that a test262 case thinks otherwise
-          // test262/test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js
-          if (webCompat === WEB_COMPAT_OFF) {
-            ustatusBody = regexSyntaxError('Found a `\\k` that referenced `' + name + '` but no capturing group had this name');
-          }
+          // This would only be valid if there were no names but by definition this is a name.
+          regexSyntaxError('Found a `\\k` that referenced `' + name + '` but no capturing group had this name');
+          bad = true;
         }
       });
-    }
-
-    if (ustatusBody === REGEX_ALWAYS_BAD) {
-      if (!lastReportableLexerError) regexSyntaxError('Regex body had an illegal escape sequence');
-      return $ERROR;
-    }
-    if (ustatusFlags === REGEX_ALWAYS_BAD) {
-      if (!lastReportableLexerError) regexSyntaxError('Regex body had an illegal escape sequence or a regex flag occurred twice (should already have called THROW for this)');
-      return $ERROR;
+      if (bad) {
+        return $ERROR;
+      }
     }
 
     if (ustatusBody === REGEX_GOOD_WITH_U_FLAG) {
@@ -2621,6 +2628,7 @@ function Lexer(
       regexSyntaxError('Regex had syntax that is invalid with u-flag and u-flag was in fact present');
       return $ERROR;
     }
+
     ASSERT(ustatusBody === REGEX_ALWAYS_GOOD, 'u-flag-status is enum and we checked all options here', ustatusBody);
     if (ustatusFlags === REGEX_GOOD_WITH_U_FLAG) return $REGEXU;
     return $REGEXN;
@@ -2656,7 +2664,6 @@ function Lexer(
     uflagStatus = cannotBeQuantifier(c, uflagStatus, c === $$CURLY_L_7B, 'Started with a quantifier but that is not allowed');
 
     let groupNames = {}; // TODO: lazy instantiation
-    let namedBackRefs = [];
 
     do {
       let s = c > 0x7e ? REGEX_ATOM_UNICODE : regexAtomJumpTable[c];
@@ -2833,7 +2840,7 @@ function Lexer(
             ASSERT_skip(d);
             afterAtom = false; // this Assertion can never have a Quantifier
           } else {
-            let escapeStatus = parseRegexAtomEscape(d, namedBackRefs);
+            let escapeStatus = parseRegexAtomEscape(d);
             ASSERT(escapeStatus === REGEX_ALWAYS_GOOD || lastPotentialRegexError || lastReportableLexerError, 'if not good then error should be set');
             if (escapeStatus === REGEX_ALWAYS_BAD) {
               uflagStatus = REGEX_ALWAYS_BAD;
@@ -2855,15 +2862,6 @@ function Lexer(
             return regexSyntaxError('Unclosed group');
           }
 
-          // Tests imply that the existence rule does not need to apply in web compat mode. TBD.
-          if (webCompat === WEB_COMPAT_OFF) {
-            let l = namedBackRefs.length;
-            for (let i=0;i<l;++i) {
-              if (groupNames['#' + namedBackRefs[i]] === undefined) {
-                return THROW('Named back reference \\k<' + namedBackRefs[i] +'> was not defined in this regex: ' + JSON.stringify(groupNames).replace(/"/g,''), startForError, pointer + 1);
-              }
-            }
-          }
           ASSERT_skip($$FWDSLASH_2F);
           return uflagStatus;
 
@@ -3038,7 +3036,7 @@ function Lexer(
     let r = _parseRegexGroupName(c, uflagStatus, forGroup);
 
     ASSERT(lastCanonizedInput.length === lastCanonizedInputLen, 'should always be in sync');
-    ASSERT(r === REGEX_ALWAYS_BAD || foundInvalidGroupName || lastCanonizedInputLen !== 0, 'a valid parse should always yield an ident, otherwise double check namedBackRefs.push', r);
+    ASSERT(r === REGEX_ALWAYS_BAD || foundInvalidGroupName || lastCanonizedInputLen !== 0, 'a valid parse should always yield an ident', r);
 
     if (uflagStatus !== REGEX_ALWAYS_BAD && r === REGEX_ALWAYS_BAD) {
       let reason = 'An illegal group name composition is only valid without u-flag and in webcompat mode';
@@ -3264,7 +3262,7 @@ function Lexer(
 
     return uflagStatus;
   }
-  function parseRegexAtomEscape(c, namedBackRefs) {
+  function parseRegexAtomEscape(c) {
     // backslash already parsed, c is peeked
     // return REGEX_*** enum
 
@@ -3448,7 +3446,6 @@ function Lexer(
         const FOR_K_ESCAPE = false;
         uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_K_ESCAPE);
         ASSERT(lastCanonizedInputLen === lastCanonizedInput.length, 'should always be in sync');
-        if (lastCanonizedInputLen > 0) namedBackRefs.push(lastCanonizedInput); // we can only validate ths after completely parsing the regex body
 
         // If the group name contained a `\u{..}` escape then the u-flag must be valid for this regex to be valid
         return uflagStatus;

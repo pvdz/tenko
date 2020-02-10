@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Named back reference \k<z> was not defined in this regex: {#x:true}
+    Regex: Found a `\k` that referenced `z` but no capturing group had this name
 
 start@1:0, error@1:0
 ╔══╦════════════════

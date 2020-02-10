@@ -1,17 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/regression_with_groups.md
+- Path: tests/testcases/regexes/named_capturing_groups/also_charclass_escape.md
 
-> :: regexes
+> :: regexes : named capturing groups
 >
-> ::> regression with groups
+> ::> also charclass escape
 >
-> This hit an assertion
+> If you use a named back reference (`\k<name>`) then you cannot use `\k` inside a character class, even when it otherwise would have been ok.
+
+## FAIL
 
 ## Input
 
 `````js
-/\k<\u4c3d/
+/(?<foo>.)[\k]\k<foo>/
 `````
 
 ## Output
@@ -28,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Missing closing angle bracket of name of capturing group
+    Regex: A character class is not allowed to have `\k` back-reference
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /\k<\u4c3d/
-   ║ ^^^^^^^^^^^------- error
+ 1 ║ /(?<foo>.)[\k]\k<foo>/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -55,26 +57,15 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-        value: null,
-        regex: { pattern: '\\k<\\u4c3d', flags: '' },
-        raw: '/\\k<\\u4c3d/'
-      }
-    }
-  ]
-}
+throws: Lexer error!
+    Regex: Can only have `\k` in a char class without u-flag and in webcompat mode; Found `\k` in a char class but the regex also had a group name so this is illegal
 
-tokens (3x):
-       REGEXN ASI
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<foo>.)[\k]\k<foo>/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Module goal with AnnexB
@@ -82,13 +73,3 @@ tokens (3x):
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-/\k<\u4c3d/;
-````
-
-Produces same AST
