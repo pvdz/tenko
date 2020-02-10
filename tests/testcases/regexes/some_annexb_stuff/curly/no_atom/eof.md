@@ -1,10 +1,10 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/some_annexb_stuff/curly/no_atom/eof_after_quantifier.md
+- Path: tests/testcases/regexes/some_annexb_stuff/curly/no_atom/eof.md
 
 > :: regexes : some annexb stuff : curly : no atom
 >
-> ::> eof after quantifier
+> ::> eof
 ## FAIL
 
 ## Input

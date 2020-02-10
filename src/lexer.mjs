@@ -3065,7 +3065,7 @@ function Lexer(
 
     let thisNameInvalid = false;
 
-    // [v]: `(?<\u0065ame>xyz)/``
+    // [v]: `/(?<\u0065ame>xyz)/``
     //          ^
     // [x]: `/(?<x>foo)met\k<\u0065>/`
     //                       ^
@@ -3092,7 +3092,8 @@ function Lexer(
         uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Encountered extended unicode escape (`\\u{}`) or surrogate pair unicode quads (`\\uxxxx\\uxxxx`) which is only valid with u-flag');
         c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
       }
-      if (c === INVALID_IDENT_CHAR || c === REGEX_CHARCLASS_BAD) {
+      if (c === REGEX_CHARCLASS_BAD) {
+        // - `/(?<\ux>foo)/`
         return regexSyntaxError('Found invalid quad unicode escape');
       }
 

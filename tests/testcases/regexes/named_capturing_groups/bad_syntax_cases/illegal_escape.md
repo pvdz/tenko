@@ -1,16 +1,17 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/some_annexb_stuff/curly/after_atom/eof.md
+- Path: tests/testcases/regexes/named_capturing_groups/bad_syntax_cases/illegal_escape.md
 
-> :: regexes : some annexb stuff : curly : after atom
+> :: regexes : named capturing groups : bad syntax cases
 >
-> ::> eof
-## FAIL
+> ::> illegal escape
+>
+> 
 
 ## Input
 
 `````js
-/f{
+/(?<\ux>foo)/
 `````
 
 ## Output
@@ -27,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Early EOF at the start of a regex quantifier
+    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; Found invalid quad unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /f{
-   ║ ^^^------- error
+ 1 ║ /(?<\ux>foo)/
+   ║ ^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
