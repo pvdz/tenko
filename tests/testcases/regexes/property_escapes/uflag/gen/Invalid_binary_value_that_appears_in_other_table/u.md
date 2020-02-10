@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The escaped property value `Variation_Selector` is not valid (does not appear in "table 56" nor "table 57"); Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
+    Regex: The escaped property value `Variation_Selector` is not valid (does not appear in "table 56" nor "table 57"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

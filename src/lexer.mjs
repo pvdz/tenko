@@ -2615,17 +2615,14 @@ function Lexer(
     if (ustatusBody === REGEX_GOOD_WITH_U_FLAG) {
       // body had an escape that is only valid with an u flag
       if (ustatusFlags === REGEX_GOOD_WITH_U_FLAG) return $REGEXU;
-      if (!lastReportableLexerError) regexSyntaxError('Regex body had an escape that is only valid with an u-flag, but it had no u-flag');
-      regexSyntaxError('Regex had syntax that is only valid with the u-flag and u-flag was in fact not present');
+      regexSyntaxError('Regex contained syntax that is only valid with the u-flag but the u-flag was not present');
       return $ERROR;
     }
 
     if (ustatusBody === REGEX_GOOD_SANS_U_FLAG) {
       // body had an escape or char class range that is invalid with a u flag
       if (ustatusFlags !== REGEX_GOOD_WITH_U_FLAG) return $REGEXN;
-      // in this case the body had syntax that's invalid with a u flag and the flag was present anyways
-      if (!lastReportableLexerError) regexSyntaxError('Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag');
-      regexSyntaxError('Regex had syntax that is invalid with u-flag and u-flag was in fact present');
+      regexSyntaxError('Regex contained syntax that is invalid with the u-flag but the u-flag was present');
       return $ERROR;
     }
 

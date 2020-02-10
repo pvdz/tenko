@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The es6 unicode escape `\u{...}` is only valid in regex with a u-flag; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
+    Regex: The es6 unicode escape `\u{...}` is only valid in regex with a u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════

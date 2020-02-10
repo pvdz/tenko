@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
+    Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

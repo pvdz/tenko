@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Escaped property name/value contained illegal characters; Regex body had an escape or char class range that is invalid with a u-flag, but it did have a u-flag
+    Regex: Escaped property name/value contained illegal characters; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

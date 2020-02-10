@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Escaping a dash in a char class is not allowed; Regex body had an escape that is only valid with an u-flag, but it had no u-flag
+    Regex: Escaping a dash in a char class is not allowed; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════
