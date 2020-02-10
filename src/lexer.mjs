@@ -2244,6 +2244,8 @@ function Lexer(
     return INVALID_IDENT_CHAR;
   }
   function isIdentRestChrUnicode(c, offsetOfC) {
+    ASSERT(isIdentRestChrUnicode.length === arguments.length, 'arg count');
+
     // https://tc39.github.io/ecma262/#sec-unicode-format-control-characters
     // U+200C (ZERO WIDTH NON-JOINER) and U+200D (ZERO WIDTH JOINER) are format-control characters that are used to
     // make necessary distinctions when forming words or phrases in certain languages. In ECMAScript source text
