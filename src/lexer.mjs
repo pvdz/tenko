@@ -2891,103 +2891,103 @@ function Lexer(
           // explicit quantifier
           // This is valid if we just parsed an atom, or in webcompat mode without the u-flag
           ASSERT_skip($$CURLY_L_7B);
+
+          if (eof()) {
+            return regexSyntaxError('Early EOF at the start of a regex quantifier');
+          }
+
           if (afterAtom) {
-            if (eof()) {
-              return regexSyntaxError('Early EOF at the start of a regex quantifier');
-            }
-            else {
-              let c = peek();
-              if (!isAsciiNumber(c)) {
-                if (webCompat === WEB_COMPAT_OFF) {
-                  if (peeky($$COMMA_2C)) {
-                    return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
-                  }
-
-                  if (peeky($$CURLY_R_7D)) {
-                    return regexSyntaxError('A regex curly quantifier had no content');
-                  }
-
-                  return regexSyntaxError('Found invalid regex curly quantifier');
-                }
-
-                afterAtom = true; // in webcompat the InvalidBracedQuantifier is an atom
-                if (peeky($$COMMA_2C)) {
-                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'The first digit of a regex curly quantifier is mandatory');
-                }
-                else if (peeky($$CURLY_R_7D)) {
-                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'A regex curly quantifier had no content');
-                }
-                else {
-                  uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found invalid regex curly quantifier');
-                }
-              }
-              else if (!parseRegexCurlyQuantifier(c)) {
-                let reason = 'Encountered unescaped closing curly `}` while not parsing a quantifier';
-                if (webCompat === WEB_COMPAT_OFF) {
-                  return regexSyntaxError(reason);
-                }
-                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-              }
-            }
-            if (neof() && peeky($$QMARK_3F)) {
-              ASSERT_skip($$QMARK_3F);
-            }
-            afterAtom = false;
-          } else {
-            let reason = 'Encountered illegal curly quantifier without anything to quantify. This is `InvalidBracedQuantifier` and explicitly a syntax error';
-            if (webCompat === WEB_COMPAT_OFF) {
-              return regexSyntaxError('Encountered unescaped opening curly `{` and the previous character was not part of something quantifiable');
-            }
-
-            // web compat only:
-            // [v]: `/f{/`
-            // [x]: `/f{1}/`
-            // [x]: `/f{1}?/`
-            // [v]: `/f{?/`
-            // [v]: `/f{/`
-            // [v]: `/f{?/`
-            // [v]: `/f{/`u
-            // [v]: `/f{?/u`
-            // [v]: `/f{/u`
-            // [v]: `/f{?/u`
-            // IF we can parse a curly quantifier, THEN we throw a syntax error. Otherwise we just parse a `{`
-            if (eof()) {
-              return regexSyntaxError('Early EOF at the start of a regex quantifier');
-            }
             let c = peek();
-            if (!isAsciiNumber(c)) {
+            if (isAsciiNumber(c)) {
+              // Try to parse a valid quantifier
+              // - `/x{1}/`
+              //       ^
+              if (parseRegexCurlyQuantifier(c)) {
+                // A question mark here makes the quantifier "non-greedy"
+                if (neof() && peeky($$QMARK_3F)) {
+                  // - `/foo{1,10}?/`
+                  //              ^
+                  ASSERT_skip($$QMARK_3F);
+                }
+
+                afterAtom = false; // Cannot quantify a quantifier
+                break;
+              }
+
+              // Something error happened, this wasn't a valid quantifier after all
+              // - `/x{1a}/`
+              //        ^
+              let reason = 'Encountered unescaped closing curly `}` while not parsing a quantifier';
               if (webCompat === WEB_COMPAT_OFF) {
-                if (peeky($$COMMA_2C)) {
-                  return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
-                }
-
-                if (peeky($$CURLY_R_7D)) {
-                  return regexSyntaxError('A regex curly quantifier had no content');
-                }
-
-                return regexSyntaxError('Found invalid regex curly quantifier');
+                return regexSyntaxError(reason);
               }
 
-              afterAtom = true; // in webcompat the InvalidBracedQuantifier is an atom
-              if (peeky($$COMMA_2C)) {
-                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'The first digit of a regex curly quantifier is mandatory');
-              }
-              else if (peeky($$CURLY_R_7D)) {
-                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'A regex curly quantifier had no content');
-              }
-              else {
-                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found invalid regex curly quantifier');
-              }
-            }
-            else if (parseRegexCurlyQuantifier(c)) {
-              return regexSyntaxError(reason);
-            }
-            else {
-              // This in webcompat is `{` as `ExtendedAtom` is a `ExtendedPatternCharacter`, which does not disallow the curly
+              // Consider this an atom. Keep the `afterAtom` state true
               uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-              // in web compat mode this case is treated as an extended atom
-              afterAtom = true;
+              break;
             }
+
+            if (webCompat === WEB_COMPAT_OFF) {
+              if (peeky($$COMMA_2C)) {
+                return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
+              }
+
+              if (peeky($$CURLY_R_7D)) {
+                return regexSyntaxError('A regex curly quantifier had no content');
+              }
+
+              return regexSyntaxError('Found invalid regex curly quantifier');
+            }
+
+            let reason = c === $$COMMA_2C ? 'The first digit of a regex curly quantifier is mandatory' :
+              c === $$CURLY_R_7D ? 'A regex curly quantifier had no content' :
+                'Found invalid regex curly quantifier';
+            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
+
+            // In webcompat the InvalidBracedQuantifier is an atom but since in web compat all quantifiers are ok
+            // to appear standalone, we don't need to worry about the afterAtom state here.
+
+            // afterAtom = false;
+            break;
+          }
+
+          if (webCompat === WEB_COMPAT_OFF) {
+            return regexSyntaxError('Encountered unescaped opening curly `{` and the previous character was not part of something quantifiable');
+          }
+
+          {
+            // web compat only:
+            // [v]: `/{/`
+            // [x]: `/{1}/`
+            // [x]: `/{1}?/`
+            // [v]: `/{?/`
+            // [v]: `/{/`
+            // [v]: `/{?/`
+            // [v]: `/{/`u
+            // [v]: `/{?/u`
+            // [v]: `/{/u`
+            // [v]: `/{?/u`
+            // IF we can parse a curly quantifier, THEN we throw a syntax error. Otherwise we just parse a `{`
+
+            // This will be an ExtendedPatternCharacter, InvalidBracedQuantifier, or syntax error
+            afterAtom = true;
+
+            let c = peek();
+            if (isAsciiNumber(c)) {
+              if (parseRegexCurlyQuantifier(c)) {
+                return regexSyntaxError('Encountered illegal curly quantifier without anything to quantify. This is `InvalidBracedQuantifier` and explicitly a syntax error');
+              }
+
+              // This in webcompat is `{` as `ExtendedAtom` is a `ExtendedPatternCharacter`, which does allows the curly
+              uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Encountered illegal curly quantifier without anything to quantify. This is `InvalidBracedQuantifier` and explicitly a syntax error');
+              break;
+            }
+
+            let reason =
+              c === $$COMMA_2C ? 'The first digit of a regex curly quantifier is mandatory' :
+              c === $$CURLY_R_7D ? 'A regex curly quantifier had no content' :
+                'Found invalid regex curly quantifier';
+            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
           }
           break;
 
