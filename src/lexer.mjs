@@ -281,6 +281,7 @@ import {
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -331,6 +332,7 @@ import {
   START_GT,
   START_OR,
   START_BSLASH,
+  START_QMARK,
   START_ERROR,
 
   STRING_PART,
@@ -847,6 +849,8 @@ function Lexer(
         return parseSameOrCompound($$OR_7C); // | || |=
       case START_BSLASH:
         return parseBackslash(); // An ident that starts with a unicode escape can be valid
+      case START_QMARK:
+        return parseQmark();
     }
 
     THROW('Unknown input', pointer - 1, pointer);
@@ -2327,6 +2331,16 @@ function Lexer(
 
   function parseBackslash() {
     return parseIdentFromUnicodeEscape(FIRST_CHAR, '', 0);
+  }
+
+  function parseQmark() {
+    // ? ??
+    if (neof() && peeky($$QMARK_3F)) {
+      ASSERT_skip($$QMARK_3F);
+      return $PUNC_QMARK_QMARK;
+    }
+
+    return $PUNC_QMARK
   }
 
   function regexSyntaxError(desc, ...rest) {

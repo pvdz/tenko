@@ -171,6 +171,7 @@ const $L_GT_EQ =  ++__$flag_leaf;
 const $L_GT_GT_EQ =  ++__$flag_leaf;
 const $L_GT_GT_GT_EQ =  ++__$flag_leaf;
 const $L_QMARK =  ++__$flag_leaf;
+const $L_QMARK_QMARK =  ++__$flag_leaf;
 const $L_BRACKET_OPEN =  ++__$flag_leaf;
 const $L_BRACKET_CLOSE =  ++__$flag_leaf;
 const $L_CARET =  ++__$flag_leaf;
@@ -307,6 +308,7 @@ const $PUNC_GT_EQ = $L_GT_EQ | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_GT_GT_EQ = $L_GT_GT_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_GT_GT_GT_EQ = $L_GT_GT_GT_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_QMARK = $L_QMARK | $G_PUNCTUATOR;
+const $PUNC_QMARK_QMARK = $L_QMARK_QMARK | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_BRACKET_OPEN = $L_BRACKET_OPEN | $G_PUNCTUATOR;
 const $PUNC_BRACKET_CLOSE = $L_BRACKET_CLOSE | $G_PUNCTUATOR;
 const $PUNC_CARET = $L_CARET | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
@@ -1727,6 +1729,7 @@ function toktypeToString(type, token, ignoreUnknown) {
     case $PUNC_GT_GT_EQ: return 'PUNC_GT_GT_EQ';
     case $PUNC_GT_GT_GT_EQ: return 'PUNC_GT_GT_GT_EQ';
     case $PUNC_QMARK: return 'PUNC_QMARK';
+    case $PUNC_QMARK_QMARK: return 'QMARK_QMARK';
     case $PUNC_BRACKET_OPEN: return 'PUNC_BRACKET_OPEN';
     case $PUNC_BRACKET_CLOSE: return 'PUNC_BRACKET_CLOSE';
     case $PUNC_CARET: return 'PUNC_CARET';
@@ -1895,6 +1898,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -1923,7 +1927,7 @@ ASSERT(ALL_TOKEN_TYPES = [
 ]);
 // </SCRUB ASSERTS TO COMMENT>
 
-let MAX_START_VALUE = 25; // For quick check difference START or token type
+let MAX_START_VALUE = 26; // For quick check difference START or token type
 let __$flag_start = 0; // This name is hardcoded in the build script...
 const START_SPACE = __$flag_start++;
 const START_ID = __$flag_start++;
@@ -1949,6 +1953,7 @@ const START_LT = __$flag_start++;
 const START_GT = __$flag_start++;
 const START_OR = __$flag_start++;
 const START_BSLASH = __$flag_start++;
+const START_QMARK = __$flag_start++;
 const START_ERROR = __$flag_start++;
 // <SCRUB ASSERTS TO COMMENT>
 ASSERT(__$flag_start === MAX_START_VALUE, 'keep in sync (update if START symbols were added/removed)');
@@ -2104,7 +2109,7 @@ let tokenStartJumpTable = [
   START_LT,               // 0x3C   no4   < :: < << <= <<= <!--
   START_EQ,               // 0x3D   no4   = :: = == === =>
   START_GT,               // 0x3E   no7   > :: > >= >> >>= >>> >>>=
-  $PUNC_QMARK,            // 0x3F   yes   ?
+  START_QMARK,            // 0x3F   yes   ?
   START_ERROR,            // 0x40   yes   @
   START_ID,               // 0x41   no*   A
   START_ID,               // 0x42   no*   B
@@ -3093,7 +3098,7 @@ let stringEscapeStartJumpTable = [
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
-ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, START_STRING, START_ZERO, START_DECIMAL, START_TEMPLATE, START_ID, START_KEY, START_PERCENT, START_AND, START_STAR, START_PLUS, START_MIN, START_DOT, START_DIV, START_CARET, START_LT, START_EQ, START_GT, START_BSLASH, START_OR, START_CURLY_CLOSE, START_ERROR]);
+ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, START_STRING, START_ZERO, START_DECIMAL, START_TEMPLATE, START_ID, START_KEY, START_PERCENT, START_AND, START_STAR, START_PLUS, START_MIN, START_DOT, START_DIV, START_CARET, START_LT, START_EQ, START_GT, START_BSLASH, START_OR, START_CURLY_CLOSE, START_QMARK, START_ERROR]);
 // </SCRUB ASSERTS TO COMMENT>
 
 function getTokenStart(c) {
@@ -3307,6 +3312,7 @@ export {
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -3357,6 +3363,7 @@ export {
   START_GT,
   START_OR,
   START_BSLASH,
+  START_QMARK,
   START_ERROR,
 
   STRING_PART,

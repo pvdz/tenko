@@ -291,6 +291,7 @@ import {
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -401,6 +402,9 @@ import {
   FROM_CATCH,
   FROM_ASYNC_ARG,
   FROM_OTHER_FUNC_ARG,
+  COAL_SEEN_NEITHER,
+  COAL_SEEN_NULLISH,
+  COAL_SEEN_LOGICAL,
   BINDING_TYPE_NONE,
   BINDING_TYPE_ARG,
   BINDING_TYPE_VAR,
@@ -7183,7 +7187,7 @@ function Parser(code, options = {}) {
         repeat = true;
       }
       else if (isNonAssignBinOp($tp_next_type, lexerFlags)) {
-        let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp);
+        let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, COAL_SEEN_NEITHER, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
         repeat = true;
       }
@@ -7196,7 +7200,30 @@ function Parser(code, options = {}) {
     }
     return assignable;
   }
-  function parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, astProp) {
+  function preventNullishWithLogic($tp_op_type, $tp_op_start, $tp_op_stop, coalSeen) {
+    ASSERT(preventNullishWithLogic.length === arguments.length, 'arg count');
+
+    // Check whether the given op is nullish (`??`), or logical (`||`, or `&&`), and that we haven't seen the other
+    // type yet. If an expression is mixing nullish with logical without parenthesis then it's a syntax error.
+
+    if ($tp_op_type === $PUNC_AND_AND || $tp_op_type === $PUNC_OR_OR) {
+      if (coalSeen === COAL_SEEN_NULLISH) {
+        return THROW_RANGE('Cannot use `??` and `&&`/`||` in the same expression without some grouping', $tp_op_start, $tp_op_stop);
+      }
+      return COAL_SEEN_LOGICAL; // Just so we know there's already a `??` in this chain, and/or itself doesn't matter
+    }
+
+    if ($tp_op_type === $PUNC_QMARK_QMARK) {
+      // Cannot mix `??` with `&&` or `||`
+      if (coalSeen === COAL_SEEN_LOGICAL) {
+        return THROW_RANGE('Cannot use `??` and `&&`/`||` in the same expression without some grouping', $tp_op_start, $tp_op_stop);
+      }
+      return COAL_SEEN_NULLISH; // Just so we know there's already a `??` in this chain
+    }
+
+    return coalSeen;
+  }
+  function parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, coalSeen, astProp) {
     ASSERT(parseExpressionFromBinaryOpOnlyStronger.length === arguments.length, 'arg count');
     // parseBinary
     // Now parsing the rhs (b) after an operator
@@ -7208,8 +7235,9 @@ function Parser(code, options = {}) {
     let $tp_op_start = tok_getStart();
     let $tp_op_stop = tok_getStop();
 
-    let opType = $tp_op_type;
-    let AST_nodeName = (opType === $PUNC_AND_AND || opType === $PUNC_OR_OR) ? 'LogicalExpression' : 'BinaryExpression';
+    coalSeen = preventNullishWithLogic($tp_op_type, $tp_op_start, $tp_op_stop, coalSeen);
+
+    let AST_nodeName = ($tp_op_type === $PUNC_AND_AND || $tp_op_type === $PUNC_OR_OR) ? 'LogicalExpression' : 'BinaryExpression';
     AST_wrapClosedCustom(astProp, {
       type: AST_nodeName,
       loc: undefined,
@@ -7229,8 +7257,11 @@ function Parser(code, options = {}) {
     // for if the previous op was also `**` (and we don't need other checks because it is the strongest binary op).
     let otherStrength = getStrength($tp_op_type, $tp_op_start, $tp_op_stop);
     while (continueParsingBinOp(lexerFlags, otherStrength)) {
-      assignable |= parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column,'right');
+      assignable |= parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column, coalSeen,'right');
     }
+
+    // Can't parse `||` or `&&` _after_ `??` on same level so don't have to check this inside the loop
+    preventNullishWithLogic(tok_getType(), tok_getStart(), tok_getStop(), coalSeen);
 
     AST_close($tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, AST_nodeName);
 
@@ -7364,29 +7395,30 @@ function Parser(code, options = {}) {
     // (note that unary ops simply don't consume further binary ops AST-wise so they dont appear in this table)
 
     switch (type) {
-      case $PUNC_STAR_STAR: return 15;
-      case $PUNC_STAR: return 14;
-      case $PUNC_DIV: return 14;
-      case $PUNC_PERCENT: return 14;
-      case $PUNC_PLUS: return 13;
-      case $PUNC_MIN: return 13;
-      case $PUNC_LT_LT: return 12;
-      case $PUNC_GT_GT: return 12;
-      case $PUNC_GT_GT_GT: return 12;
-      case $PUNC_LT: return 11;
-      case $PUNC_LT_EQ: return 11;
-      case $PUNC_GT: return 11;
-      case $PUNC_GT_EQ: return 11;
-      case $ID_in: return 11;
-      case $ID_instanceof: return 11;
-      // case $ID_of: return 11;
-      case $PUNC_EQ_EQ: return 10;
-      case $PUNC_EXCL_EQ: return 10;
-      case $PUNC_EQ_EQ_EQ: return 10;
-      case $PUNC_EXCL_EQ_EQ: return 10;
-      case $PUNC_AND: return 9;
-      case $PUNC_CARET: return 8;
-      case $PUNC_OR: return 7;
+      case $PUNC_STAR_STAR: return 16;
+      case $PUNC_STAR: return 15;
+      case $PUNC_DIV: return 15;
+      case $PUNC_PERCENT: return 15;
+      case $PUNC_PLUS: return 14;
+      case $PUNC_MIN: return 14;
+      case $PUNC_LT_LT: return 13;
+      case $PUNC_GT_GT: return 13;
+      case $PUNC_GT_GT_GT: return 13;
+      case $PUNC_LT: return 12;
+      case $PUNC_LT_EQ: return 12;
+      case $PUNC_GT: return 12;
+      case $PUNC_GT_EQ: return 12;
+      case $ID_in: return 12;
+      case $ID_instanceof: return 12;
+      // case $ID_of: return 12;
+      case $PUNC_EQ_EQ: return 11;
+      case $PUNC_EXCL_EQ: return 11;
+      case $PUNC_EQ_EQ_EQ: return 11;
+      case $PUNC_EXCL_EQ_EQ: return 11;
+      case $PUNC_AND: return 10;
+      case $PUNC_CARET: return 9;
+      case $PUNC_OR: return 8;
+      case $PUNC_QMARK_QMARK: return 7;
       case $PUNC_AND_AND: return 6;
       case $PUNC_OR_OR: return 5;
       // case $PUNC_QMARK: return 4;
@@ -7410,35 +7442,36 @@ function Parser(code, options = {}) {
     // (note that unary ops simply don't consume further binary ops AST-wise so they dont appear in this table)
 
     switch (tok_getType()) {
-      case $PUNC_EQ_EQ: return 10 > otherStrength;
-      case $PUNC_EXCL_EQ: return 10 > otherStrength;
-      case $PUNC_EQ_EQ_EQ: return 10 > otherStrength;
-      case $PUNC_EXCL_EQ_EQ: return 10 > otherStrength;
+      case $PUNC_EQ_EQ: return 11 > otherStrength;
+      case $PUNC_EXCL_EQ: return 11 > otherStrength;
+      case $PUNC_EQ_EQ_EQ: return 11 > otherStrength;
+      case $PUNC_EXCL_EQ_EQ: return 11 > otherStrength;
       case $PUNC_AND_AND: return 6 > otherStrength;
       case $PUNC_OR_OR: return 5 > otherStrength;
-      case $PUNC_PLUS: return 13 > otherStrength;
-      case $PUNC_MIN: return 13 > otherStrength;
-      case $PUNC_LT: return 11 > otherStrength;
-      case $PUNC_GT: return 11 > otherStrength;
-      case $PUNC_LT_EQ: return 11 > otherStrength;
-      case $PUNC_GT_EQ: return 11 > otherStrength;
-      case $PUNC_STAR: return 14 > otherStrength;
-      case $PUNC_DIV: return 14 > otherStrength;
-      case $PUNC_PERCENT: return 14 > otherStrength;
-      case $PUNC_LT_LT: return 12 > otherStrength;
-      case $PUNC_GT_GT: return 12 > otherStrength;
-      case $PUNC_GT_GT_GT: return 12 > otherStrength;
+      case $PUNC_PLUS: return 14 > otherStrength;
+      case $PUNC_MIN: return 14 > otherStrength;
+      case $PUNC_LT: return 12 > otherStrength;
+      case $PUNC_GT: return 12 > otherStrength;
+      case $PUNC_LT_EQ: return 12 > otherStrength;
+      case $PUNC_GT_EQ: return 12 > otherStrength;
+      case $PUNC_STAR: return 15 > otherStrength;
+      case $PUNC_DIV: return 15 > otherStrength;
+      case $PUNC_PERCENT: return 15 > otherStrength;
+      case $PUNC_LT_LT: return 13 > otherStrength;
+      case $PUNC_GT_GT: return 13 > otherStrength;
+      case $PUNC_GT_GT_GT: return 13 > otherStrength;
       case $ID_in:
         if (hasAllFlags(lexerFlags, LF_IN_FOR_LHS)) {
           return false;
         }
-        return 11 > otherStrength;
-      case $ID_instanceof: return 11 > otherStrength;
-      // case $ID_of: return 11;
-      case $PUNC_AND: return 9 > otherStrength;
-      case $PUNC_CARET: return 8 > otherStrength;
-      case $PUNC_OR: return 7 > otherStrength;
+        return 12 > otherStrength;
+      case $ID_instanceof: return 12 > otherStrength;
+      // case $ID_of: return 12;
+      case $PUNC_AND: return 10 > otherStrength;
+      case $PUNC_CARET: return 9 > otherStrength;
+      case $PUNC_OR: return 8 > otherStrength;
       // case $PUNC_QMARK: return 4;
+      case $PUNC_QMARK_QMARK: return 7;
       case $PUNC_STAR_STAR:
         if (!allowExponentiation) {
           return THROW_RANGE('`**` was introduced in ES7', tok_getStart(), tok_getStop());
@@ -8201,7 +8234,6 @@ function Parser(code, options = {}) {
     AST_close($tp_yield_start, $tp_yield_line, $tp_yield_column, 'YieldExpression');
 
     if (tok_getType() === $PUNC_QMARK) {
-      ASSERT(tok_sliceInput(tok_getStart(), tok_getStop()) === '?', 'just in case more tokens can start with `?`');
       return THROW_RANGE('Can not have a `yield` expression on the left side of a ternary', $tp_yield_start, $tp_yield_stop);
     }
 

@@ -150,8 +150,6 @@ function onRead(file, content) {
     return console.log(BOLD, 'SKIP', RESET, '(Stage 3: optional-chaining)');
   } else if (features.includes('top-level-await')) {
     return console.log(BOLD, 'SKIP', RESET, '(Stage 3: top-level-await)');
-  } else if (features.includes('coalesce-expression')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 4: `??`)');
   } else if (features.includes('optional-chaining')) {
     return console.log(BOLD, 'SKIP', RESET, '(Stage 4: `?.`)');
   }
