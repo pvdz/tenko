@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Error while trying to parse new unicode escape
+    Regex: EOF while trying to parse regex atom unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════

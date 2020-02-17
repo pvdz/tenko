@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The start of an group name had a surrogate pair and is therefor only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag; The start of a `\k` group name had a surrogate pair and is therefor only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -58,10 +58,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<@{x2f9df}@xyz>foo)met\k<@{x2f9df}@xyz>/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Early EOF while parsing character class escape
+    Regex: Unexpected EOF while parsing unicode escape; Missing closing angle bracket of name of capturing group
 
 start@1:0, error@1:0
 ╔══╦════════════════

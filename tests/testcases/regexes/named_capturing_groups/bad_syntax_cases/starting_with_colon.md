@@ -5,9 +5,9 @@
 > :: regexes : named capturing groups : bad syntax cases
 >
 > ::> starting with colon
+## FAIL
 
 ## Input
-
 
 `````js
 /(?<:a>a)/
@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`:`, 58]
+    Regex: Tried to parse the name for a capturing group but it contained at least one invalid ident char (`:`)
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -53,41 +53,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
-        value: null,
-        regex: { pattern: '(?<:a>a)', flags: '' },
-        raw: '/(?<:a>a)/'
-      }
-    }
-  ]
-}
-
-tokens (3x):
-       REGEXN ASI
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-/(?<:a>a)/;
-````
-
-Produces same AST
+_Output same as sloppy mode._

@@ -11,7 +11,7 @@
 ## Input
 
 `````js
-  /\k<4>/
+/\k<4>/
 `````
 
 ## Output
@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`4`, 52]
+    Regex: Tried to parse the name for a capturing group but it contained at least one invalid ident char (`4`)
 
-start@1:0, error@1:2
+start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║   /\k<4>/
-   ║   ^^^^^^^------- error
+ 1 ║ /\k<4>/
+   ║ ^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -57,14 +57,14 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:2},end:{line:1,column:9},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
       expression: {
         type: 'Literal',
-        loc:{start:{line:1,column:2},end:{line:1,column:9},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
         value: null,
         regex: { pattern: '\\k<4>', flags: '' },
         raw: '/\\k<4>/'

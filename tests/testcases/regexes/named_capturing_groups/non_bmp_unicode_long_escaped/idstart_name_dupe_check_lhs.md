@@ -36,7 +36,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The es6 long unicode escape is only valid with u-flag; Encountered extended unicode escape (`\u{}`) or surrogate pair unicode quads (`\uxxxx\uxxxx`) which is only valid with u-flag; Named capturing group named contained an invalid unicode escaped char: [55422]
+    Regex: Found a unicode ruby escape which is only valid with u-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this can not become valid without web compat mode
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -62,10 +62,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: Found a unicode ruby escape which is only valid with u-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this is invalid with u-flag
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<\u{2F9DF}>foo)met\k<\ud87e>/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

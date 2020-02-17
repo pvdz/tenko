@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Early EOF while parsing escape inside group name identifier
+    Regex: Found EOF at start of a group name identifier
 
 start@1:0, error@1:0
 ╔══╦════════════════

@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The es6 long unicode escape is only valid with u-flag; Encountered extended unicode escape (`\u{}`) or surrogate pair unicode quads (`\uxxxx\uxxxx`) which is only valid with u-flag; Named capturing group named contained an invalid unicode escaped char: [120784]
+    Regex: Found a unicode ruby escape which is only valid with u-flag; Encountered invalid unicode escape inside the group name of a capturing group, this cannot be valid
 
 start@1:0, error@1:0
 ╔══╦════════════════

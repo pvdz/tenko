@@ -36,7 +36,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag; Named capturing group named contained an invalid unicode escaped char: [56799]
+    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this can not become valid without web compat mode
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -62,10 +62,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this is invalid with u-flag
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<\ud87e\udddf>foo)met\k<\udddf>/u
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

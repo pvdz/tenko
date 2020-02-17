@@ -5,6 +5,9 @@
 > :: regexes : named capturing groups : bad syntax cases
 >
 > ::> k arg not closed
+Fails because `\k` is never considered a valid atom in web compat due to `N` being enabled after parsing the first group name.
+
+## FAIL
 
 ## Input
 
@@ -26,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Missing closing angle bracket of name of capturing group
+    Regex: Tried to parse the name for a capturing group but it contained at least one invalid ident char (`/`)
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -53,26 +56,15 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
-        value: null,
-        regex: { pattern: '(?<a>.)\\k<a', flags: '' },
-        raw: '/(?<a>.)\\k<a/'
-      }
-    }
-  ]
-}
+throws: Lexer error!
+    Regex: Tried to parse the name for a capturing group but it contained at least one invalid ident char (`/`); Found `\k` in a char class but the regex also had a group name so this is illegal
 
-tokens (3x):
-       REGEXN ASI
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>.)\k<a/
+   ║ ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Module goal with AnnexB
@@ -80,13 +72,3 @@ tokens (3x):
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-/(?<a>.)\k<a/;
-````
-
-Produces same AST

@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: name contained a character that is only a valid identifier with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════

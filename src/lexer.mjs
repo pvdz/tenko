@@ -438,12 +438,16 @@ const TABLE57 = ',Adlam,Adlm,Ahom,Anatolian_Hieroglyphs,Hluw,Arabic,Arab,Armenia
 import {
   BAD_ESCAPE,
   GOOD_ESCAPE,
+  FOR_NAMED_GROUP,
+  FOR_K_ESCAPE,
   GOAL_MODULE,
   GOAL_SCRIPT,
+  MAX_VALID_UNICODE_VALUE,
   REGEX_ALWAYS_GOOD,
   REGEX_GOOD_WITH_U_FLAG,
   REGEX_GOOD_SANS_U_FLAG,
   REGEX_ALWAYS_BAD,
+  REGEX_GOOD_RUBY_EDGE_CASE,
   FIRST_CHAR,
   ILLEGAL_UNICODE_ESCAPE,
   NON_START,
@@ -453,7 +457,7 @@ import {
   REGEX_CHARCLASS_BAD_SANS_U_FLAG,
   REGEX_CHARCLASS_BAD_WITH_U_FLAG,
   REGEX_CHARCLASS_CLASS_ESCAPE,
-  REGEX_CHARCLASS_DOUBLE_QUAD,
+  REGEX_CHARCLASS_WAS_RUBY,
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,
@@ -543,7 +547,6 @@ function Lexer(
   let lastColumn = 0;
   let lastCanonizedInput = ''; // updated when parsing ident or string. Contains _unescaped_ input. Used for keyword checks and .value in ast for strings
   let lastCanonizedInputLen = 0; // work around an inline cache bug (lastCanonizedInput.length would cause megamorphic deopt for some reason)
-  let lastRegexUnicodeEscapeOrd = 0; // need this to validate unicode escapes in named group identifiers :/
   let lastPotentialRegexError = ''; // If regex scanner is an error then this is the message. Many errors require flag validation at the end.
   let lastReportableLexerError = ''; // Set whenever an $error is or will be returned
 
@@ -1021,7 +1024,7 @@ function Lexer(
             lastCanonizedInput += slice(pointerOffset, pointer);
             lastCanonizedInputLen += pointer - pointerOffset;
             // The canonized value will be updated too
-            badEscape = parseStringEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
+            badEscape = parseStringOrTemplateEscape(lexerFlags, NOT_TEMPLATE) === BAD_ESCAPE || badEscape;
             pointerOffset = pointer;
 
             break;
@@ -1052,8 +1055,8 @@ function Lexer(
     if (!lastReportableLexerError) lastReportableLexerError = 'Unclosed string at EOF';
     return $ERROR;
   }
-  function parseStringEscape(lexerFlags, forTemplate) {
-    ASSERT(arguments.length === parseStringEscape.length, 'need args');
+  function parseStringOrTemplateEscape(lexerFlags, forTemplate) {
+    ASSERT(arguments.length === parseStringOrTemplateEscape.length, 'need args');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
 
     ASSERT_skip($$BACKSLASH_5C);
@@ -1094,7 +1097,8 @@ function Lexer(
         return GOOD_ESCAPE;
 
       case STRING_ESC_U: {
-        let r = parseIdentOrStringEscapeUnicode();
+        if (eof()) return BAD_ESCAPE;
+        let r = parseUnicodeEscapeForNonRegex();
         if (r === ILLEGAL_UNICODE_ESCAPE) return BAD_ESCAPE;
         lastCanonizedInput += r > 0xffff ? String.fromCodePoint(r) : String.fromCharCode(r);
         lastCanonizedInputLen += r > 0xffff ? 2 : 1;
@@ -1159,69 +1163,6 @@ function Lexer(
         return ASSERT(false, 'unreachable', c);
       // </SCRUB ASSERTS>
     }
-  }
-  function parseIdentOrStringEscapeUnicode() {
-    ASSERT(parseIdentOrStringEscapeUnicode.length === arguments.length, 'arg count');
-
-    // This is _after_ `\u` have been consumed already!
-
-    if (eof()) {
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
-
-    // We could read() here because we want to consume two more chars (at least)
-    // however, if the escape is bad we would also consume the closing quote so we peek()
-
-    let c = peek();
-
-    if (c !== $$CURLY_L_7B) {
-      return parseStringEscapeUnicodeQuad(c);
-    }
-
-    ASSERT_skip($$CURLY_L_7B);
-
-    let r = parseUnicodeEscapeVary();
-    if (r === ILLEGAL_UNICODE_ESCAPE) {
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
-
-    return r;
-  }
-  function parseStringEscapeUnicodeQuad(a) {
-    // we've already consumed a. we must consume 3 more chars for this quad unicode escape
-    if (eofd(3)) {
-      if (!lastReportableLexerError) lastReportableLexerError = 'Not enough characters left for a proper unicode escape';
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
-
-    let b = peekd(1);
-    let c = peekd(2);
-    let d = peekd(3);
-
-    let va = getHexValue(a);
-    let vb = getHexValue(b);
-    let vc = getHexValue(c);
-    let vd = getHexValue(d);
-
-    if ((va | vb | vc | vd) > 15) {
-      // if this is a bad escape then dont consume the chars. one of them could be a closing quote
-      if (!lastReportableLexerError) lastReportableLexerError = 'At least one character of the unicode escape was not a valid hex (0-9a-f) character';
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
-
-    ASSERT(ASSERT_peekUncached() === a);
-    skipFastWithoutUpdatingCache();
-    ASSERT(ASSERT_peekUncached() === b);
-    skipFastWithoutUpdatingCache();
-    ASSERT(ASSERT_peekUncached() === c);
-    skipFastWithoutUpdatingCache();
-    ASSERT(ASSERT_peekUncached() === d);
-    skip();
-
-    let r = (va << 12) | (vb << 8) | (vc << 4) | vd;
-    ASSERT(parseInt(String.fromCharCode(a, b, c, d), 16) === r, 'confirm manual conversion works');
-
-    return r;
   }
 
   function skipZeroes() {
@@ -1509,7 +1450,7 @@ function Lexer(
       } else if (c === $$BACKSLASH_5C) {
         lastCanonizedInput += slice(lastOffset, pointer);
         lastCanonizedInputLen += pointer - lastOffset;
-        badEscapes = parseStringEscape(lexerFlags, FOR_TEMPLATE) === BAD_ESCAPE || badEscapes;
+        badEscapes = parseStringOrTemplateEscape(lexerFlags, FOR_TEMPLATE) === BAD_ESCAPE || badEscapes;
         lastOffset = pointer;
       } else {
         ASSERT_skip(c);
@@ -2092,7 +2033,8 @@ function Lexer(
     }
 
     // Note: this is a slow path. and a super edge case.
-    let r = parseIdentOrStringEscapeUnicode();
+    let r = parseUnicodeEscapeForNonRegex();
+
     if (r === ILLEGAL_UNICODE_ESCAPE) {
       parseIdentifierRest(prevStr, prevLen); // keep on parsing the identifier but we will make it an error token
       lastCanonizedInput = prevStr;
@@ -2127,101 +2069,11 @@ function Lexer(
     if (!lastReportableLexerError) lastReportableLexerError = 'Identifier escape did not yield a valid identifier character';
     return $ERROR;
   }
-  function parseRegexIdentifierRest(prevStr, uflagStatus) {
-    // Returns a uflagStatus enum. See parseIdentifierRest for non-regex idents.
-    ASSERT(parseRegexIdentifierRest.length === arguments.length, 'arg count');
-    ASSERT(typeof prevStr === 'string', 'prev should be string so far or empty', prevStr);
-    ASSERT(neof(), 'call site should take care of this');
-
-    let c = peek();
-    do {
-      if (c === $$BACKSLASH_5C) {
-        // This ident is part of a regex. If the backslash is invalid or the escaped codepoint not valid for the
-        // identifier then the ALWAYS_BAD flag should be returned. If the escape is "es6 unicode escape" then the
-        // flag must be set to require the uflag. Note that the escape is evaluated as the canonical value in any
-        // case (including surrogate pairs), so `a\u0062c` equals `abc`.
-        if (eofd(1)) {
-          return regexSyntaxError('Early EOF while parsing escape inside group name identifier');
-        }
-        if (peekd(1) !== $$U_75) {
-          return regexSyntaxError('Only unicode escapes are legal in identifier names');
-        }
-
-        ASSERT_skip($$BACKSLASH_5C);
-        ASSERT_skip($$U_75);
-        c = parseRegexCharClassUnicodeEscape();
-        let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
-        if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
-
-        if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
-          uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found "es6" unicode escape (`\\u{..}`) or surrogate pair quads (`\\uxxxx\\uxxxx`) in regex ident, which is only valid with u-flag in regex');
-          c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
-        }
-        if (c === REGEX_CHARCLASS_BAD) {
-          return regexSyntaxError('Found invalid quad unicode escape in regex ident, the escape must be part of the ident so the ident is an error');
-        }
-        ASSERT(!(c & REGEX_CHARCLASS_BAD_WITH_U_FLAG), 'regex idents cant be bad with u-flag? I think', c, uflagStatus);
-        let wide = isIdentRestChr(c, CODEPOINT_FROM_ESCAPE);
-        if (wide === INVALID_IDENT_CHAR) {
-          return regexSyntaxError('An escape that might be part of an identifier cannot be anything else so if it is invalid it must be an error');
-        }
-        if (wide === VALID_SINGLE_CHAR) {
-          // - `/(?<a\u00aa>.)/u`
-          ASSERT(!wasDoubleQuad, 'The first quad of a valid surrogate pair cannot yield a valid single ident character');
-          prevStr += String.fromCharCode(c);
-        } else {
-          ASSERT(!wasDoubleQuad || (isIdentRestChr(codePointToSurrogateHead(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR && isIdentRestChr(codePointToSurrogateTail(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR), 'The first quad of a surrogate pair cannot yield a valid single rest ident rest character')
-          prevStr += String.fromCodePoint(c);
-          if (wasDoubleQuad) {
-            uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag');
-          }
-        }
-      }
-      else {
-        let wide = isIdentRestChr(c, pointer);
-        if (wide === INVALID_IDENT_CHAR) break;
-        if (wide === VALID_DOUBLE_CHAR) {
-          uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'name contained a character that is only a valid identifier with u-flag');
-          prevStr += slice(pointer, pointer + 2); // we could try to get the ord and fromCodePoint for perf
-          skipFastWithoutUpdatingCache();
-          skip();
-        }
-        else {
-          ASSERT(wide === VALID_SINGLE_CHAR, 'wide enum');
-          ASSERT_skip(c);
-          prevStr += String.fromCharCode(c); // TODO: if this affects perf we can try a slice after the loop
-        }
-      }
-      if (eof()) break;
-      c = peek();
-    } while (true);
-
-    lastCanonizedInput = prevStr;
-    lastCanonizedInputLen = prevStr.length;
-    return uflagStatus;
-  }
 
   function toStringExpensive(c) {
     return String.fromCodePoint(c);
   }
 
-  function codepointLen(c, offsetOfC) {
-    if (c < 127) return 1;
-    // now we have to do an expensive... but proper unicode check
-    return codepointLenExpensive(c, offsetOfC);
-  }
-  function codepointLenExpensive(c, offsetOfC) {
-    ASSERT(codepointLenExpensive.length === arguments.length, 'arg count');
-    // offset is skipped for escapes. we can assert `c` is correct in those cases.
-    if (offsetOfC !== CODEPOINT_FROM_ESCAPE) {
-      // this is a slow path that only validates if unicode chars are used in an identifier
-      // since that is pretty uncommon I don't mind doing an extra codepoint lookup here
-      c = input.codePointAt(offsetOfC);
-    }
-    let s = String.fromCodePoint(c);
-    ASSERT(s.length === 1 || s.length === 2, 'up to four bytes...'); // js strings are 16bit
-    return s.length;
-  }
   function isIdentStart(c, offsetOfC) {
     ASSERT(isIdentStart.length === arguments.length, 'all args');
     if (c > 0x7e) {
@@ -2593,11 +2445,9 @@ function Lexer(
       }
     }
 
-    // According to test262 the next exception is not applied to web compat mode:
-    //   test262/test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js
-    if (webCompat === WEB_COMPAT_OFF && reffedGroupNames !== ',') { // "not empty"
-      // Other than above we don't care about whether group names were declared (by named capturing groups).
-      // We do need to validate the referenced group names with `\k` atom escapes.
+    if (reffedGroupNames !== ',' && (webCompat === WEB_COMPAT_OFF || declaredGroupNames !== ',')) {
+      // We need to validate the referenced group names with `\k` atom escapes.
+      // In web compat mode, we can ignore that if no names were declared at all
       // This is a fairly unused functionality so I'm going to do this in a slow path for now.
       let bad = false;
       reffedGroupNames.split(',').filter(Boolean).forEach(name => {
@@ -2653,7 +2503,7 @@ function Lexer(
     // - there are two grammars; a simple (RegularExpressionLiteral) and a more granular grammar (Pattern). Pattern governs. The first cannot be extended/changed, the second may be.
     //   - the spec describes such an extension in (B.1.4) we may need to use that as our end goal
     // - there are two parsing modes; unicode and without unicode. the unicode is slightly more strict
-    //   - reflects on surrogate pairs, long unicode escapes, and valid char class ranges
+    //   - reflects on surrogate pairs, unicode ruby escapes, and valid char class ranges
 
     let afterAtom = false;
 
@@ -2723,6 +2573,7 @@ function Lexer(
                 if (eof()) {
                   return regexSyntaxError('Encountered early EOF');
                 }
+
                 c = peek();
                 if (c === $$IS_3D || c === $$EXCL_21) {
                   if (!supportRegexLookbehinds) {
@@ -2731,16 +2582,24 @@ function Lexer(
                   // (?<= (?<!
                   ASSERT_skip(c);
                   wasUnfixableAssertion = true;
-                } else if (!supportRegexNamedGroups) {
+                }
+                else if (!supportRegexNamedGroups) {
                   ASSERT_skip(c);
                   return regexSyntaxError('The lookbehind group `(?<` must be `(?<=` or `(?<!` because named groups are not supported in the currently targeted ES version, next char after `<` is `' + String.fromCharCode(c) + '`');
-                } else {
+                }
+                else {
                   // parseRegexNamedGroup, parseNamedCapturingGroup
                   // [v]: `/(?<name>content)/`
                   // [v]: `/(?<\u0065bc>content)/`
 
-                  const FOR_NAMED_GROUP = true;
                   uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_NAMED_GROUP);
+                  if (uflagStatus === REGEX_GOOD_SANS_U_FLAG && webCompat === WEB_COMPAT_OFF) {
+                    // If there is a u-flag, this is illegal
+                    // If there is no u-flag, the ident required u-flag to be valid, so unable to parse a group name, so
+                    // the `(?<name>` tries to become an atom `(` with quantifier `?`, which is never legal, so it fails
+                    // If the status was invalid then that's an immediate error.
+                    uflagStatus = regexSyntaxError('This will lead to `(?` which is always an error');
+                  }
 
                   let name = lastCanonizedInput;
                   if (groupNames['#' + name]) {
@@ -2836,15 +2695,23 @@ function Lexer(
           if (d === $$B_62 || d === $$B_UC_42) {
             ASSERT_skip(d);
             afterAtom = false; // this Assertion can never have a Quantifier
-          } else {
-            let escapeStatus = parseRegexAtomEscape(d);
-            ASSERT(escapeStatus === REGEX_ALWAYS_GOOD || lastPotentialRegexError || lastReportableLexerError, 'if not good then error should be set');
+          }
+          else {
+            let escapeStatus = parseEscapeForRegexAtom(d);
+            ASSERT(escapeStatus === REGEX_GOOD_RUBY_EDGE_CASE || escapeStatus === REGEX_ALWAYS_GOOD || lastPotentialRegexError || lastReportableLexerError, 'if not good then error should be set');
             if (escapeStatus === REGEX_ALWAYS_BAD) {
               uflagStatus = REGEX_ALWAYS_BAD;
-            } else if (escapeStatus === REGEX_GOOD_SANS_U_FLAG) {
+            }
+            else if (escapeStatus === REGEX_GOOD_SANS_U_FLAG) {
               uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
-            } else if (escapeStatus === REGEX_GOOD_WITH_U_FLAG) {
+            }
+            else if (escapeStatus === REGEX_GOOD_WITH_U_FLAG) {
               uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
+            }
+            else if (escapeStatus === REGEX_GOOD_RUBY_EDGE_CASE) {
+              // Edge case for `/\u{1}/`, to detect double quantifiers after a proper ruby without u-flag in webcompat
+              // If it reached this point, the escape is still valid with and without u-flag. Do not propagate the edge case flag.
+              afterAtom = false;
             }
           }
         }
@@ -3027,13 +2894,16 @@ function Lexer(
     // this is a fail because we didnt got to the end of input before the closing /
     return regexSyntaxError('Found EOF before regex was closed');
   }
-  function parseRegexGroupName(c, uflagStatus, forGroup) {
+  function parseRegexGroupName(c, uflagStatus, forCapturing/*: FOR_NAMED_GROUP | FOR_K_ESCAPE */) {
     ASSERT(parseRegexGroupName.length === arguments.length, 'arg count');
+    // The initial `<` should be consumed here, but it's considering `/\k<</` is valid, we can't assert that here
 
-    let r = _parseRegexGroupName(c, uflagStatus, forGroup);
+    let r = _parseRegexGroupName(c, uflagStatus, forCapturing);
+
+    if (eof()) return r;
 
     ASSERT(lastCanonizedInput.length === lastCanonizedInputLen, 'should always be in sync');
-    ASSERT(r === REGEX_ALWAYS_BAD || foundInvalidGroupName || lastCanonizedInputLen !== 0, 'a valid parse should always yield an ident', r);
+    ASSERT(foundInvalidGroupName || lastCanonizedInputLen !== 0, 'a valid parse should always yield an ident', r);
 
     if (uflagStatus !== REGEX_ALWAYS_BAD && r === REGEX_ALWAYS_BAD) {
       let reason = 'An illegal group name composition is only valid without u-flag and in webcompat mode';
@@ -3042,12 +2912,20 @@ function Lexer(
       } else {
         return regexSyntaxError(reason);
       }
+    } else if (foundInvalidGroupName) {
+      if (forCapturing === FOR_NAMED_GROUP) {
+        return regexSyntaxError('An invalid name for a capturing group can never lead to a valid regex');
+      } else {
+        ASSERT(forCapturing === FOR_K_ESCAPE, 'enum');
+        // This makes sure that `\k` is not allowed in webcompat mode IF the regex DOES contain a valid group name
+        kCharClassEscaped = true;
+      }
     }
 
     return r;
   }
-  function _parseRegexGroupName(c, uflagStatus, forGroup) {
-    ASSERT(parseRegexGroupName.length === arguments.length, 'arg count');
+  function _parseRegexGroupName(c, uflagStatus, forCapturing/*: FOR_NAMED_GROUP | FOR_K_ESCAPE */) {
+    ASSERT(_parseRegexGroupName.length === arguments.length, 'arg count');
 
     // Note: you are first supposed to parse the generic regex payload with either ~U,~N or +U,+N, depending on
     // the u-flag. Without the flag, and in web compat mode, you would parse `\k<abc>` first as just an
@@ -3063,204 +2941,361 @@ function Lexer(
     // We use a global (for now) for this. Set `foundValidGroupName` or `foundInvalidGroupName` and confirm afterwards
     // whether invalid names were found and, if so, no valid names were found. Throw accordingly. (TODO: juggle this)
 
-    let thisNameInvalid = false;
-
     // [v]: `/(?<\u0065ame>xyz)/``
     //          ^
     // [x]: `/(?<x>foo)met\k<\u0065>/`
     //                       ^
-    if (c === $$BACKSLASH_5C) {
-      // Note: can't backtrack from here. Invalid ident or missing `>` is a syntax error now, in any mode/flag
-      // [x]: `/(?<x>foo)met\k<\u0065>/`
-      //                       ^
-      // [x]: `/(?<x>foo)met\k<\ud87e\udddf>/`
-      // [x]: `/(?<x>foo)met\k<\u{2F9DF}>/`
 
-      ASSERT_skip($$BACKSLASH_5C);
-      if (eof()) return regexSyntaxError('Found EOF at start of a group name identifier');
-      if (!peeky($$U_75)) return regexSyntaxError('Found invalid escape character at the start of a group name identifier');
-      ASSERT_skip($$U_75);
-
-      // We need to parse a unicode escape here that can be a quad, a double quad, or a variable length escape
-      // However, we also need to know the size of the code point (one or two characters or invalid)
-      // Without u-flag, the variable length and non-bmp code points are not considered and will cause an error here.
-
-      c = parseRegexCharClassUnicodeEscape(); // will check EOF first, consume a valid unicode escape, else bail
-      let wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
-      if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
-      if ((c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) === REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
-        uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Encountered extended unicode escape (`\\u{}`) or surrogate pair unicode quads (`\\uxxxx\\uxxxx`) which is only valid with u-flag');
-        c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+    if (c === $$GT_3E) {
+      foundInvalidGroupName = true;
+      lastCanonizedInput = '';
+      lastCanonizedInputLen = 0;
+      if (webCompat === WEB_COMPAT_ON) {
+        // Signify that a `\k` escape was attempted so it will throw if any group name was parsed in this regex (`+N`)
+        reffedGroupNames += '<>,';
+        return updateRegexUflagIsIllegal(uflagStatus, 'Group name is not optional without webcompat, found empty `<>`');
       }
-      if (c === REGEX_CHARCLASS_BAD) {
-        // - `/(?<\ux>foo)/`
-        return regexSyntaxError('Found invalid quad unicode escape');
-      }
+      return regexSyntaxError('Group name is not optional, found empty `<>`');
+    }
 
-      let wide = isIdentStart(c, CODEPOINT_FROM_ESCAPE);
-      // Note: if wide or if the escape was of the `\u{}` form then the uflag will have been updated here so skip that
-      if (wide === VALID_SINGLE_CHAR) {
-        ASSERT(!wasDoubleQuad, 'The first quad of a valid surrogate pair cannot yield a valid single ident character');
-        // [v]: `/(?<\u0041>.)/`
-        // Fine with and without u-flag
-      }
-      else if (wide === VALID_DOUBLE_CHAR) {
-        ASSERT(!wasDoubleQuad || (isIdentRestChr(codePointToSurrogateHead(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR && isIdentRestChr(codePointToSurrogateTail(c), CODEPOINT_FROM_ESCAPE) === INVALID_IDENT_CHAR), 'The first quad of a surrogate pair cannot yield a valid single ident rest character for regex')
-        // [x]: `/(?<\ud87e\udddfrest>foo)/`
-        // [v]: `/(?<\ud87e\udddfrest>foo)/u`
-        // The first character is a valid ident start, however, it only is as a code point, which is only the case
-        // when u-flag is present. So this is an error without u-flag, since surrogate pair heads are not valid here.
-        if (wasDoubleQuad) {
-          uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag');
-        }
-      }
-      else {
-        ASSERT(wide === INVALID_IDENT_CHAR, 'wide is enum (2)');
-        // [x]: `/(?<\uD835\uDFD0rest>foo)/`
-        //                       ^
-        // [x]: `/(?<\u0020ame>xyz)/``
-        //                 ^
-        // [x]: `/(?<x>foo)\k<\u0020ame>xyz/``
-        //                          ^
-        return regexSyntaxError('Named capturing group named contained an invalid unicode escaped char', c);
-      }
+    let pointerStart = pointer;
+    lastCanonizedInput = '';
+    lastCanonizedInputLen = 0;
 
-      let firstCharStr = toStringExpensive(c);
-      ASSERT(typeof firstCharStr === 'string', 'readNextCodepointAsStringExpensive should return a string', firstCharStr, c, CODEPOINT_FROM_ESCAPE, false);
-
-      if (peeky($$GT_3E)) {
-        // name is one character
-        lastCanonizedInput = firstCharStr;
-        lastCanonizedInputLen = firstCharStr.length; // TODO: can this ever be multi-byte ...?
+    let first = true;
+    let lastPointer = 0; // It is possible that the parsing stops without consumption. Exit to prevent infiloop
+    while (c !== $$GT_3E && uflagStatus !== REGEX_ALWAYS_BAD && lastPointer !== pointer) {
+      lastPointer = pointer;
+      if (c === $$BACKSLASH_5C) {
+        uflagStatus = _parseRegexGroupNameEscape(first, uflagStatus, forCapturing);
       } else {
-        uflagStatus = parseRegexIdentifierRest(firstCharStr, uflagStatus); // updates lastCanonizedInput & lastCanonizedInputLen
+        uflagStatus = _parseRegexGroupNameChar(first, c, uflagStatus, forCapturing);
       }
-      foundValidGroupName = true;
-    } else {
-      // [v]: `/(?<name>x)*/`
-      //           ^
-      // [v]: `/(?<name>x)*/u`
-      // [v]: `/(?<輸rest>foo)/u`
-      //           ^
-      let wide = isIdentStart(c, pointer);
-      if (wide === VALID_SINGLE_CHAR) {
-        // [v]: `/(?<name>x)*/`
-        //           ^
-        // [v]: `/(?<name>x)*/u`
-        // Fine with and without u-flag
-        ASSERT_skip(c);
-        foundValidGroupName = true;
-      }
-      else if (wide === VALID_DOUBLE_CHAR) {
-        // [v]: `/(?<輸rest>foo)/u`
-        //           ^
-        // The first character is a valid ident start, however, it only is as a code point, which is only the case
-        // when u-flag is present. So this is an error without u-flag, since surrogate pair heads are not valid here.
-        uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'The start of an group name had a surrogate pair and is therefor only valid with u-flag');
-        ASSERT(peeky(c));
-        skipFastWithoutUpdatingCache();
-        skip();
-        foundValidGroupName = true;
-      }
-      else {
-        ASSERT(wide === INVALID_IDENT_CHAR, 'wide enum (3)');
-        // [x]: `/(?<>a)/`
-        //           ^
-        // [x]: `/(?<4>a)/`
-        //           ^
-        // [v]: `/(?<𝟐rest>fxoo)/`
-        //           ^
-        // [x]: `/(?<輸>foo)met\k<�>/u`
-        //                        ^
-
-        if (webCompat !== WEB_COMPAT_ON) {
-          // (The name must be valid ident so non-ident chars will end the parse prematurely)
-          // if (webCompat === WEB_COMPAT_OFF) {
-          // [x]: `/(?<x>foo)met\k<#/`
-          //                       ^
-          // [x]: `/(?<x>foo)met\k<abc#/`
-          //                          ^
-          // [x]: `/(?<x>foo)met\k<5/`
-          //                       ^
-          return regexSyntaxError('Wanted to parse an unescaped group name specifier but it had a bad start', '`' + String.fromCharCode(c) + '`', c);
-        }
-
-        // Ignore this error
-        foundInvalidGroupName = true;
-        thisNameInvalid = true;
-        // Figure out how many chars to skip (slow path)
-        let len = codepointLen(c, pointer);
-        ASSERT(len === 1 || len === 2, 'codepoints are 1 or 2?', [len, c, pointer]);
-        if (len === 1) {
-          // [x]: `/(?<>a)/`
-          //           ^
-          wide = VALID_SINGLE_CHAR;
-          ASSERT_skip(c);
-        } else {
-          // [v]: `/(?<𝟐rest>fxoo)/`
-          //           ^
-          // Do we need to throw without u-flag? Is it relevant to only skip one character without u-flag? I don't think so because I don't think a valid surrogate tail can lead to a significant syntax character
-          wide = VALID_DOUBLE_CHAR;
-          ASSERT(peeky(c));
-          skipFastWithoutUpdatingCache();
-          skip();
-        }
-      }
-
-      let firstCharStr = (wide === VALID_DOUBLE_CHAR) ? slice(pointer - 2, pointer) : String.fromCharCode(c);
 
       if (eof()) {
-        // `/(?<a`
-        return regexSyntaxError('Early EOF after parsing first char of an ident in regex');
-      }
-
-      if (peeky($$GT_3E)) {
-        // name is one character
-        lastCanonizedInput = firstCharStr;
-        lastCanonizedInputLen = firstCharStr.length; // TODO: can ever be multi-byte?
-      }
-      else {
-        uflagStatus = parseRegexIdentifierRest(firstCharStr, uflagStatus); // updates lastCanonizedInput & lastCanonizedInputLen
-        if (uflagStatus === REGEX_ALWAYS_BAD) return REGEX_ALWAYS_BAD;
-      }
-
-      if (thisNameInvalid) {
-        // Prevent backreference errors. If the group name is allowed to be an invalid ident then it won't matter
-        // and otherwise the presence of a valid group name will trigger this error.
         lastCanonizedInput = '';
         lastCanonizedInputLen = 0;
+        return regexSyntaxError('Missing closing angle bracket of name of capturing group');
       }
+
+      c = peek();
+      first = false;
     }
 
-    if (eof()) {
-      return regexSyntaxError('Missing closing angle bracket of name of capturing group');
+    if (uflagStatus === REGEX_ALWAYS_BAD) {
+      foundInvalidGroupName = true;
+      lastCanonizedInput = '';
+      lastCanonizedInputLen = 0;
+      return REGEX_ALWAYS_BAD;
     }
 
-    if (!peeky($$GT_3E)) {
-      // I think this error should not be recoverable in web compat mode but tests seem to disagree
-      let reason = 'Missing closing angle bracket of name of capturing group';
-      if (webCompat === WEB_COMPAT_OFF) {
-        return regexSyntaxError(reason);
-      }
-      return updateRegexUflagIsIllegal(uflagStatus, reason);
+    if (lastPointer === pointer) {
+      // This is an implicit case where a unicode escape was illegal but the regex could still be valid without u-flag
+      ASSERT(uflagStatus === REGEX_GOOD_SANS_U_FLAG, 'this case should only happen for this state');
+      foundInvalidGroupName = true;
+      lastCanonizedInput = '';
+      lastCanonizedInputLen = 0;
+      return uflagStatus;
     }
+
+    lastCanonizedInputLen = lastCanonizedInput.length;
 
     ASSERT_skip($$GT_3E);
 
-    ASSERT(lastCanonizedInput.length === lastCanonizedInputLen, 'should always be in sync');
     if (lastCanonizedInputLen > 0) {
       // This enables +N mode, meaning `\k` is now disallowed in char classes in webcompat mode too
-      if (forGroup) {
-        declaredGroupNames += lastCanonizedInput + ',';
+      let next = lastCanonizedInput + ',';
+      if (forCapturing === FOR_NAMED_GROUP) {
+        if (declaredGroupNames.includes(',' + next)) {
+          // [x]: `/(?<a>a)(?<b>b)(?<a>a)/`
+          THROW('This group name (`' + lastCanonizedInput + '`) was already used before', pointerStart, pointer - 1);
+        }
+        declaredGroupNames += next;
       } else {
         // We can only verify existence after completing the body
-        reffedGroupNames += lastCanonizedInput + ',';
+        reffedGroupNames += next;
       }
+    }
+
+    // If this was the name of a group then if the uflag is invalid, so is the whole group (invalid with u-flag, and
+    // without u-flag, the `(?<` turns into `? trying to quantify `(`, which can not be an atom, so it fails)
+    // If this was `\k` and the flag signals an error, then it's fine without u-flag since that just treats it as atoms.
+
+    return uflagStatus;
+  }
+
+  function _parseRegexGroupNameChar(start, c, uflagStatus, forCapturing) {
+    ASSERT(_parseRegexGroupNameChar.length === arguments.length, 'arg count');
+    ASSERT(c !== $$BACKSLASH_5C, 'should be asserted by caller');
+
+    // [v]: `/(?<name>x)/`
+    //           ^
+    // [v]: `/(?<name>x)/u`
+    // [x]: `/(?<輸rest>x)/`
+    //           ^
+    // [v]: `/(?<輸rest>x)/u`
+    // [v]: `/(?<name>x)\k<name>*/`
+    //           ^         ^
+    // [v]: `/(?<name>x)\k<name>/u`
+    // [x]: `/(?<輸rest>x)\k<輸rest>/`
+    //           ^           ^
+    // [v]: `/(?<輸rest>x)\k<輸rest>/u`
+
+    let wide = start ? isIdentStart(c, pointer) : isIdentRestChr(c, pointer);
+
+    if (wide === VALID_SINGLE_CHAR) {
+      // [v]: `/(?<name>x)*/`
+      //           ^
+      // [v]: `/(?<name>x)*/u`
+      // Fine with and without u-flag
+      ASSERT_skip(c);
+      lastCanonizedInput += String.fromCharCode(c);
+
+      return uflagStatus;
+    }
+
+    if (wide === INVALID_IDENT_CHAR) {
+      // This case is invalid for u-flag. One case can be made valid without u-flag in web compat mode: the `\k` escape
+
+      // [x]: `/(?<>a)/`
+      //           ^
+      // [x]: `/(?<>a)/u`
+      // [x]: `/(?<4>a)/`
+      //           ^
+      // [x]: `/(?<4>a)/u`
+      // [v]: `/(?<𝟐rest>fxoo)/`
+      //           ^
+      // [x]: `/(?<輸>foo)met\k<�>/u`
+      //                        ^
+      // [x]: `/(?<x>foo)met\k<5/`
+      //                       ^
+
+      foundInvalidGroupName = true;
+
+      if (webCompat === WEB_COMPAT_OFF || forCapturing === FOR_NAMED_GROUP) {
+        // if (webCompat === WEB_COMPAT_OFF) {
+        // [x]: `/(?<#x>foo)met\k<#/u`
+        // [w]: `/(?<x>foo)met\k<#x/`
+        //                       ^
+        // [x]: `/(?<x>foo)met\k<5/u`
+        // [x]: `/(?<5x>foo)met\k<x/`
+        //           ^
+        return regexSyntaxError('Tried to parse the name for a capturing group but it contained at least one invalid ident char (`' + String.fromCharCode(c) + '`)');
+      }
+
+      // This must be `\k<` and some non-ident-start char after it in webcompat. This means `\k` and `<` are atoms
+      // Don't parse a group, immediately return. Let outer parser consume the next char (it may be a quantifier)
+      return updateRegexUflagIsIllegal(uflagStatus, 'Tried to parse the name for a capturing group but it contained at least one invalid ident char (`' + String.fromCharCode(c) + '`)');
+    }
+
+    ASSERT(wide === VALID_DOUBLE_CHAR, 'enum');
+
+    // [v]: `/(?<輸rest>foo)/u`
+    //           ^
+    // The first character is a valid ident start, however, it only is as a code point which is only the case
+    // when u-flag is present. Without u-flag the pair is treated as two individual characters and the surrogate
+    // head is not a valid ident char. As such the group name fails to parse. There are two outcomes now; if the
+    // name was for a capturing group then this is an unrecoverable error because the regex would need to interpret
+    // the start of the group as `(?`, which wants to quantify an atom, except `(` is never allowed to be an atom.
+    // However, if this was the name for a `\k` escape, then in web compat mode it can end up as atoms for the
+    // `\k` escape and the `<`. So we need to check the forCapturing state.
+
+    skipFastWithoutUpdatingCache();
+    skip();
+    lastCanonizedInput += String.fromCodePoint(c);
+
+    if (forCapturing === FOR_NAMED_GROUP) {
+      // Error without u-flag because even in webcompat it leads to `(?` which is an illegal quantifier
+      return updateRegexUflagIsMandatory(uflagStatus, 'The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag');
+    }
+
+    if (webCompat === WEB_COMPAT_OFF) {
+      // This case can only made to work in web compat mode because that allows `\k` to be an atom
+      return updateRegexUflagIsMandatory(uflagStatus, 'The start of a `\\k` group name had a surrogate pair and is therefor only valid with u-flag'); // Let's not promote web compat
     }
 
     return uflagStatus;
   }
-  function parseRegexAtomEscape(c) {
+  function _parseRegexGroupNameEscape(start, uflagStatus, forCapturing) {
+    ASSERT(_parseRegexGroupNameEscape.length === arguments.length, 'arg count');
+
+    // [v]: `/(?<\u0065>x)/`
+    //           ^
+    // [v]: `/(?<\u0065>x)/u`
+    // [v]: `/(?<e>x)\k<\u0065>/`
+    //                  ^
+    // [v]: `/(?<e>x)\k<\u0065>/u`
+    // [x]: `/(?<\u{65}>x)/`
+    // [v]: `/(?<\u{65}>x)/u`
+    // [w]: `/\k<\u{65}>/`
+    // [x]: `/\k<\u{65}>/u`
+    // [w]: `/(?<e>x)\k<\u{65}>/`
+    // [v]: `/(?<e>x)\k<\u{65}>/u`
+    // [x]: `/(?<\ud87e\udddf>x)/`
+    // [v]: `/(?<\ud87e\udddf>x)/u`
+    // [w]: `/\k<\ud87e\udddf>/`
+    // [x]: `/\k<\ud87e\udddf>/u`
+    // [x]: `/(?<輸>x)\k<\ud87e\udddf>/`
+    // [v]: `/(?<輸>x)\k<\ud87e\udddf>/u`
+    // [x]: `/(?<輸>x)\k<\u{2F9DF}>/`
+    // [v]: `/(?<輸>x)\k<\u{2F9DF}>/u`
+
+    ASSERT_skip($$BACKSLASH_5C);
+    if (eof()) {
+      foundInvalidGroupName = true;
+      return regexSyntaxError('Found EOF at start of a group name identifier');
+    }
+    if (!peeky($$U_75)) {
+      foundInvalidGroupName = true;
+      return regexSyntaxError('Found invalid escape character at the start of a group name identifier');
+    }
+    ASSERT_skip($$U_75);
+
+    if (eof()) {
+      return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Unexpected EOF while parsing unicode escape');
+    }
+
+    // We need to parse a unicode escape here that can be a quad, a double quad, or a ruby escape
+    // However, we also need to know the size of the code point (one or two characters or invalid)
+    // Without u-flag, the ruby and non-bmp code points are not considered and will cause an error here.
+
+    // `/(?<a\u{0065}b>c)/u`
+    //       ^
+    // `/(?<a\u0065b>c)/u`
+    //       ^
+    // `/(?<a\u0065\u0065b>c)/u`     (the quads can be a surrogate pair, but do not have to be; valid ident either way)
+    //       ^
+    // `/(?<a\u{}b>c)/u`             (error because ruby must contain at least one hexdigit)
+    // `/(?<{0065}>x)\k<\u{0065}>/u` (ok)
+    // `/(?<\u0065>x)\k<\u0065>/u`   (ok)
+    // `/\k<\u{0065}>/u`             (error because there is no group with this name)
+    // `/\k<\u{}>/u`                 (error because ruby must contain at least one hexdigit)
+    // `/\k<\u{0x65}>/u`             (error because u-flag forbids alternative readings of brace quantifier)
+    // `/\k<\u{0,65}>/u`             (error because `\k` can not be an atom so it cannot be quantified)
+    // `/\k<a\u0065b>/u`             (fine if escape is ok and a group with that name exists)
+    // `/\k<a\u0065\u0065b>/u`       (same as above, quads may also form a surrogate pair)
+
+    // Under certain circumstances the lack u-flag can still yield a valid, albeit different, interpretation
+    // `/(?<a\u{0065}b>c)/`          (illegal because ruby is not considered without u-flag> name invalid> `(?` invalid)
+    // `/(?<a\u{}b>c)/`              (error because name is invalid and `(?` is invalid quantifier without it)
+    // `/(?<a\u0065b>c)/`            (fine if escape is ok)
+    // `/(?<a\u0065\u0065b>c)/`      (fine if escape is okay and not a surrogate pair, since that requires u-flag)
+    // `/(?<\u0065>x)\k<\u0065>/`    (ok, named groups and \k are not hidden under u-flag, matches /xx/)
+    // `/\k<\u{0065}>/`              (illegal because if group name is valid, a group with that name must exist)
+    // `/\k<\u{0x65}>/`              (ok in web, atoms `\k`, `<`, `\u`, `{`, `0x65`, `}`, `>`. Error without web)
+    // `/\k<\u{0,65}>/`              (ok in web, the group name fails but `\u` is quantified. Error without web)
+    // `/\k<\u{}>/`                  (ok in web, atoms `\k`, `<`, `\u`, `{`, `}`)
+    // `/\k<a\u0065b>/`              (fine if escape is ok and a group with that name exists)
+    // `/\k<a\u0065\u0065b>/`        (same as above, but also the quads are illegal if they are a surrogate pair)
+
+    // We dont know whether u-flag is present until after we've parsed the flags so we track both
+    // Parse as loose as possible and keep track of parsing specific u-flag or non-u-flag stuff
+    // then after flag parsing confirm that the flag presence conforms to expectations
+
+    // Note that `(?<name>` without u-flag is illegal if the name is illegal. That's because the alternative reading
+    // requires the `(` to be an atom that is quantified by `?`. However, `(` can not be an atom, so it still fails.
+
+    let c = peek(); // dont read. we dont want to consume a bad \n here
+    if (c === $$CURLY_L_7B) {
+      c = parseUnicodeRubyEscape();
+
+      // If this is part of a `\k` escape then this might be ok without u-flag in web compat, otherwise it must be error
+      uflagStatus = updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag'); // don't mention the webcompat exception
+    } else {
+      c = parseUnicodeQuadEscape(c, false);
+
+      if (c > 0xffff && forCapturing === FOR_NAMED_GROUP) {
+        // The double quad can be made to work without u-flag but not inside a capturing group because `(?` is invalid
+        uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag');
+      }
+    }
+
+    if (eof()) {
+      // We are inside a regex so whether or not we parsed a ruby is irrelevant at this point
+      // The eof happens before the end of the regex, so this must be a syntax error
+      foundInvalidGroupName = true;
+      return regexSyntaxError('Early EOF while parsing a group name');
+    }
+
+    if (c === REGEX_CHARCLASS_BAD) {
+      foundInvalidGroupName = true;
+      if (webCompat === WEB_COMPAT_OFF || forCapturing === FOR_NAMED_GROUP) {
+        return regexSyntaxError('Regex contained a group name with invalid unicode escape');
+      }
+
+      return updateRegexUflagIsIllegal(uflagStatus, 'The name of a `\\k` escape contained a broken unicode ruby escape and this can not lead to a valid regex with u-flag');
+    }
+
+    ASSERT(c >= 0 && c <= MAX_VALID_UNICODE_VALUE, 'c should be valid unicode now', c);
+
+    let firstCharStr = toStringExpensive(c);
+    ASSERT(typeof firstCharStr === 'string', 'readNextCodepointAsStringExpensive should return a string', firstCharStr, c);
+    lastCanonizedInput += firstCharStr;
+
+    let wide = start ? isIdentStart(c, CODEPOINT_FROM_ESCAPE) : isIdentRestChr(c, CODEPOINT_FROM_ESCAPE);
+
+    if (wide === VALID_SINGLE_CHAR) {
+      // (Named groups are not hidden behind u-flag but ruby escapes are not treated as such without it)
+      // [v]: `/(?<\u0041>.)/`
+      // [v]: `/(?<\u0041>.)/u`
+      // [x]: `/(?<\u{41}>.)/`                 Fails because `(?` is always an illegal quantifier
+      // [v]: `/(?<\u{41}>.)/u`
+      // [v]: `/(?<A>x)\k<\u0041>/`
+      // [v]: `/(?<A>x)\k<\u0041>/u`
+      // [v]: `/(?<A>x)\k<\u{41}>/`            Webcompat only (where `\k` is a valid atom)
+      // [v]: `/(?<A>x)\k<\u{41}>/u`
+
+      return uflagStatus;
+    }
+
+    if (wide === VALID_DOUBLE_CHAR) {
+      // A codepoint beyond 0xffff can only be recognized with u-flag
+      // Without u-flag, a double quad that is surrogate pair would be treated as two individual chars, neither
+      // can be a valid ident char so without u-flag the group name would not be valid, falling back to legacy atoms.
+      // [x]: `/(?<\ud87e\udddf>foo)/`         Without u-flag the quads are not combined so invalid group name
+      // [v]: `/(?<\ud87e\udddf>foo)/u`
+      // [x]: `/(?<\u{2F9DF}>foo)/u`           Fails because `(?` is always an illegal quantifier
+      // [v]: `/(?<\u{2F9DF}>foo)/u`
+      // [x]: `/(?<輸>x)\k<\ud87e\udddf>)/`    Webcompat only (the quads are not valid ident chars on their own)
+      // [v]: `/(?<輸>x)\k<\ud87e\udddf>)/u`
+      // [x]: `/(?<輸>x)\k<\u{2F9DF}>)/`       Webcompat only (where `\k` is a valid atom)
+      // [v]: `/(?<輸>x)\k<\u{2F9DF}>)/u`
+      if (forCapturing === FOR_NAMED_GROUP) {
+        // Only for named groups is this a problem because either way (double quad or ruby) the escape cannot
+        // contribute a valid ident char to the group name, meaning the group name fails to parse, meaning the
+        // interpretation of this part falls back to legacy atoms in web compat mode, and just fails otherwise
+        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a capturing group name that requires the u-flag to be considered valid');
+      }
+
+      if (webCompat === WEB_COMPAT_OFF) {
+        // This is a `\k` escape, which can recover from a high codepoint, but only in webcompat mode. In that case
+        // the `\k` and `\u` become individual atoms. A quad becomes a trivial atom while a ruby becomes a quantifier
+        // like `\u{50000}` in webcompat mode is the letter `u` repeated 50000 times. Otherwise it's still an error.
+        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a `\\k` escape group name that requires the u-flag to be considered valid');
+      }
+
+      return uflagStatus;
+    }
+
+    ASSERT(wide === INVALID_IDENT_CHAR, 'wide is enum (2)');
+
+    // Two main cases; either inside a capturing group or a k-escape.
+    // The capturing group is non-recoverable because the `(?` which is impossible since `(` cannot be an atom.
+    // The k-escape can recover in web compat mode, at least up to the point of invalidation, since all parts that
+    // were potentially valid can "decompose" to valid fallback atoms (including `\k`, `\u`, and a ruby escape)
+    if (forCapturing === FOR_NAMED_GROUP) {
+      foundInvalidGroupName = true;
+      return regexSyntaxError('Encountered invalid unicode escape inside the group name of a capturing group, this cannot be valid');
+    }
+
+    if (webCompat === WEB_COMPAT_OFF) {
+      foundInvalidGroupName = true;
+      return regexSyntaxError('Encountered invalid unicode escape inside the group name of a `\\k` escape, this can not become valid without web compat mode');
+    }
+
+    return updateRegexUflagIsIllegal(uflagStatus, 'Encountered invalid unicode escape inside the group name of a `\\k` escape, this is invalid with u-flag');
+  }
+  function parseEscapeForRegexAtom(c) {
     // backslash already parsed, c is peeked
     // return REGEX_*** enum
 
@@ -3284,7 +3319,7 @@ function Lexer(
 
       case REGATOM_ESC_u:
         ASSERT_skip($$U_75);
-        return parseRegexAtomUnicodeEscape();
+        return parseUnicodeEscapeForRegexAtom();
 
       case REGATOM_ESC_x:
         // hex
@@ -3450,6 +3485,7 @@ function Lexer(
         if (eof()) return regexSyntaxError('Early EOF while parsing `\\k` escape in regex character class');
         c = peek();
         if (c !== $$LT_3C) {
+          kCharClassEscaped = true;
           let reason = 'Named back reference \\k; missing group name';
           if (webCompat === WEB_COMPAT_OFF) {
             return regexSyntaxError(reason, c);
@@ -3460,7 +3496,6 @@ function Lexer(
         if (eof()) return regexSyntaxError('Early EOF while parsing `\\k` escape in regex character class');
         c = peek();
 
-        const FOR_K_ESCAPE = false;
         uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_K_ESCAPE);
         ASSERT(lastCanonizedInputLen === lastCanonizedInput.length, 'should always be in sync');
 
@@ -3530,132 +3565,6 @@ function Lexer(
 
     return REGEX_ALWAYS_GOOD;
   }
-  function parseRegexAtomUnicodeEscape() {
-    // Return REGEX_*** enum
-
-    // if unicode flag
-    // - surrogate pairs may matter
-    // - class char status matters
-    // - long unicode escape is allowed
-
-    // we dont know whether u-mode is enabled until after we've parsed the flags
-    // so we must parse as loose as possible and keep track of parsing specific u-flag or non-u-flag stuff
-    // then after flag parsing confirm that the flag presence conforms to expectations
-
-    lastRegexUnicodeEscapeOrd = 0;
-
-    if (eofd(3)) { // We are after the `\u` and now we parse either 4 hex digits or, at least, `{}` and one hex digit
-      return regexSyntaxError('Early EOF while trying to parse unicode escape');
-    }
-
-    let c = peek(); // dont read. we dont want to consume a bad \n here
-    if (c !== $$CURLY_L_7B) {
-      return parseRegexAtomUnicodeEscapeQuad(c);
-    }
-
-    ASSERT_skip($$CURLY_L_7B);
-
-    if (parseUnicodeEscapeVary() === ILLEGAL_UNICODE_ESCAPE) {
-      return regexSyntaxError('Error while trying to parse new unicode escape');
-    }
-
-    return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The es6 unicode escape `\\u{...}` is only valid in regex with a u-flag');
-  }
-  function parseRegexAtomUnicodeEscapeQuad(a) {
-    // we've already consumed a. we must consume 3 more chars for this quad unicode escape
-    if (eofd(3)) {
-      let reason = 'Encountered early EOF while parsing a unicode escape quad';
-      if (webCompat === WEB_COMPAT_ON) {
-        // can still be `/\u/` so let EOF be checked elsewhere...
-        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-      } else {
-        return regexSyntaxError(reason);
-      }
-    }
-    let b = peekd(1);
-    let c = peekd(2);
-    let d = peekd(3);
-
-    let va = getHexValue(a);
-    let vb = getHexValue(b);
-    let vc = getHexValue(c);
-    let vd = getHexValue(d);
-
-    // if this is a bad escape then dont consume the chars. one of them could be a closing quote
-    if ((va | vb | vc | vd) < HEX_OOB) {
-      // okay, _now_ consume them
-      ASSERT(ASSERT_peekUncached() === a);
-      skipFastWithoutUpdatingCache();
-      ASSERT(ASSERT_peekUncached() === b);
-      skipFastWithoutUpdatingCache();
-      ASSERT(ASSERT_peekUncached() === c);
-      skipFastWithoutUpdatingCache();
-      ASSERT(ASSERT_peekUncached() === d);
-      skip();
-
-      let firstPart = (va << 12) | (vb << 8) | (vc << 4) | vd;
-
-      // Is this a surrogate high byte? then we'll try another one
-      if (firstPart >= 0xD800 && firstPart <= 0xDBFF) {
-        // pretty slow path but we're constructing a low+hi surrogate pair together here
-        if (!eofd(5) && peek() === $$BACKSLASH_5C && peekd(1) === $$U_75) {
-          let a = peekd(2);
-          let b = peekd(3);
-          let c = peekd(4);
-          let d = peekd(5);
-
-          let va = getHexValue(a);
-          let vb = getHexValue(b);
-          let vc = getHexValue(c);
-          let vd = getHexValue(d);
-
-          let secondPart = va << 12 | vb << 8 | vc << 4 | vd;
-
-          if (((va | vb | vc | vd) < HEX_OOB) && secondPart >= 0xDC00 && secondPart <= 0xDFFF) {
-            /*
-              https://en.wikipedia.org/wiki/UTF-16
-              To decode U+10437 (𐐷) from UTF-16:
-              Take the high surrogate (0xD801) and subtract 0xD800, then multiply by 0x400, resulting in 0x0001 * 0x400 = 0x0400.
-              Take the low surrogate (0xDC37) and subtract 0xDC00, resulting in 0x37.
-              Add these two results together (0x0437), and finally add 0x10000 to get the final decoded UTF-32 code point, 0x10437.
-             */
-            // firstPart = 0xD801;
-            // secondPart = 0xDC37;
-            // let expected = 0x10437;
-
-            // now skip `\uxxxx` (6)
-            ASSERT(ASSERT_peekUncached() === $$BACKSLASH_5C);
-            skipFastWithoutUpdatingCache();
-            ASSERT(ASSERT_peekUncached() === $$U_75);
-            skipFastWithoutUpdatingCache();
-            ASSERT(ASSERT_peekUncached() === a);
-            skipFastWithoutUpdatingCache();
-            ASSERT(ASSERT_peekUncached() === b);
-            skipFastWithoutUpdatingCache();
-            ASSERT(ASSERT_peekUncached() === c);
-            skipFastWithoutUpdatingCache();
-            ASSERT(ASSERT_peekUncached() === d);
-            skip();
-
-            // we have a matching low+hi, combine them
-            lastRegexUnicodeEscapeOrd = surrogateToCodepoint(firstPart, secondPart);
-            return REGEX_ALWAYS_GOOD; // Without u-flag it won't matter for atom escapes and can't lead to syntax errors
-          }
-        }
-      }
-
-      lastRegexUnicodeEscapeOrd = firstPart;
-      return REGEX_ALWAYS_GOOD; // outside char classes we can ignore surrogates
-    } else {
-      let reason = 'Encountered bad character while trying to parse a unicode escape quad';
-      if (webCompat === WEB_COMPAT_ON) {
-        lastRegexUnicodeEscapeOrd = parseInt(a+b+c+d, 16); // *shrug*
-        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-      } else {
-        return regexSyntaxError(reason);
-      }
-    }
-  }
 
   function parseRegexCharClass() {
     // Parse a character class (a set of chars by which to match one character)
@@ -3673,7 +3582,7 @@ function Lexer(
     // ranges and its progress in two separate ways while progressing the pointer of the same lexer. Fun!
 
     // Note that surrogate pairs (only supported with u-flag) can only appear as a pair as literal characters, or as
-    // the variable unicode escape (`\u{...}`), or as a double quad escape (`\uxxxx\uxxxx`). Other escapes or a mix of
+    // the unicode ruby escape (`\u{...}`), or as a double quad escape (`\uxxxx\uxxxx`). Other escapes or a mix of
     // these methods will not lead to a pair, which can be important for validating ranges with and without u-flag.
 
     ASSERT_skip($$SQUARE_L_5B);
@@ -3699,53 +3608,120 @@ function Lexer(
       c = peek();
     }
 
-    // With u-flag, a surrogate pair encoded as double unicode escaped quads must be consumed as one char. Without
+    // With u-flag, a surrogate pair encoded as double unicode quad escapes must be consumed as one char. Without
     // u-flag, each quad must be consumed individually but we must still forward the scanner when finding it (for
     // u-flag support). So we'll cache the second quad, which must be a valid surrogate tail in such case (so no
     // worries about that stuff) so that we can process it separately
-    // Keep in mind; no mixing of surrogate pair encoding. Either both literal, one variable unicode, or double quads.
+    // Keep in mind; no mixing of surrogate pair encoding. Either both literal, one unicode ruby, or double quads.
 
     while (c !== $$SQUARE_R_5D) {
       // There is no single escape that can be combined with an existing character here as a surrogate pair.
-      // Variable escapes can yield codepoints > 0xffff, and double quad unicode escapes can. Only other way is literal.
+      // Ruby escapes can yield codepoints > 0xffff, and double unicode quad escapes can. Only other way is literal.
       let wasEscape = false;
       let wasDoubleQuad = false;
+      let wasUniEscape = false;
+      let wasBadUniEscape = false;
+      let wasRubyWebEscape = false;
+
       if (c === $$BACKSLASH_5C) {
         ASSERT_skip($$BACKSLASH_5C);
         wasEscape = true;
-        // `c` may be >0xffff by variable unicode escape or double quad unicode escape (only...)
-        c = parseRegexCharClassEscape();
-        // It matters explicitly for this function due to unicode range ambiguity. For double quad the second quad may
-        // be part of a new range which may be relevant in case there is no u-flag.
-        wasDoubleQuad = c & REGEX_CHARCLASS_DOUBLE_QUAD;
-        if (wasDoubleQuad) c ^= REGEX_CHARCLASS_DOUBLE_QUAD;
+
+        if (eof()) {
+          regexSyntaxError('Early EOF after backslash in char class');
+          return REGEX_CHARCLASS_BAD;
+        }
+
+        c = peek();
+        wasUniEscape = c === $$U_75;
+
+        // `c` may be >0xffff by unicode ruby escape or double unicode quad escapes (only...)
+        c = parseRegexCharClassEscape(c);
+
+        // TODO: /[\u{01}-a]/ if there is a u-flag, this is ok. no u-flag, `}-a` should fail unless webcompat mode
+        // in both cases, at this point, it should not yet fail. strict mode is not relevant.
+        // TODO: /[\u01-a]/ similar, if u-flag then \u cannot be atom, but otherwise in webcompat, this can be `1-a`
+        // For the ruby case it's easy; if we see a ruby case without u-flag then we know it should be tested against }
+        // For the quad case that is harder because it can be any hex value or even `u` and we'd have to propagate that
+        // Easiest for quad is to scan back one position, either it's a valid hex digit or `u`. There are no other cases
+
+        // Webcompat exception; if a \u escape was invalid + there is no u-flag + this is webcompat, then we need to
+        // know what the last parsed character was to validate certain range cases (`/[\u{1}-a]/` but also `/[\uab-a]/`)
+        if (wasUniEscape) {
+          if (c === REGEX_CHARCLASS_BAD) {
+            // That's one case
+            if (eof()) return REGEX_CHARCLASS_BAD;
+            if (webCompat === WEB_COMPAT_OFF) return REGEX_CHARCLASS_BAD;
+
+            // [w]: `/[\u]/`
+            // [x]: `/[\u]/u`
+            // [w]: `/[\uabx]/`
+            // [x]: `/[\uabx]/u`
+            // [w]: `/[\u{abx}]/`
+            // [x]: `/[\u{abx}]/u`
+            // Now for the non-u-flag cases it's important to know what the last char value was to validate ranges
+            // [x]: `/[\u-a]/`
+            // [w]: `/[\u-v]/`
+            // [x]: `/[\u{b-a]/`
+            // [w]: `/[\u{b-c]/`
+            // [x]: `/[\ub-a]/`
+            // [w]: `/[\ub-c]/`
+            // (If the next char isn't `-` it's not important, but swah)
+
+            // This is a unicode escape (either quad or ruby) that contained illegal chars
+            // It will have been parsed until the first invalid character
+            // For the sake of ranges, we consider `u` the end of any range that might be open right now and
+            // the last parsed character as the start of a next range, if any.
+            wasBadUniEscape = true;
+            flagState = updateRegexUflagIsIllegal(flagState, 'A broken `\\u` escape can never be valid with u-flag');
+          }
+          else if ((c & REGEX_CHARCLASS_WAS_RUBY) > 0) {
+            // This allows properly checking ranges for the non-uflag state (which must use `}` as the final c here
+            // for the non-uflag case, which is relevant for ranges)
+            c ^= REGEX_CHARCLASS_WAS_RUBY;
+            wasRubyWebEscape = webCompat === WEB_COMPAT_ON;
+          }
+          else if (c > 0xffff) {
+            ASSERT(c <= MAX_VALID_UNICODE_VALUE, 'no other flags');
+            wasDoubleQuad = true;
+          }
+        }
+
         if (c === REGEX_CHARCLASS_BAD) {
-          // `/[\N]/`
-          ASSERT(lastPotentialRegexError, 'error should be set');
-          flagState = regexSyntaxError(lastPotentialRegexError);
-        } else if (c === (REGEX_CHARCLASS_BAD | REGEX_CHARCLASS_CLASS_ESCAPE)) {
+          if (!wasBadUniEscape) {
+            // `/[\N]/`
+            ASSERT(lastPotentialRegexError, 'error should be set');
+            flagState = regexSyntaxError(lastPotentialRegexError);
+          }
+        }
+        else if (c === (REGEX_CHARCLASS_BAD | REGEX_CHARCLASS_CLASS_ESCAPE)) {
           // (Currently) only happens for property escapes that are illegal
           // `/[\p{x}]/`
           ASSERT(lastPotentialRegexError, 'error should be set');
           flagState = regexSyntaxError(lastPotentialRegexError);
           c = REGEX_CHARCLASS_CLASS_ESCAPE;
-        } else if (c === REGEX_CHARCLASS_CLASS_ESCAPE) {
+        }
+        else if (c === REGEX_CHARCLASS_CLASS_ESCAPE) {
           // For example: escaped dash
 
-        } else if (c === INVALID_IDENT_CHAR) {
+        }
+        else if (c === INVALID_IDENT_CHAR) {
           ASSERT(lastPotentialRegexError, 'error should be set');
           flagState = regexSyntaxError(lastPotentialRegexError);
-        } else if (c === REGEX_CHARCLASS_ESCAPED_UC_B) {
+        }
+        else if (c === REGEX_CHARCLASS_ESCAPED_UC_B) {
           ASSERT(lastPotentialRegexError, 'error should be set');
           flagState = updateRegexUflagIsIllegal(flagState, lastPotentialRegexError);
           // In webcompat this is an identity escape, which get the ord of the char being escaped
           // But this is only necessary for range checks, at which point this would be an error anyways.
-        } else if (c === REGEX_CHARCLASS_ESCAPED_C) {
+        }
+        else if (c === REGEX_CHARCLASS_ESCAPED_C) {
           ASSERT(webCompat === WEB_COMPAT_ON, 'only appears with web compat');
           ASSERT(lastPotentialRegexError, 'error should be set');
           flagState = updateRegexUflagIsIllegal(flagState, lastPotentialRegexError);
           c = $$BACKSLASH_5C; // yes... NOT `c`
-        } else {
+        }
+        else {
           if (c & REGEX_CHARCLASS_BAD_WITH_U_FLAG) {
             c = c ^ REGEX_CHARCLASS_BAD_WITH_U_FLAG; // remove the CHARCLASS_BAD_WITH_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
             ASSERT(lastPotentialRegexError, 'error should be set');
@@ -3759,17 +3735,22 @@ function Lexer(
             ASSERT(flagState === REGEX_GOOD_WITH_U_FLAG || flagState === REGEX_ALWAYS_BAD, 'either way, the flag state should now reflect "bad with u-flag", or worse');
           }
         }
-        ASSERT(c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B || c <= 0x110000, 'c should now be valid unicode range or 0x110000 for error', c, (REGEX_CHARCLASS_BAD | REGEX_CHARCLASS_CLASS_ESCAPE), REGEX_CHARCLASS_BAD_SANS_U_FLAG, REGEX_CHARCLASS_BAD_WITH_U_FLAG, REGEX_CHARCLASS_ESCAPED_UC_B);
+        ASSERT(c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B || c <= 0x110000, 'c should now be valid unicode range or 0x110000 for error', c);
         // else char class is good :)
-      } else if (urangeOpen && c === $$SQUARE_R_5D) {
+      }
+      else if (urangeOpen && c === $$SQUARE_R_5D) {
         flagState = regexSyntaxError('Encountered early end of charclass while parsing character class range');
-      } else if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
+      }
+      else if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
         return regexSyntaxError('Encountered newline'); // same as end of input
-      } else {
+      }
+      else {
         ASSERT_skip(c);
       }
 
-      if (wasEscape) {
+      if (wasBadUniEscape) {
+        // Do nothing
+      } else if (wasEscape) {
         // Even if `c` is a surrogate tail, this won't lead to a pair with a previous code unit
         // But if the current codepoint is >0xffff then we still mark it as such
         // Also stops escaped dashes from being interpreted as ranges
@@ -3777,18 +3758,22 @@ function Lexer(
         ASSERT(!isSurrogate || c === REGEX_CHARCLASS_CLASS_ESCAPE || (c & 0x1fffff) === c, 'non-bmp ranges should be explicitly bounded when they come from escapes', c, isSurrogate, (c & 0x1fffff) === c, c.toString(16), (c & 0x1fffff));
         if (isSurrogate) surrogate = c;
         isSurrogateHead = false;
-      } else if (c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B) {
+      }
+      else if (c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B) {
         isSurrogate = false;
         isSurrogateHead = false;
-      } else if (wasSurrogateHead && isSurrogateTail(c)) {
+      }
+      else if (wasSurrogateHead && isSurrogateTail(c)) {
         isSurrogate = true;
         isSurrogateHead = false;
         surrogate = getSurrogate(prev, c);
-      } else if (!wasSurrogate && !wasSurrogateHead && (c & 0x1fffff) > 0xffff) { // long unicode escape
+      }
+      else if (!wasSurrogate && !wasSurrogateHead && (c & 0x1fffff) > 0xffff) { // unicode ruby escape
         isSurrogate = true;
         isSurrogateHead = false;
         surrogate = c;
-      } else {
+      }
+      else {
         isSurrogate = false;
         isSurrogateHead = isSurrogateLead(c);
       }
@@ -3824,11 +3809,13 @@ function Lexer(
         } else {
           // range remains open because this was a surrogate head and the next character may still be part of the range
         }
-      } else if (c === $$DASH_2D && !wasEscape && urangeLeft !== -1) {
+      }
+      else if (c === $$DASH_2D && !wasEscape && urangeLeft !== -1) {
         ASSERT(urangeLeft !== -1, 'U: if we are opening a range here then we should have parsed and set the left codepoint value by now');
         // If the dash was escaped, it should not cause a range
         urangeOpen = true;
-      } else {
+      }
+      else {
         ASSERT(urangeOpen === false, 'U: we should only be updating left codepoint if we are not inside a range');
         urangeLeft = isSurrogate ? surrogate : c;
       }
@@ -3844,10 +3831,12 @@ function Lexer(
       // Webcompat does not change this, it only affects isCharacterClass checks
       // https://tc39.es/ecma262/#sec-patterns-static-semantics-early-errors-annexb
 
-      // For the case where there is NO u-flag:
+      // For the case where there is NO u-flag the wasRubyWebEscape check will use `}` as the last char of the atom
+      // After processing this, there will be another pass, passing on the `}` of the escape as if it's a surrogate tail
       let cTmp = c;
       let cTail = c; // If double quad, this will hold the second quad ("low surrogate") while the first is processed
       let stillDataLeft = true;
+      let uniEscHack = wasRubyWebEscape || wasBadUniEscape;
       while (stillDataLeft) {
         // Deal with the "surrogate pair encoded as double quads are ignored without u-flag" case first
         if (wasDoubleQuad) {
@@ -3862,11 +3851,36 @@ function Lexer(
           cTmp = codePointToSurrogateHead(cTmp);
           ASSERT(cTail >= 0xDC00 && cTail <= 0xDFFF, 'must be surrogate tail');
           ASSERT(cTmp >= 0xD800 && cTmp <= 0xDBFF, 'must be surrogate head');
+        } else if (wasRubyWebEscape || wasBadUniEscape) {
+          // In this case there was a valid ruby escape and `c` will be its escaped value.
+          // However, without u-flag this is not recognized and ends up being an invalid quad escape
+          // However, in webcompat mode, `\u` is allowed to be a single escape char, resulting in the value for `u` when
+          // it comes down to range validation. Since valid ruby escapes contain no other weird characters (for a char
+          // class, anyways), we can ignore the "inside" of the ruby and treat it it like two characters; `\u` and `}`.
+          // In this, we piggy back on the double quad system which doesn't need to validate (again) whether or not the
+          // surrogate pair is valid. So in the first iteration of the loop consider `u` as the code unit, potentially
+          // being the end of an open nrange (`/[t-\u{1}]/`). In the second iteration consider `}` to be the code unit,
+          // potentially starting a new range (`/[\u{1}-~]/`). This makes `/[t-\u{1}-~]/` pass properly.
+          if (uniEscHack) {
+            uniEscHack = false;
+            cTmp = $$U_75;
+          } else {
+            stillDataLeft = false;
+            if (wasBadUniEscape) {
+              ASSERT(pointer > 0, 'pointer cannot be a the start because regex and class starts with `/[`');
+              // If there was an error, the parser would have stopped right before the offending char
+              // Note that we want a single code unit here, not code point
+              cTmp = peekd(-1);
+              wasBadUniEscape = false;
+            } else {
+              wasRubyWebEscape = false;
+              cTmp = $$CURLY_R_7D;
+            }
+          }
         } else {
           // Processing the surrogate tail of a double unicode encoded quad now
           stillDataLeft = false;
-          cTmp = cTail; // Note: cTail can still be >0xffff if it's the first iteration. But that's a syntax error -u
-          ASSERT(cTail <= 0xffff || cTail > 0x10ffff || lastPotentialRegexError, 'either ctail is <=0xffff, a high end flag, or a sans flag error is prepared', cTail, c);
+          cTmp = cTail; // Note: cTail can still be >0xffff if it's the first iteration
         }
 
         if (nrangeOpen) {
@@ -3903,11 +3917,13 @@ function Lexer(
           }
           nrangeLeft = -1;
           nrangeOpen = false;
-        } else if (cTmp === $$DASH_2D && !wasEscape && nrangeLeft !== -1) {
+        }
+        else if (cTmp === $$DASH_2D && !wasEscape && nrangeLeft !== -1) {
           ASSERT(nrangeLeft !== -1, 'N if we are opening a range here then we should have parsed and set the left codepoint value by now');
           // If the dash was escaped, it should not cause a range
           nrangeOpen = true;
-        } else {
+        }
+        else {
           // ASSERT(nrangeLeft === -1, 'N apparently we werent in a range so this should be the start of a left side of a codepoint and the var should be cleared');
           ASSERT(nrangeOpen === false, 'N we should only be updating left codepoint if we are not inside a range');
           nrangeLeft = cTmp;
@@ -3983,16 +3999,13 @@ function Lexer(
     return ((codepoint - 0x10000) >> 10) + 0xD800
   }
 
-  function parseRegexCharClassEscape() {
+  function parseRegexCharClassEscape(c) {
+    ASSERT(parseRegexCharClassEscape.length === arguments.length, 'arg count');
+
     // atom escape is slightly different from charclass escape
 
     // https://www.ecma-international.org/ecma-262/7.0/#sec-classescape
 
-    if (eof()) {
-      regexSyntaxError('Early EOF after backslash in char class');
-      return REGEX_CHARCLASS_BAD;
-    }
-    let c = peek();
     let s = c >= 0x7f ? REGCLS_ESC_UNICODE : regexClassEscapeStartJumpTable[c];
 
     switch (s) {
@@ -4076,7 +4089,7 @@ function Lexer(
       case REGCLS_ESC_u:
         // \u<????> and \u{<?..?>}
         ASSERT_skip($$U_75);
-        return parseRegexCharClassUnicodeEscape();
+        return parseUnicodeEscapeForRegexCharClass();
 
       case REGCLS_ESC_x:
         // \x<??>
@@ -4142,14 +4155,14 @@ function Lexer(
           // This is now an `IdentityEscape` and just parses the `c` itself
           // The "character value" will be the backslash (!), NOT the value of `c`
           // This is relevant for tests like `/[a-\c]/` (bad) vs `/[A-\c]/` (good)
-          return REGEX_CHARCLASS_ESCAPED_C;
+          return REGEX_CHARCLASS_ESCAPED_C; // This is the only way to update the uflagState at call site :/
         }
         regexSyntaxError(reason);
         return REGEX_CHARCLASS_BAD;
       }
 
       case REGCLS_ESC_k:
-        ASSERT_skip(c);
+        ASSERT_skip($$K_6B);
         if (webCompat === WEB_COMPAT_ON) {
           // A character class is not allowed to have `\k` back references.
           // In webcompat mode without uflag, you can have `\k` appear as long as it has no `<name>` following it and
@@ -4161,7 +4174,7 @@ function Lexer(
           return $$K_6B | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
         regexSyntaxError('A character class is not allowed to have `\\k` back-reference');
-        return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        return REGEX_CHARCLASS_BAD;
 
       case REGCLS_ESC_b:
         // \b
@@ -4594,7 +4607,7 @@ function Lexer(
         if (eof()) return regexSyntaxError('Encountered early EOF while trying to parse a regex flag that is escaped (the backslash is the very last char which is illegal)');
         if (peeky($$U_75)) {
           ASSERT_skip($$U_75);
-          parseRegexAtomUnicodeEscape();
+          parseUnicodeEscapeForRegexAtom(); // may return REGEX_GOOD_RUBY_EDGE_CASE (but who cares)
           regexSyntaxError('Regex flags can not be escaped in any form');
         } else {
           regexSyntaxError('Unknown regex flag [ord=' + c + ']');
@@ -4777,9 +4790,111 @@ function Lexer(
     return c >= $$4_34 && c <= $$7_37;
   }
 
-  function parseRegexCharClassUnicodeEscape() {
-    // This returns the code point, if valid, possibly together with REGEX_CHARCLASS_BAD_SANS_U_FLAG
-    // May also return REGEX_CHARCLASS_BAD
+  function parseUnicodeEscapeForNonRegex() {
+    ASSERT(parseUnicodeEscapeForNonRegex.length === arguments.length, 'arg count');
+    ASSERT(neof(), 'should be checked by caller');
+
+    // Parse a unicode escape, quad or ruby, and return either the codepoint or a generic error code
+    // This is _after_ `\u` have been consumed already!
+
+    // We could read() here because we want to consume two more chars (at least)
+    // However, if the escape is bad we would also consume the closing quote so we peek()
+
+    let c = peek();
+
+    if (c !== $$CURLY_L_7B) {
+      return parseUnicodeQuadEscape(c, true); // ILLEGAL_UNICODE_ESCAPE or codepoint, must check eof()
+    }
+
+    return parseUnicodeRubyEscape();
+  }
+  function parseUnicodeEscapeForRegexAtom() {
+    // Return REGEX_*** uflagState enum
+
+    // if unicode flag
+    // - surrogate pairs may matter
+    // - class char status matters
+    // - unicode ruby escape is allowed
+
+    // we dont know whether u-mode is enabled until after we've parsed the flags
+    // so we must parse as loose as possible and keep track of parsing specific u-flag or non-u-flag stuff
+    // then after flag parsing confirm that the flag presence conforms to expectations
+
+    if (eof()) { // In webcompat `\u` would be valid on its own so don't scan eof forward (we used to do eofd(3))
+      return regexSyntaxError('Early EOF while trying to parse unicode escape');
+    }
+
+    let c = peek(); // dont read. we dont want to consume a bad \n here
+
+    let wasRuby = false;
+    if (c === $$CURLY_L_7B) {
+      c = parseUnicodeRubyEscape();
+      wasRuby = true;
+    } else {
+      c = parseUnicodeQuadEscape(c, false);
+    }
+
+    if (eof()) {
+      return regexSyntaxError('EOF while trying to parse regex atom unicode escape');
+    }
+
+    if (c === ILLEGAL_UNICODE_ESCAPE) {
+      if (webCompat === WEB_COMPAT_ON) {
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Error while trying to parse regex atom unicode escape');
+      }
+
+      return regexSyntaxError('Error while trying to parse regex atom unicode escape');
+    }
+
+    if (wasRuby && webCompat === WEB_COMPAT_OFF) {
+      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'A regex atom that is an unicode ruby escape is only legal with u-flag');
+    }
+
+    // This was a proper ruby escape. This means that for the case without u-flag in webcompat it must be
+    // determined whether or not the curlies could be a valid quantifier (this means no a-f hex digits)
+    // We check this the slow way because this is an edge case and not worth to optimize. The trick is simple; the
+    // code point in `c` represents the hex value that was escaped, like `\u{2300}` or `\u{3a9c}`. So if we convert
+    // the code point to hex, we can check whether or not a letter was used and act accordingly :)
+    if (wasRuby && webCompat === WEB_COMPAT_ON && !c.toString(16).match(/[a-z]/i)) {
+      // This must be a unicode ruby escape that only contained numbers, no letters.
+      // This means in non-uflag webcompat mode, we just parsed a quantified atom. Oh joy.
+      // Relevant edge cases (almost all would pass with u-flag and fail without u-flag without web)):
+      // For the next cases the star is interchangeable for `+`, `?`, and `{1}`
+      // [w]: `/\u{100}/`
+      // [x]: `/\u{100}*/`    The {100} is already a quantifier, so can't be followed by *
+      // [w]: `/\u{100}?/`    This is the only exception, since ? becomes a non-greedy modifier here
+      // [w]: `/\u{100}*/u`
+      // [x]: `/\u{100}*?/`
+      // [x]: `/\u{100}??/`   Unlike before, you can't non-greedy modify a non-greedy modifier
+      // [x]: `/\u{100}*?/u`
+
+      if (neof() && peeky($$QMARK_3F)) {
+        // This is a non-greedy modifier. Basically, `/\u{10}?/` matches the smallest series of `u`, but at least 10.
+        // Since we are parsing an atom, we can just skip the qmark here. We don't need to report the escaped value.
+        ASSERT_skip($$QMARK_3F);
+      }
+
+      return REGEX_GOOD_RUBY_EDGE_CASE;
+    }
+
+    // [w]: `/\u{1a0}/`
+    // [w]: `/\u{1a0}*/`    Unlike the 100, {1a0} cant be a quantifier so * is fine
+    // [w]: `/\u{1a0}*/u`
+    // [w]: `/\u{1a0}*?/`
+    // [w]: `/\u{1a0}*?/u`
+    return REGEX_ALWAYS_GOOD;
+  }
+  function parseUnicodeEscapeForRegexCharClass() {
+    ASSERT(parseUnicodeEscapeForRegexCharClass.length === arguments.length, 'arg count');
+    // Does NOT return a uflagStatus, but a char code with REGEX_CHARCLASS_BAD bitwise flags
+
+    // Should return a char value, even for botched bad escapes that are valid in webcompat
+    // [w]: `/[\u{5}-~]/`        Valid but only because `}-~` is a valid range
+    // [v]: `/[\u{5}-~]/u`       Valid
+    // [x]: `/[\u{5}-1]/`        Bad because `}-1` is an illegal range because the ruby is ignored without u-flag
+    // [v]: `/[\u{5}-1]/u`       Good because the ruby escape is 0x05, which makes the range valid
+    // [v]: `/[\u{500}-}]/`      Valid because `}-}` is a valid range
+    // [x]: `/[\u{500}-}]/u`     Bad because `0x500` > `ord(~)=0x7e`
 
     // `\u{...}`
     //    ^
@@ -4791,38 +4906,62 @@ function Lexer(
     // if unicode flag
     // - surrogate pairs may matter
     // - class char status matters
-    // - long unicode escape is allowed
+    // - unicode ruby escape is allowed
 
     // we dont know whether u-mode is enabled until after we've parsed the flags
     // so we must parse as loose as possible and keep track of parsing specific u-flag or non-u-flag stuff
     // then after flag parsing confirm that the flag presence conforms to expectations
 
-    if (eofd(3)) {
-      // Either this is a quad, then we need 4 chars `xxxx`, or a dynamic escape, then at least 3 `{x}`
-      regexSyntaxError('Early EOF while parsing character class escape');
+    if (eof()) {
+      // This'll be a syntax error regardless.
+      regexSyntaxError('Early EOF while parsing a unicode escape in a regex char class');
       return REGEX_CHARCLASS_BAD;
     }
 
     let c = peek(); // dont read. we dont want to consume a bad \n here
-    if (c !== $$CURLY_L_7B) {
-      return parseRegexCharClassUnicodeEscapeQuad(c);
+    let wasQuad = true;
+    if (c === $$CURLY_L_7B) {
+      c = parseUnicodeRubyEscape();
+      wasQuad = false;
+    }
+    else {
+      c = parseUnicodeQuadEscape(c, false);
     }
 
-    ASSERT_skip($$CURLY_L_7B);
+    if (eof()) {
+      regexSyntaxError('Early EOF while parsing a unicode escape in a regex char class');
+      return REGEX_CHARCLASS_BAD
+    }
 
-    let r = parseUnicodeEscapeVary();
-
-    if (r === ILLEGAL_UNICODE_ESCAPE) {
-      regexSyntaxError('Missing curly of unicode long escape in a regex');
+    if (c === REGEX_CHARCLASS_BAD) {
       return REGEX_CHARCLASS_BAD;
     }
 
-    updateRegexPotentialError('The es6 long unicode escape is only valid with u-flag');
-    return r | REGEX_CHARCLASS_BAD_SANS_U_FLAG; // `\u{}` in regexes is restricted to +u flag
+    // Need to know whether it was a ruby because if this was part of a group name this will be illegal without u=flag
+    // Otoh, if this is part of a `\k` escape then this is fine with and without u-flag (web compat)
+    let rubyWebException = false;
+    if (!wasQuad) {
+      if (webCompat === WEB_COMPAT_OFF) {
+        updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag'); // don't mention the webcompat exception
+        rubyWebException = true; // Can't parse `\u` as an atom, only allowed in webcompat, so this must be u-flag to be valid
+      }
+
+      c |= REGEX_CHARCLASS_WAS_RUBY; // only for valid
+    }
+
+    ASSERT(((c|REGEX_CHARCLASS_WAS_RUBY)^REGEX_CHARCLASS_WAS_RUBY) >= 0 && ((c|REGEX_CHARCLASS_WAS_RUBY)^REGEX_CHARCLASS_WAS_RUBY) <= MAX_VALID_UNICODE_VALUE, 'c should be valid unicode (+ some optional explicit flags) now');
+    // `\u{..}` in regexes is restricted to +u flag, but if there is no u-flag then in web it can be a `u` etc
+
+    if (rubyWebException) return c | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+
+    return c;
   }
-  function parseRegexCharClassUnicodeEscapeQuad(a) {
+  function parseUnicodeQuadEscape(a, noDouble) {
+    ASSERT(parseUnicodeQuadEscape.length === arguments.length, 'arg count');
+    ASSERT(neof(), 'checked at callsite')
+
     // This returns the code point, if valid, possibly together with REGEX_CHARCLASS_BAD_SANS_U_FLAG
-    // We've already consumed a char in `a`. we must consume 3 more chars for this quad unicode escape
+    // We've already consumed a char in `a`. we must consume 3 more chars for this unicode quad escape
 
     // `\uxxxx`
     //    ^
@@ -4830,7 +4969,8 @@ function Lexer(
     //    ^
 
     if (eofd(3)) {
-      updateRegexPotentialError('Unexpected EOF while parsing unicode escape');
+      // Return the last char that was parsed before the eof. This helps validating webcompat cases like `/\ub-a/`
+      updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Unexpected EOF while parsing unicode quad escape');
       return REGEX_CHARCLASS_BAD;
     }
 
@@ -4860,8 +5000,9 @@ function Lexer(
 
     // Pretty slow path but we're constructing a low+hi surrogate pair together here
     if (
-      eofd(5) || // we need at least a couple more bytes for this to work at all
+      noDouble ||
       firstPart < 0xD800 || firstPart > 0xDBFF || // "Is this a surrogate high byte?"
+      eofd(5) || // we need at least a couple more bytes for this to work at all
 
       // `\uxxxx\uxxxx`         (we've verified the first quad is a valid surrogate head)
       //        ^
@@ -4915,49 +5056,49 @@ function Lexer(
 
     // We have a matching low+hi, combine them
     // Without u-flag the surrogate tail is just a separate character
-    return codepoint | REGEX_CHARCLASS_DOUBLE_QUAD;
+    return codepoint;
   }
+  function parseUnicodeRubyEscape() {
+    ASSERT(parseUnicodeRubyEscape.length === arguments.length, 'arg count');
 
-  function parseUnicodeEscapeVary() {
-    let c = parseUnicodeEscapeVaryBody();
+    ASSERT_skip($$CURLY_L_7B);
 
-    if (c === ILLEGAL_UNICODE_ESCAPE) {
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
+    let c = parseUnicodeRubyEscapeBody(); // either ILLEGAL_UNICODE_ESCAPE, REGEX_CHARCLASS_BAD_WITH_U_FLAG, or the ord
 
-    if (eof()) {
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
+    ASSERT(c >= 0 && c <= ILLEGAL_UNICODE_ESCAPE);
 
-    if (!peeky($$CURLY_R_7D)) {
+    // Note: if the max number of chars were parsed, eof is not checked for the curly, so do that now
+    if (c === ILLEGAL_UNICODE_ESCAPE || eof() || !peeky($$CURLY_R_7D)) {
       return ILLEGAL_UNICODE_ESCAPE;
     }
 
     ASSERT_skip($$CURLY_R_7D);
+
     return c;
   }
-  function parseUnicodeEscapeVaryBody() {
-    // "It is a Syntax Error if the MV of HexDigits > 1114111."
-    // this means the actual hex value cannot exceed 6 chars (0x10ffff). It can have any number of leading zeroes
+  function parseUnicodeRubyEscapeBody() {
+    // Returns;
+    // - ILLEGAL_UNICODE_ESCAPE if the value was empty, too high, or contained a non-hex char
+    // - codepoint otherwise
+    // - must check eof() because that is not signaled. This way we can tell a hard error from soft for templates
 
-    if (eof()) {
-      // Must at least parse one hex digit (but it could be invalid so we can't skip)
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
+    // https://tc39.es/ecma262/#prod-RegExpUnicodeEscapeSequence
+    //   +U u { CodePoint }
+    // https://tc39.es/ecma262/#prod-CodePoint
+    // > CodePoint::
+    // >   HexDigitsbut only if MV of HexDigits ≤ 0x10FFFF
+    // This means the actual hex value cannot exceed 6 chars (0x10ffff). It can have any number of leading zeroes
+
+    if (eof()) return ILLEGAL_UNICODE_ESCAPE; // Error either way
 
     let a = peek();
-    let va = getHexValue(a);
-    if (va === HEX_OOB) return ILLEGAL_UNICODE_ESCAPE; // first one is mandatory
+    let v = getHexValue(a);
+    if (v === HEX_OOB) return ILLEGAL_UNICODE_ESCAPE; // first one is mandatory
     ASSERT_skip(a);
 
-    let c = _parseRegexUnicodeEscapeVary2(va);
-    if (c === ILLEGAL_UNICODE_ESCAPE) {
-      updateRegexPotentialError('Encountered early EOF while parsing a unicode long escape in a regex');
-      return ILLEGAL_UNICODE_ESCAPE;
-    }
-    return c;
+    return parseUnicodeRubyEscapeBody2(v);
   }
-  function _parseRegexUnicodeEscapeVary2(v) {
+  function parseUnicodeRubyEscapeBody2(v) {
     // skip leading zeroes if there are any
     if (v === 0) {
       if (eof()) return ILLEGAL_UNICODE_ESCAPE;
@@ -4969,64 +5110,49 @@ function Lexer(
       }
       ASSERT_skip(c);
     }
-
-    return __parseRegexUnicodeEscapeVary2(v);
+    return parseUnicodeRubyEscapeBody3(v);
   }
-  function __parseRegexUnicodeEscapeVary2(v) {
+  function parseUnicodeRubyEscapeBody3(v) {
     if (eof()) return ILLEGAL_UNICODE_ESCAPE;
     let b = peek();
     let vb = getHexValue(b);
-    if (vb === HEX_OOB) {
-      return v;
-    }
+    if (vb === HEX_OOB) return v;
     ASSERT_skip(b);
-
-    return ___parseRegexUnicodeEscapeVary2((v << 4) + vb);
+    return parseUnicodeRubyEscapeBody4((v << 4) + vb);
   }
-  function ___parseRegexUnicodeEscapeVary2(v) {
+  function parseUnicodeRubyEscapeBody4(v) {
     if (eof()) return ILLEGAL_UNICODE_ESCAPE;
     let c = peek();
     let vc = getHexValue(c);
-    if (vc === HEX_OOB) {
-      return v;
-    }
+    if (vc === HEX_OOB) return v;
     ASSERT_skip(c);
-
-    return ____parseRegexUnicodeEscapeVary2((v << 4) + vc);
+    return parseUnicodeRubyEscapeBody5((v << 4) + vc);
   }
-  function ____parseRegexUnicodeEscapeVary2(v) {
+  function parseUnicodeRubyEscapeBody5(v) {
     if (eof()) return ILLEGAL_UNICODE_ESCAPE;
     let d = peek();
     let vd = getHexValue(d);
-    if (vd === HEX_OOB) {
-      return v;
-    }
+    if (vd === HEX_OOB) return v;
     ASSERT_skip(d);
-
-    return _____parseRegexUnicodeEscapeVary2((v << 4) + vd);
+    return parseUnicodeRubyEscapeBody6((v << 4) + vd);
   }
-  function _____parseRegexUnicodeEscapeVary2(v) {
+  function parseUnicodeRubyEscapeBody6(v) {
     if (eof()) return ILLEGAL_UNICODE_ESCAPE;
     let e = peek();
     let ve = getHexValue(e);
-    if (ve === HEX_OOB) {
-      return v;
-    }
+    if (ve === HEX_OOB) return v;
     ASSERT_skip(e);
-
-    return ______parseRegexUnicodeEscapeVary2((v << 4) + ve);
+    return parseUnicodeRubyEscapeBody7((v << 4) + ve);
   }
-  function ______parseRegexUnicodeEscapeVary2(v) {
+  function parseUnicodeRubyEscapeBody7(v) {
     if (eof()) return ILLEGAL_UNICODE_ESCAPE;
     let f = peek();
     let vf = getHexValue(f);
-    if (vf === HEX_OOB) {
-      return v;
-    }
+    if (vf === HEX_OOB) return v;
     ASSERT_skip(f);
-
     let r = (v << 4) + vf;
-    return Math.min(0x110000, r);
+    if (r >= 0x110000) return ILLEGAL_UNICODE_ESCAPE;
+    return r;
   }
 
   function parseOtherUnicode(c) {
@@ -5270,7 +5396,6 @@ function START(type) {
   }
   return 'S<' + T(type) + '>';
 }
-
 
 export default Lexer; // QoL for somebody, perhaps.
 export {

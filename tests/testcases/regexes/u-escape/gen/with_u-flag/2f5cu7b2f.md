@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Early EOF while trying to parse unicode escape
+    Regex: Error while trying to parse regex atom unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /\u{/u
-   ║ ^^^^------- error
+   ║ ^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -56,12 +56,12 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Early EOF while trying to parse unicode escape
+    Regex: Error while trying to parse regex atom unicode escape; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /\u{/u
-   ║ ^^^^^------- error
+   ║ ^^^^^^------- error
 ╚══╩════════════════
 
 `````

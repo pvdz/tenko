@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════

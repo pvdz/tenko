@@ -5,6 +5,9 @@
 > :: regexes : named capturing groups : bad syntax cases
 >
 > ::> k class missing arg
+Fails because the named group enables `N` syntax which disallows `\k` as an escape
+
+## FAIL
 
 ## Input
 
@@ -53,26 +56,15 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-        value: null,
-        regex: { pattern: '(?<a>.)\\k', flags: '' },
-        raw: '/(?<a>.)\\k/'
-      }
-    }
-  ]
-}
+throws: Lexer error!
+    Regex: Named back reference \k; missing group name; Found `\k` in a char class but the regex also had a group name so this is illegal
 
-tokens (3x):
-       REGEXN ASI
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<a>.)\k/
+   ║ ^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Module goal with AnnexB
@@ -80,13 +72,3 @@ tokens (3x):
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-/(?<a>.)\k/;
-````
-
-Produces same AST

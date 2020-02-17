@@ -5,6 +5,9 @@
 > :: regexes : named capturing groups : bad syntax cases
 >
 > ::> k arg empty name
+This must fail because webcompat does not allow `\k` since the `N` syntax is enabled after using at least one groupName in the regex. As such, the `\k` would only be valid with an actual group name so it should fail.
+
+## FAIL
 
 ## Input
 
@@ -26,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Wanted to parse an unescaped group name specifier but it had a bad start: [`>`, 62]
+    Regex: Group name is not optional, found empty `<>`
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -54,7 +57,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Missing closing angle bracket of name of capturing group; Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error
+    Regex: Group name is not optional without webcompat, found empty `<>`; Found `\k` in a char class but the regex also had a group name so this is illegal
 
 start@1:0, error@1:0
 ╔══╦════════════════

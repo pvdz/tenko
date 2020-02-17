@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The es6 long unicode escape is only valid with u-flag; Found "es6" unicode escape (`\u{..}`) or surrogate pair quads (`\uxxxx\uxxxx`) in regex ident, which is only valid with u-flag in regex; A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Found a quad that was a surrogate pair which created a valid identifier character and that will only work with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: Found a unicode ruby escape which is only valid with u-flag; A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Found a codepoint in a `\k` escape group name that requires the u-flag to be considered valid; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -58,10 +58,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: Found a unicode ruby escape which is only valid with u-flag; A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<abc\u{1D7D0}def>foo\k<abc\uD835\uDFD0def>)/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

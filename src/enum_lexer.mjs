@@ -12,10 +12,12 @@ const REGEX_ALWAYS_GOOD = 0;
 const REGEX_GOOD_WITH_U_FLAG = 1;
 const REGEX_GOOD_SANS_U_FLAG = 2;
 const REGEX_ALWAYS_BAD = 4;
+const REGEX_GOOD_RUBY_EDGE_CASE = 8;
 
 const FIRST_CHAR = true;
 const NON_START = false;
 
+const MAX_VALID_UNICODE_VALUE = 0x10ffff;
 const ILLEGAL_UNICODE_ESCAPE = 0x110000;
 
 const REGEX_CHARCLASS_BAD = 0x110000; // Note: max valid unicode value is <0x110000 so we can use high flags as side channels!
@@ -24,7 +26,7 @@ const REGEX_CHARCLASS_ESCAPED_C = 0x110002;
 const REGEX_CHARCLASS_BAD_SANS_U_FLAG = 1<<23;
 const REGEX_CHARCLASS_BAD_WITH_U_FLAG = 1<<24;
 const REGEX_CHARCLASS_CLASS_ESCAPE = 1<<25; // \d \w \s etc, for webcompat checks in ranges
-const REGEX_CHARCLASS_DOUBLE_QUAD = 1<<26; // The returned code point was a double quad (matters for ranges and u-flag disambiguation)
+const REGEX_CHARCLASS_WAS_RUBY = 1<<26; // For invalid u-escapes om ramges om cjar c;asses wotjpit i=f;ag om webcompat
 
 const COLLECT_TOKENS_NONE = 0;
 const COLLECT_TOKENS_SOLID = 1; // non-whitespace
@@ -56,15 +58,24 @@ const INVALID_IDENT_CHAR = -1;
 const VALID_SINGLE_CHAR = -2;
 const VALID_DOUBLE_CHAR = -3;
 
+// When parsing a regex groupName, this enum determines whether or not an invalid group name triggers an
+// unconditional syntax error (a named capturing group cannot recover from an invalid group name)
+const FOR_NAMED_GROUP = true;
+const FOR_K_ESCAPE = false;
+
 export {
   BAD_ESCAPE,
   GOOD_ESCAPE,
+  FOR_NAMED_GROUP,
+  FOR_K_ESCAPE,
   GOAL_MODULE,
   GOAL_SCRIPT,
+  MAX_VALID_UNICODE_VALUE,
   REGEX_ALWAYS_GOOD,
   REGEX_GOOD_WITH_U_FLAG,
   REGEX_GOOD_SANS_U_FLAG,
   REGEX_ALWAYS_BAD,
+  REGEX_GOOD_RUBY_EDGE_CASE,
   FIRST_CHAR,
   ILLEGAL_UNICODE_ESCAPE,
   NON_START,
@@ -74,7 +85,7 @@ export {
   REGEX_CHARCLASS_BAD_SANS_U_FLAG,
   REGEX_CHARCLASS_BAD_WITH_U_FLAG,
   REGEX_CHARCLASS_CLASS_ESCAPE,
-  REGEX_CHARCLASS_DOUBLE_QUAD,
+  REGEX_CHARCLASS_WAS_RUBY,
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,

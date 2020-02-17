@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; Found invalid quad unicode escape
+    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag; Regex contained a group name with invalid unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════

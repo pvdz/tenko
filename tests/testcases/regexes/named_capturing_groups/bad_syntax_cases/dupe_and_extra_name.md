@@ -5,6 +5,9 @@
 > :: regexes : named capturing groups : bad syntax cases
 >
 > ::> dupe and extra name
+Fails regardless because the duplicate name does not allow backtracking in webcompat; it's gonna be an error.
+
+## FAIL
 
 ## Input
 
@@ -27,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Each group name can only be declared once: `a`
+    This group name (`a`) was already used before
 
-start@1:0, error@1:0
-╔══╦════════════════
+start@1:0, error@1:18
+╔══╦═════════════════
  1 ║ /(?<a>a)(?<b>b)(?<a>a)/
-   ║ ^^^^^^^^^^^^^^^^^^^^------- error
-╚══╩════════════════
+   ║                   ^------- error
+╚══╩═════════════════
 
 `````
 
