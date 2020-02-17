@@ -1,23 +1,24 @@
 # Tenko parser test case
 
-- Path: tests/testcases/objects/duplicate_keys/obj_expr/dunderproto___proto__/async_generator.md
+- Path: tests/testcases/objects/duplicate_keys/obj_expr/dunderproto___proto__/key_method.md
 
 > :: objects : duplicate keys : obj expr : dunderproto proto
 >
-> ::> async generator
-> 
-> https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
-> 
-> > It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__" and at least two of those entries were obtained from productions of the form PropertyDefinition:PropertyName:AssignmentExpression .
-> 
-> Rule does not apply to methods
+> ::> key method
+>
+> Regression caught by test262/test/language/expressions/object/__proto__-permitted-dup.js 
+>
+> The __proto__ rule does not apply to methods
 
 ## PASS
 
 ## Input
 
 `````js
-x = {async __proto__(){}, *__proto__(){}}
+o = {
+  __proto__: null,
+  __proto__() {},
+}
 `````
 
 ## Output
@@ -35,56 +36,49 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:41},source:''},
+  loc:{start:{line:1,column:0},end:{line:4,column:1},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:41},source:''},
+      loc:{start:{line:1,column:0},end:{line:4,column:1},source:''},
       expression: {
         type: 'AssignmentExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:41},source:''},
+        loc:{start:{line:1,column:0},end:{line:4,column:1},source:''},
         left: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          name: 'x'
+          name: 'o'
         },
         operator: '=',
         right: {
           type: 'ObjectExpression',
-          loc:{start:{line:1,column:4},end:{line:1,column:41},source:''},
+          loc:{start:{line:1,column:4},end:{line:4,column:1},source:''},
           properties: [
             {
               type: 'Property',
-              loc:{start:{line:1,column:5},end:{line:1,column:24},source:''},
+              loc:{start:{line:2,column:2},end:{line:2,column:17},source:''},
               key: {
                 type: 'Identifier',
-                loc:{start:{line:1,column:11},end:{line:1,column:20},source:''},
+                loc:{start:{line:2,column:2},end:{line:2,column:11},source:''},
                 name: '__proto__'
               },
               kind: 'init',
-              method: true,
+              method: false,
               computed: false,
               value: {
-                type: 'FunctionExpression',
-                loc:{start:{line:1,column:5},end:{line:1,column:24},source:''},
-                generator: false,
-                async: true,
-                id: null,
-                params: [],
-                body: {
-                  type: 'BlockStatement',
-                  loc:{start:{line:1,column:22},end:{line:1,column:24},source:''},
-                  body: []
-                }
+                type: 'Literal',
+                loc:{start:{line:2,column:13},end:{line:2,column:17},source:''},
+                value: null,
+                raw: 'null'
               },
               shorthand: false
             },
             {
               type: 'Property',
-              loc:{start:{line:1,column:26},end:{line:1,column:40},source:''},
+              loc:{start:{line:3,column:2},end:{line:3,column:16},source:''},
               key: {
                 type: 'Identifier',
-                loc:{start:{line:1,column:27},end:{line:1,column:36},source:''},
+                loc:{start:{line:3,column:2},end:{line:3,column:11},source:''},
                 name: '__proto__'
               },
               kind: 'init',
@@ -92,14 +86,14 @@ ast: {
               computed: false,
               value: {
                 type: 'FunctionExpression',
-                loc:{start:{line:1,column:26},end:{line:1,column:40},source:''},
-                generator: true,
+                loc:{start:{line:3,column:2},end:{line:3,column:16},source:''},
+                generator: false,
                 async: false,
                 id: null,
                 params: [],
                 body: {
                   type: 'BlockStatement',
-                  loc:{start:{line:1,column:38},end:{line:1,column:40},source:''},
+                  loc:{start:{line:3,column:14},end:{line:3,column:16},source:''},
                   body: []
                 }
               },
@@ -112,11 +106,11 @@ ast: {
   ]
 }
 
-tokens (19x):
-       IDENT PUNC_EQ PUNC_CURLY_OPEN ID_async IDENT PUNC_PAREN_OPEN
-       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE PUNC_COMMA
-       PUNC_STAR IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_CURLY_OPEN PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE ASI
+tokens (16x):
+       IDENT PUNC_EQ PUNC_CURLY_OPEN IDENT PUNC_COLON ID_null
+       PUNC_COMMA IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_CURLY_OPEN PUNC_CURLY_CLOSE PUNC_COMMA PUNC_CURLY_CLOSE
+       ASI
 `````
 
 ### Strict mode
@@ -148,7 +142,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-x = {async __proto__(){}, * __proto__(){}};
+o = {__proto__:null, __proto__(){}};
 ````
 
 Produces same AST

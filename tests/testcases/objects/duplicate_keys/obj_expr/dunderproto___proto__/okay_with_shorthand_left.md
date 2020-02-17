@@ -10,7 +10,9 @@
 > 
 > > It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__" and at least two of those entries were obtained from productions of the form PropertyDefinition:PropertyName:AssignmentExpression .
 > 
-> This restriction only applies to webcompat mode (annex B)
+> Note: a shorthand is not: `PropertyName : AssignmentExpression` and dupe keys are not an error so this should always pass
+
+## PASS
 
 ## Input
 
@@ -116,23 +118,13 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-throws: Parser error!
-  Found a part that cant destruct and a part that must destruct so it is not destructible (at EOF)
-
-start@1:0, error@1:29
-╔══╦═════════════════
- 1 ║ x = {__proto__, __proto__: 2}
-   ║                              ^------- error at EOF
-╚══╩═════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
+_Output same as sloppy mode._
 
 ## AST Printer
 

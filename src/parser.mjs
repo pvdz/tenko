@@ -10732,6 +10732,8 @@ function Parser(code, options = {}) {
 
       let destructible = MIGHT_DESTRUCT;
       if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
+        // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+        // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
         destructible = PIGGY_BACK_WAS_PROTO;
       }
 
@@ -10743,14 +10745,13 @@ function Parser(code, options = {}) {
       // - `({ ident() { } })`
       //            ^
 
+      // Note: __proto__ rule:
+      // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
+
       AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
 
-      let destructible = MIGHT_DESTRUCT;
-      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
-        destructible = PIGGY_BACK_WAS_PROTO;
-      }
-
-      return destructible | parseObjectMethod(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'init', false, true, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp)
+      return parseObjectMethod(lexerFlags, $tp_propLeadingIdent_start, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, 'init', false, true, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp)
     }
 
     if ($tp_afterIdent_type === $PUNC_COMMA || $tp_afterIdent_type === $PUNC_CURLY_CLOSE) {
@@ -10762,12 +10763,11 @@ function Parser(code, options = {}) {
       // - `(x = {eval})`
       // - `({eval} = x)`
 
-      let destructible = MIGHT_DESTRUCT;
-      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
-        destructible = PIGGY_BACK_WAS_PROTO;
-      }
+      // Note: __proto__ rule:
+      // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
 
-      return destructible | parseObjectShorthand(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
+      return parseObjectShorthand(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
     }
 
     if ($tp_afterIdent_type === $PUNC_EQ) {
@@ -10775,7 +10775,9 @@ function Parser(code, options = {}) {
       // - `({ident = x} = y)`
       //            ^
 
-      // Note: __proto__ is irrelevant because it does not count against patterns. Since this must be a pattern ... meh.
+      // Note: __proto__ rule:
+      // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
 
       return parseObjectShorthandWithInit(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp);
     }
@@ -11376,6 +11378,7 @@ function Parser(code, options = {}) {
       let destructible_forPiggies = MIGHT_DESTRUCT;
 
       // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
       // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
       if (options_webCompat === WEB_COMPAT_ON && $tp_lit_canon === '__proto__') {
         destructible_forPiggies |= PIGGY_BACK_WAS_PROTO;
@@ -11580,8 +11583,9 @@ function Parser(code, options = {}) {
     // [v]: `for ({x} = z;;);`
     // [v]: `({...[].x} = x);`
     // [x]: `x = {__proto__: a, __proto__: b} = y`
-    // TODO: not sure about PIGGY_BACK_WAS_PROTO (but "free" so not wasting time for a test case right now)
-    destructible = sansFlag(destructible, MUST_DESTRUCT | PIGGY_BACK_WAS_PROTO);
+
+    ASSERT(hasNoFlag(destructible, PIGGY_BACK_WAS_PROTO), 'by the time this is called the proto piggy is already checked and infiltrated');
+    destructible = sansFlag(destructible, MUST_DESTRUCT);
 
     // the array MUST now be a pattern. Does not need to be an arrow.
     // the outer-most assignment is an expression, the inner assignments become patterns too.

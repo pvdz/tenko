@@ -10,7 +10,9 @@
 > 
 > > It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__" and at least two of those entries were obtained from productions of the form PropertyDefinition:PropertyName:AssignmentExpression .
 > 
-> This restriction only applies to webcompat mode (annex B)
+> Rule does not apply to methods
+
+## PASS
 
 ## Input
 
