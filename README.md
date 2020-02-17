@@ -20,8 +20,8 @@ REPL: https://pvdz.github.io/tenko/repl
   - Babel (anything stage 4, except comments)
   - Supports location data (matching Acorn/Babel for reference)
 - Tests
-  - 32k input syntax tests
-  - Passes test262 suite (at least September 2019)
+  - 33k input syntax tests
+  - Passes test262 suite (at least February 2020)
 
 # Name
 
