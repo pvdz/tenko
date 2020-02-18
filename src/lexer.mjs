@@ -533,6 +533,7 @@ function Lexer(
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
+  const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
 
   let pointer = 0;
   let len = input.length;
@@ -2337,7 +2338,11 @@ function Lexer(
     // ? ??
     if (neof() && peeky($$QMARK_3F)) {
       ASSERT_skip($$QMARK_3F);
-      return $PUNC_QMARK_QMARK;
+      if (supportNullishCoalescing) {
+        return $PUNC_QMARK_QMARK;
+      }
+
+      return THROW('The nullish coalescing operator (`??`) is only supported since ES2020, currently targeting a lower version', pointer - 2, pointer);
     }
 
     return $PUNC_QMARK
