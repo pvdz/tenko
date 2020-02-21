@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Encountered incorrect range (left>right) which is illegal with u-flag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Encountered incorrect range (left>right, 128171 > 56492, 0x1f4ab > 0xdcac) which is illegal with u-flag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

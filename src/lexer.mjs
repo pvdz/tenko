@@ -3848,7 +3848,7 @@ function Lexer(
           ASSERT(urangeLeft !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
           ASSERT(urangeRight !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
           if (urangeLeft > urangeRight) {
-            flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right) which is illegal with u-flag');
+            flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right, ' + urangeLeft + ' > ' + urangeRight + ', 0x' + urangeLeft.toString(16) + ' > 0x' + urangeRight.toString(16) + ') which is illegal with u-flag');
           }
           urangeLeft = -1;
         } else {
