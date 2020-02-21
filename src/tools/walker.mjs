@@ -329,6 +329,16 @@ function ObjectProperty(node, parent, prop, index) {
     Property(node, parent, prop, index);
   }
 }
+function OptionalCallExpression(node) {
+  assert(node.type, 'OptionalCallExpression');
+  $(node.callee);
+  $(node.arguments);
+}
+function OptionalMemberExpression(node) {
+  assert(node.type, 'OptionalMemberExpression');
+  $(node.object);
+  $(node.property);
+}
 function Program(node, parent, prop, index) {
   assert(node.type, 'Program');
   node.body.forEach((e, i) => $(e, node, 'body', i));
@@ -483,6 +493,7 @@ let jumpTable = [
     if (c === $$E_UC_45) return ThisExpression(node, parent, prop, index);
     if (c === $$W_77) return ThrowStatement(node, parent, prop, index);
     if (c === $$E_65) return WhileStatement(node, parent, prop, index);
+    if (c === $$O_6F) return OptionalCallExpression(node);
     return YieldExpression(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {
@@ -493,6 +504,7 @@ let jumpTable = [
   (node, parent, prop, index, type, c) => {
     c = type.charCodeAt(0);
     if (c === $$N_UC_4E) return NewExpression(node, parent, prop, index);
+    if (c === $$O_UC_4F) return OptionalMemberExpression(node);
     return RegExpLiteral(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {

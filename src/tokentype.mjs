@@ -171,6 +171,7 @@ const $L_GT_EQ =  ++__$flag_leaf;
 const $L_GT_GT_EQ =  ++__$flag_leaf;
 const $L_GT_GT_GT_EQ =  ++__$flag_leaf;
 const $L_QMARK =  ++__$flag_leaf;
+const $L_QMARK_DOT =  ++__$flag_leaf;
 const $L_QMARK_QMARK =  ++__$flag_leaf;
 const $L_BRACKET_OPEN =  ++__$flag_leaf;
 const $L_BRACKET_CLOSE =  ++__$flag_leaf;
@@ -308,6 +309,7 @@ const $PUNC_GT_EQ = $L_GT_EQ | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_GT_GT_EQ = $L_GT_GT_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_GT_GT_GT_EQ = $L_GT_GT_GT_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_QMARK = $L_QMARK | $G_PUNCTUATOR;
+const $PUNC_QMARK_DOT = $L_QMARK_DOT | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_QMARK_QMARK = $L_QMARK_QMARK | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_BRACKET_OPEN = $L_BRACKET_OPEN | $G_PUNCTUATOR;
 const $PUNC_BRACKET_CLOSE = $L_BRACKET_CLOSE | $G_PUNCTUATOR;
@@ -1729,6 +1731,7 @@ function toktypeToString(type, token, ignoreUnknown) {
     case $PUNC_GT_GT_EQ: return 'PUNC_GT_GT_EQ';
     case $PUNC_GT_GT_GT_EQ: return 'PUNC_GT_GT_GT_EQ';
     case $PUNC_QMARK: return 'PUNC_QMARK';
+    case $PUNC_QMARK_DOT: return 'QMARK_DOT';
     case $PUNC_QMARK_QMARK: return 'QMARK_QMARK';
     case $PUNC_BRACKET_OPEN: return 'PUNC_BRACKET_OPEN';
     case $PUNC_BRACKET_CLOSE: return 'PUNC_BRACKET_CLOSE';
@@ -1898,6 +1901,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
@@ -3312,6 +3316,7 @@ export {
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,

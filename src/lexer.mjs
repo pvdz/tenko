@@ -281,6 +281,7 @@ import {
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
@@ -534,6 +535,7 @@ function Lexer(
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
+  const supportOptionalChaining = targetEsVersion === 11 || targetEsVersion === Infinity;
 
   let pointer = 0;
   let len = input.length;
@@ -650,7 +652,7 @@ function Lexer(
     return pointer < len;
   }
   function neofd(d) {
-    return pointer < len - d;
+    return pointer <= len - d;
   }
 
   // <SCRUB ASSERTS TO COMMENT>
@@ -2335,9 +2337,12 @@ function Lexer(
   }
 
   function parseQmark() {
-    // ? ??
-    if (neof() && peeky($$QMARK_3F)) {
+    // ? ?? ?.
+    if (eof()) return $PUNC_QMARK;
+
+    if (peeky($$QMARK_3F)) {
       ASSERT_skip($$QMARK_3F);
+
       if (supportNullishCoalescing) {
         return $PUNC_QMARK_QMARK;
       }
@@ -2345,7 +2350,28 @@ function Lexer(
       return THROW('The nullish coalescing operator (`??`) is only supported since ES2020, currently targeting a lower version', pointer - 2, pointer);
     }
 
-    return $PUNC_QMARK
+    if (peeky($$DOT_2E)) {
+      // Must prevent parsing `a?.2` as a `?.` token as it will lead to an incorrect error, if the `.2` case is valid
+      // (Spec explicitly disallows a digit after `?.`)
+      if (neofd(1)) {
+        let c = peekd(1);
+        if (c >= $$0_30 && c <= $$9_39) {
+          // [v]: `a ?.2 : b`
+          // [x]: `a ?.2`
+          return $PUNC_QMARK;
+        }
+      }
+
+      ASSERT_skip($$DOT_2E);
+
+      if (supportOptionalChaining) {
+        return $PUNC_QMARK_DOT;
+      }
+
+      return THROW('The optional chaining operator (`?.`) is only supported since ES2020, currently targeting a lower version', pointer, pointer + 2);
+    }
+
+    return $PUNC_QMARK;
   }
 
   function regexSyntaxError(desc, ...rest) {

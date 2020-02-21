@@ -6,7 +6,6 @@ REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
   - Anything stage 4 up to ES11 / ES2020
-    - TODO: optional chaining (`?.`) operator
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
@@ -16,6 +15,7 @@ REPL: https://pvdz.github.io/tenko/repl
 - AST
   - Is optional, enabled by default
   - Estree (default)
+  - (Optional chaining AST works but AST spec seems still in flux)
   - Acorn
   - Babel (anything stage 4, except comments)
   - Supports location data (matching Acorn/Babel for reference)

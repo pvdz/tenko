@@ -550,6 +550,19 @@ function ObjectProperty(node) {
   // Babel
   return Property(node);
 }
+function OptionalCallExpression(node) {
+  assert(node.type, 'OptionalCallExpression');
+  if (Array.isArray(node.arguments)) {
+    return $(node.callee) + '?.(' + node.arguments.map($).join(', ') + ')';
+  }
+
+  return $(node.callee) + '?.(' + $(node.arguments) + ')';
+}
+function OptionalMemberExpression(node) {
+  assert(node.type, 'OptionalMemberExpression');
+  if (node.computed) return $w(node.object) + '?.[' + $(node.property) + ']';
+  return $(node.object) + '?.' + $(node.property);
+}
 function Program(node) {
   assert(node.type, 'Program');
   return node.body.map($).join('\n');
@@ -729,6 +742,7 @@ let jumpTable = [
     if (c === $$E_UC_45) return ThisExpression(node);
     if (c === $$W_77) return ThrowStatement(node);
     if (c === $$E_65) return WhileStatement(node);
+    if (c === $$O_6F) return OptionalCallExpression(node);
     return YieldExpression(node);
   },
   (node, fromFor, type, c) => {
@@ -739,6 +753,7 @@ let jumpTable = [
   (node, fromFor, type, c) => {
     c = type.charCodeAt(0);
     if (c === $$N_UC_4E) return NewExpression(node);
+    if (c === $$O_UC_4F) return OptionalMemberExpression(node);
     return RegExpLiteral(node);
   },
   (node, fromFor, type, c) => {

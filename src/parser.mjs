@@ -291,6 +291,7 @@ import {
   $PUNC_GT_GT_EQ,
   $PUNC_GT_GT_GT_EQ,
   $PUNC_QMARK,
+  $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
@@ -821,7 +822,7 @@ function Parser(code, options = {}) {
     ASSERT(typeof prop === 'string', 'prop should be string');
     ASSERT(_path.length > 0, 'path shouldnt be empty');
     ASSERT(_pnames.length === _path.length, 'pnames should have as many names as paths');
-    ASSERT(prop[0] === '$' || prop === 'directives' || prop === 'extra' || _path[_path.length - 1].hasOwnProperty(prop), 'all ast node members should be predefined');
+    ASSERT(prop[0] === '$' || prop === 'directives' || prop === 'extra' || _path[_path.length - 1].hasOwnProperty(prop), 'all ast node members should be predefined', prop, _path[_path.length - 1].type);
 
     // Set a property value and expect it to be undefined before
     ASSERT(_path[_path.length - 1][prop] === undefined, 'use AST_clobber? This func doesnt clobber, prop=' + prop + ', val=' + value);
@@ -844,7 +845,7 @@ function Parser(code, options = {}) {
       p[p.length] = node;
     }
     else {
-      ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`);
+      ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`, astProp, p && p.type);
       parentNode[astProp] = node;
     }
   }
@@ -1067,7 +1068,7 @@ function Parser(code, options = {}) {
 
     let parent = _path[_path.length-1];
     let p = parent[prop];
-    ASSERT(p || p === null, 'the prop should exist... (and be a node, or null for the init in `for (;;);`)');
+    ASSERT(p || p === null, 'the prop should exist... (and be a node, or null for the init in `for (;;);`)', prop, parent.type);
     if (Array.isArray(p)) {
       ASSERT(Array.isArray(p), 'ast nodes do not have a `length` property so this duck type check should have sufficed');
       ASSERT(p.length);
@@ -1530,7 +1531,7 @@ function Parser(code, options = {}) {
         // Check for a group type of token
         ASSERT((tok_getType() & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
-        ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
+        ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set', what);
         ASSERT(hasAllFlags(tok_getType(), what), 'expecting to skip token with certain type');
       }
     }
@@ -1549,14 +1550,14 @@ function Parser(code, options = {}) {
         // Check for a group type of token
         ASSERT((tok_getType() & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
-        ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
+        ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set', what);
         ASSERT(hasAllFlags(tok_getType(), what), 'expecting to skip token with certain type');
       }
     }
     skipDiv(lexerFlags);
   }
   function ASSERT_skipAny(what, lexerFlags) {
-    ASSERT(arguments.length === 2, 'should get all params', arguments);
+    ASSERT(ASSERT_skipAny.length === arguments.length, 'arg count to ASSERT_skipAny', arguments);
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof what === 'number' || typeof what === 'string', 'what number/string');
     ASSERT(hasNoFlag(lexerFlags, LF_FOR_REGEX), 'regex flag should not be set or propagated inside the parser');
@@ -1567,7 +1568,7 @@ function Parser(code, options = {}) {
         // Check for a group type of token
         ASSERT((tok_getType() & what) === what, 'Expected to parse a particular group type of token', what);
       } else {
-        ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set');
+        ASSERT(ALL_TOKEN_TYPES.includes(what), 'token types are a fixed set', what);
         ASSERT(hasAllFlags(tok_getType(), what), 'expecting to skip token with certain type');
       }
     }
@@ -8518,6 +8519,22 @@ function Parser(code, options = {}) {
         return _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp);
       case $PUNC_PAREN_OPEN: // niet nodig
         return _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp);
+      case $PUNC_QMARK_DOT:
+        // [v]: `` value?.bar ``
+        // [v]: `` value?.() ``
+        // [v]: `` value?.[foo] ``
+        // [v]: `` value?.`foo` ``
+        // [x]: `` value?.bar`tag` ``
+        // [x]: `` value?.()`tag` ``
+        // [x]: `` value?.[foo]`tag` ``
+        // [x]: `` value?.`foo``tag` ``
+        // [v]: `` value?.super ``
+
+        if (isNewArg === IS_NEW_ARG) {
+          return THROW_RANGE('Cannot use `?.` in the arg of `new`', tok_getStart(), tok_getStop());
+        }
+
+        return parseOptionalValueTailOuter(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, astProp);
       case $TICK_PURE:
       case $TICK_HEAD:
       case $TICK_BAD_PURE:
@@ -8534,6 +8551,219 @@ function Parser(code, options = {}) {
 
     if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
     return assignable;
+  }
+  function parseOptionalValueTailOuter(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, astProp) {
+    ASSERT(parseOptionalValueTailOuter.length === arguments.length, 'arg count');
+    ASSERT(tok_getType() === $PUNC_QMARK_DOT, 'should call this when we know next is a `?.`');
+
+    // a?.b.c        optional(a, member(b, c))               member(optional(a, b), c)
+    // a.b?.c        optional(member(a, b), c)               optional(member(a, b), c)
+    // a?.b?.c       optional(a, optional(b, c))             optional(optional(a, b), c)
+    // a.b.?.c.d     member(a, optional(b, member(a, b))     member(a, member(optional(b, c), d))
+    //
+    // a?.b.c;     vs   (a?.b).c;
+    // a?.b.c.d;   vs   (a?.b).c.d;
+    // a?.b?.c.d;   vs   (a?.b)?.c.d.e;   vs   (a?.b?.c).d.e;   vs   ((a?.b)?.c).d.e;
+
+    do {
+
+      let $tp_next_type = tok_getType();
+
+      switch ($tp_next_type) {
+
+        case $PUNC_QMARK_DOT:
+          // <x> ?.
+
+          ASSERT_skipAny($PUNC_QMARK_DOT, lexerFlags);
+
+          let $tp_q_type = tok_getType();
+
+          if (isIdentToken($tp_q_type)) {
+            // [v]: `value?.foo.bar`
+            //              ^
+
+            let $tp_ident_type = tok_getType();
+            let $tp_ident_line = tok_getLine();
+            let $tp_ident_column = tok_getColumn();
+            let $tp_ident_start = tok_getStart();
+            let $tp_ident_stop = tok_getStop();
+            let $tp_ident_canon = tok_getCanoN();
+
+            if (!isIdentToken($tp_ident_type)) THROW_RANGE('Expected ident after dot', $tp_ident_start, $tp_ident_stop);
+
+            ASSERT_skipDiv($G_IDENT, lexerFlags);
+
+            AST_setNode(astProp, {
+              type: 'OptionalMemberExpression',
+              loc: AST_getClosedLoc($tp_valueFirst_start, $tp_valueFirst_line,  $tp_valueFirst_column),
+              optional: true, // False for non-optional tails after an optional
+              computed: false,
+              object: AST_popNode(astProp),
+              property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
+            });
+          } else if ($tp_q_type === $PUNC_BRACKET_OPEN) {
+            // [v]: `value?.[x]`
+            //              ^
+
+            ASSERT_skipAny($PUNC_BRACKET_OPEN, lexerFlags);
+
+            AST_wrapClosedCustom(astProp, {
+              type: 'OptionalMemberExpression',
+              loc: undefined,
+              optional: true, // False for non-optional tails after an optional
+              computed: true,
+              object: undefined,
+              property: undefined,
+            }, 'object');
+
+            parseExpression(lexerFlags, 'property');
+
+            if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+              return THROW_RANGE('Expected the closing `]` char of a dynamic property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+            }
+
+            ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
+
+            AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column,'OptionalMemberExpression');
+          } else if ($tp_q_type === $PUNC_PAREN_OPEN) {
+            // [v]: `value?.(x)`
+            //              ^
+
+            AST_wrapClosedCustom(astProp, {
+              type: 'OptionalCallExpression',
+              loc: undefined,
+              optional: true, // False for non-optional tails after an optional
+              callee: undefined,
+              arguments: undefined,
+            }, 'callee');
+
+            let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
+
+            assignable = mergeAssignable(nowAssignable, assignable);
+
+            AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'OptionalCallExpression');
+          } else if (isTemplateStart($tp_q_type)) {
+            // [v]: `` value?.`x` ``
+            //                ^
+
+            return THROW_RANGE('An value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
+          }
+
+          break;
+
+        case $PUNC_DOT:
+          // [v]: `value?.foo.bar`
+          //                 ^
+          // [v]: `value?.[foo].bar`
+          //                   ^
+          // [v]: `value?.(foo).bar`
+          //                   ^
+
+          ASSERT_skipAny($PUNC_DOT, lexerFlags);
+
+          let $tp_ident_type = tok_getType();
+          let $tp_ident_line = tok_getLine();
+          let $tp_ident_column = tok_getColumn();
+          let $tp_ident_start = tok_getStart();
+          let $tp_ident_stop = tok_getStop();
+          let $tp_ident_canon = tok_getCanoN();
+
+          if (!isIdentToken($tp_ident_type)) THROW_RANGE('Expected ident after dot', $tp_ident_start, $tp_ident_stop);
+
+          ASSERT_skipDiv($G_IDENT, lexerFlags);
+
+          AST_setNode(astProp, {
+            type: 'OptionalMemberExpression',
+            loc: AST_getClosedLoc($tp_valueFirst_start, $tp_valueFirst_line,  $tp_valueFirst_column),
+            optional: false, // !!
+            computed: false,
+            object: AST_popNode(astProp),
+            property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
+          });
+
+          break;
+
+        case $PUNC_PAREN_OPEN:
+          // [v]: `value?.foo(bar)`
+          //                 ^
+          // [v]: `value?.[foo](bar)`
+          //                   ^
+          // [v]: `value?.(foo)(bar)`
+          //                   ^
+
+          AST_wrapClosedCustom(astProp, {
+            type: 'OptionalCallExpression',
+            loc: undefined,
+            optional: false, // !!
+            callee: undefined,
+            arguments: undefined,
+          }, 'callee');
+
+          let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
+
+          assignable = mergeAssignable(nowAssignable, assignable);
+
+          AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'CallExpression');
+
+          break;
+
+        case $PUNC_BRACKET_OPEN:
+          // [v]: `value?.foo[bar]`
+          //                 ^
+          // [v]: `value?.[foo][bar]`
+          //                   ^
+          // [v]: `value?.(foo)[bar]`
+          //                   ^
+
+          ASSERT_skipAny($PUNC_BRACKET_OPEN, lexerFlags);
+
+          AST_wrapClosedCustom(astProp, {
+            type: 'OptionalMemberExpression',
+            loc: undefined,
+            optional: false, // !!
+            computed: true,
+            object: undefined,
+            property: undefined,
+          }, 'object');
+
+          parseExpression(lexerFlags, 'property');
+
+          if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
+            return THROW_RANGE('Expected the closing `]` char of a dynamic property, found`' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+          }
+
+          ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
+
+          assignable = parseOptionalValueTailOuter(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, 'property');
+
+          AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column,'OptionalMemberExpression');
+
+          break;
+
+        // case $PUNC_PLUS_PLUS:
+        //   return THROW_RANGE('An value containing the optional chaining operator is not assignable so `++` is illegal here', tok_getStart(), tok_getStop());
+        //
+        // case $PUNC_MIN_MIN:
+        //   return THROW_RANGE('An value containing the optional chaining operator is not assignable so `--` is illegal here', tok_getStart(), tok_getStop());
+
+        default:
+          if (isTemplateStart($tp_next_type)) {
+            // [v]: `` value?.foo`bar` ``
+            //                 ^
+            // [v]: `` value?.[foo]`bar` ``
+            //                   ^
+            // [v]: `` value?.(foo)`bar` ``
+            //                   ^
+
+            return THROW_RANGE('An value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
+          }
+
+          return setNotAssignable(assignable);
+      }
+
+    } while(true);
+
+    ASSERT(false, 'unreachable');
   }
   function _parseValueTailDotProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
     // parseMemberExpression dot
@@ -8580,7 +8810,9 @@ function Parser(code, options = {}) {
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setAssignable(assignable), isNewArg, NOT_LHSE, astProp); // member expressions are assignable
   }
   function _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
-    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN);
+    ASSERT(_parseValueTailCall.length === arguments.length, 'arg count');
+    ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'at paren');
+
     if (isNewArg === IS_NEW_ARG) { // exception for `new`
       let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
       if (tok_getType() === $PUNC_EQ_GT) {
@@ -8589,24 +8821,25 @@ function Parser(code, options = {}) {
       // new stops parsing the rhs after the first call args
       assignable = mergeAssignable(nowAssignable, assignable);
       assignable = setNotAssignable(assignable);
-    } else {
-      // Not `new`, parses tail, does not throw on `new async () =>`
-      ASSERT(typeof astProp === 'string', 'should be string');
-      AST_wrapClosedCustom(astProp, {
-        type: 'CallExpression',
-        loc: undefined,
-        callee: undefined,
-        arguments: [],
-      }, 'callee');
-      let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
-      assignable = mergeAssignable(nowAssignable, assignable);
-      AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'CallExpression');
-      assignable = parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+      return assignable;
     }
 
-    return assignable;
+    // Not `new`, parses tail, does not throw on `new async () =>`
+    ASSERT(typeof astProp === 'string', 'should be string');
+    AST_wrapClosedCustom(astProp, {
+      type: 'CallExpression',
+      loc: undefined,
+      callee: undefined,
+      arguments: [],
+    }, 'callee');
+    let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
+    assignable = mergeAssignable(nowAssignable, assignable);
+    AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'CallExpression');
+
+    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
   }
   function _parseValueTailTemplate(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
+    ASSERT(_parseValueTailTemplate.length === arguments.length, 'arg count');
     // parseTaggedTemplate
     // Note: in es9+ (only) it is legal for _tagged_ templates to contain illegal escapes (`isBadTickToken(tok_getType())`)
 
