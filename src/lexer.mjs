@@ -2629,21 +2629,11 @@ function Lexer(
                   // parseRegexNamedGroup, parseNamedCapturingGroup
                   // [v]: `/(?<name>content)/`
                   // [v]: `/(?<\u0065bc>content)/`
+                  // [v]: `/(?<n5>x)*/u`
 
                   uflagStatus = parseRegexGroupName(c, uflagStatus, FOR_NAMED_GROUP);
-                  if (uflagStatus === REGEX_GOOD_SANS_U_FLAG && webCompat === WEB_COMPAT_OFF) {
-                    // If there is a u-flag, this is illegal
-                    // If there is no u-flag, the ident required u-flag to be valid, so unable to parse a group name, so
-                    // the `(?<name>` tries to become an atom `(` with quantifier `?`, which is never legal, so it fails
-                    // If the status was invalid then that's an immediate error.
-                    uflagStatus = regexSyntaxError('This will lead to `(?` which is always an error');
-                  }
 
-                  let name = lastCanonizedInput;
-                  if (groupNames['#' + name]) {
-                    return regexSyntaxError('Each group name can only be declared once: `' + name + '`');
-                  }
-                  groupNames['#' + name] = true;
+                  ASSERT(!lastCanonizedInput || !groupNames['#' + lastCanonizedInput], 'duplicate group name check should have happened elsewhere', lastCanonizedInput);
 
                   // named capturing group
                   ++nCapturingParens;
@@ -2938,27 +2928,20 @@ function Lexer(
 
     let r = _parseRegexGroupName(c, uflagStatus, forCapturing);
 
-    if (eof()) return r;
-
     ASSERT(lastCanonizedInput.length === lastCanonizedInputLen, 'should always be in sync');
     ASSERT(foundInvalidGroupName || lastCanonizedInputLen !== 0, 'a valid parse should always yield an ident', r);
 
-    if (uflagStatus !== REGEX_ALWAYS_BAD && r === REGEX_ALWAYS_BAD) {
-      let reason = 'An illegal group name composition is only valid without u-flag and in webcompat mode';
-      if (webCompat === WEB_COMPAT_ON) {
-        return updateRegexUflagIsIllegal(uflagStatus, reason);
-      } else {
-        return regexSyntaxError(reason);
-      }
-    } else if (foundInvalidGroupName) {
-      if (forCapturing === FOR_NAMED_GROUP) {
-        return regexSyntaxError('An invalid name for a capturing group can never lead to a valid regex');
-      } else {
-        ASSERT(forCapturing === FOR_K_ESCAPE, 'enum');
-        // This makes sure that `\k` is not allowed in webcompat mode IF the regex DOES contain a valid group name
-        kCharClassEscaped = true;
-      }
+    if (!foundInvalidGroupName) return r;
+
+    if (forCapturing === FOR_NAMED_GROUP) {
+      // [x]: `/(?<>a)/`
+      return regexSyntaxError('An invalid name for a capturing group can never lead to a valid regex');
     }
+
+    ASSERT(forCapturing === FOR_K_ESCAPE, 'enum');
+    // This makes sure that `\k` is not allowed in webcompat mode IF the regex DOES contain a valid group name
+    // [x]: `/(?<a>.)\k<a/`
+    kCharClassEscaped = true;
 
     return r;
   }
@@ -3011,6 +2994,7 @@ function Lexer(
       }
 
       if (eof()) {
+        foundInvalidGroupName = true;
         lastCanonizedInput = '';
         lastCanonizedInputLen = 0;
         return regexSyntaxError('Missing closing angle bracket of name of capturing group');
@@ -3033,7 +3017,7 @@ function Lexer(
       foundInvalidGroupName = true;
       lastCanonizedInput = '';
       lastCanonizedInputLen = 0;
-      return uflagStatus;
+      return REGEX_GOOD_SANS_U_FLAG;
     }
 
     lastCanonizedInputLen = lastCanonizedInput.length;
@@ -3261,6 +3245,7 @@ function Lexer(
         return regexSyntaxError('Regex contained a group name with invalid unicode escape');
       }
 
+      // [w]: `/\k<xyz\ua`
       return updateRegexUflagIsIllegal(uflagStatus, 'The name of a `\\k` escape contained a broken unicode ruby escape and this can not lead to a valid regex with u-flag');
     }
 
@@ -3565,7 +3550,7 @@ function Lexer(
         ASSERT(false, 'unreachable', c);
       // </SCRUB ASSERTS>
     }
-    THROW('dis be dead code', pointer, pointer);
+    ASSERT(false, 'unreachable', c);
   }
   function parseRegexDecimalEscape(c) {
     // parseBackReference
@@ -3743,10 +3728,6 @@ function Lexer(
           // For example: escaped dash
 
         }
-        else if (c === INVALID_IDENT_CHAR) {
-          ASSERT(lastPotentialRegexError, 'error should be set');
-          flagState = regexSyntaxError(lastPotentialRegexError);
-        }
         else if (c === REGEX_CHARCLASS_ESCAPED_UC_B) {
           ASSERT(lastPotentialRegexError, 'error should be set');
           flagState = updateRegexUflagIsIllegal(flagState, lastPotentialRegexError);
@@ -3760,6 +3741,8 @@ function Lexer(
           c = $$BACKSLASH_5C; // yes... NOT `c`
         }
         else {
+          ASSERT(c !== INVALID_IDENT_CHAR, 'I dont think this status flag can reach this point');
+
           if (c & REGEX_CHARCLASS_BAD_WITH_U_FLAG) {
             c = c ^ REGEX_CHARCLASS_BAD_WITH_U_FLAG; // remove the CHARCLASS_BAD_WITH_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
             ASSERT(lastPotentialRegexError, 'error should be set');
@@ -3776,9 +3759,6 @@ function Lexer(
         ASSERT(c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B || c <= 0x110000, 'c should now be valid unicode range or 0x110000 for error', c);
         // else char class is good :)
       }
-      else if (urangeOpen && c === $$SQUARE_R_5D) {
-        flagState = regexSyntaxError('Encountered early end of charclass while parsing character class range');
-      }
       else if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
         return regexSyntaxError('Encountered newline'); // same as end of input
       }
@@ -3788,7 +3768,8 @@ function Lexer(
 
       if (wasBadUniEscape) {
         // Do nothing
-      } else if (wasEscape) {
+      }
+      else if (wasEscape) {
         // Even if `c` is a surrogate tail, this won't lead to a pair with a previous code unit
         // But if the current codepoint is >0xffff then we still mark it as such
         // Also stops escaped dashes from being interpreted as ranges
@@ -3797,19 +3778,10 @@ function Lexer(
         if (isSurrogate) surrogate = c;
         isSurrogateHead = false;
       }
-      else if (c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B) {
-        isSurrogate = false;
-        isSurrogateHead = false;
-      }
       else if (wasSurrogateHead && isSurrogateTail(c)) {
         isSurrogate = true;
         isSurrogateHead = false;
         surrogate = getSurrogate(prev, c);
-      }
-      else if (!wasSurrogate && !wasSurrogateHead && (c & 0x1fffff) > 0xffff) { // unicode ruby escape
-        isSurrogate = true;
-        isSurrogateHead = false;
-        surrogate = c;
       }
       else {
         isSurrogate = false;
@@ -3820,31 +3792,27 @@ function Lexer(
       if (urangeOpen) {
         // if c is a head we must check the next char for being a tail before we can determine the code _point_
         // otoh, if c is a tail or a non-surrogate then we can now safely do range checks since the codepoint wont change
-        // if this is a head and the previous was too then the previous was the rhs on its own and we check `prev` instead
+        // if this is a head and the previous was too then the previous was the rhs on its own and we check `prev`
+        // instead (prev is used for literal surrogate pair chars, unescaped)
         let urangeRight = isSurrogate ? surrogate : wasSurrogateHead ? prev : c;
-        if (
-          urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE ||
-          urangeRight === REGEX_CHARCLASS_CLASS_ESCAPE
-        ) {
+        if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || urangeRight === REGEX_CHARCLASS_CLASS_ESCAPE) {
           // Class escapes are illegal for ranges
           let reason = 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without uflag';
           flagState = updateRegexUflagIsIllegal(flagState, reason);
-        } else if (
-          urangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B ||
-          urangeRight === REGEX_CHARCLASS_ESCAPED_UC_B
-        ) {
+        }
+        else if (urangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || urangeRight === REGEX_CHARCLASS_ESCAPED_UC_B) {
           // Class escapes are illegal for ranges
-          let reason = 'Character class escapes `\\B` is never legal with u-flag';
+          let reason = 'Character class escapes `\\B` in ranges is never legal with u-flag';
           flagState = updateRegexUflagIsIllegal(flagState, reason);
-        } else if (!isSurrogateHead || wasSurrogateHead) {
+        }
+        else if (!isSurrogateHead || wasSurrogateHead) {
           urangeOpen = false;
-          ASSERT(urangeLeft !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
-          ASSERT(urangeRight !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
           if (urangeLeft > urangeRight) {
             flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right, ' + urangeLeft + ' > ' + urangeRight + ', 0x' + urangeLeft.toString(16) + ' > 0x' + urangeRight.toString(16) + ') which is illegal with u-flag');
           }
           urangeLeft = -1;
-        } else {
+        }
+        else {
           // range remains open because this was a surrogate head and the next character may still be part of the range
         }
       }
@@ -3852,7 +3820,6 @@ function Lexer(
         ASSERT(urangeLeft !== -1, 'U: if we are opening a range here then we should have parsed and set the left codepoint value by now');
         // If the dash was escaped, it should not cause a range
         urangeOpen = true;
-        // urangeLeft = $$DASH_2D; // TODO: add test where this matters
       }
       else {
         ASSERT(urangeOpen === false, 'U: we should only be updating left codepoint if we are not inside a range');
@@ -3924,10 +3891,7 @@ function Lexer(
 
         if (nrangeOpen) {
           const nrangeRight = cTmp; // without u-flag it's always just one char
-          if (
-            nrangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE ||
-            nrangeRight === REGEX_CHARCLASS_CLASS_ESCAPE
-          ) {
+          if (nrangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || nrangeRight === REGEX_CHARCLASS_CLASS_ESCAPE) {
             // Class escapes are illegal for ranges, however, they are allowed and ignored in webcompat mode
             // The webcompat checks have happened before (because \d \D \s \S \w \W are treated differently from \p \P)
             let reason = 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without uflag';
@@ -3937,16 +3901,13 @@ function Lexer(
               // when not in webcompat mode, it may also be the case that a range lhs or rhs is a class escape (\s \d \w etc)
               flagState = updateRegexUflagIsMandatory(flagState, reason);
             }
-          } else if (
-            nrangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B ||
-            nrangeRight === REGEX_CHARCLASS_ESCAPED_UC_B
-          ) {
+          }
+          else if (nrangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || nrangeRight === REGEX_CHARCLASS_ESCAPED_UC_B) {
             // Class escapes are illegal for ranges
             let reason = 'Character class escapes `\\B` is never legal as part of a char class range';
             flagState = updateRegexUflagIsIllegal(flagState, reason);
-          } else {
-            ASSERT(nrangeLeft !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
-            ASSERT(nrangeRight !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
+          }
+          else {
             if (nrangeLeft > nrangeRight) {
               flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right) when parsing as if without u-flag');
             }
