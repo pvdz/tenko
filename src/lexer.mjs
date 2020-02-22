@@ -3852,6 +3852,7 @@ function Lexer(
         ASSERT(urangeLeft !== -1, 'U: if we are opening a range here then we should have parsed and set the left codepoint value by now');
         // If the dash was escaped, it should not cause a range
         urangeOpen = true;
+        // urangeLeft = $$DASH_2D; // TODO: add test where this matters
       }
       else {
         ASSERT(urangeOpen === false, 'U: we should only be updating left codepoint if we are not inside a range');
@@ -3948,9 +3949,6 @@ function Lexer(
             ASSERT(nrangeRight !== REGEX_CHARCLASS_ESCAPED_UC_B || lastPotentialRegexError, 'error should have been set when flag was returned');
             if (nrangeLeft > nrangeRight) {
               flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right) when parsing as if without u-flag');
-            } else if (isSurrogateHead) {
-
-              flagState = updateRegexUflagIsMandatory(flagState, 'Class had a range with right side being surrogate pair which is only recognized as a single codepoint with uflag but uflag was missing');
             }
           }
           nrangeLeft = -1;
@@ -3977,7 +3975,34 @@ function Lexer(
       }
       c = peek();
     }
-    return parseRegexCharClassEnd(urangeOpen, wasSurrogateHead, urangeLeft, prev, flagState);
+
+    ASSERT_skip($$SQUARE_R_5D);
+
+    // Code point range may be open if the rhs was surrogate head. That's the only range case to be checked here.
+    // [x]: `/[\B-@{xD800}@]/u`
+    // (Note: this is explicitly a case where the rhs of the range is a surrogate head character, not escape, and such
+    // a character has the danger of being encoded weirdly / normalized, so I use my test encoding here: `@{x...}@`
+
+    if (urangeOpen && wasSurrogateHead) {
+      // I don't think prev _can_ be \B (because prev is a surrogate head?) but ok...
+      if (urangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || prev === REGEX_CHARCLASS_ESCAPED_UC_B) {
+        // [x]: `/[\B-@{xD800}@]/u`
+        return updateRegexUflagIsIllegal(flagState, 'Illegal `\\B` in regex char class range');
+      }
+
+      if (urangeLeft > prev) {
+        // [x]: `/[\xffff-@{xD800}@]/`
+        // [x]: `/[\xffff-@{xD800}@]/u`
+        return updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range end (left>right, ' + urangeLeft + ' > ' + prev + ', 0x' + urangeLeft.toString(16) + ' > 0x' + prev.toString(16) + ') which is illegal with u-flag');
+      }
+
+      // [v]: `/[\B-@{xD800}@]/`
+      // [v]: `/[\x000f-@{xD800}@]/`
+      // [v]: `/[\x000f-@{xD800}@]/u`
+      return flagState;
+    }
+
+    return flagState;
   }
 
   ASSERT(surrogateToCodepoint(0xD801, 0xDC37) === 0x10437);
@@ -4744,18 +4769,6 @@ function Lexer(
   function getSurrogate(c1, c2) {
     // "A sequence of two code units, where the first code unit c1 is in the range 0xD800 to 0xDBFF and the second code unit c2 is in the range 0xDC00 to 0xDFFF, is a surrogate pair and is interpreted as a code point with the value (c1 - 0xD800) × 0x400 + (c2 - 0xDC00) + 0x10000. (See 10.1.2)
     return (c1 - 0xD800) * 0x400 + (c2 - 0xDC00) + 0x10000;
-  }
-  function parseRegexCharClassEnd(urangeOpen, wasSurrogateHead, urangeLeft, prev, flagState) {
-    ASSERT_skip($$SQUARE_R_5D);
-
-    // code point range may be open if the rhs was a surrogate head.
-    // that's the only range case that needs to be checked here.
-    if (urangeOpen && wasSurrogateHead && (urangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || prev === REGEX_CHARCLASS_ESCAPED_UC_B || urangeLeft > prev)) {
-      if (flagState === REGEX_GOOD_WITH_U_FLAG) return regexSyntaxError('Unknown reason that is only an error without u-flag');
-      if (flagState === REGEX_ALWAYS_BAD) return REGEX_ALWAYS_BAD; // should already have THROWn for this
-      return REGEX_GOOD_SANS_U_FLAG;
-    }
-    return flagState;
   }
   function parseDecimalEscape(c) {
     let reason = 'Cannot escape \\8 or \\9 in a regex char class with u-flag';
