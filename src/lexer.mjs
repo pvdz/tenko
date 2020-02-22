@@ -2433,7 +2433,6 @@ function Lexer(
   let declaredGroupNames = ','; // List of comma concatenated declared group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
   let reffedGroupNames = ','; // List of comma concatenated referenced group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
   let kCharClassEscaped = false; // If one was missing but there was at least one group name then it's always an error
-  let foundValidGroupName = false; // used for +N post-regex check
   let foundInvalidGroupName = false; // used for +N post-regex check
   function parseRegex(c) {
     nCapturingParens = 0;
@@ -2442,7 +2441,6 @@ function Lexer(
     declaredGroupNames = ',';
     reffedGroupNames = ',';
     kCharClassEscaped = false;
-    foundValidGroupName = false;
     foundInvalidGroupName = false;
 
     let ustatusBody = parseRegexBody(c);
@@ -2465,11 +2463,6 @@ function Lexer(
 
       // skip this check
       ustatusBody = updateRegexUflagIsIllegal(ustatusBody, errmsg);
-    }
-
-    if (foundInvalidGroupName && foundValidGroupName) {
-      regexSyntaxError('Found at least one invalid group name but also at least one valid group name, so this activates +N and triggers this error');
-      return $ERROR;
     }
 
     if (ustatusFlags === REGEX_ALWAYS_BAD) {
