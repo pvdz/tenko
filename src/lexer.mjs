@@ -3817,8 +3817,11 @@ function Lexer(
         }
       }
       else if (c === $$DASH_2D && !wasEscape && urangeLeft !== -1) {
-        ASSERT(urangeLeft !== -1, 'U: if we are opening a range here then we should have parsed and set the left codepoint value by now');
         // If the dash was escaped, it should not cause a range
+        // [v]: `/[a-]/`
+        //          ^
+        // [v]: `/[a-b]/`
+        //          ^
         urangeOpen = true;
       }
       else {
@@ -4064,50 +4067,79 @@ function Lexer(
         return REGEX_CHARCLASS_BAD;
 
       case REGCLS_ESC_UNICODE: {
-        // c is >0xfe
+        // This is an escape in a regex charclass (!)
+        // c is >0xfe and <0xffff (because it was peek()ed)
+
+        // https://tc39.es/ecma262/#prod-ClassEscape (not IdentityEscape !!)
+        // https://tc39.es/ecma262/#prod-IdentityEscape
+        //   [+U] SyntaxCharacter
+        //   [+U] /
+        //   [~U] SourceCharacter but not UnicodeIDContinue
+        // In web compat:
+        // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
+        // https://tc39.es/ecma262/#prod-annexB-SourceCharacterIdentityEscape
+        // SourceCharacterIdentityEscape[N]::
+        //   [~N] SourceCharacter but not c
+        //   [+N] SourceCharacter but not one of c or k
+        // (Note: this branch has c>0xffff so we don't care about `c` or `k` in web compat)
+
+        // The \u1000 is "CJK Unified Ideograph-5000", a "other letter" category https://codepoints.net/U+1000
+        // The \u3000 is "Ideographic Space-3000", a "space separator" category https://codepoints.net/U+3000
+        // the \u10000 is "Linear B Syllable B008 A", a "other letter" category https://codepoints.net/U+10000
+        // the \u11049 is "Brahmi Punctuation Dot", a "other punctuation" category https://codepoints.net/U+11049
+        // [w]: `/[\@{x1000}@]/`
+        // [x]: `/[\@{x1000}@]/u`
+        // [v]: `/[\@{x3000}@]/`
+        // [x]: `/[\@{x3000}@]/u`
+        // [v]: `/[\@{x10000}@]/`        Without u it's escaping the surrogate head
+        // [x]: `/[\@{x10000}@]/u`       u-flag always only allows strict set
+        // [v]: `/[\@{x11049}@]/`        Without u it's escaping the surrogate head
+        // [x]: `/[\@{x11049}@]/u`       u-flag always only allows strict set
+
+        // This is illegal with u-flag regardless because then you can only escape a handful of characters.
+        updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a char class with the u-flag');
+
+        if (webCompat === WEB_COMPAT_ON) {
+          ASSERT_skip(c);
+
+          ASSERT(c >= 0x7f && c <= 0xffff, 'String.fromCodePoint can throw for OOB but c was peeked so is 0x7e~0xffff', c);
+
+          // The "ascii" value of an illegal escape is the value of the character escaped. So we just return `c` for it.
+          // (If this was a surrogate pair, `c` will only be the head!)
+          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+
+        // No web compat so this is: `[~U] SourceCharacter but not UnicodeIDContinue`
+
+        let wide = isIdentRestChr(c, CODEPOINT_FROM_ESCAPE); // c is peeked, do not allow to parse a whole codepoint
+
+        if (wide === VALID_SINGLE_CHAR) {
+          // Note: u-flag does not allow this for any code point, so no exception here.
+          // String.fromCodePoint can throw for OOB but c should be within unicode bounds ...
+          regexSyntaxError('Cannot escape `' + String.fromCodePoint(c) + '` in a char class');
+          return REGEX_CHARCLASS_BAD;
+        }
+
+        ASSERT(wide === INVALID_IDENT_CHAR, 'c cannot be a wide ident so it must be invalid here');
 
         if (c === $$PS_2028 || c === $$LS_2029) {
           // Line continuation is not supported in regex char class and the escape is explicitly disallowed
           // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+
+          // [v]: `/[\@{x2028}@]/`
+          // [x]: `/[\@{x2029}@]/u`
+          // [x]: `/[\@{x2029}@]/`
+
           ASSERT_skip(c);
           regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
           return REGEX_CHARCLASS_BAD;
         }
 
-        if (webCompat === WEB_COMPAT_ON) {
-          // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
-          // Note: even if c is part of a surrogate pair, it will consume both parts of the pair here so no special handling is required
-          ASSERT_skip(c);
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCodePoint(c) + '` in a char class with the u-flag');
-          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-        }
+        // c is not unicode continue char and this is not web compat mode so it is ok (without u-flag)
 
-        // so we can already not be valid for u flag, we just need to check here whether we can be valid without u-flag
-        // (any unicode continue char would be a problem)
-        let wide = isIdentRestChr(c, pointer); // c is peeked
-        if (wide === INVALID_IDENT_CHAR) {
-          // c is not unicode continue char
+        ASSERT_skip(c);
 
-          ASSERT_skip(c);
-
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCodePoint(c) + '` in a char class with the u-flag');
-          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-        }
-
-        // else return bad char class because the escape is bad
-        updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCodePoint(c) + '` in a char class');
-        if (wide === VALID_SINGLE_CHAR) {
-          // bad escapes
-          ASSERT_skip(c);
-          return REGEX_CHARCLASS_BAD;
-        }
-
-        ASSERT(wide === VALID_DOUBLE_CHAR, 'wide enum');
-        ASSERT(peeky(c));
-        skipFastWithoutUpdatingCache();
-        skip();
-        return REGEX_CHARCLASS_BAD;
-
+        return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
       }
 
       case REGCLS_ESC_u:
