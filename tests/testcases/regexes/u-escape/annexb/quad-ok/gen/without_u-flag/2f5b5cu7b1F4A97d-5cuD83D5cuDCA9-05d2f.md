@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Encountered incorrect range (left>right, 56489 > 48, 0xdca9 > 0x30) when parsing as if without u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
 
 start@1:0, error@1:0
 ╔══╦════════════════

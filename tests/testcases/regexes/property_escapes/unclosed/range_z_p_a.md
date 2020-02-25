@@ -60,7 +60,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Property escape `\p` must start with a curly bracket; Encountered incorrect range (left>right) when parsing as if without u-flag
+    Regex: Property escape `\p` must start with a curly bracket; Encountered incorrect range (left>right, 122 > 112, 0x7a > 0x70) when parsing as if without u-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

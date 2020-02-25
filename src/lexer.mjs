@@ -3947,8 +3947,7 @@ function Lexer(
           }
           else {
             if (nrangeLeft > nrangeRight) {
-              // flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right, ' + nrangeLeft + ' > ' + nrangeRight + ', 0x' + nrangeLeft.toString(16) + ' > 0x' + nrangeRight.toString(16) + ') when parsing as if without u-flag');
-              flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right) when parsing as if without u-flag');
+              flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right, ' + nrangeLeft + ' > ' + nrangeRight + ', 0x' + nrangeLeft.toString(16) + ' > 0x' + nrangeRight.toString(16) + ') when parsing as if without u-flag');
             }
           }
           nrangeLeft = -1;

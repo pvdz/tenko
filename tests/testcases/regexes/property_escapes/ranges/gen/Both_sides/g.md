@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u; Encountered incorrect range (left>right) when parsing as if without u-flag
+    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u; Encountered incorrect range (left>right, 125 > 112, 0x7d > 0x70) when parsing as if without u-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

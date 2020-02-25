@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Char class can not contain `\B`; Encountered incorrect range (left>right) when parsing as if without u-flag
+    Regex: Char class can not contain `\B`; Encountered incorrect range (left>right, 97 > 66, 0x61 > 0x42) when parsing as if without u-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Encountered incorrect range (left>right, 31 > 1, 0x1f > 0x1) which is illegal with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag
+    Regex: Encountered incorrect range (left>right, 31 > 1, 0x1f > 0x1) which is illegal with u-flag; Encountered incorrect range (left>right, 31 > 1, 0x1f > 0x1) when parsing as if without u-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

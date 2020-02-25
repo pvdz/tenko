@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Encountered incorrect range (left>right, 122 > 1, 0x7a > 0x1) which is illegal with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag
+    Regex: Encountered incorrect range (left>right, 122 > 1, 0x7a > 0x1) which is illegal with u-flag; Encountered incorrect range (left>right, 122 > 117, 0x7a > 0x75) when parsing as if without u-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════
