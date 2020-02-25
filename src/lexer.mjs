@@ -4669,7 +4669,6 @@ function Lexer(
     let u = 0;
     let y = 0;
     let s = 0;
-    let bad = 0;
     while (neof()) {
       let c = peek();
       switch (c) {
@@ -4683,7 +4682,7 @@ function Lexer(
           ++m;
           break;
         case $$U_75:
-          ++u; // \\u{...} is only supported with this flag and an early error otherwise
+          ++u; // `\u{...}`, `\p{..}`, and `\P{..}` are only supported with this flag
           break;
         case $$Y_79:
           ++y;
@@ -4694,43 +4693,22 @@ function Lexer(
           }
           ++s; // dotall flag was added in es9 / es2018
           break;
-        case $$BACKSLASH_5C:
-          break; // see below
         default:
-          if (isAsciiLetter(c)) {
-            ++bad; // unknown flags are considered syntax errors by the semantics
+          if (isAsciiLetter(c) || c === $$BACKSLASH_5C) {
+            // Unknown flags are considered syntax errors by the semantics and flags cannot be escaped
             regexSyntaxError('Unknown regex flag [ord=' + c + ', `' + String.fromCodePoint(c) + '`)]');
-          } else if (bad) {
-            return REGEX_ALWAYS_BAD; // already THROWn for this
-          } else if ((g|i|m|u|y|s) > 1) {
-            return regexSyntaxError('Encountered at least one regex flag twice');
-          } else {
-            return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
+            return REGEX_ALWAYS_BAD;
           }
-      }
-      ASSERT_skip(c);
 
-      // escaped flags (rare path that we must invalidate)
-      if (c === $$BACKSLASH_5C) {
-        // while syntactically a unicode escaped flag could be valid, the semantics explicitly disallow it
-        // just gracefully parse a unicode escape and return an error token
-        // (note: this is already the "slow" path because we know it's an error)
-        if (eof()) return regexSyntaxError('Encountered early EOF while trying to parse a regex flag that is escaped (the backslash is the very last char which is illegal)');
-        if (peeky($$U_75)) {
-          ASSERT_skip($$U_75);
-          parseUnicodeEscapeForRegexAtom(); // may return REGEX_GOOD_RUBY_EDGE_CASE (but who cares)
-          regexSyntaxError('Regex flags can not be escaped in any form');
-        } else {
-          regexSyntaxError('Unknown regex flag [ord=' + c + ']');
-        }
-        ++bad;
+          // The next character can no longer be part of the flag. Don't try to validate here, just return now.
+          return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
       }
+
+      ASSERT_skip(c);
     }
-    // the error is the (slightly and very theoretical) slow path because it leads to an error anyways
-    // if any flags occurred more than once, the or below will result in >1
-    if (bad) {
-      return REGEX_ALWAYS_BAD; // already THROWn for this
-    } else if ((g|i|m|u|y|s) > 1) {
+
+    // If any flags occurred more than once, the or below will result in >1
+    if ((g|i|m|u|y|s) > 1) {
       return regexSyntaxError('Encountered at least one regex flag twice');
     } else {
       return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
