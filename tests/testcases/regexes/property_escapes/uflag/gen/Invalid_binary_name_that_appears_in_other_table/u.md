@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The escaped binary property name `ASCII` is not valid (does not appear in "table 54") with u-flag, and `\p` is not valid without u-flag and without webcompat
+    Regex: The `\p` escaped binary property name `ASCII` is not valid (does not appear in "table 54")
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /\P{ASCII=Connector_Punctuation}/u;
-   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The escaped binary property name `ASCII` is not valid (does not appear in "table 54"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: The `\p` escaped binary property name `ASCII` is not valid (does not appear in "table 54"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

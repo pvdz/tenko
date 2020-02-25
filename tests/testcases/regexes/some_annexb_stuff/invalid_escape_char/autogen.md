@@ -77,6 +77,9 @@ So a-\c is bad where A-\c is good (backslash sits between lower and upper case)
 
 #### Character class range right without uflag
 
+The `a-\B` case fails without web compat or with u-flag because it doesn't allow `\B` at all
+The `a-\B` case fails in web compat because `a-B` is an illegal range (`97 - 66`)
+
 `````js
 /[a-\#]/
 `````

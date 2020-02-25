@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Char class can not contain `\B` with u-flag or without webcompat
+    Regex: Char class can not contain `\B`
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Char class can not contain `\B` with u-flag or without webcompat; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Char class can not contain `\B`; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

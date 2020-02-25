@@ -55,15 +55,26 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-throws: Lexer error!
-    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; A broken `\u` escape can never be valid with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+      expression: {
+        type: 'Literal',
+        loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+        value: null,
+        regex: { pattern: '[a-\\u-a]', flags: '' },
+        raw: '/[a-\\u-a]/'
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /[a-\u-a]/
-   ║ ^^^^^^^^^^------- error
-╚══╩════════════════
-
+tokens (3x):
+       REGEXN ASI
 `````
 
 ### Module goal with AnnexB
@@ -71,3 +82,13 @@ start@1:0, error@1:0
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+/[a-\u-a]/;
+````
+
+Produces same AST

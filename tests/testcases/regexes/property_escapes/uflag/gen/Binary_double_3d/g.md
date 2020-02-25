@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: This is bad with u-flag because a property escape name is whitelisted and bad with-out u-flag because only webcompat mode would allow `\p`
+    Regex: Property escape `\p` contained double equal sign, which is not valid
 
 start@1:0, error@1:0
 ╔══╦════════════════

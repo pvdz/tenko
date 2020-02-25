@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: This is bad with u-flag because a property escape name is whitelisted and bad with-out u-flag because only webcompat mode would allow `\p`
+    Regex: Property escape `\p` contained double equal sign, which is not valid
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: An escaped property can only contain one eq sign (`=`) but found a second one; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Property escape `\p` contained double equal sign, which is not valid; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

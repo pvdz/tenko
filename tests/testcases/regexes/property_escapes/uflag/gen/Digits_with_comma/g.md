@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The escaped lone property name `1,1234` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\p` is not valid without u-flag and without webcompat
+    Regex: Property escape `\p` contained illegal character `1`
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /\p{1,1234}/g;
-   ║ ^^^^^^^^^^^^------- error
+   ║ ^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -55,15 +55,26 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-throws: Lexer error!
-    Regex: Encountered a property escape which could be a quantifier. Without u-flag it fails in webcompat mode. With u-flag it fails because the name is not in the whitelist.
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+      expression: {
+        type: 'Literal',
+        loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+        value: null,
+        regex: { pattern: '\\p{1,1234}', flags: 'g' },
+        raw: '/\\p{1,1234}/g'
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /\p{1,1234}/g;
-   ║ ^^^^^^^^^^^^------- error
-╚══╩════════════════
-
+tokens (3x):
+       REGEXN PUNC_SEMI
 `````
 
 ### Module goal with AnnexB
@@ -71,3 +82,7 @@ start@1:0, error@1:0
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
+
+## AST Printer
+
+Printer output was same as input [sloppy][annexb:yes]

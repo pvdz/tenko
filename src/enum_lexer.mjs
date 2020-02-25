@@ -23,10 +23,10 @@ const ILLEGAL_UNICODE_ESCAPE = 0x110000;
 const REGEX_CHARCLASS_BAD = 0x110000; // Note: max valid unicode value is <0x110000 so we can use high flags as side channels!
 const REGEX_CHARCLASS_ESCAPED_UC_B = 0x110001;
 const REGEX_CHARCLASS_ESCAPED_C = 0x110002;
-const REGEX_CHARCLASS_BAD_SANS_U_FLAG = 1<<23;
+const REGEX_CHARCLASS_BAD_SANS_U_FLAG = 1<<23; // Note: first value is 8388608 (0x800000) so keep error codes below ;)
 const REGEX_CHARCLASS_BAD_WITH_U_FLAG = 1<<24;
 const REGEX_CHARCLASS_CLASS_ESCAPE = 1<<25; // \d \w \s etc, for webcompat checks in ranges
-const REGEX_CHARCLASS_WAS_RUBY = 1<<26; // For invalid u-escapes om ramges om cjar c;asses wotjpit i=f;ag om webcompat
+const REGEX_CHARCLASS_WAS_RUBY = 1<<26; // For invalid u-escapes in ranges in char classes with u-flag in webcompat
 
 const COLLECT_TOKENS_NONE = 0;
 const COLLECT_TOKENS_SOLID = 1; // non-whitespace

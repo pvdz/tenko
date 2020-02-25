@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The escaped property value `` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\p` is not valid without u-flag and without webcompat
+    Regex: Property escape `\p` had no value after the `=` which is illegal
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /\P{Script_Extensions=}/u;
-   ║ ^^^^^^^^^^^^^^^^^^^^^^^^------- error
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The escaped property value `` is not valid (does not appear in "table 56" nor "table 57"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Property escape `\p` had no value after the `=` which is illegal; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The escaped lone property name `1234` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\p` is not valid without u-flag and without webcompat
+    Regex: Property escape `\p` contained illegal character `1`
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The escaped lone property name `1234` is not valid (does not appear in "table 55" nor "table 56"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Property escape `\p` contained illegal character `1`; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

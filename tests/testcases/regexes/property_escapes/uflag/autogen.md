@@ -24,7 +24,7 @@ Each case is applied to each test by simply replacing `#` with the actual case.
 Illegal without u-flag and without webcompat
 
 `````js
-/\P{Hex}/#
+/\P{Hex_Digit}/#
 `````
 
 #### Class property escapes base case
@@ -32,19 +32,19 @@ Illegal without u-flag and without webcompat
 Illegal without u-flag and without webcompat
 
 `````js
-/[\p{Hex}]/#
+/[\p{Hex_Digit}]/#
 `````
 
 #### Double property escapes 
 
 `````js
-/\P{Hex}\P{Hex}/#
+/\P{Hex_Digit}\P{Hex_Digit}/#
 `````
 
 #### Double class property escapes 
 
 `````js
-/[\p{Hex}\P{Hex}]/#
+/[\p{Hex_Digit}\P{Hex_Digit}]/#
 `````
 
 #### Valid binary
@@ -139,6 +139,18 @@ This fails because in webcompat the fallback is not allowed to have a quantifier
 
 `````js
 /\p{1,1234}/#;
+`````
+
+#### Digits with a=comma
+
+`````js
+/\p{a=1,1234}/#;
+`````
+
+#### Ident start then digits with comma
+
+`````js
+/\p{a1,1234}/#;
 `````
 
 #### Digits with value

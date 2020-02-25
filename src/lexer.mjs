@@ -431,12 +431,11 @@ import {
 } from './tokentype.mjs';
 
 // https://tc39.es/ecma262/#table-nonbinary-unicode-properties
-// (manually copied from spec)
-const TABLE54 = ',General_Category,gc,Script,sc,Script_Extensions,scx,';
-const TABLE55 = ',ASCII,ASCII_Hex_Digit,AHex,Alphabetic,Alpha,Any,Assigned,Bidi_Control,Bidi_C,Bidi_Mirrored,Bidi_M,Case_Ignorable,CI,Cased,Changes_When_Casefolded,CWCF,Changes_When_Casemapped,CWCM,Changes_When_Lowercased,CWL,Changes_When_NFKC_Casefolded,CWKCF,Changes_When_Titlecased,CWT,Changes_When_Uppercased,CWU,Dash,Default_Ignorable_Code_Point,DI,Deprecated,Dep,Diacritic,Dia,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Extended_Pictographic,Extender,Ext,Grapheme_Base,Gr_Base,Grapheme_Extend,Gr_Ext,Hex_Digit,Hex,IDS_Binary_Operator,IDSB,IDS_Trinary_Operator,IDST,ID_Continue,IDC,ID_Start,IDS,Ideographic,Ideo,Join_Control,Join_C,Logical_Order_Exception,LOE,Lowercase,Lower,Math,Noncharacter_Code_Point,NChar,Pattern_Syntax,Pat_Syn,Pattern_White_Space,Pat_WS,Quotation_Mark,QMark,Radical,Regional_Indicator,RI,Sentence_Terminal,STerm,Soft_Dotted,SD,Terminal_Punctuation,Term,Unified_Ideograph,UIdeo,Uppercase,Upper,Variation_Selector,VS,White_Space,space,XID_Continue,XIDC,XID_Start,XIDS,';
-const TABLE56 = ',Cased_Letter,LC,Close_Punctuation,Pe,Connector_Punctuation,Pc,Control,Cc,cntrl,Currency_Symbol,Sc,Dash_Punctuation,Pd,Decimal_Number,Nd,digit,Enclosing_Mark,Me,Final_Punctuation,Pf,Format,Cf,Initial_Punctuation,Pi,Letter,L,Letter_Number,Nl,Line_Separator,Zl,Lowercase_Letter,Ll,Mark,M,Combining_Mark,Math_Symbol,Sm,Modifier_Letter,Lm,Modifier_Symbol,Sk,Nonspacing_Mark,Mn,Number,N,Open_Punctuation,Ps,Other,C,Other_Letter,Lo,Other_Number,No,Other_Punctuation,Po,Other_Symbol,So,Paragraph_Separator,Zp,Private_Use,Co,Punctuation,P,punct,Separator,Z,Space_Separator,Zs,Spacing_Mark,Mc,Surrogate,Cs,Symbol,S,Titlecase_Letter,Lt,Unassigned,Cn,Uppercase_Letter,Lu,';
-// Note: Added Elym instead of a duplicate Elymaic to table 57 because I think that's a typo in the spec
-const TABLE57 = ',Adlam,Adlm,Ahom,Anatolian_Hieroglyphs,Hluw,Arabic,Arab,Armenian,Armn,Avestan,Avst,Balinese,Bali,Bamum,Bamu,Bassa_Vah,Bass,Batak,Batk,Bengali,Beng,Bhaiksuki,Bhks,Bopomofo,Bopo,Brahmi,Brah,Braille,Brai,Buginese,Bugi,Buhid,Buhd,Canadian_Aboriginal,Cans,Carian,Cari,Caucasian_Albanian,Aghb,Chakma,Cakm,Cham,Cherokee,Cher,Common,Zyyy,Coptic,Copt,Qaac,Cuneiform,Xsux,Cypriot,Cprt,Cyrillic,Cyrl,Deseret,Dsrt,Devanagari,Deva,Dogra,Dogr,Duployan,Dupl,Egyptian_Hieroglyphs,Egyp,Elbasan,Elba,Elymaic,Elym,Ethiopic,Ethi,Georgian,Geor,Glagolitic,Glag,Gothic,Goth,Grantha,Gran,Greek,Grek,Gujarati,Gujr,Gunjala_Gondi,Gong,Gurmukhi,Guru,Han,Hani,Hangul,Hang,Hanifi_Rohingya,Rohg,Hanunoo,Hano,Hatran,Hatr,Hebrew,Hebr,Hiragana,Hira,Imperial_Aramaic,Armi,Inherited,Zinh,Qaai,Inscriptional_Pahlavi,Phli,Inscriptional_Parthian,Prti,Javanese,Java,Kaithi,Kthi,Kannada,Knda,Katakana,Kana,Kayah_Li,Kali,Kharoshthi,Khar,Khmer,Khmr,Khojki,Khoj,Khudawadi,Sind,Lao,Laoo,Latin,Latn,Lepcha,Lepc,Limbu,Limb,Linear_A,Lina,Linear_B,Linb,Lisu,Lycian,Lyci,Lydian,Lydi,Mahajani,Mahj,Makasar,Maka,Malayalam,Mlym,Mandaic,Mand,Manichaean,Mani,Marchen,Marc,Medefaidrin,Medf,Masaram_Gondi,Gonm,Meetei_Mayek,Mtei,Mende_Kikakui,Mend,Meroitic_Cursive,Merc,Meroitic_Hieroglyphs,Mero,Miao,Plrd,Modi,Mongolian,Mong,Mro,Mroo,Multani,Mult,Myanmar,Mymr,Nabataean,Nbat,Nandinagari,Nand,New_Tai_Lue,Talu,Newa,Nko,Nkoo,Nushu,Nshu,Nyiakeng_Puachue_Hmong,Hmnp,Ogham,Ogam,Ol_Chiki,Olck,Old_Hungarian,Hung,Old_Italic,Ital,Old_North_Arabian,Narb,Old_Permic,Perm,Old_Persian,Xpeo,Old_Sogdian,Sogo,Old_South_Arabian,Sarb,Old_Turkic,Orkh,Oriya,Orya,Osage,Osge,Osmanya,Osma,Pahawh_Hmong,Hmng,Palmyrene,Palm,Pau_Cin_Hau,Pauc,Phags_Pa,Phag,Phoenician,Phnx,Psalter_Pahlavi,Phlp,Rejang,Rjng,Runic,Runr,Samaritan,Samr,Saurashtra,Saur,Sharada,Shrd,Shavian,Shaw,Siddham,Sidd,SignWriting,Sgnw,Sinhala,Sinh,Sogdian,Sogd,Sora_Sompeng,Sora,Soyombo,Soyo,Sundanese,Sund,Syloti_Nagri,Sylo,Syriac,Syrc,Tagalog,Tglg,Tagbanwa,Tagb,Tai_Le,Tale,Tai_Tham,Lana,Tai_Viet,Tavt,Takri,Takr,Tamil,Taml,Tangut,Tang,Telugu,Telu,Thaana,Thaa,Thai,Tibetan,Tibt,Tifinagh,Tfng,Tirhuta,Tirh,Ugaritic,Ugar,Vai,Vaii,Wancho,Wcho,Warang_Citi,Wara,Yi,Yiii,Zanabazar_Square,Zanb,';
+// (Manually copied from spec. Note that the numbers of the table is not "fixed" so don't refer to them like that)
+const TABLE_NONBIN_UNI_PROPS = ',General_Category,gc,Script,sc,Script_Extensions,scx,';
+const TABLE_BIN_UNI_PROPS = ',ASCII,ASCII_Hex_Digit,AHex,Alphabetic,Alpha,Any,Assigned,Bidi_Control,Bidi_C,Bidi_Mirrored,Bidi_M,Case_Ignorable,CI,Cased,Changes_When_Casefolded,CWCF,Changes_When_Casemapped,CWCM,Changes_When_Lowercased,CWL,Changes_When_NFKC_Casefolded,CWKCF,Changes_When_Titlecased,CWT,Changes_When_Uppercased,CWU,Dash,Default_Ignorable_Code_Point,DI,Deprecated,Dep,Diacritic,Dia,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Extended_Pictographic,Extender,Ext,Grapheme_Base,Gr_Base,Grapheme_Extend,Gr_Ext,Hex_Digit,Hex,IDS_Binary_Operator,IDSB,IDS_Trinary_Operator,IDST,ID_Continue,IDC,ID_Start,IDS,Ideographic,Ideo,Join_Control,Join_C,Logical_Order_Exception,LOE,Lowercase,Lower,Math,Noncharacter_Code_Point,NChar,Pattern_Syntax,Pat_Syn,Pattern_White_Space,Pat_WS,Quotation_Mark,QMark,Radical,Regional_Indicator,RI,Sentence_Terminal,STerm,Soft_Dotted,SD,Terminal_Punctuation,Term,Unified_Ideograph,UIdeo,Uppercase,Upper,Variation_Selector,VS,White_Space,space,XID_Continue,XIDC,XID_Start,XIDS,';
+const TABLE_GEN_CAT_VALUES = ',Cased_Letter,LC,Close_Punctuation,Pe,Connector_Punctuation,Pc,Control,Cc,cntrl,Currency_Symbol,Sc,Dash_Punctuation,Pd,Decimal_Number,Nd,digit,Enclosing_Mark,Me,Final_Punctuation,Pf,Format,Cf,Initial_Punctuation,Pi,Letter,L,Letter_Number,Nl,Line_Separator,Zl,Lowercase_Letter,Ll,Mark,M,Combining_Mark,Math_Symbol,Sm,Modifier_Letter,Lm,Modifier_Symbol,Sk,Nonspacing_Mark,Mn,Number,N,Open_Punctuation,Ps,Other,C,Other_Letter,Lo,Other_Number,No,Other_Punctuation,Po,Other_Symbol,So,Paragraph_Separator,Zp,Private_Use,Co,Punctuation,P,punct,Separator,Z,Space_Separator,Zs,Spacing_Mark,Mc,Surrogate,Cs,Symbol,S,Titlecase_Letter,Lt,Unassigned,Cn,Uppercase_Letter,Lu,';
+const TABLE_SCRIPT_VALUES = ',Adlam,Adlm,Ahom,Anatolian_Hieroglyphs,Hluw,Arabic,Arab,Armenian,Armn,Avestan,Avst,Balinese,Bali,Bamum,Bamu,Bassa_Vah,Bass,Batak,Batk,Bengali,Beng,Bhaiksuki,Bhks,Bopomofo,Bopo,Brahmi,Brah,Braille,Brai,Buginese,Bugi,Buhid,Buhd,Canadian_Aboriginal,Cans,Carian,Cari,Caucasian_Albanian,Aghb,Chakma,Cakm,Cham,Cherokee,Cher,Common,Zyyy,Coptic,Copt,Qaac,Cuneiform,Xsux,Cypriot,Cprt,Cyrillic,Cyrl,Deseret,Dsrt,Devanagari,Deva,Dogra,Dogr,Duployan,Dupl,Egyptian_Hieroglyphs,Egyp,Elbasan,Elba,Elymaic,Elym,Ethiopic,Ethi,Georgian,Geor,Glagolitic,Glag,Gothic,Goth,Grantha,Gran,Greek,Grek,Gujarati,Gujr,Gunjala_Gondi,Gong,Gurmukhi,Guru,Han,Hani,Hangul,Hang,Hanifi_Rohingya,Rohg,Hanunoo,Hano,Hatran,Hatr,Hebrew,Hebr,Hiragana,Hira,Imperial_Aramaic,Armi,Inherited,Zinh,Qaai,Inscriptional_Pahlavi,Phli,Inscriptional_Parthian,Prti,Javanese,Java,Kaithi,Kthi,Kannada,Knda,Katakana,Kana,Kayah_Li,Kali,Kharoshthi,Khar,Khmer,Khmr,Khojki,Khoj,Khudawadi,Sind,Lao,Laoo,Latin,Latn,Lepcha,Lepc,Limbu,Limb,Linear_A,Lina,Linear_B,Linb,Lisu,Lycian,Lyci,Lydian,Lydi,Mahajani,Mahj,Makasar,Maka,Malayalam,Mlym,Mandaic,Mand,Manichaean,Mani,Marchen,Marc,Medefaidrin,Medf,Masaram_Gondi,Gonm,Meetei_Mayek,Mtei,Mende_Kikakui,Mend,Meroitic_Cursive,Merc,Meroitic_Hieroglyphs,Mero,Miao,Plrd,Modi,Mongolian,Mong,Mro,Mroo,Multani,Mult,Myanmar,Mymr,Nabataean,Nbat,Nandinagari,Nand,New_Tai_Lue,Talu,Newa,Nko,Nkoo,Nushu,Nshu,Nyiakeng_Puachue_Hmong,Hmnp,Ogham,Ogam,Ol_Chiki,Olck,Old_Hungarian,Hung,Old_Italic,Ital,Old_North_Arabian,Narb,Old_Permic,Perm,Old_Persian,Xpeo,Old_Sogdian,Sogo,Old_South_Arabian,Sarb,Old_Turkic,Orkh,Oriya,Orya,Osage,Osge,Osmanya,Osma,Pahawh_Hmong,Hmng,Palmyrene,Palm,Pau_Cin_Hau,Pauc,Phags_Pa,Phag,Phoenician,Phnx,Psalter_Pahlavi,Phlp,Rejang,Rjng,Runic,Runr,Samaritan,Samr,Saurashtra,Saur,Sharada,Shrd,Shavian,Shaw,Siddham,Sidd,SignWriting,Sgnw,Sinhala,Sinh,Sogdian,Sogd,Sora_Sompeng,Sora,Soyombo,Soyo,Sundanese,Sund,Syloti_Nagri,Sylo,Syriac,Syrc,Tagalog,Tglg,Tagbanwa,Tagb,Tai_Le,Tale,Tai_Tham,Lana,Tai_Viet,Tavt,Takri,Takr,Tamil,Taml,Tangut,Tang,Telugu,Telu,Thaana,Thaa,Thai,Tibetan,Tibt,Tifinagh,Tfng,Tirhuta,Tirh,Ugaritic,Ugar,Vai,Vaii,Wancho,Wcho,Warang_Citi,Wara,Yi,Yiii,Zanabazar_Square,Zanb,';
 
 import {
   BAD_ESCAPE,
@@ -3479,8 +3478,8 @@ function Lexer(
         // - `/\P{name}`
         // - `/\p{name=value}`
         // - `/\P{name=value}`
-        const NOT_FROM_CHAR_CLASS = false;
-        return parseRegexPropertyEscape(c, NOT_FROM_CHAR_CLASS);
+        const FROM_ATOM = false;
+        return parseRegexPropertyEscape(c, FROM_ATOM);
 
       case REGATOM_ESC_0:
         ASSERT_skip($$0_30);
@@ -3642,10 +3641,13 @@ function Lexer(
       // Ruby escapes can yield codepoints > 0xffff, and double unicode quad escapes can. Only other way is literal.
       let wasEscape = false;
       let wasDoubleQuad = false;
-      let wasUniEscape = false;
       let wasBadUniEscape = false;
+      let wasPropEscape = false;
+      let wasPropOnly = false;
+      let wasBadPropEscape = false;
       let wasRubyWebEscape = false;
 
+      let escapeCharUP = 0; // Used for u, p, and P. Meaningless otherwise
       if (c === $$BACKSLASH_5C) {
         ASSERT_skip($$BACKSLASH_5C);
         wasEscape = true;
@@ -3656,7 +3658,8 @@ function Lexer(
         }
 
         c = peek();
-        wasUniEscape = c === $$U_75;
+        escapeCharUP = c;
+        let escapePointer = pointer;
 
         // `c` may be >0xffff by unicode ruby escape or double unicode quad escapes (only...)
         c = parseRegexCharClassEscape(c);
@@ -3668,9 +3671,9 @@ function Lexer(
         // For the quad case that is harder because it can be any hex value or even `u` and we'd have to propagate that
         // Easiest for quad is to scan back one position, either it's a valid hex digit or `u`. There are no other cases
 
-        // Webcompat exception; if a \u escape was invalid + there is no u-flag + this is webcompat, then we need to
-        // know what the last parsed character was to validate certain range cases (`/[\u{1}-a]/` but also `/[\uab-a]/`)
-        if (wasUniEscape) {
+        if (escapeCharUP === $$U_75) {
+          // Webcompat exception; if a \u escape was invalid + there is no u-flag + this is webcompat, then we need to
+          // know what the last parsed character was to validate certain range cases (`/[\u{1}-a]/` but also `/[\uab-a]/`)
           if (c === REGEX_CHARCLASS_BAD) {
             // That's one case
             if (eof()) return REGEX_CHARCLASS_BAD;
@@ -3697,6 +3700,8 @@ function Lexer(
             // the last parsed character as the start of a next range, if any.
             wasBadUniEscape = true;
             flagState = updateRegexUflagIsIllegal(flagState, 'A broken `\\u` escape can never be valid with u-flag');
+            // This one makes `/[a-\u-a]/` work
+            wasPropOnly = (pointer - escapePointer) === 1;
           }
           else if ((c & REGEX_CHARCLASS_WAS_RUBY) > 0) {
             // This allows properly checking ranges for the non-uflag state (which must use `}` as the final c here
@@ -3707,6 +3712,33 @@ function Lexer(
           else if (c > 0xffff) {
             ASSERT(c <= MAX_VALID_UNICODE_VALUE, 'no other flags');
             wasDoubleQuad = true;
+          }
+        }
+        else if (escapeCharUP === $$P_70 || escapeCharUP === $$P_UC_50) {
+          // Webcompat exception; if a \p escape was valid but had no u-flag + there is no u-flag + this is webcompat
+          // We need to know what the last parsed character was to validate certain range cases (`/[q-\p{a}-a]/`
+          // [x]: `/[\p-a]/`
+          // [w]: `/[\p-z]/`
+          // [x]: `/[\p{b-a]/`
+          // [w]: `/[\p{b-z]/`
+          // [x]: `/[\p{b=-<]/`
+          // [w]: `/[\p{b=->]/`
+          // [x]: `/[\p{b=b-a]/`
+          // [w]: `/[\p{b=b-z]/`
+          // (If the next char isn't `-` it's not important, but swah)
+
+          // Only care about valid \p escapes, meaning u-flag must still be valid (at least). It kind of doesn't matter
+          // if the escape is illegal without u-flag but I don't think that case even exists for `\p`. Maybe eof?
+
+          if (webCompat === WEB_COMPAT_ON) {
+            if (c === REGEX_CHARCLASS_BAD || c === (REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD) || (c & REGEX_CHARCLASS_BAD_WITH_U_FLAG) === REGEX_CHARCLASS_BAD_WITH_U_FLAG) {
+              wasBadPropEscape = true;
+            } else {
+              // \p is a property escape, only supported with u-flag
+              wasPropEscape = true;
+              // This one makes `/[a-\p-a]/` and `/[z-\p-a]/` and `/[z-\p-a]/` and `/[\p{Hex_Digit}-z]/` work.
+              wasPropOnly = (pointer - escapePointer) === 1;
+            }
           }
         }
 
@@ -3729,10 +3761,18 @@ function Lexer(
 
         }
         else if (c === REGEX_CHARCLASS_ESCAPED_UC_B) {
-          ASSERT(lastPotentialRegexError, 'error should be set');
-          flagState = updateRegexUflagIsIllegal(flagState, lastPotentialRegexError);
-          // In webcompat this is an identity escape, which get the ord of the char being escaped
-          // But this is only necessary for range checks, at which point this would be an error anyways.
+          // [x]: `/[\B-]/u`
+          // [w]: `/[\B-]/`
+          // [x]: `/[\B-A]/`
+          // [w]: `/[\B-Z]/`
+
+          if (webCompat === WEB_COMPAT_ON) {
+            flagState = updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class can not contain `\\B`');
+          } else {
+            flagState = regexSyntaxError('Char class can not contain `\\B`');
+          }
+
+          c = $$B_UC_42; // For range checks in web compat mode
         }
         else if (c === REGEX_CHARCLASS_ESCAPED_C) {
           ASSERT(webCompat === WEB_COMPAT_ON, 'only appears with web compat');
@@ -3756,7 +3796,7 @@ function Lexer(
             ASSERT(flagState === REGEX_GOOD_WITH_U_FLAG || flagState === REGEX_ALWAYS_BAD, 'either way, the flag state should now reflect "bad with u-flag", or worse');
           }
         }
-        ASSERT(c === REGEX_CHARCLASS_CLASS_ESCAPE || c === REGEX_CHARCLASS_ESCAPED_UC_B || c <= 0x110000, 'c should now be valid unicode range or 0x110000 for error', c);
+        ASSERT(c === REGEX_CHARCLASS_CLASS_ESCAPE || c <= 0x110000, 'c should now be valid unicode range or 0x110000 for error', c);
         // else char class is good :)
       }
       else if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
@@ -3796,14 +3836,8 @@ function Lexer(
         // instead (prev is used for literal surrogate pair chars, unescaped)
         let urangeRight = isSurrogate ? surrogate : wasSurrogateHead ? prev : c;
         if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || urangeRight === REGEX_CHARCLASS_CLASS_ESCAPE) {
-          // Class escapes are illegal for ranges
-          let reason = 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without uflag';
-          flagState = updateRegexUflagIsIllegal(flagState, reason);
-        }
-        else if (urangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || urangeRight === REGEX_CHARCLASS_ESCAPED_UC_B) {
-          // Class escapes are illegal for ranges
-          let reason = 'Character class escapes `\\B` in ranges is never legal with u-flag';
-          flagState = updateRegexUflagIsIllegal(flagState, reason);
+          // Class escapes with u-flag are always illegal for ranges
+          flagState = updateRegexUflagIsIllegal(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` not allowed in ranges with u');
         }
         else if (!isSurrogateHead || wasSurrogateHead) {
           urangeOpen = false;
@@ -3840,17 +3874,23 @@ function Lexer(
       // Webcompat does not change this, it only affects isCharacterClass checks
       // https://tc39.es/ecma262/#sec-patterns-static-semantics-early-errors-annexb
 
-      // For the case where there is NO u-flag the wasRubyWebEscape check will use `}` as the last char of the atom
-      // After processing this, there will be another pass, passing on the `}` of the escape as if it's a surrogate tail
-      let cTmp = c;
-      let cTail = c; // If double quad, this will hold the second quad ("low surrogate") while the first is processed
+      // For the case where there is NO u-flag the rubyHackRhsCurly check will use `}` as the last char of the atom
+      let cTmp = wasRubyWebEscape || wasPropEscape ? escapeCharUP : c;
+      // If multiple characters were considered one code point with u-flag, we need to process the first and last value
+      // here separately for range checks. So for unicode double quad, this will hold the second quad ("low surrogate")
+      // while the first is processed. For ruby escapes, `cTmp` holds the `}`, while `u/p/P` is processed first.
+      let cTail = c;
       let stillDataLeft = true;
-      let uniEscHack = wasRubyWebEscape || wasBadUniEscape;
+      let rubyHackLhs = wasRubyWebEscape || wasBadUniEscape || wasPropEscape; // "consider rhs of old range to be u/p/P"
+      let rubyHackRhsPeek = wasBadUniEscape || (wasBadPropEscape && !wasPropOnly); // "consider lhs of new range to be peek(-1)"
+      let rubyHackRhsCurly = wasRubyWebEscape || (wasPropEscape && !wasPropOnly); // "consider lhs of new range to be `}`"
       while (stillDataLeft) {
         // Deal with the "surrogate pair encoded as double quads are ignored without u-flag" case first
         if (wasDoubleQuad) {
           // - `/[\uD800\uDC00-\uFFFF]/`
           //                  ^
+          // - `/[\uFFFF-\uD800\uDC00]/`
+          //             ^^^^^^^^^^^^
           // `c` contains the ord for the surrogate pair encoded by a quad. The quad _must_ be surrogate head + tail here.
           ASSERT(cTmp > 0xffff, 'a double quad is only consumed if it is a valid surrogate pair, which in turn must be >0xffff');
           // Without u-flag we can only consume the head part here so buffer the tail for next loop iteration
@@ -3860,32 +3900,36 @@ function Lexer(
           cTmp = codePointToSurrogateHead(cTmp);
           ASSERT(cTail >= 0xDC00 && cTail <= 0xDFFF, 'must be surrogate tail');
           ASSERT(cTmp >= 0xD800 && cTmp <= 0xDBFF, 'must be surrogate head');
-        } else if (wasRubyWebEscape || wasBadUniEscape) {
-          // In this case there was a valid ruby escape and `c` will be its escaped value.
-          // However, without u-flag this is not recognized and ends up being an invalid quad escape
-          // However, in webcompat mode, `\u` is allowed to be a single escape char, resulting in the value for `u` when
-          // it comes down to range validation. Since valid ruby escapes contain no other weird characters (for a char
-          // class, anyways), we can ignore the "inside" of the ruby and treat it it like two characters; `\u` and `}`.
-          // In this, we piggy back on the double quad system which doesn't need to validate (again) whether or not the
-          // surrogate pair is valid. So in the first iteration of the loop consider `u` as the code unit, potentially
-          // being the end of an open nrange (`/[t-\u{1}]/`). In the second iteration consider `}` to be the code unit,
-          // potentially starting a new range (`/[\u{1}-~]/`). This makes `/[t-\u{1}-~]/` pass properly.
-          if (uniEscHack) {
-            uniEscHack = false;
-            cTmp = $$U_75;
-          } else {
-            stillDataLeft = false;
-            if (wasBadUniEscape) {
-              ASSERT(pointer > 0, 'pointer cannot be a the start because regex and class starts with `/[`');
-              // If there was an error, the parser would have stopped right before the offending char
-              // Note that we want a single code unit here, not code point
-              cTmp = peekd(-1);
-              wasBadUniEscape = false;
-            } else {
-              wasRubyWebEscape = false;
-              cTmp = $$CURLY_R_7D;
-            }
-          }
+        } else if (rubyHackLhs) {
+          // Start of this escape. Use the escaped char (u p P) to start/end ranges.
+          // `\u{xxx}`
+          // `\p{xxx}`
+          // `\P{xxx}`
+          rubyHackLhs = false;
+          cTmp = escapeCharUP;
+          if (wasPropOnly) stillDataLeft = false;
+        } else if (rubyHackRhsCurly) {
+          // End of this escape. Use the `}` to start new ranges
+          // `\u{xxx}`
+          // `\p{xxx}`
+          // `\P{xxx}`
+          // Valid \u or \p or \P ruby escape
+          rubyHackRhsCurly = false;
+          cTmp = $$CURLY_R_7D; // This is true for \u ruby escapes and correct \p \P escapes
+          stillDataLeft = false;
+        } else if (rubyHackRhsPeek) {
+          // End of this escape. Use the last char that would still have been valid to start new ranges
+          // `\u{xxx`
+          // `\p{xxx`
+          // `\p{xxx=`
+          // `\p{xxx=xxx`
+          // `\P{xxx`
+          ASSERT(pointer > 0, 'pointer cannot be a the start because regex and class starts with `/[`');
+          // If there was an error, the parser would have stopped right before the offending char
+          // Note that we want a single code unit here, not code point
+          cTmp = peekd(-1);
+          rubyHackRhsPeek = false;
+          stillDataLeft = false;
         } else {
           // Processing the surrogate tail of a double unicode encoded quad now
           stillDataLeft = false;
@@ -3896,22 +3940,14 @@ function Lexer(
           const nrangeRight = cTmp; // without u-flag it's always just one char
           if (nrangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || nrangeRight === REGEX_CHARCLASS_CLASS_ESCAPE) {
             // Class escapes are illegal for ranges, however, they are allowed and ignored in webcompat mode
-            // The webcompat checks have happened before (because \d \D \s \S \w \W are treated differently from \p \P)
-            let reason = 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without uflag';
-            if (webCompat === WEB_COMPAT_ON) {
-              // return REGEX_CHARCLASS_BAD_SANS_U_FLAG;
-            } else {
-              // when not in webcompat mode, it may also be the case that a range lhs or rhs is a class escape (\s \d \w etc)
-              flagState = updateRegexUflagIsMandatory(flagState, reason);
+            if (webCompat === WEB_COMPAT_OFF) {
+              // Class escapes without u-flag are illegal for ranges if not in web compat mode
+              flagState = updateRegexUflagIsMandatory(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` not allowed in ranges');
             }
-          }
-          else if (nrangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || nrangeRight === REGEX_CHARCLASS_ESCAPED_UC_B) {
-            // Class escapes are illegal for ranges
-            let reason = 'Character class escapes `\\B` is never legal as part of a char class range';
-            flagState = updateRegexUflagIsIllegal(flagState, reason);
           }
           else {
             if (nrangeLeft > nrangeRight) {
+              // flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right, ' + nrangeLeft + ' > ' + nrangeRight + ', 0x' + nrangeLeft.toString(16) + ' > 0x' + nrangeRight.toString(16) + ') when parsing as if without u-flag');
               flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right) when parsing as if without u-flag');
             }
           }
@@ -3948,10 +3984,9 @@ function Lexer(
     // a character has the danger of being encoded weirdly / normalized, so I use my test encoding here: `@{x...}@`
 
     if (urangeOpen && wasSurrogateHead) {
-      // I don't think prev _can_ be \B (because prev is a surrogate head?) but ok...
-      if (urangeLeft === REGEX_CHARCLASS_ESCAPED_UC_B || prev === REGEX_CHARCLASS_ESCAPED_UC_B) {
-        // [x]: `/[\B-@{xD800}@]/u`
-        return updateRegexUflagIsIllegal(flagState, 'Illegal `\\B` in regex char class range');
+      if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || prev === REGEX_CHARCLASS_CLASS_ESCAPE) {
+        // This might be dead
+        return updateRegexUflagIsIllegal(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without uflag');
       }
 
       if (urangeLeft > prev) {
@@ -4245,12 +4280,8 @@ function Lexer(
         // "A ClassAtom can use any of the escape sequences that are allowed in the rest of the regular expression
         // except for \b, \B, and backreferences. Inside a CharacterClass, \b means the backspace character, while
         // \B and backreferences raise errors. Using a backreference inside a ClassAtom causes an error."
-        let reason = 'Char class can not contain `\\B` with u-flag or without webcompat';
-        if (webCompat === WEB_COMPAT_ON) {
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-        } else {
-          regexSyntaxError(reason);
-        }
+        // Note: without u-flag in web compat mode this is actually just a B.
+        // Caller should take care of error, this is why we're feeding back a special code
         ASSERT_skip($$B_UC_42);
         return REGEX_CHARCLASS_ESCAPED_UC_B;
       }
@@ -4314,23 +4345,14 @@ function Lexer(
         if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
           ASSERT(lastPotentialRegexError, 'should be set');
           // semantically ignored without u-flag, syntactically only okay in web-compat / Annex B mode
-          if (webCompat === WEB_COMPAT_ON) {
-            ASSERT(lastPotentialRegexError, 'should be set');
-            return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-          } else {
-            ASSERT(lastReportableLexerError, 'should be set');
-            return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD;
-          }
+          return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
 
         if (regexPropState === REGEX_GOOD_WITH_U_FLAG) {
           ASSERT(lastPotentialRegexError, 'should be set');
+          ASSERT(webCompat === WEB_COMPAT_OFF, 'there is no valid uflag case that is invalid in webcompat');
           // webcompat mode has no effect to the u-flag...
-          // if (webCompat === WEB_COMPAT_ON) {
-          //   return REGEX_CHARCLASS_CLASS_ESCAPE;
-          // } else {
-            return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
-          // }
+          return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
         }
 
         ASSERT(regexPropState === REGEX_ALWAYS_GOOD, 'parseRegexPropertyEscape should return enum');
@@ -4426,9 +4448,9 @@ function Lexer(
 
     // introduced in ES9 / ES2018; https://github.com/tc39/proposal-regexp-unicode-property-escapes
     if (!supportRegexPropertyEscapes) {
-      let reason = 'Property escapes are not supported by the currently targeted language version';
-      if (webCompat === WEB_COMPAT_ON) return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-      return regexSyntaxError(reason);
+      let uflagState = updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escapes are not supported by the currently targeted language version');
+      if (webCompat === WEB_COMPAT_ON) return uflagState;
+      return updateRegexUflagIsMandatory(uflagState, 'Cannot escape `\\p` without u-flag');
     }
 
     // https://tc39.github.io/ecma262/#prod-CharacterClassEscape
@@ -4437,24 +4459,26 @@ function Lexer(
     // It would be fine in web-compat because neither is a problem in the escape bit (see the IdentityEscape in
     // https://tc39.github.io/ecma262/#prod-annexB-CharacterEscape) nor for the braces (see ExtendedPatternCharacter in
     // https://tc39.github.io/ecma262/#prod-annexB-ExtendedAtom). And since the syntax of `\p` is tightly controlled
-    // this should only change semantics without causing potential syntax errors by ignoring the `\p` escape.
+    // through the whitelist, a valid \p without u-flag should only change semantics without causing potential syntax
+    // errors (not even quantifiers, since a valid `\p` can not lead to a quantified `\p`, so another quantifier is ok).
 
     // With uflag, the \p is a unicode property escape and must look like \p{x} or \p{x=y} with x and y whitelisted
     // Without uflag, the \p it leads to IdentityEscape where it fails for any value that is in ID_CONTINUE, inc p
     // In webcompat mode, without uflag, it leads to SourceCharacterIdentityEscape and passes without "body"
-    // (Note that `\p{1}` in webcompat mode is parsed as an atom with a quantifier. Not sure about runtime semantics.)
 
-    if (eofd(1)) return regexSyntaxError('Early EOF while parsing regex property escape');
+    // So beyond validating the `\p`, the only edge case for an invalid `\p` is non-uflag in web compat where we must
+    // take care not to allow a quantifier after a quantified `\p`, like `\p{1}{1}` or `\p{1}*` or `\p{1}??`. Parsing
+    // should stop in webcompat as soon as a char is non-ident. In that case it _cant_ have parsed a quantifier.
 
-    // skip the p and assert it is immediately followed by a curly
+    // skip the `p` and assert it is immediately followed by a curly
     ASSERT_skip(c);
-    if (peek() !== $$CURLY_L_7B) { // Note: we did eofd(1) above
-      let reason = 'Property escape \\p must be followed by a curly bracket (and would be illegal without u-flag)';
-      if (webCompat === WEB_COMPAT_ON) return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-      return regexSyntaxError(reason);
-    }
 
-    if (eof()) return regexSyntaxError('Early EOF while parsing regex property escape');
+    if (eof()) return regexSyntaxError('Early EOF after a regex `\\p`'); // This can never be valid so *shrug*
+
+    if (peek() !== $$CURLY_L_7B) {
+      if (webCompat === WEB_COMPAT_ON) return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escape `\\p` must start with a curly bracket');
+      return regexSyntaxError('Property escape `\\p` must start with a curly bracket');
+    }
 
     c = ASSERT_skipPeek($$CURLY_L_7B);
 
@@ -4462,80 +4486,92 @@ function Lexer(
     // and so we don't have to parse with much care. Just consume alphanumeric chars into the name and value until
     // the next is not alnum, then act accordingly. The whitelist will fix everything. Let the error path be slow.
 
+    let pointerOffset = pointer;
     let name = '';
-    let notQuantifier = false;
     let sawCommas = 0;
     let hasEq = false;
     let value = '';
-    let scanning = true;
 
     do {
-      if (isAsciiLetter(c) || c === $$LODASH_5F) {
+      if ((c >= $$A_61 && c <= $$Z_7A) || (c >= $$A_UC_41 && c<= $$Z_UC_5A) || c === $$LODASH_5F) {
         // The whitelist only contains a-zA-Z and _
-        notQuantifier = true;
-        if (hasEq) value += String.fromCharCode(c);
-        else name += String.fromCharCode(c);
-      } else if (isAsciiNumber(c)) {
-        // Note: numbers and commas are never legit with u-flag (superseded by the whitelist check) but we have to track
-        // them because we have to validate that webcompat mode is not allowing `\p{1}`, anyways. Just easier this way.
-        if (hasEq) value += String.fromCharCode(c);
-        else name += String.fromCharCode(c);
-      } else if (c === $$COMMA_2C) {
-        // Note: numbers and commas are never legit with u-flag (superseded by the whitelist check) but we have to track
-        // them because we have to validate that webcompat mode is not allowing `\p{1}`, anyways. Just easier this way.
-        ++sawCommas;
-        if (hasEq) value += String.fromCharCode(c);
-        else name += String.fromCharCode(c);
-      } else if (c === $$CURLY_R_7D) {
-        scanning = false;
-      } else if (fromCharClass === false && c === $$FWDSLASH_2F) {
-        // TODO: c could also be an escaped slash and this case should only apply to a literal `/` char :(
-        // Stop scanning because it won't lead to a valid char with u-flag but might still be valid for webcompat
-        if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Escaped property name/value contained illegal characters');
-        } else {
-          return regexSyntaxError('Escaped property name/value contained illegal characters');
+      }
+      else if (c === $$CURLY_R_7D) {
+        break;
+      }
+      else if (c === $$IS_3D) {
+        if (pointerOffset === pointer) {
+          // [w]: `/\p{=Connector_Punctuation}/g;`
+          //           ^
+          if (webCompat === WEB_COMPAT_ON) {
+            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escape `\\p` had no value after the `=` which is illegal');
+          }
+
+          return regexSyntaxError('Property escape `\\p` had no value after the `=` which is illegal');
         }
-      } else if (fromCharClass === true && c === $$SQUARE_R_5D) {
-        // TODO: c could also be an escaped bracket and this case should only apply to a literal `]` char :(
-        // Stop scanning because it won't lead to a valid char with u-flag but might still be valid for webcompat
-        if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Escaped charclass property name/value contained illegal characters');
-        } else {
-          return regexSyntaxError('Escaped charclass property name/value contained illegal characters');
-        }
-      } else if (c === $$IS_3D) {
+
         if (hasEq) {
           // Property escape "args" can not contain double `=`
+          // This can be `\p` in web compat without u-flag and is an error otherwise
           if (webCompat === WEB_COMPAT_ON) {
-            // If there is no u-flag then this is still valid in web compat mode. The presence of `=` means we can
-            // return now without having to scan up to a `}`
-            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'An escaped property can only contain one eq sign (`=`) but found a second one');
-          } else {
-            return regexSyntaxError('This is bad with u-flag because a property escape name is whitelisted and bad with-out u-flag because only webcompat mode would allow `\\p`');
+            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escape `\\p` contained double equal sign, which is not valid');
           }
+
+          return regexSyntaxError('Property escape `\\p` contained double equal sign, which is not valid');
         }
+
         hasEq = true;
-      } else {
+        name = slice(pointerOffset, pointer);
+        pointerOffset = pointer + 1;
+      }
+      else {
         // Any other character means end of this property escape. It might still be valid in webcompat without uflag...
+        // This can be `\p` in web compat without u-flag and is an error otherwise
         if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Escaped property name/value contained illegal characters');
-        } else {
-          return regexSyntaxError('Escaped property name/value contained illegal characters');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escape `\\p` contained illegal character `' + slice(pointer, pointer + 1) + '`');
         }
+
+        return regexSyntaxError('Property escape `\\p` contained illegal character `' + slice(pointer, pointer + 1) + '`');
       }
 
       c = ASSERT_skipPeek(c);
+
       if (eof()) {
-        // - `/\p{1=1234/;`        // This would still be valid in web compat mode...
-        // - `/\p{1=1234/u;`       // This is always an error
+        // [w]: `/\p{abc=abc/`        // This could still be valid in web compat mode...
+        //                  ^
+        // [x]: `/\p{abc=abcx`        // Can only be valid if `c` is now a forward slash ... otherwise regex is unclosed
+        //                  ^
+        // [x]: `/[\p{abc=abc]`      // And a char class can't be saved here
+        //                    ^
+
         if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Encountered early EOF while parsing property escape');
-        } else {
-          return regexSyntaxError('Encountered early EOF while parsing property escape');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Encountered early EOF while parsing `\\p` property escape');
         }
+
+        return regexSyntaxError('Encountered early EOF while parsing `\\p` property escape');
       }
-    } while (scanning);
+    } while (true);
+
+    if (pointerOffset === pointer) {
+      if (webCompat === WEB_COMPAT_ON) {
+        if (hasEq) {
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escape `\\p` had no value after the `=` which is illegal');
+        }
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escape `\\p` contained illegal character `' + slice(pointer, pointer + 1) + '`');
+      }
+
+      if (hasEq) {
+        return regexSyntaxError('Property escape `\\p` had no value after the `=` which is illegal');
+      }
+      return regexSyntaxError('Property escape `\\p` contained illegal character `' + slice(pointer, pointer + 1) + '`');
+    }
+
+    if (hasEq) value = slice(pointerOffset, pointer);
+    else name = slice(pointerOffset, pointer);
+
+    ASSERT(c === $$CURLY_R_7D, 'For any error the loop returns early so this should be closing curly');
+    ASSERT(name, 'there should be a name now');
+    ASSERT(!hasEq || value, 'if there was an eq there should now be a value');
 
     // The name and value must end up composing a name that is part of an explicitly, albeit large, defined set
     // It should be a syntax error if the names do not appear on their list.
@@ -4551,56 +4587,77 @@ function Lexer(
     // https://tc39.es/ecma262/#table-nonbinary-unicode-properties
     let nc = ',' + name + ',';
     if (hasEq) {
+      // > UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue
+      // > It is a Syntax Error if the List of Unicode code points that is SourceText of UnicodePropertyName is not
+      //   identical to a List of Unicode code points that is a Unicode property name or property alias listed in the
+      //   “Property name and aliases” column of Table 57.
+      // > It is a Syntax Error if the List of Unicode code points that is SourceText of UnicodePropertyValue is not
+      //   identical to a List of Unicode code points that is a value or value alias for the Unicode property or
+      //   property alias given by SourceText of UnicodePropertyName listed in the “Property value and aliases” column
+      //   of the corresponding tables Table 59 or Table 60.
+      // "Table 57": https://tc39.es/ecma262/#table-nonbinary-unicode-properties
+      // "Table 59": https://tc39.es/ecma262/#table-unicode-general-category-values
+      // "Table 60": https://tc39.es/ecma262/#table-unicode-script-values
+
       // No need to post-validate webcompat without u-flag (due to the `=`)
-      // Validate name against table 54
-      if (!TABLE54.includes(nc)) {
+      // Validate name against non binary unicode props
+      if (!TABLE_NONBIN_UNI_PROPS.includes(nc)) {
         if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped binary property name `' + name + '` is not valid (does not appear in "table 54")');
-        } else {
-          return regexSyntaxError('The escaped binary property name `' + name + '` is not valid (does not appear in "table 54") with u-flag, and `\\p` is not valid without u-flag and without webcompat');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The `\\p` escaped binary property name `' + name + '` is not valid (does not appear in "table 54")');
         }
+
+        return regexSyntaxError('The `\\p` escaped binary property name `' + name + '` is not valid (does not appear in "table 54")');
       }
-      // Validate value against table 56 or 57
+
+      // Validate value against general category values and script values
       let vc = ',' + value + ',';
-      if (!TABLE56.includes(vc) && !TABLE57.includes(vc)) {
+      if (!TABLE_GEN_CAT_VALUES.includes(vc) && !TABLE_SCRIPT_VALUES.includes(vc)) {
         if (webCompat === WEB_COMPAT_ON) {
           return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped property value `' + value + '` is not valid (does not appear in "table 56" nor "table 57")')
-        } else {
-          return regexSyntaxError('The escaped property value `' + value + '` is not valid (does not appear in "table 56" nor "table 57") with u-flag, and `\\p` is not valid without u-flag and without webcompat')
         }
-      }
-    } else {
-      // Validate value against table 55 or 56
-      // If invalid, double check to make sure it does not match the quantifier pattern
-      if (!TABLE55.includes(nc) && !TABLE56.includes(nc)) {
-        if (webCompat === WEB_COMPAT_ON) {
-          // This is such an edge case that I'm just taking the easy path here
-          // Note that we only accepted alnums here, so comma can not appear in the name. So just check if they
-          // are all digits or not. If all digits, then it's a InvalidBracedQuantifier in webcompat non-uflag mode.
-          // This exception does not apply inside a character class, since there the tail is just part of the class.
-          if (name !== '' && !notQuantifier && sawCommas <= 1 && fromCharClass === false) {
-            // [x]: `/\p{123}/`         (webcompat, illegal quantifier over `\p`)
-            // [x]: `/\p{123}/u`        (whitelists do not contain only numbers)
-            return regexSyntaxError('Encountered a property escape which could be a quantifier. Without u-flag it fails in webcompat mode. With u-flag it fails because the name is not in the whitelist.');
-          } else {
-            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped lone property name `' + name + '` is not valid (does not appear in "table 55" nor "table 56")');
-          }
-        } else {
-          return regexSyntaxError('The escaped lone property name `' + name + '` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\\p` is not valid without u-flag and without webcompat');
-        }
-      }
-    }
 
-    // With u-flag, this is valid.
-    // Without u-flag, this is valid only in webcompat mode. The tail (which we also just parsed) of `{name}` or of
-    // `{name=value}` is fine as non-important ExtendedPatternCharacter atoms in webcompat mode. The exception is if
-    // it was `{name}` or `{name, name2}` where the names were only digits. Those are checked above. Since there are no
-    // such valid names on the list, we can skip that check here. Hurrah.
-    if (webCompat === WEB_COMPAT_ON) {
-      return REGEX_ALWAYS_GOOD;
-    } else {
+        return regexSyntaxError('The escaped property value `' + value + '` is not valid (does not appear in "table 56" nor "table 57")')
+      }
+
+      // The actual `\p` is only valid with u-flag. However, with web-compat, a correct `\p` escape is also valid
+      // without u-flag. It's just considered a set of atoms, ending with `}` as atom / character.
+
+      ASSERT_skip($$CURLY_R_7D);
+
+      if (webCompat === WEB_COMPAT_ON) {
+        return REGEX_ALWAYS_GOOD;
+      }
+
       return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag, or as a webcompat edge case');
     }
+
+    // This is LoneUnicodePropertyNameOrValue
+    // > It is a Syntax Error if the List of Unicode code points that is SourceText of LoneUnicodePropertyNameOrValue
+    // > is not identical to a List of Unicode code points that is a Unicode general category or general category alias
+    // > listed in the “Property value and aliases” column of Table 59, nor a binary property or binary property alias
+    // > listed in the “Property name and aliases” column of Table 58.
+    // "Table 58": https://tc39.es/ecma262/#table-binary-unicode-properties
+    // "Table 59": https://tc39.es/ecma262/#table-unicode-general-category-values
+
+    // Validate value against non-binary unicode properties or general category values
+    if (!TABLE_BIN_UNI_PROPS.includes(nc) && !TABLE_GEN_CAT_VALUES.includes(nc)) {
+      if (webCompat === WEB_COMPAT_ON) {
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped lone property name `' + name + '` is not valid (does not appear in "table 55" nor "table 56")');
+      }
+
+      return regexSyntaxError('The escaped lone property name `' + name + '` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\\p` is not valid without u-flag and without webcompat');
+    }
+
+    // The actual `\p` is only valid with u-flag. However, with web-compat, a correct `\p` escape is also valid
+    // without u-flag. It's just considered a set of atoms, ending with `}` as atom / character.
+
+    ASSERT_skip($$CURLY_R_7D);
+
+    if (webCompat === WEB_COMPAT_ON) {
+      return REGEX_ALWAYS_GOOD;
+    }
+
+    return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag, or as a webcompat edge case');
   }
   function parseRegexFlags() {
     // there are 5 valid flags and in unicode mode each flag may only occur once

@@ -56,12 +56,12 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; A broken `\u` escape can never be valid with u-flag; Encountered incorrect range (left>right) when parsing as if without u-flag
+    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; A broken `\u` escape can never be valid with u-flag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /[a-\u-a]/u
-   ║ ^^^^^^^^^^------- error
+   ║ ^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

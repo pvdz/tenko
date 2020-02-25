@@ -8,18 +8,12 @@
 >
 > From test262/test/built-ins/RegExp/property-escapes/character-class-range-no-dash-start.js
 >
-> 
->
-> Should throw an error because you can't have \p in a range
->
-> 
-
-## FAIL
+> Only applies to regex with u-flag
 
 ## Input
 
 `````js
-/[\p{Hex}-\uFFFF]/u;
+/[\p{Hex_Digit}-\uFFFF]/;
 `````
 
 ## Output
@@ -36,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
+    Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /[\p{Hex}-\uFFFF]/u;
-   ║ ^^^^^^^^^^^^^^^^^^------- error
+ 1 ║ /[\p{Hex_Digit}-\uFFFF]/;
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -63,15 +57,26 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-throws: Lexer error!
-    Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+      expression: {
+        type: 'Literal',
+        loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+        value: null,
+        regex: { pattern: '[\\p{Hex_Digit}-\\uFFFF]', flags: '' },
+        raw: '/[\\p{Hex_Digit}-\\uFFFF]/'
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /[\p{Hex}-\uFFFF]/u;
-   ║ ^^^^^^^^^^^^^^^^^^^------- error
-╚══╩════════════════
-
+tokens (3x):
+       REGEXN PUNC_SEMI
 `````
 
 ### Module goal with AnnexB
@@ -79,3 +84,7 @@ start@1:0, error@1:0
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
+
+## AST Printer
+
+Printer output was same as input [sloppy][annexb:yes]

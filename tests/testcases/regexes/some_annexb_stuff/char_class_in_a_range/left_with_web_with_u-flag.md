@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
+    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u; Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

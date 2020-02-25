@@ -11,7 +11,7 @@
 
 
 `````js
-/[\p{Hex}\P{Hex}]/u
+/[\p{Hex_Digit}\P{Hex_Digit}]/u
 `````
 
 ## Output
@@ -29,17 +29,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
       expression: {
         type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
         value: null,
-        regex: { pattern: '[\\p{Hex}\\P{Hex}]', flags: 'u' },
-        raw: '/[\\p{Hex}\\P{Hex}]/u'
+        regex: { pattern: '[\\p{Hex_Digit}\\P{Hex_Digit}]', flags: 'u' },
+        raw: '/[\\p{Hex_Digit}\\P{Hex_Digit}]/u'
       }
     }
   ]
@@ -78,7 +78,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-/[\p{Hex}\P{Hex}]/u;
+/[\p{Hex_Digit}\P{Hex_Digit}]/u;
 ````
 
 Produces same AST

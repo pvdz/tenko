@@ -11,7 +11,7 @@
 
 
 `````js
-/[a-\p{Hex}]/g
+/[a-\p{Hex_Digit}]/g
 `````
 
 ## Output
@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
+    Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /[a-\p{Hex}]/g
-   ║ ^^^^^^^^^^^^^------- error
+ 1 ║ /[a-\p{Hex_Digit}]/g
+   ║ ^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -57,17 +57,17 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
       expression: {
         type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
         value: null,
-        regex: { pattern: '[a-\\p{Hex}]', flags: 'g' },
-        raw: '/[a-\\p{Hex}]/g'
+        regex: { pattern: '[a-\\p{Hex_Digit}]', flags: 'g' },
+        raw: '/[a-\\p{Hex_Digit}]/g'
       }
     }
   ]
@@ -88,7 +88,7 @@ _Output same as sloppy mode with annexB._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-/[a-\p{Hex}]/g;
+/[a-\p{Hex_Digit}]/g;
 ````
 
 Produces same AST

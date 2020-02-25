@@ -11,7 +11,7 @@
 
 
 `````js
-/[\p{Hex}\P{Hex}]/g
+/[\p{Hex_Digit}\P{Hex_Digit}]/g
 `````
 
 ## Output
@@ -32,8 +32,8 @@ throws: Lexer error!
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /[\p{Hex}\P{Hex}]/g
-   ║ ^^^^^^^^^^^^^^^^^^^------- error
+ 1 ║ /[\p{Hex_Digit}\P{Hex_Digit}]/g
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -57,17 +57,17 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
       expression: {
         type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
         value: null,
-        regex: { pattern: '[\\p{Hex}\\P{Hex}]', flags: 'g' },
-        raw: '/[\\p{Hex}\\P{Hex}]/g'
+        regex: { pattern: '[\\p{Hex_Digit}\\P{Hex_Digit}]', flags: 'g' },
+        raw: '/[\\p{Hex_Digit}\\P{Hex_Digit}]/g'
       }
     }
   ]
@@ -88,7 +88,7 @@ _Output same as sloppy mode with annexB._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-/[\p{Hex}\P{Hex}]/g;
+/[\p{Hex_Digit}\P{Hex_Digit}]/g;
 ````
 
 Produces same AST

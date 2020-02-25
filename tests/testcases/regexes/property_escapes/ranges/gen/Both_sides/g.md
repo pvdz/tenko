@@ -11,7 +11,7 @@
 
 
 `````js
-/[\p{Bidi_Mirrored}-\p{Hex}]/g
+/[\p{Bidi_Mirrored}-\p{Hex_Digit}]/g
 `````
 
 ## Output
@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` are only ok as a range with webcompat, without uflag
+    Regex: The `\p` property escape is only legal with a u-flag, or as a webcompat edge case; Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /[\p{Bidi_Mirrored}-\p{Hex}]/g
-   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+ 1 ║ /[\p{Bidi_Mirrored}-\p{Hex_Digit}]/g
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -55,26 +55,15 @@ _Output same as sloppy mode._
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
 `````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:30},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:30},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:30},source:''},
-        value: null,
-        regex: { pattern: '[\\p{Bidi_Mirrored}-\\p{Hex}]', flags: 'g' },
-        raw: '/[\\p{Bidi_Mirrored}-\\p{Hex}]/g'
-      }
-    }
-  ]
-}
+throws: Lexer error!
+    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u; Encountered incorrect range (left>right) when parsing as if without u-flag
 
-tokens (3x):
-       REGEXN ASI
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[\p{Bidi_Mirrored}-\p{Hex_Digit}]/g
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Module goal with AnnexB
@@ -82,13 +71,3 @@ tokens (3x):
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode with annexB._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-/[\p{Bidi_Mirrored}-\p{Hex}]/g;
-````
-
-Produces same AST
