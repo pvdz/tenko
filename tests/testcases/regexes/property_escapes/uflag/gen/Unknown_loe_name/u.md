@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The escaped lone property name `JavaScript` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\p` is not valid without u-flag and without webcompat
+    Regex: The escaped lone property name `JavaScript` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values") with u-flag, and `\p` is not valid without u-flag and without webcompat
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The escaped lone property name `JavaScript` is not valid (does not appear in "table 55" nor "table 56"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: The escaped lone property name `JavaScript` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

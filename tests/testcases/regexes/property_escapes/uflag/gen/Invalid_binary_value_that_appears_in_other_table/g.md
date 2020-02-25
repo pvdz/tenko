@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The escaped property value `Variation_Selector` is not valid (does not appear in "table 56" nor "table 57")
+    Regex: The escaped property value `Variation_Selector` is not valid (does not appear in "table-unicode-general-category-values" nor "table-unicode-script-values")
 
 start@1:0, error@1:0
 ╔══╦════════════════

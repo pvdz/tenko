@@ -3960,7 +3960,6 @@ function Lexer(
           nrangeOpen = true;
         }
         else {
-          // ASSERT(nrangeLeft === -1, 'N apparently we werent in a range so this should be the start of a left side of a codepoint and the var should be cleared');
           ASSERT(nrangeOpen === false, 'N we should only be updating left codepoint if we are not inside a range');
           nrangeLeft = cTmp;
         }
@@ -4603,20 +4602,20 @@ function Lexer(
       // Validate name against non binary unicode props
       if (!TABLE_NONBIN_UNI_PROPS.includes(nc)) {
         if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The `\\p` escaped binary property name `' + name + '` is not valid (does not appear in "table 54")');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The `\\p` escaped binary property name `' + name + '` is not valid (does not appear in "table-nonbinary-unicode-properties")');
         }
 
-        return regexSyntaxError('The `\\p` escaped binary property name `' + name + '` is not valid (does not appear in "table 54")');
+        return regexSyntaxError('The `\\p` escaped binary property name `' + name + '` is not valid (does not appear in "table-nonbinary-unicode-properties")');
       }
 
       // Validate value against general category values and script values
       let vc = ',' + value + ',';
       if (!TABLE_GEN_CAT_VALUES.includes(vc) && !TABLE_SCRIPT_VALUES.includes(vc)) {
         if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped property value `' + value + '` is not valid (does not appear in "table 56" nor "table 57")')
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped property value `' + value + '` is not valid (does not appear in "table-unicode-general-category-values" nor "table-unicode-script-values")')
         }
 
-        return regexSyntaxError('The escaped property value `' + value + '` is not valid (does not appear in "table 56" nor "table 57")')
+        return regexSyntaxError('The escaped property value `' + value + '` is not valid (does not appear in "table-unicode-general-category-values" nor "table-unicode-script-values")')
       }
 
       // The actual `\p` is only valid with u-flag. However, with web-compat, a correct `\p` escape is also valid
@@ -4642,10 +4641,10 @@ function Lexer(
     // Validate value against non-binary unicode properties or general category values
     if (!TABLE_BIN_UNI_PROPS.includes(nc) && !TABLE_GEN_CAT_VALUES.includes(nc)) {
       if (webCompat === WEB_COMPAT_ON) {
-        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped lone property name `' + name + '` is not valid (does not appear in "table 55" nor "table 56")');
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped lone property name `' + name + '` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values")');
       }
 
-      return regexSyntaxError('The escaped lone property name `' + name + '` is not valid (does not appear in "table 55" nor "table 56") with u-flag, and `\\p` is not valid without u-flag and without webcompat');
+      return regexSyntaxError('The escaped lone property name `' + name + '` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values") with u-flag, and `\\p` is not valid without u-flag and without webcompat');
     }
 
     // The actual `\p` is only valid with u-flag. However, with web-compat, a correct `\p` escape is also valid
