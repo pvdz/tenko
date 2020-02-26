@@ -55,6 +55,11 @@ NOCOLOR="\e[0m"
 ARROW_UP='▲'
 ARROW_DOWN='▼'
 
+if [[ $# = 0 ]]; then
+  ./t --help
+  exit $!
+fi
+
 while [[ $# > 0 ]] ; do
   case "$1" in
     --help)
@@ -63,8 +68,8 @@ Tenko test runner help:
 
  Shortcuts for common test runner setups I use:
 
- i <code>      Run test with custom input, by default only runs sloppy script
- f <path>      Run a specific .md parser test file, by default only runs sloppy script (a diff a/ b/ prefix is checked)
+ i <code>      Run test with custom input, by default only runs sloppy script and sloppy webcompat
+ f <path>      Run a specific .md parser test file (the a/ b/ \"diff\" prefix is checked)
  F <path>      Run a specific file and consider its entire contents to be test input
  g             Regenerate _all_ auto generated files
  G             Autogenerate only files that don't already exist
