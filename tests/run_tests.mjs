@@ -45,16 +45,6 @@ import {
 import {
   reduceAndExit,
 } from './test_case_reducer.mjs';
-import {
-  compareBabel,
-  ignoreTenkoTestForBabel,
-  processBabelResult,
-} from './parse_babel.mjs';
-import {
-  compareAcorn,
-  ignoreTenkoTestForAcorn,
-  processAcornResult,
-} from './parse_acorn.mjs';
 import {walker} from "../src/tools/walker.mjs";
 import {testPrinter} from "./run_printer.mjs";
 
@@ -193,7 +183,7 @@ const TEST_SLOPPY = 'sloppy';
 const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
 
-if ((REDUCING || REDUCING_PRINTER) && !TARGET_FILE && !INPUT_OVERRIDE) THROW('Can only use `--min` and `--min-parser` together with `-f` or `-i`');
+if ((REDUCING || REDUCING_PRINTER) && !TARGET_FILE && !INPUT_OVERRIDE) throw new Error('Can only use `--min` and `--min-parser` together with `-f` or `-i`');
 if (NO_FATALS) console.log(BLINK + 'NO_FATALS enabled. Do not blindly commit result!!' + RESET);
 if (USE_BUILD) console.log('Using PROD build of Tenko');
 
@@ -220,6 +210,16 @@ if (SEARCH) {
   global.HIT = ()=>{};
   global.HITS = ()=>{};
 }
+
+// Babel is loaded async
+let compareBabel;
+let ignoreTenkoTestForBabel;
+let processBabelResult;
+// Babel is loaded async
+let compareAcorn;
+let ignoreTenkoTestForAcorn;
+let processAcornResult;
+
 
 async function extractFiles(list) {
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ Test file extraction time');
@@ -563,6 +563,7 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
 
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('  $$ Batch for ' + testVariant + ' (annexB='+annexB+')');
 }
+
 function showDiff(tob) {
   console.log(
     '\n' +
@@ -670,6 +671,7 @@ async function runTests(list, tenko) {
     }
   }
 }
+
 function constructNewOutput(list) {
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ New output construction time');
   list.forEach((tob/*: Tob */) => {
@@ -849,6 +851,21 @@ async function cli() {
 
 async function main() {
   let tenko = await loadTenkoAsync();
+
+  if (TEST_BABEL) {
+    ({
+      compareBabel,
+      ignoreTenkoTestForBabel,
+      processBabelResult,
+    } = await import('./parse_babel.mjs'));
+  }
+  if (TEST_ACORN) {
+    ({
+      compareAcorn,
+      ignoreTenkoTestForAcorn,
+      processAcornResult,
+    } = await import('./parse_acorn.mjs'));
+  }
 
   if (TARGET_FILE) {
     console.log('Using explicit file:', TARGET_FILE);

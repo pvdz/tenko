@@ -74,7 +74,7 @@ while [[ $# > 0 ]] ; do
 Tenko CLI Toolkit help:
 
  Shortcuts for common tools I use to work on Tenko.
- Note that tests will not work on an npm checkout, needs a git clone.
+ Note that tests or anything depending on node_modules will not work on an npm checkout, that'd need a git clone.
 
  i <code>      Run test with custom input. Runs sloppy and sloppy webcompat by default. (stdin not supported)
  f <path>      Run a specific .md parser test file (the a/ b/ \"diff\" prefix is checked)
@@ -393,7 +393,8 @@ Tenko CLI Toolkit help:
   shift
 done
 
-if [[ "$("${NODE_BIN}" --version)" < "v12" ]]; then
+# Confirm node version is 12+ because the `import`/`export` syntax was not supported before
+if [[ "$("${NODE_BIN}" --version | sed 's/[^0-9]*\([0-9]\+\).*/\1/')" -lt "12" ]]; then
   echo "
 Tenko CLI Toolkit:
 
