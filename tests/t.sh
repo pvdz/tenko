@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
+# https://stackoverflow.com/questions/7665/how-to-resolve-symbolic-links-in-a-shell-script
 # Move to the folder where this script lives (should be `**/tenko/tests/t.sh`)
-cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1
+cd "$( dirname $(realpath "${BASH_SOURCE[0]}") )" >/dev/null 2>&1
 # Some recursive calls assume to be in project root. This makes it work when not called from there (like npm .bin/tenko)
 cd ..
 
