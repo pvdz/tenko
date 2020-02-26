@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
+# Move to the folder where this script lives (should be `**/tenko/tests/t.sh`)
+cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1
+# Some recursive calls assume to be in project root. This makes it work when not called from there (like npm .bin/tenko)
+cd ..
+
 # Can override this through `--node-bin path/here`
 # I need to override this path when calling `./t p` through `sudo` for perf (`cset` & `chrt`), which mandate root.
 NODE_BIN=$(which node) # This may exit non-zero. That's fine.
@@ -64,26 +70,27 @@ while [[ $# > 0 ]] ; do
   case "$1" in
     --help)
         echo "
-Tenko test runner help:
+Tenko CLI Toolkit help:
 
- Shortcuts for common test runner setups I use:
+ Shortcuts for common tools I use to work on Tenko.
+ Note that tests will not work on an npm checkout, needs a git clone.
 
- i <code>      Run test with custom input, by default only runs sloppy script and sloppy webcompat
+ i <code>      Run test with custom input. Runs sloppy and sloppy webcompat by default. (stdin not supported)
  f <path>      Run a specific .md parser test file (the a/ b/ \"diff\" prefix is checked)
  F <path>      Run a specific file and consider its entire contents to be test input
  g             Regenerate _all_ auto generated files
  G             Autogenerate only files that don't already exist
  u             Run all test files and just write output
- U             Run all test files and force write output
+ U             Run all test files and force write output (ignores ASSERT failures)
  m             Run all tests and ask for update one-by-one
  n             Run all tests, don't generate new test files or write anything (for coverage)
  s             Search for needles (call \`HIT()\` or \`HITS()\` to place a needle and report all tests that hit them)
- t             Run test262 suite (only) from assuming their repo is in \`./ignore/test262\`
+ t             Run test262 suite (only). Assumes repo is cloned to \`./ignore/test262\`
  a             Alias for ./t m --test-acorn, to verify Tenko output against the Acorn AST
  b             Alias for ./t m --test-babel, to verify Tenko output against the Babel AST
- fu            Test file and ask to update it if necessary
+ fu <path>     This is \`./t m\` for one file
  fuzz          Run fuzzer
- hf            Log stats through HeatFiler (wip), can be used in conjunction with almost anything
+ hf            Log stats through HeatFiler (private wip), can be used in conjunction with almost anything
  p             [Deprecated: use p6 for proper stable benchmarking.] Run benchmarks (everything in same node instance)
  p6            Tightly controlled benchmarking tool. Run target parser against target input for n times and report stats.
  z             Create build
@@ -385,6 +392,18 @@ Tenko test runner help:
   shift
 done
 
+if [[ "$("${NODE_BIN}" --version)" < "v12" ]]; then
+  echo "
+Tenko CLI Toolkit:
+
+  Error: Using NodeJS version $(node --version)
+
+  The Tenko CLI toolkit requires NodeJS 12+ because it uses ESM (import/export) without Babel.
+
+  You can supply a custom node binary through the arg (\`./t --node-bin ~/.nvm/versions/node/v12.14.1/bin/node i 'x'\`)
+  "
+  exit 1
+fi
 
 #    ██╗    ██████╗  █████╗ ███╗   ██╗ ██████╗ ███████╗██████╗     ██╗
 #   ██╔╝    ██╔══██╗██╔══██╗████╗  ██║██╔════╝ ██╔════╝██╔══██╗    ╚██╗
