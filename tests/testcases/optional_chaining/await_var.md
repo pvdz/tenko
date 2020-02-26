@@ -57,11 +57,13 @@ ast: {
                 loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
                 name: 'a'
               },
-              arguments: {
-                type: 'Identifier',
-                loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
-                name: 'await'
-              }
+              arguments: [
+                {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
+                  name: 'await'
+                }
+              ]
             }
           }
         ],

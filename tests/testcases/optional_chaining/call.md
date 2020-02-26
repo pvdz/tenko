@@ -45,11 +45,13 @@ ast: {
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
           name: 'a'
         },
-        arguments: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
-          name: 'x'
-        }
+        arguments: [
+          {
+            type: 'Identifier',
+            loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
+            name: 'x'
+          }
+        ]
       }
     }
   ]

@@ -8635,7 +8635,7 @@ function Parser(code, options = {}) {
               loc: undefined,
               optional: true, // False for non-optional tails after an optional
               callee: undefined,
-              arguments: undefined,
+              arguments: [],
             }, 'callee');
 
             let nowAssignable = parseCallArgs(lexerFlags, 'arguments');

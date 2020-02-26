@@ -343,11 +343,13 @@ ast: {
                       },
                       computed: false
                     },
-                    arguments: {
-                      type: 'Identifier',
-                      loc:{start:{line:7,column:6},end:{line:7,column:7},source:''},
-                      name: 'a'
-                    }
+                    arguments: [
+                      {
+                        type: 'Identifier',
+                        loc:{start:{line:7,column:6},end:{line:7,column:7},source:''},
+                        name: 'a'
+                      }
+                    ]
                   },
                   property: {
                     type: 'Identifier',
@@ -680,11 +682,13 @@ ast: {
                       },
                       computed: false
                     },
-                    arguments: {
-                      type: 'Identifier',
-                      loc:{start:{line:15,column:7},end:{line:15,column:8},source:''},
-                      name: 'a'
-                    }
+                    arguments: [
+                      {
+                        type: 'Identifier',
+                        loc:{start:{line:15,column:7},end:{line:15,column:8},source:''},
+                        name: 'a'
+                      }
+                    ]
                   },
                   property: {
                     type: 'Identifier',

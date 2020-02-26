@@ -332,7 +332,7 @@ function ObjectProperty(node, parent, prop, index) {
 function OptionalCallExpression(node) {
   assert(node.type, 'OptionalCallExpression');
   $(node.callee);
-  $(node.arguments);
+  node.arguments.forEach((e, i) => $(e, node, 'arguments', i));
 }
 function OptionalMemberExpression(node) {
   assert(node.type, 'OptionalMemberExpression');

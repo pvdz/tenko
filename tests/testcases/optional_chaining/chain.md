@@ -80,11 +80,13 @@ ast: {
                   name: 'c'
                 }
               },
-              arguments: {
-                type: 'Identifier',
-                loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
-                name: 'd'
-              }
+              arguments: [
+                {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+                  name: 'd'
+                }
+              ]
             },
             property: {
               type: 'Identifier',
