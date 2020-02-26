@@ -883,7 +883,7 @@ function Lexer(
 
   function createToken(type, start, stop, column, line) {
     ASSERT(createToken.length === arguments.length, 'arg count');
-    ASSERT(ALL_TOKEN_TYPES.includes(type) || console.log('####\n' + getErrorContext(start, stop)), 'the set of generated token types is fixed. New ones combinations should be part of this set');
+    ASSERT(ALL_TOKEN_TYPES.includes(type) || console.log('####\n' + getErrorContext(start, stop, 'bad type')), 'the set of generated token types is fixed. New ones combinations should be part of this set');
     ASSERT(Number.isFinite(start), 'start finite');
     ASSERT(Number.isFinite(stop), 'stop finite');
     ASSERT(Number.isFinite(column), 'col finite');
@@ -4661,8 +4661,6 @@ function Lexer(
     // there are 5 valid flags and in unicode mode each flag may only occur once
     // 12.2.8.1: "It is a Syntax Error if FlagText of RegularExpressionLiteral contains any code points other than "g", "i", "m", "u", or"y", or if it contains the same code point more than once."
 
-    // TODO: dotall flag "s" : https://tc39.github.io/proposal-regexp-dotall-flag/
-
     let g = 0;
     let i = 0;
     let m = 0;
@@ -4696,11 +4694,14 @@ function Lexer(
         default:
           if (isAsciiLetter(c) || c === $$BACKSLASH_5C) {
             // Unknown flags are considered syntax errors by the semantics and flags cannot be escaped
-            regexSyntaxError('Unknown regex flag [ord=' + c + ', `' + String.fromCodePoint(c) + '`)]');
-            return REGEX_ALWAYS_BAD;
+            return regexSyntaxError('Unknown regex flag [ord=' + c + ', `' + String.fromCharCode(c) + '`)]');
           }
 
-          // The next character can no longer be part of the flag. Don't try to validate here, just return now.
+          // If any flags occurred more than once, the or below will result in >1
+          if ((g|i|m|u|y|s) > 1) {
+            return regexSyntaxError('Encountered at least one regex flag twice');
+          }
+
           return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
       }
 
@@ -4710,9 +4711,9 @@ function Lexer(
     // If any flags occurred more than once, the or below will result in >1
     if ((g|i|m|u|y|s) > 1) {
       return regexSyntaxError('Encountered at least one regex flag twice');
-    } else {
-      return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
     }
+
+    return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
   }
   function parseRegexCurlyQuantifier(c) {
     ASSERT(neof(), 'call site will have verified neof()');
@@ -4826,36 +4827,59 @@ function Lexer(
     let secondChar = peek();
     if (isLowerOctal(firstChar)) {
       // third char may be any octal
+      // [w]: `/[\1]/`
+      // [w]: `/[\12]/`
+      // [w]: `/[\123]/`
       if (isOctal(secondChar)) {
+        // [w]: `/[\12]/`
+        // [w]: `/[\123]/`
         ASSERT_skip(secondChar);
+
         if (eof()) return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
+
         let thirdChar = peek();
+
         if (isOctal(thirdChar)) {
+          // [w]: `/[\123]/`
           ASSERT_skip(thirdChar);
           return ((firstChar - $$0_30) * 8 * 8) + ((secondChar - $$0_30) * 8) + (thirdChar - $$0_30);
-        } else {
-          return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
         }
-      } else {
-        return firstChar - $$0_30;
+
+        return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
       }
-    } else {
-      ASSERT(isUpperOctal(firstChar));
-      // third char may only be the lower octals
-      if (isOctal(secondChar)) {
-        ASSERT_skip(secondChar);
-        if (eof()) return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
-        let thirdChar = peek();
-        if (isLowerOctal(thirdChar)) {
-          ASSERT_skip(thirdChar);
-          return ((firstChar - $$0_30) * 8 * 8) + ((secondChar - $$0_30) * 8) + (thirdChar - $$0_30);
-        } else {
-          return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
-        }
-      } else {
-        return firstChar - $$0_30;
-      }
+
+      return firstChar - $$0_30;
     }
+
+    // [w]: `/[\7]/`
+    // [w]: `/[\72]/`
+    // [w]: `/[\723]/`
+
+    ASSERT(isUpperOctal(firstChar));
+    // third char may only be the lower octals
+    if (isOctal(secondChar)) {
+      // [w]: `/[\72]/`
+      // [w]: `/[\723]/`
+      // [w]: `/[\726]/`
+      ASSERT_skip(secondChar);
+
+      if (eof()) return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
+
+      let thirdChar = peek();
+
+      if (isLowerOctal(thirdChar)) {
+        // [w]: `/[\723]/`
+        ASSERT_skip(thirdChar);
+        return ((firstChar - $$0_30) * 8 * 8) + ((secondChar - $$0_30) * 8) + (thirdChar - $$0_30);
+      }
+
+      // [w]: `/[\72]/`
+      // [w]: `/[\726]/`
+
+      return ((firstChar - $$0_30) * 8) + (secondChar - $$0_30);
+    }
+
+    return firstChar - $$0_30;
   }
   function isOctal(c) {
     return c >= $$0_30 && c <= $$7_37;
@@ -5275,12 +5299,13 @@ function Lexer(
   function _THROW(str, tokenStart, tokenStop, msg = '', fullErrorContext = false) {
     $log('\n');
     let ectxt = getErrorContext(tokenStart, tokenStop, msg, fullErrorContext);
-    let context = '\n`````\n' + ectxt + (ectxt[ectxt.length-1] === '\n' ? '' : '\n') + '`````\n';
+    ASSERT(ectxt[ectxt.length-1] === '\n', 'this is always the case so no need to append one, change if this changed');
+    let context = '\n`````\n' + ectxt + '`````\n';
     $log('Error at:' + context);
     if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
     else $error(str);
   }
-  function getErrorContext(tokenStart, tokenStop, msg = '', fullErrorContext = false) {
+  function getErrorContext(tokenStart, tokenStop, msg, fullErrorContext = false) {
     ASSERT(getErrorContext.length >= 2 && getErrorContext.length <= 4, 'arg count');
     ASSERT(tokenStart <= tokenStop, 'should have a positive length range', tokenStart, tokenStop);
 
@@ -5297,14 +5322,14 @@ function Lexer(
 
     // Try to force-include the current offset if it's not too far away from the point of error (in some edge cases
     // it may still be megabytes away from each other and in that case we'll just omit the line/col reporting).
-    let isPointerInlcuded = true;
+    let isPointerIncluded = true;
     if (inputOffset + inputLen < pointer) {
       // Let's say 1k?
       let len = pointer - inputOffset;
       if (len < 1024) {
         inputLen = len;
       } else {
-        isPointerInlcuded = false;
+        isPointerIncluded = false;
       }
     }
 
@@ -5328,7 +5353,7 @@ function Lexer(
     let pointerLine = currentLine;
     let errorLine = currentLine; // Update it until it passes nl1, which is the last nl before the error
     let errorColumn = (inputOffset > 0 && nl1 < 0) ? -1 : ((tokenStart - inputOffset) - (nl1 >= 0 ? nl1 + 1 : 0));
-    if (isPointerInlcuded) {
+    if (isPointerIncluded) {
       // Where is the pointer relative in the usedInput?
       let relativePointer = pointer - inputOffset;
       // Skip newlines until we're passing the point of error
@@ -5390,7 +5415,7 @@ function Lexer(
       ' ║ ' +
       ' '.repeat(Math.max(0, indentCount)) +
       '^'.repeat(Math.max(0, arrowCount)) +
-      '------- error' + (msg ? ': ' : '') + msg + (tokenOffset >= usedInput.length ? ' at EOF' : '') + (post2 ? '\n' : '') +
+      '------- error' + (msg ? ': ' + msg : '') + (tokenOffset >= usedInput.length ? ' at EOF' : '') + (post2 ? '\n' : '') +
       post2 + '\n' +
       footer + bar +
       ''
@@ -5407,14 +5432,8 @@ function Lexer(
     asi: addAsi,
     throw: _THROW,
     lexError: function() {
-      if (lastReportableLexerError) {
-        THROW(lastReportableLexerError, startForError,  pointer);
-      }
-      if (lastPotentialRegexError) {
-        THROW(lastPotentialRegexError, startForError,  pointer);
-      }
-      ASSERT(false, 'lexError should only be called if a lexer error was actually detected');
-      THROW('Parser thought lexer threw an error but lexer has no error message prepared so ... please file an issue with this input?', pointer, pointer);
+      ASSERT(lastReportableLexerError, 'lexError should only be called if a lexer error was actually detected');
+      THROW(lastReportableLexerError, startForError,  pointer);
     },
     getTokenCountAny: function(){ return anyTokenCount; },
     getTokenCountSolid: function(){ return solidTokenCount; },
@@ -5443,6 +5462,7 @@ function isPsLs(c) {
   return c === $$PS_2028 || c === $$LS_2029;
 }
 
+ASSERT(START(START_ERROR), 'increase code coverage');
 function START(type) {
   switch (type) {
     case START_SPACE: return 'START_SPACE';

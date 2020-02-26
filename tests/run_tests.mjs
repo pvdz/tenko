@@ -767,7 +767,11 @@ async function runAndRegenerateList(list, tenko) {
       list[0].newData = list[0].newData.replace(/\{#.*#\}/g, '[object Object]');
     }
     if (RUN_VERBOSE_IN_SERIAL && list[0].oldData !== list[0].newData) {
-      showDiff(list[0]);
+      try {
+        showDiff(list[0]);
+      } catch (e) {
+        console.log('Unable to show the diff... ' + e);
+      }
     }
 
     await writeNewOutput(list);
