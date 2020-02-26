@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # Can override this through `--node-bin path/here`
 # I need to override this path when calling `./t p` through `sudo` for perf (`cset` & `chrt`), which mandate root.
@@ -72,8 +72,8 @@ Tenko test runner help:
  U             Run all test files and force write output
  m             Run all tests and ask for update one-by-one
  n             Run all tests, don't generate new test files or write anything (for coverage)
- s             Search for needles (call HIT() to place a needle and find all tests that hit them)
- t             Run test262 suite (only)
+ s             Search for needles (call \`HIT()\` or \`HITS()\` to place a needle and report all tests that hit them)
+ t             Run test262 suite (only) from assuming their repo is in \`./ignore/test262\`
  a             Alias for ./t m --test-acorn, to verify Tenko output against the Acorn AST
  b             Alias for ./t m --test-babel, to verify Tenko output against the Babel AST
  fu            Test file and ask to update it if necessary
