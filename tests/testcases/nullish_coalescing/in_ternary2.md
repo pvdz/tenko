@@ -42,7 +42,7 @@ ast: {
           name: 'x'
         },
         consequent: {
-          type: 'BinaryExpression',
+          type: 'LogicalExpression',
           loc:{start:{line:1,column:4},end:{line:1,column:10},source:''},
           left: {
             type: 'Identifier',
@@ -99,7 +99,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(x? a ?? b : y);
+(x? ((a ?? b)) : y);
 ````
 
 Produces same AST

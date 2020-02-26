@@ -37,7 +37,7 @@ ast: {
         type: 'ConditionalExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
         test: {
-          type: 'BinaryExpression',
+          type: 'LogicalExpression',
           loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
           left: {
             type: 'Identifier',
@@ -99,7 +99,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-((a ?? b)? x : y);
+(((a ?? b))? x : y);
 ````
 
 Produces same AST

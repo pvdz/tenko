@@ -7238,7 +7238,8 @@ function Parser(code, options = {}) {
 
     coalSeen = preventNullishWithLogic($tp_op_type, $tp_op_start, $tp_op_stop, coalSeen);
 
-    let AST_nodeName = ($tp_op_type === $PUNC_AND_AND || $tp_op_type === $PUNC_OR_OR) ? 'LogicalExpression' : 'BinaryExpression';
+    // Note: `??` seems to land on being a LogicalExpression, as per https://github.com/estree/estree/issues/203
+    let AST_nodeName = ($tp_op_type === $PUNC_AND_AND || $tp_op_type === $PUNC_OR_OR || $tp_op_type === $PUNC_QMARK_QMARK) ? 'LogicalExpression' : 'BinaryExpression';
     AST_wrapClosedCustom(astProp, {
       type: AST_nodeName,
       loc: undefined,
