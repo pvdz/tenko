@@ -1349,7 +1349,7 @@ function Parser(code, options = {}) {
     ASSERT(AST_babelGetStringNode.length === arguments.length, 'arg count');
 
     let str = tok_sliceInput($tp_string_start, $tp_string_stop);
-    let value = fromDirective ? str : $tp_string_canon;
+    let value = fromDirective ? str.slice(1, -1) : $tp_string_canon;
 
     return {
       type: 'StringLiteral',
@@ -1392,7 +1392,7 @@ function Parser(code, options = {}) {
       type: 'BigIntLiteral',
       loc: AST_getCloseLoc($tp_number_start, $tp_number_line, $tp_number_column, $tp_number_stop, $tp_number_line, $tp_number_column + ($tp_number_stop - $tp_number_start)),
       value: str,
-      extra: {rawValue: str, raw: str}, // This will probably change ...
+      extra: {rawValue: str, raw: str + 'n'}, // This will probably change ...
     };
   }
   function AST_babelGetRegexNode($tp_regex_start, $tp_regex_stop, $tp_regex_line, $tp_regex_column) {
@@ -4341,6 +4341,10 @@ function Parser(code, options = {}) {
     // - `export * as y from "x"`
     //           ^
 
+    let $tp_star_line = tok_getLine();
+    let $tp_star_column = tok_getColumn();
+    let $tp_star_start = tok_getStart();
+
     // Must skip `as` or `from`, but we'll check for those explicitly here, so just skipAny
     ASSERT_skipAny($PUNC_STAR, lexerFlags);
 
@@ -4363,8 +4367,15 @@ function Parser(code, options = {}) {
 
       addNameToExports(exportedNames, $tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
 
-      // Must skip `from` but we'll check for that explicitly next, so just skipAny
-      skipAny(lexerFlags);
+      // Must skip to `from` but we'll check for that explicitly next, so just skipAny
+      ASSERT_skipAny($G_IDENT, lexerFlags);
+
+      // Create specifiers here because location of the specifier is the `* as x` part only (same for estree and babel)
+      let specifiers = [{
+        type: 'ExportNamespaceSpecifier',
+        loc: AST_getClosedLoc($tp_star_start, $tp_star_line, $tp_star_column),
+        exported: AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon),
+      }];
 
       if (tok_getType() !== $ID_from) {
         return THROW_RANGE('Expected to find `as` or `from`, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
@@ -4380,19 +4391,28 @@ function Parser(code, options = {}) {
 
       ASSERT_skipToStatementStart($G_STRING, lexerFlags);
 
+      // Source node is between `from` and semi (same between babel and estree)
+      let source = AST_getStringNode($tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false);
+
       parseSemiOrAsi(lexerFlags);
 
-      AST_setNode(astProp, {
-        type: 'ExportNamedDeclaration',
-        loc: AST_getClosedLoc($tp_export_start, $tp_export_line, $tp_export_column),
-        specifiers: [{
-          type: 'ExportNamespaceSpecifier',
+      if (babelCompat) {
+        // No declarations prop
+        AST_setNode(astProp, {
+          type: 'ExportNamedDeclaration',
           loc: AST_getClosedLoc($tp_export_start, $tp_export_line, $tp_export_column),
-          exported: AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon),
-        }],
-        declaration: null,
-        source: AST_getStringNode($tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false),
-      });
+          specifiers,
+          source,
+        });
+      } else {
+        AST_setNode(astProp, {
+          type: 'ExportNamedDeclaration',
+          loc: AST_getClosedLoc($tp_export_start, $tp_export_line, $tp_export_column),
+          specifiers,
+          declaration: null,
+          source,
+        });
+      }
 
       return;
     }
@@ -4411,12 +4431,15 @@ function Parser(code, options = {}) {
 
     ASSERT_skipToStatementStart($G_STRING, lexerFlags);
 
+    // Source location is between `from` and semi
+    let source = AST_getStringNode($tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false);
+
     parseSemiOrAsi(lexerFlags);
 
     AST_setNode(astProp, {
       type: 'ExportAllDeclaration',
       loc: AST_getClosedLoc($tp_export_start, $tp_export_line,  $tp_export_column),
-      source: AST_getStringNode($tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false),
+      source,
     });
   }
   function parseExportNamed(lexerFlags, scoop, $tp_export_start, $tp_export_stop, $tp_export_line, $tp_export_column, exportedNames, exportedBindings, astProp) {
@@ -7472,8 +7495,8 @@ function Parser(code, options = {}) {
       case $PUNC_AND: return 10 > otherStrength;
       case $PUNC_CARET: return 9 > otherStrength;
       case $PUNC_OR: return 8 > otherStrength;
-      // case $PUNC_QMARK: return 4;
-      case $PUNC_QMARK_QMARK: return 7;
+      // case $PUNC_QMARK: return 4 > otherStrength;
+      case $PUNC_QMARK_QMARK: return 7 > otherStrength;
       case $PUNC_STAR_STAR:
         if (!allowExponentiation) {
           return THROW_RANGE('`**` was introduced in ES7', tok_getStart(), tok_getStop());

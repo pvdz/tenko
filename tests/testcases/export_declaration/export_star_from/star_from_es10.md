@@ -62,7 +62,7 @@ ast: {
       loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
       source: {
         type: 'Literal',
-        loc:{start:{line:1,column:14},end:{line:1,column:20},source:''},
+        loc:{start:{line:1,column:14},end:{line:1,column:19},source:''},
         value: 'bar',
         raw: "'bar'"
       }

@@ -37,28 +37,28 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
       expression: {
-        type: 'BinaryExpression',
+        type: 'LogicalExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
         left: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          name: 'a'
-        },
-        operator: '^',
-        right: {
-          type: 'LogicalExpression',
-          loc:{start:{line:1,column:4},end:{line:1,column:10},source:''},
+          type: 'BinaryExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
           left: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+            name: 'a'
+          },
+          operator: '^',
+          right: {
             type: 'Identifier',
             loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
             name: 'b'
-          },
-          operator: '??',
-          right: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
-            name: 'c'
           }
+        },
+        operator: '??',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
+          name: 'c'
         }
       }
     }
@@ -98,7 +98,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a ^ ((b ?? c));
+((a ^ b) ?? c);
 ````
 
 Produces same AST

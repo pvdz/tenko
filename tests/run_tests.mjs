@@ -189,6 +189,7 @@ if (USE_BUILD) console.log('Using PROD build of Tenko');
 
 let stopAsap = false;
 let skippedOtherParserDelta = 0;
+let skippedOtherParserList = [];
 
 // use -s and call HIT in some part of the code to log all test cases that visit that particular branch(es)
 let wasHits = [];
@@ -574,6 +575,12 @@ function showDiff(tob) {
     tob.inputCode, '\n' +
     BOLD + '######' + RESET + '\n'
   );
+
+  // For diffing sake, dont encode the unicode stuff when doing acorn/babel runs
+  let newData = TEST_ACORN || TEST_BABEL
+    ? tob.newData
+    : encodeUnicode(tob.newData);
+
   // We omit some test-boiler plate from the diff because we don't care about that in the diff
   // (This is visual to the test runner only, actual test cases will still have this stuff)
   execSync(
@@ -592,7 +599,7 @@ function showDiff(tob) {
       grep -v "Parsed in sloppy script mode but with the web compat flag enabled." |
       sed '/^$/N;/^\\n$/D'
     ) <(
-      echo '${Buffer.from(encodeUnicode(tob.newData)).toString('base64')}' | base64 -d - |
+      echo '${Buffer.from(newData).toString('base64')}' | base64 -d - |
       grep -v "_Note: the whole output block is auto-generated. Manual changes will be overwritten!_" |
       grep -v "Below follow outputs in four parsing modes: sloppy mode, strict mode script goal, module goal, web compat mode (always sloppy)." |
       grep -v "Below follow outputs in five parsing modes: sloppy, sloppy+annexb, strict script, module, module+annexb" |
@@ -780,9 +787,7 @@ async function runAndRegenerateList(list, tenko) {
   }
 }
 
-async function cli() {
-  let tenko = await loadTenkoAsync();
-
+async function cli(tenko) {
   let tob = new Tob('<cli>', INPUT_OVERRIDE);
   tob.inputCode = INPUT_OVERRIDE;
   tob.inputOptions.es = FORCED_ES_TARGET;
@@ -849,24 +854,7 @@ async function cli() {
   }
 }
 
-async function main() {
-  let tenko = await loadTenkoAsync();
-
-  if (TEST_BABEL) {
-    ({
-      compareBabel,
-      ignoreTenkoTestForBabel,
-      processBabelResult,
-    } = await import('./parse_babel.mjs'));
-  }
-  if (TEST_ACORN) {
-    ({
-      compareAcorn,
-      ignoreTenkoTestForAcorn,
-      processAcornResult,
-    } = await import('./parse_acorn.mjs'));
-  }
-
+async function main(tenko) {
   if (TARGET_FILE) {
     console.log('Using explicit file:', TARGET_FILE);
     files = [TARGET_FILE];
@@ -895,6 +883,7 @@ async function main() {
       if (tob.oldData === tob.newData) {
         if (tob.skippedForParser) {
           ++skippedOtherParserDelta;
+          skippedOtherParserList.push(tob.fileShort);
           console.log(BOLD + GREEN + 'SKIP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file whitelisted to fail for other parser)');
         } else {
           console.log(BOLD + GREEN + 'PASS' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
@@ -904,6 +893,9 @@ async function main() {
         console.log(RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
       }
     }
+    console.log('Ignored these files:');
+    console.log(skippedOtherParserList.sort().join('\n'))
+    console.log('Ignored the above ' + skippedOtherParserDelta + ' files that were known to parse differently to Tenko');
   } else {
     await runAndRegenerateList(list, tenko);
   }
@@ -919,13 +911,14 @@ function sanitize(dir) {
   .replace(/[^a-zA-Z0-9_-]/g, s => s.charCodeAt(0).toString(16));
 }
 
-async function gen() {
+async function gen(tenko) {
   const CASE_HEAD = '### Cases';
   const TPL_HEAD = '### Templates';
   const OUT_HEAD = '## Output';
 
   files = files.filter(f => f.endsWith('autogen.md'));
   let list = await readFiles(files);
+
   for (let ti=0; ti<list.length; ++ti) {
     let tob/*: Tob */ = list[ti];
     let genDir = path.join(path.dirname(tob.file), 'gen');
@@ -1167,8 +1160,28 @@ function generateOutputModule(moduleOutput, annexB, module, sloppyAnnexB, strict
     '';
 }
 
-console.time('$$ Whole test run');
+async function loadParsers() {
+  let tenko = await loadTenkoAsync();
 
+  if (TEST_BABEL || COMPARE_BABEL || BABEL_COMPAT) {
+    ({
+      compareBabel,
+      ignoreTenkoTestForBabel,
+      processBabelResult,
+    } = await import('./parse_babel.mjs'));
+  }
+  if (TEST_ACORN || COMPARE_ACORN || ACORN_COMPAT) {
+    ({
+      compareAcorn,
+      ignoreTenkoTestForAcorn,
+      processAcornResult,
+    } = await import('./parse_acorn.mjs'));
+  }
+
+  return tenko;
+}
+
+console.time('$$ Whole test run');
 
 let files = [];
 if (INPUT_OVERRIDE) {
@@ -1188,9 +1201,9 @@ if (INPUT_OVERRIDE) {
 }
 
 if (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE) {
-  gen();
+  loadParsers().then(gen);
 } else if (INPUT_OVERRIDE) {
-  cli();
+  loadParsers().then(cli);
 } else {
-  main();
+  loadParsers().then(main);
 }

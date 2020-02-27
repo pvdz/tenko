@@ -1,19 +1,17 @@
 # Tenko parser test case
 
-- Path: tests/testcases/nullish_coalescing/or_coal.md
+- Path: tests/testcases/group_or_arrow/group/single_line_location.md
 
-> :: nullish coalescing
+> :: group or arrow : group
 >
-> ::> or coal
+> ::> single line location
 >
-> Operator precedence versus `|`
-
-## PASS
+> 
 
 ## Input
 
 `````js
-a | b ?? c
+a = (  b, c  )
 `````
 
 ## Output
@@ -31,42 +29,44 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
       expression: {
-        type: 'LogicalExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
         left: {
-          type: 'BinaryExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
-          left: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-            name: 'a'
-          },
-          operator: '|',
-          right: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
-            name: 'b'
-          }
-        },
-        operator: '??',
-        right: {
           type: 'Identifier',
-          loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
-          name: 'c'
+          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+          name: 'a'
+        },
+        operator: '=',
+        right: {
+          type: 'SequenceExpression',
+          loc:{start:{line:1,column:7},end:{line:1,column:11},source:''},
+          expressions: [
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
+              name: 'b'
+            },
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+              name: 'c'
+            }
+          ]
         }
       }
     }
   ]
 }
 
-tokens (7x):
-       IDENT PUNC_OR IDENT QMARK_QMARK IDENT ASI
+tokens (9x):
+       IDENT PUNC_EQ PUNC_PAREN_OPEN IDENT PUNC_COMMA IDENT
+       PUNC_PAREN_CLOSE ASI
 `````
 
 ### Strict mode
@@ -98,7 +98,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-((a | b) ?? c);
+a = (b, c);
 ````
 
 Produces same AST

@@ -40,25 +40,25 @@ ast: {
         type: 'LogicalExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
         left: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          name: 'a'
-        },
-        operator: '??',
-        right: {
           type: 'LogicalExpression',
-          loc:{start:{line:1,column:5},end:{line:1,column:11},source:''},
+          loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
           left: {
             type: 'Identifier',
-            loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
-            name: 'b'
+            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+            name: 'a'
           },
           operator: '??',
           right: {
             type: 'Identifier',
-            loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
-            name: 'c'
+            loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+            name: 'b'
           }
+        },
+        operator: '??',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+          name: 'c'
         }
       }
     }
@@ -98,7 +98,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(a ?? ((b ?? c)));
+(((a ?? b)) ?? c);
 ````
 
 Produces same AST

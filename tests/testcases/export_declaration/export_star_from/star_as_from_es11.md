@@ -63,7 +63,7 @@ ast: {
       specifiers: [
         {
           type: 'ExportNamespaceSpecifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:27},source:''},
+          loc:{start:{line:1,column:7},end:{line:1,column:15},source:''},
           exported: {
             type: 'Identifier',
             loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
@@ -74,7 +74,7 @@ ast: {
       declaration: null,
       source: {
         type: 'Literal',
-        loc:{start:{line:1,column:21},end:{line:1,column:27},source:''},
+        loc:{start:{line:1,column:21},end:{line:1,column:26},source:''},
         value: 'bar',
         raw: "'bar'"
       }
