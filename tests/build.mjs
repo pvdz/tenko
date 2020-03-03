@@ -8,6 +8,7 @@ import {
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,
+  COLLECT_TOKENS_TYPES,
 
   GOAL_MODULE,
   GOAL_SCRIPT,
@@ -37,6 +38,7 @@ if (typeof toktypeToString !== 'function') throw new Error('Bad toktypeToString 
 if (typeof COLLECT_TOKENS_NONE === 'undefined') throw new Error('Bad COLLECT_TOKENS_NONE export');
 if (typeof COLLECT_TOKENS_SOLID === 'undefined') throw new Error('Bad COLLECT_TOKENS_SOLID export');
 if (typeof COLLECT_TOKENS_ALL === 'undefined') throw new Error('Bad COLLECT_TOKENS_ALL export');
+if (typeof COLLECT_TOKENS_TYPES === 'undefined') throw new Error('Bad COLLECT_TOKENS_TYPES export');
 if (typeof GOAL_MODULE === 'undefined') throw new Error('Bad COLLECT_TOKENS_NONE export');
 if (typeof GOAL_SCRIPT === 'undefined') throw new Error('Bad COLLECT_TOKENS_NONE export');
 if (typeof WEB_COMPAT_OFF === 'undefined') throw new Error('Bad COLLECT_TOKENS_NONE export');
@@ -93,6 +95,7 @@ if (_pass('a // c\nd;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_AL
 if (_pass('a /* c */.d;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_ALL}).tokens.length === 6) throw new Error('When collecting all tokens it should collect the spaces and multi-comments too');
 if (_pass('a. // c\nd /* xyz */;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_SOLID}).tokens.length === 4) throw new Error('When collecting solid tokens it should ignore whitespace');
 if (_pass('a. // c\nd /* xyz */;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_NONE}).tokens !== undefined) throw new Error('When collecting no tokens it should not return anything');
+if (_pass('a // c\nd;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_TYPES}).tokens.every(t => typeof t === 'number') === true) throw new Error('COLLECT_TOKENS_TYPES should return int token type ids only');
 
 // Token types
 if (typeof isWhiteToken !== 'function') throw new Error('isWhiteToken should be a function');

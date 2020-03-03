@@ -118,7 +118,7 @@ tokens (15x):
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._
 
 ## AST Printer
 

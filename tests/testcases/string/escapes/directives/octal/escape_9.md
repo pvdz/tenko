@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Octal escapes are only allowed in sloppy mode with web compat enabled
+    The grammar does not allow to escape the 8 or the 9 character
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -42,57 +42,22 @@ start@1:0, error@1:0
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-`````
-throws: Lexer error!
-    Illegal legacy octal escape in strict mode
-
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ 'a \9 b';
-   ║ ^^^^^^^^------- error
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as strict mode._
+_Output same as sloppy mode._
 
 ### Sloppy mode with AnnexB
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
-        value: 'a 9 b',
-        raw: "'a \\9 b'"
-      },
-      directive: 'a \\9 b'
-    }
-  ]
-}
-
-tokens (3x):
-       STRING_SINGLE PUNC_SEMI
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as strict mode._
-
-## AST Printer
-
-Printer output was same as input [sloppy][annexb:yes]
+_Output same as sloppy mode._

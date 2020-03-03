@@ -26,6 +26,7 @@ import {testPrinter} from "./run_printer.mjs";
 let GOAL_MODULE;
 let GOAL_SCRIPT;
 let COLLECT_TOKENS_ALL;
+let COLLECT_TOKENS_TYPES;
 let COLLECT_TOKENS_SOLID;
 let COLLECT_TOKENS_NONE;
 
@@ -39,6 +40,12 @@ const ACORN_AST = process.argv.includes('--acorn'); // run Tenko with babelCompa
 const COMPARE_ACORN = process.argv.includes('--test-acorn'); // compare Tenko output for each test with Acorn output?
 const BABEL_AST = process.argv.includes('--babel'); // run Tenko with babelCompat=true?
 const COMPARE_BABEL = process.argv.includes('--test-babel'); // compare Tenko output for each test with Babel output?
+const TARGET_FILE = (process.argv.includes('-f') && process.argv[process.argv.indexOf('-f') + 1]) || '';
+
+if (ACORN_AST) console.log('Generating an Acorn compatible AST for all tests');
+if (BABEL_AST) console.log('Generating a Babel compatible AST for all tests');
+if (COMPARE_ACORN) console.log('Comparing to Acorn output');
+if (COMPARE_BABEL) console.log('Comparing to Babel output');
 
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
@@ -48,6 +55,14 @@ const BLINK = '\x1b[;5;1m';
 const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const RESET = '\x1b[0m';
+
+if (TARGET_FILE) {
+  if (!TARGET_FILE.startsWith('test262/') && !TARGET_FILE.startsWith('/')) {
+    console.error('\nThe path should be an absolute path or relative to test262 folder, so for example: `test262/test/language/white-space/string-space.js`');
+    process.exit(1);
+  }
+  console.log('\nFiltering for ' + TARGET_FILE + '\n');
+}
 
 // Placeholder...
 let Tenko = function(){ throw new Error('not yet loaded through import...'); };
@@ -89,33 +104,42 @@ function read(path, file, onContent) {
   }
 }
 let counter = 0;
+let compareDrops = new Set;
+let compareFails = new Set;
+let compareSkips = new Set;
 function onRead(file, content) {
   ++counter;
   // if (counter < 22000) return;
 
   let displayFile = file.slice(path.resolve(dirname, '../ignore').length + 1);
   if (displayFile.includes('FIXTURE')) return;
-  console.log(BOLD, counter, RESET, 'Testing', BOLD, displayFile, RESET)
 
-  switch (displayFile) {
-    case 'test262/test/annexB/language/expressions/object/__proto__-duplicate.js':
-      // - Claims it should fail due to double __proto__ but the spec has an exception
-      // - > In addition, it is not applied when initially parsing a CoverParenthesizedExpressionAndArrowParameterList or a CoverCallExpressionAndAsyncArrowHead.
-      // - And `({` is most definitely initially parsing a CoverParenthesizedExpressionAndArrowParameterList
+  if (TARGET_FILE) {
+    if (displayFile !== TARGET_FILE) return;
+    console.log(BOLD, counter, RESET, 'Testing', BOLD, displayFile, RESET);
+    console.log('-> ' + file);
+  } else {
+    console.log(BOLD, counter, RESET, 'Testing', BOLD, displayFile, RESET);
+    switch (displayFile) {
+      case 'test262/test/annexB/language/expressions/object/__proto__-duplicate.js':
+        // - Claims it should fail due to double __proto__ but the spec has an exception
+        // - > In addition, it is not applied when initially parsing a CoverParenthesizedExpressionAndArrowParameterList or a CoverCallExpressionAndAsyncArrowHead.
+        // - And `({` is most definitely initially parsing a CoverParenthesizedExpressionAndArrowParameterList
 
-    // case 'test262/test/language/statements/break/S12.8_A1_T2.js':
-      // TODO: report incorrect reason for failure of test  (fails because the label does not appear in the labelSet,
-      //       since a break with label _can_ be valid)
+      // case 'test262/test/language/statements/break/S12.8_A1_T2.js':
+        // TODO: report incorrect reason for failure of test  (fails because the label does not appear in the labelSet,
+        //       since a break with label _can_ be valid)
 
-    // case 'test262/test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js':
-      // TODO: discuss updating the spec on this wording. Currently the grammar would never allow the parser to parse a
-      //       `GroupName` in ~N mode, so the condition would never trigger for the parser to restart in `+N` mode.
-      //       Additionally, this test case implies that the missing name static semantics can be skipped, even though
-      //       either we parse the whole thing as an AtomEscape, in which case the semantics seem to apply (because
-      //       annexB doesn't update this rule), or it doesn't parse and the GroupName is invalid, but I don't think so.
+      // case 'test262/test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js':
+        // TODO: discuss updating the spec on this wording. Currently the grammar would never allow the parser to parse a
+        //       `GroupName` in ~N mode, so the condition would never trigger for the parser to restart in `+N` mode.
+        //       Additionally, this test case implies that the missing name static semantics can be skipped, even though
+        //       either we parse the whole thing as an AtomEscape, in which case the semantics seem to apply (because
+        //       annexB doesn't update this rule), or it doesn't parse and the GroupName is invalid, but I don't think so.
 
-      console.log(BOLD, 'SKIP', RESET, '(see test runner code for reasoning)');
-      return;
+        console.log(BOLD, 'SKIP', RESET, '(see test runner code for reasoning)');
+        return;
+    }
   }
 
   ASSERT(content.includes('/*---') && content.includes('---*/'), 'missing test262 header', file);
@@ -156,15 +180,15 @@ function onRead(file, content) {
 
   let printedOnce = false;
   if (!flags.includes('onlyStrict') && !flags.includes('module')) {
-    // This is the sloppy or web run
+    // This is the sloppy or web run (governed by the test config!)
 
     let failed = false;
     let z;
     try {
       z = parse(content, false, false, webcompat);
-      console.log(GREEN, 'PASS', RESET, 'sloppy', webcompat);
+      console.log(GREEN, 'PASS', RESET, 'sloppy, webcompat=', webcompat);
     } catch (e) {
-      console.log(GREEN, 'FAIL', RESET, 'sloppy', webcompat);
+      console.log(GREEN, 'FAIL', RESET, 'sloppy, webcompat=', webcompat);
       failed = e;
     }
 
@@ -198,43 +222,73 @@ function onRead(file, content) {
     // ###  OTHER PARSERS  ###
     // #######################
 
-    if (COMPARE_ACORN && !ignoreTest262Acorn(file)) {
+
+    if (COMPARE_ACORN) {
+      if (ignoreTest262Acorn(displayFile)) compareDrops.add(displayFile);
+
       // Parse and hope for the best. AnnexB is applied by default, no opt-out
       // Acorn doesn't spam comments so we don't have to scrub the input
 
       let [acornOk, acornFail, zasa] = compareAcorn(content, !failed, 'sloppy', true, file);
-      let outputAcorn = processAcornResult(acornOk, acornFail, failed, zasa, false);
-      if (outputAcorn) {
-        console.log('##### "web" content that was tested in Acorn:');
-        console.log(content);
-        console.log('#####');
-        console.log(zasa ? astToString(zasa.ast) : '<no zasa>');
-        console.log(outputAcorn);
-        console.log('File:', file);
-        console.error('Exit now.');
-        process.exit(1);
+      let matchProblems = processAcornResult(acornOk, acornFail, failed, zasa, false);
+      if (matchProblems) {
+        if (TARGET_FILE) {
+          console.log('matchProblems for sloppy-annexb:', matchProblems);
+          console.log('##### non-strict annexb content that was tested in Acorn:');
+          console.log(content);
+          console.log('#####');
+          console.log(zasa ? astToString(zasa.ast) : '<no zasa>');
+          console.log(matchProblems);
+          console.log('File:', file);
+          // console.error('Exit now.');
+          // process.exit(1);
+        }
+
+        if (ignoreTest262Acorn(displayFile)) {
+          compareSkips.add(displayFile);
+          console.log(BOLD, 'SKIP', RESET, '(error whitelisted by ignoreTest262Acorn)');
+        } else {
+          compareFails.add(displayFile);
+          console.log(RED, 'BAD!', RESET, '(output not same and file not whitelisted by ignoreTest262Acorn)');
+        }
+      } else if (ignoreTest262Acorn(displayFile)) {
+        console.log(BOLD, 'DROP', RESET, '(error whitelisted by ignoreTest262Acorn but output is same)');
       }
     }
 
-    if (COMPARE_BABEL && !ignoreTest262Babel(file)) {
-      // Parse and hope for the best. AnnexB is applied by default, no opt-out
-      let noCommentContent = content;
-      if (z) {
-        // Strip comment nodes because that's the only expected difference between the two ASTs
-        noCommentContent = z.tokens.map(token => !isCommentToken(token.type) ? token.str : token.str.includes('\n') ? '\n' : '').join('');
-      }
+    if (COMPARE_BABEL) {
+      if (ignoreTest262Babel(displayFile)) compareDrops.add(displayFile);
+
+      // Parse and hope for the best. AnnexB is applied by default, no opt-out.
+      // We just want to confirm Tenko does the same as Babel, not test the actual test
+
+      let noCommentContent = scrubCommentsForBabel(content, z);
 
       let [babelOk, babelFail, zasb] = compareBabel(noCommentContent, !failed, 'sloppy', true, file);
-      let outputBabel = processBabelResult(babelOk, babelFail, failed, zasb, false);
-      if (outputBabel) {
-        console.log('##### no comment "web" content that was tested in Babel:');
-        console.log(noCommentContent);
-        console.log('#####');
-        console.log(zasb ? astToString(zasb.ast) : '<no zasb>');
-        console.log(outputBabel);
-        console.log('File:', file);
-        console.error('Exit now.');
-        process.exit(1);
+
+      let matchProblems = processBabelResult(babelOk, babelFail, failed, zasb, false);
+      if (matchProblems) {
+        if (TARGET_FILE) {
+          console.log('matchProblems for sloppy-annexb:', matchProblems);
+          console.log('##### non-strict annexb content without comments that was tested in Babel:');
+          console.log(noCommentContent);
+          console.log('#####');
+          console.log(zasb ? astToString(zasb.ast) : '<no zasb>');
+          console.log(matchProblems);
+          console.log('File:', file);
+          // console.error('Exit now.');
+          // process.exit(1);
+        }
+
+        if (ignoreTest262Babel(displayFile)) {
+          compareSkips.add(displayFile);
+          console.log(BOLD, 'SKIP', RESET, '(output not same but file whitelisted by ignoreTest262Babel)');
+        } else {
+          compareFails.add(displayFile);
+          console.log(RED, 'BAD!', RESET, '(output not same and file not whitelisted by ignoreTest262Babel)');
+        }
+      } else if (ignoreTest262Babel(displayFile)) {
+        console.log(BOLD, 'DROP', RESET, '(error whitelisted by ignoreTest262Babel but output is same)');
       }
     }
   }
@@ -246,10 +300,10 @@ function onRead(file, content) {
     let failed = false;
     let z;
     try {
-      z = parse(content, true, flags.includes('module'), false);
-      console.log(GREEN, 'PASS', RESET, modstr);
+      z = parse(content, true, flags.includes('module'), webcompat);
+      console.log(GREEN, 'PASS', RESET, modstr + ', webcompat=', webcompat);
     } catch (e) {
-      console.log(GREEN, 'FAIL', RESET, modstr);
+      console.log(GREEN, 'FAIL', RESET, modstr + ', webcompat=', webcompat);
       failed = e;
     }
 
@@ -280,46 +334,85 @@ function onRead(file, content) {
     // ###  OTHER PARSERS  ###
     // #######################
 
-    if (COMPARE_ACORN && flags.includes('module') && !ignoreTest262Acorn(file)) {
+
+    if (COMPARE_ACORN && flags.includes('module')) {
+      if (ignoreTest262Acorn(displayFile)) compareDrops.add(displayFile);
+
       // Parse and hope for the best. AnnexB is applied by default, no opt-out
       // Acorn doesn't spam comments so we don't have to scrub the input
 
       let [acornOk, acornFail, zasa] = compareAcorn(content, !failed, 'module', true, file);
-      let outputAcorn = processAcornResult(acornOk, acornFail, failed, zasa, false);
-      if (outputAcorn) {
-        console.log('##### "module" content that was tested in Acorn:');
-        console.log(content);
-        console.log('#####');
-        console.log(zasa ? astToString(zasa.ast) : '<no zasa>');
-        console.log(outputAcorn);
-        console.log('File:', file);
-        console.error('Exit now.');
-        process.exit(1);
+
+      let matchProblems = processAcornResult(acornOk, acornFail, failed, zasa, false);
+      if (matchProblems) {
+        if (TARGET_FILE) {
+          console.log('matchProblems for module-annexb:', matchProblems);
+          console.log('##### module annexb content that was tested in Acorn:');
+          console.log(content);
+          console.log('#####');
+          console.log(zasa ? astToString(zasa.ast) : '<no zasa>');
+          console.log(matchProblems);
+          console.log('File:', file);
+          // console.error('Exit now.');
+          // process.exit(1);
+        }
+
+        if (ignoreTest262Acorn(displayFile)) {
+          compareSkips.add(displayFile);
+          console.log(BOLD, 'SKIP', RESET, '(output not same but file whitelisted by ignoreTest262Acorn)');
+        } else {
+          compareFails.add(displayFile);
+          console.log(RED, 'BAD!', RESET, '(output not same and file not whitelisted by ignoreTest262Acorn)');
+        }
+      } else if (ignoreTest262Acorn(displayFile)) {
+        console.log(BOLD, 'DROP', RESET, '(error whitelisted by ignoreTest262Acorn but output is same)');
       }
     }
 
-    if (COMPARE_BABEL && flags.includes('module') && !ignoreTest262Babel(file)) {
-      // Parse and hope for the best. AnnexB is applied by default, no opt-out
-      let noCommentContent = content;
-      if (z) {
-        // Strip comment nodes because that's the only expected difference between the two ASTs
-        noCommentContent = z.tokens.map(token => isCommentToken(token.type) ? token.str : token.str.includes('\n') ? '\n' : '').join('');
-      }
+
+    if (COMPARE_BABEL && flags.includes('module')) {
+      if (ignoreTest262Babel(displayFile)) compareDrops.add(displayFile);
+
+      // Parse and hope for the best. AnnexB is applied by default, no opt-out.
+      // We just want to confirm Tenko does the same as Babel, not test the actual test
+
+      let noCommentContent = scrubCommentsForBabel(content, z);
 
       let [babelOk, babelFail, zasb] = compareBabel(noCommentContent, !failed, 'module', true, file);
-      let outputBabel = processBabelResult(babelOk, babelFail, failed, zasb, false);
-      if (outputBabel) {
-        console.log('##### no comment "module" content that was tested in Babel:');
-        console.log(noCommentContent);
-        console.log('#####');
-        console.log(zasb ? astToString(zasb.ast) : '<no zasb>');
-        console.log(outputBabel);
-        console.log('File:', file);
-        console.error('Exit now.');
-        process.exit(1);
+
+      let matchProblems = processBabelResult(babelOk, babelFail, failed, zasb, false);
+      if (matchProblems) {
+        if (TARGET_FILE) {
+          console.log('matchProblems for module-annexb:', matchProblems);
+          console.log('##### module annexb content without comments that was tested in Babel:');
+          console.log(noCommentContent);
+          console.log('#####');
+          console.log(zasb ? astToString(zasb.ast) : '<no zasb>');
+          console.log(matchProblems);
+          console.log('File:', file);
+          // console.error('Exit now.');
+          // process.exit(1);
+        }
+
+        if (ignoreTest262Babel(displayFile)) {
+          compareSkips.add(displayFile);
+          console.log(BOLD, 'SKIP', RESET, '(output not same but file whitelisted by ignoreTest262Babel)');
+        } else {
+          compareFails.add(displayFile);
+          console.log(RED, 'BAD!', RESET, '(output not same and file not whitelisted by ignoreTest262Babel)');
+        }
+      } else if (ignoreTest262Babel(displayFile)) {
+        console.log(BOLD, 'DROP', RESET, '(error whitelisted by ignoreTest262Babel but output is same)');
       }
     }
   }
+}
+
+function scrubCommentsForBabel(content, z) {
+  if (!z) return content;
+
+  // Strip comment nodes because that's the only expected difference between the two ASTs
+  return z.tokens.map(token => (token.nl ? '\n' : '') + (!isCommentToken(token.type) ? content.slice(token.start, token.stop) : '')).join('') || ';';
 }
 
 (async function(){
@@ -328,11 +421,25 @@ function onRead(file, content) {
     GOAL_MODULE,
     GOAL_SCRIPT,
     COLLECT_TOKENS_ALL,
+    COLLECT_TOKENS_TYPES,
     COLLECT_TOKENS_SOLID,
     COLLECT_TOKENS_NONE,
   } = (await import(USE_BUILD ? TENKO_PROD_FILE : TENKO_DEV_FILE)));
 
   read(PATH262, '', onRead);
 
-  console.log('The end...? Wow really?');
+  // Any file that's skipped (failed+whitelist) or failed is not droppable. Any file that's white listed is not failed.
+  compareSkips.forEach(s => (compareFails.delete(s), compareDrops.delete(s)));
+  compareFails.forEach(s => compareDrops.delete(s));
+
+  if (compareDrops.size) {
+    console.log(BOLD, 'These files passed the comparison but where whitelisted', RESET);
+    console.log([...compareDrops].sort().join('\n'));
+  }
+  if (compareFails.size) {
+    console.log(BOLD, 'These files failed the comparison and were not whitelisted', RESET);
+    console.log([...compareFails].sort().join('\n'));
+  }
+
+  console.log('\nNatural end of this script...\n');
 })();

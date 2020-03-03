@@ -5,6 +5,12 @@
 > :: for statement : for-of : let as a var
 >
 > ::> a call on let is not allowed in for-of
+>
+> https://tc39.es/ecma262/#prod-IterationStatement
+>
+> for-of header cannot start with `let` as var name
+
+## FAIL
 
 ## Input
 

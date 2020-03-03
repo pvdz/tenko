@@ -58,7 +58,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: A regex curly quantifier had no content; Found EOF before regex was closed
+    Regex: Found an unescaped `{` that was not the start of a valid quantifier; Found EOF before regex was closed
 
 start@1:0, error@2:0
 ╔══╦════════════════

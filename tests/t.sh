@@ -87,6 +87,7 @@ Tenko CLI Toolkit help:
  n             Run all tests, don't generate new test files or write anything (for coverage)
  s             Search for needles (call \`HIT()\` or \`HITS()\` to place a needle and report all tests that hit them)
  t             Run test262 suite (only). Assumes repo is cloned to \`./ignore/test262\`
+ T <path>      Run specified test262 file only (path relative to root, so \`./t T ignore/test262/...\`
  a             Alias for ./t m --test-acorn, to verify Tenko output against the Acorn AST
  b             Alias for ./t m --test-babel, to verify Tenko output against the Babel AST
  fu <path>     This is \`./t m\` for one file
@@ -209,6 +210,12 @@ Tenko CLI Toolkit help:
     t)
       # Run all test262 tests
       ACTION='test262'
+      ;;
+    T)
+      # Run one test262 test
+      ACTION='test262'
+      shift
+      ARG=$1
       ;;
     fuzz)
       # Run the fuzzer
@@ -652,7 +659,7 @@ set -x
 
 case "${ACTION}" in
     test262)
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules tests/test262.mjs ${ACORN} ${BABEL} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules tests/test262.mjs -f "${ARG}" ${ACORN} ${BABEL} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
     ;;
 
     fuzz)

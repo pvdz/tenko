@@ -463,6 +463,7 @@ import {
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,
+  COLLECT_TOKENS_TYPES,
   WEB_COMPAT_OFF,
   WEB_COMPAT_ON,
   RETURN_ANY_TOKENS,
@@ -480,6 +481,9 @@ import {
   INVALID_IDENT_CHAR,
   VALID_SINGLE_CHAR,
   VALID_DOUBLE_CHAR,
+  REGEX_VALID_CURLY_QUANTIFIER,
+  REGEX_INVALID_CURLY_QUANTIFIER,
+  REGEX_PARTIAL_CURLY_QUANTIFIER,
 } from './enum_lexer.mjs';
 
 let ID_START_REGEX = undefined;
@@ -492,9 +496,24 @@ function getIdRestRegexSuperSlow() {
   if (ID_CONTINUE_REGEX) return ID_CONTINUE_REGEX;
   return ID_CONTINUE_REGEX = createUnicodeRegex('^\\p{ID_Continue}$');
 }
+let SPACE_SEPARATOR_REGEX = undefined;
+function getSpaceSeparatorSuperSlow() {
+  if (!SPACE_SEPARATOR_REGEX) {
+    SPACE_SEPARATOR_REGEX = createUnicodeRegex('[\\p{Space_Separator}]');
+  }
+  return SPACE_SEPARATOR_REGEX;
+}
 function createUnicodeRegex(pattern) {
   try {
     return new RegExp(pattern,'u');
+  } catch(e) {
+    console.warn('Tenko: Current nodejs version does not suppport unicode regexes or regex property escapes; Input contains unicode that requires it so Tenko is unable to properly parse input (' + e.message + ')');
+    return /|/;
+  }
+}
+function createSpaceSeparatorRegex(pattern) {
+  try {
+    return new RegExp('[\\p{Space_Separator}]','u');
   } catch(e) {
     console.warn('Tenko: Current nodejs version does not suppport unicode regexes or regex property escapes; Input contains unicode that requires it so Tenko is unable to properly parse input (' + e.message + ')');
     return /|/;
@@ -508,8 +527,8 @@ function Lexer(
   const {
     targetEsVersion = Infinity,
     parsingGoal = GOAL_MODULE,
-    collectTokens = COLLECT_TOKENS_NONE, // what to collect in the token storage
-    returnTokens = RETURN_SOLID_TOKENS,  // what to emit and not to emit while lexing
+    collectTokens = COLLECT_TOKENS_NONE, // Collect token objects in an array? (Enabling this may slow down parsing!)
+    returnTokens = RETURN_SOLID_TOKENS,  // What to emit and not to emit while lexing
     webCompat = WEB_COMPAT_ON,
     gracefulErrors = FAIL_HARD,
     tokenStorageExternal,
@@ -692,7 +711,7 @@ function Lexer(
       if (eof()) {
         createToken($EOF, pointer, pointer, startCol, startRow);
         finished = true;
-        return returnSolidToken($EOF);
+        return returnSolidToken($EOF, pointer, pointer, startCol, startRow);
       }
 
       let start = startForError = pointer; // TODO: see if startForError makes a dent at all
@@ -704,21 +723,21 @@ function Lexer(
       // Non-whitespace tokens always get returned
       if (!isWhiteToken(consumedTokenType)) {
         createToken(consumedTokenType, start, pointer, startCol, startRow);
-        return returnSolidToken(consumedTokenType);
+        return returnSolidToken(consumedTokenType, start, pointer, startCol, startRow);
       }
 
       // Babel parity demands comments to be returned... Not sure whether the complexity (over checking $white) is worth
       if (isCommentToken(consumedTokenType)) {
         if (returnTokens === RETURN_COMMENT_TOKENS) {
           createToken(consumedTokenType, start, pointer, startCol, startRow);
-          return returnCommentToken(consumedTokenType);
+          return returnCommentToken(consumedTokenType, start, pointer, startCol, startRow);
         }
       }
 
       // This is a whitespace token (which may be a comment) that is not yet collected.
-      if (collectTokens === COLLECT_TOKENS_ALL) {
+      if (collectTokens === COLLECT_TOKENS_ALL || collectTokens === COLLECT_TOKENS_TYPES) {
         createToken(consumedTokenType, start, pointer, startCol, startRow);
-        tokenStorage.push(consumedTokenType);
+        tokenStorage.push(collectTokens === COLLECT_TOKENS_TYPES ? consumedTokenType : createBaseToken(consumedTokenType, start, pointer, startCol, startRow, false));
       }
 
       if (returnTokens === RETURN_ANY_TOKENS) {
@@ -730,24 +749,38 @@ function Lexer(
 
       if (consumedTokenType === $COMMENT_SINGLE) {
         // Either this is EOF or the next token must be a newline
-        if (collectTokens !== COLLECT_TOKENS_ALL) skipNewlinesWithoutTokens();
+        if (collectTokens !== COLLECT_TOKENS_ALL && collectTokens !== COLLECT_TOKENS_TYPES) skipNewlinesWithoutTokens();
       } // do not `else`
       if (nlwas === true) {
-        if (collectTokens !== COLLECT_TOKENS_ALL) skipSpacesWithoutTokens();
+        if (collectTokens !== COLLECT_TOKENS_ALL && collectTokens !== COLLECT_TOKENS_TYPES) skipSpacesWithoutTokens();
       }
     } while (true);
 
     ASSERT(false, 'unreachable');
   }
-  function returnCommentToken(consumedTokenType) {
-    if (collectTokens === COLLECT_TOKENS_ALL) {
-      tokenStorage.push(consumedTokenType);
+  function returnCommentToken(consumedTokenType, start, pointer, startCol, startRow) {
+    ASSERT(returnCommentToken.length === arguments.length, 'arg count');
+    ASSERT(typeof consumedTokenType === 'number', 'our types are nums');
+    ASSERT(typeof start === 'number', 'our locs are nums');
+    ASSERT(typeof pointer === 'number', 'our locs are nums');
+    ASSERT(typeof startCol === 'number', 'our locs are nums');
+    ASSERT(typeof startRow === 'number', 'our locs are nums');
+
+    if (collectTokens === COLLECT_TOKENS_ALL || collectTokens === COLLECT_TOKENS_TYPES) {
+      tokenStorage.push(collectTokens === COLLECT_TOKENS_TYPES ? consumedTokenType : createBaseToken(consumedTokenType, start, pointer, startCol, startRow, false));
     }
   }
-  function returnSolidToken(consumedTokenType) {
+  function returnSolidToken(consumedTokenType, start, pointer, startCol, startRow) {
+    ASSERT(returnSolidToken.length === arguments.length, 'arg count');
+    ASSERT(typeof consumedTokenType === 'number', 'our types are nums');
+    ASSERT(typeof start === 'number', 'our locs are nums');
+    ASSERT(typeof pointer === 'number', 'our locs are nums');
+    ASSERT(typeof startCol === 'number', 'our locs are nums');
+    ASSERT(typeof startRow === 'number', 'our locs are nums');
+
     ++solidTokenCount;
     if (collectTokens !== COLLECT_TOKENS_NONE) {
-      tokenStorage.push(consumedTokenType);
+      tokenStorage.push(collectTokens === COLLECT_TOKENS_TYPES ? consumedTokenType : createBaseToken(consumedTokenType, start, pointer, startCol, startRow, consumedNewlinesBeforeSolid));
     }
     consumedNewlinesBeforeSolid = false;
     prevTokenSolid = true;
@@ -874,7 +907,7 @@ function Lexer(
     // put it _before_ the current token (that should be the "offending" token)
     if (collectTokens !== COLLECT_TOKENS_NONE) {
       // createToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine);
-      tokenStorage.push($ASI, tokenStorage.pop());
+      tokenStorage.push(collectTokens === COLLECT_TOKENS_TYPES ? $ASI : createBaseToken($ASI, pointer, pointer, pointer - currentColOffset, currentLine, false), tokenStorage.pop());
     }
     ++anyTokenCount;
     ++solidTokenCount; // eh... i guess.
@@ -898,8 +931,14 @@ function Lexer(
     lastLine = line;
     lastColumn = column;
   }
-  function createBaseToken(type, start, stop, column, line, asi) {
+  function createBaseToken(type, start, stop, column, line, nl) {
     ASSERT(createBaseToken.length === arguments.length, 'arg count');
+    ASSERT(typeof type === 'number', 'our types are nums');
+    ASSERT(typeof start === 'number', 'our locs are nums');
+    ASSERT(typeof stop === 'number', 'our locs are nums');
+    ASSERT(typeof column === 'number', 'our locs are nums');
+    ASSERT(typeof line === 'number', 'our locs are nums');
+    ASSERT(typeof nl === 'boolean', 'nl is or is not');
 
     if (babelTokenCompat) {
       return {
@@ -922,10 +961,12 @@ function Lexer(
     }
 
     return {
+      type,
       start,
       stop, // start of next token
       column, // of first char of token
       line, // of first char of token
+      nl, // If true, this was a non-whitespace token, and there was a newline between this and the previous one
     };
   }
 
@@ -1215,11 +1256,22 @@ function Lexer(
     ASSERT(typeof a === 'number', 'first digit ord');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
 
+    // \8 and \9 are never allowed in strings. Tagged templates the exception of course.
+    // > SingleStringCharacter -> `\` EscapeSequence -> CharacterEscapeSequence -> NonEscapeCharacter ->
+    // >   SourceCharacter but not one of EscapeCharacter or LineTerminator -> (EscapeCharacter:) DecimalDigit -> 0123456789
+
+    if (a === $$8_38 || a === $$9_39) {
+      if (!lastReportableLexerError) lastReportableLexerError = 'The grammar does not allow to escape the 8 or the 9 character';
+      return BAD_ESCAPE;
+    }
+
     if (eof()) return GOOD_ESCAPE; // Will error somewhere else
     let b = peek();
 
+    // If this is valid, this leads to a LegacyOctalEscapeSequence
+
     // Octals are only supported in web compat, sloppy mode, and only in strings
-    // In web compat, \1 ~ \7 are considered start of an octal escape. Otherwise they are just a single digit escaped.
+    // In web compat, \1 ~ \7 are considered start of an octal escape. \8 and \9 are illegal regardless.
     // Otherwise, \1~\9 are illegal through CharacterEscapeSequence -> NonEscapeCharacter -> "SourceCharacter but not
     // one of EscapeCharacter or LineTerminator" -> EscapeCharacter -> DecimalDigit
 
@@ -1256,28 +1308,20 @@ function Lexer(
         if (!lastReportableLexerError) lastReportableLexerError = 'Octal escapes are only allowed in sloppy mode with web compat enabled';
       }
       return BAD_ESCAPE;
-    } else {
-      // If octals are allowed then the nul escape may be followed by 8 or 9
-      if (a === $$0_30 && (b < $$0_30 || b > $$7_37)) {
-        // [v]: `"\0"`
-        // [v]: `"\0x"`
-        // [v]: `"\07"`
-        // [v]: `"\08"`
-        // [v]: `"\09"`
-        // \0 is not an octal escape, it's a nul, but whatever
-        // In web compat mode the following char can be 8 and 9 according to the extended syntax
-        lastCanonizedInput += '\0';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      } else if (a === $$8_38) {
-        lastCanonizedInput += '8';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      } else if (a === $$9_39) {
-        lastCanonizedInput += '9';
-        ++lastCanonizedInputLen;
-        return GOOD_ESCAPE;
-      }
+    }
+
+    // If octals are allowed then the nul escape may be followed by 8 or 9
+    if (a === $$0_30 && (b < $$0_30 || b > $$7_37)) {
+      // [v]: `"\0"`
+      // [v]: `"\0x"`
+      // [v]: `"\07"`
+      // [v]: `"\08"`
+      // [v]: `"\09"`
+      // \0 is not an octal escape, it's a nul, but whatever
+      // In web compat mode the following char can be 8 and 9 according to the extended syntax
+      lastCanonizedInput += '\0';
+      ++lastCanonizedInputLen;
+      return GOOD_ESCAPE;
     }
 
     if (b < $$0_30 || b > $$7_37) {
@@ -1295,6 +1339,7 @@ function Lexer(
       ++lastCanonizedInputLen; // Always 1 char
       return GOOD_ESCAPE;
     }
+
     let c = peek();
     if (c < $$0_30 || c > $$7_37) {
       lastCanonizedInput += String.fromCharCode(parseInt(String.fromCharCode(a, b), 8));
@@ -2781,7 +2826,7 @@ function Lexer(
           afterAtom = true;
           break;
 
-        case REGEX_ATOM_CURLYL:
+        case REGEX_ATOM_CURLYL: {
           // explicit quantifier
           // This is valid if we just parsed an atom, or in webcompat mode without the u-flag
           ASSERT_skip($$CURLY_L_7B);
@@ -2790,101 +2835,89 @@ function Lexer(
             return regexSyntaxError('Early EOF at the start of a regex quantifier');
           }
 
-          if (afterAtom) {
-            let c = peek();
-            if (isAsciiNumber(c)) {
-              // Try to parse a valid quantifier
-              // - `/x{1}/`
-              //       ^
-              if (parseRegexCurlyQuantifier(c)) {
-                // A question mark here makes the quantifier "non-greedy"
-                if (neof() && peeky($$QMARK_3F)) {
-                  // - `/foo{1,10}?/`
-                  //              ^
-                  ASSERT_skip($$QMARK_3F);
-                }
+          // Check whether this is a valid quantifier at all (`{ digits [, digits] }`)
+          // Then if it is, throw if not afterAtom, even in web compat (static semantic covers that)
+          // Otherwise it is an invalid brace. Can only be legal in web compat without u-flag.
 
-                afterAtom = false; // Cannot quantify a quantifier
-                break;
+          let c = peek();
+          let validBrace = isAsciiNumber(c) ? parseRegexCurlyQuantifier(c) : REGEX_PARTIAL_CURLY_QUANTIFIER;
+
+          ASSERT([REGEX_VALID_CURLY_QUANTIFIER, REGEX_INVALID_CURLY_QUANTIFIER, REGEX_PARTIAL_CURLY_QUANTIFIER].includes(validBrace), 'func returns an enum');
+          if (validBrace === REGEX_VALID_CURLY_QUANTIFIER) {
+            if (afterAtom) {
+              // This is the most likely case
+              // `/a{12}/`
+              //    ^^^^
+              // `/a{12,}/`
+              //    ^^^^^
+              // `/a{12,13}/`
+              //    ^^^^^^^
+              afterAtom = false;
+
+              if (neof() && peeky($$QMARK_3F)) {
+                // `/a{12}?/`
+                //        ^
+                // `/a{12,}?/`
+                //         ^
+                // `/a{12,13}?/`
+                //           ^
+
+                // This is a non-greedy modifier. Basically, `/\u{10}?/` matches the smallest series of `u`, but at
+                // least 10. Since we are parsing an atom, we can just skip the qmark here.
+                ASSERT_skip($$QMARK_3F);
               }
 
-              // Something error happened, this wasn't a valid quantifier after all
-              // - `/x{1a}/`
-              //        ^
-              let reason = 'Encountered unescaped closing curly `}` while not parsing a quantifier';
-              if (webCompat === WEB_COMPAT_OFF) {
-                return regexSyntaxError(reason);
-              }
-
-              // Consider this an atom. Keep the `afterAtom` state true
-              uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
               break;
             }
 
-            if (webCompat === WEB_COMPAT_OFF) {
-              if (peeky($$COMMA_2C)) {
-                return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
-              }
-
-              if (peeky($$CURLY_R_7D)) {
-                return regexSyntaxError('A regex curly quantifier had no content');
-              }
-
-              return regexSyntaxError('Found invalid regex curly quantifier');
-            }
-
-            let reason = c === $$COMMA_2C ? 'The first digit of a regex curly quantifier is mandatory' :
-              c === $$CURLY_R_7D ? 'A regex curly quantifier had no content' :
-                'Found invalid regex curly quantifier';
-            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-
-            // In webcompat the InvalidBracedQuantifier is an atom but since in web compat all quantifiers are ok
-            // to appear standalone, we don't need to worry about the afterAtom state here.
-
-            // afterAtom = false;
-            break;
+            // `/a*{1}/`
+            // `/a?{1}/`
+            // `/a+{1}/`
+            // `/a{1}{1}/`
+            // `/{1}/`
+            // `/a|{1}/`
+            return regexSyntaxError('A valid bracket quantifier requires an unqualified atom, but that was not the case');
           }
+
+          if (validBrace === REGEX_INVALID_CURLY_QUANTIFIER) {
+            // `/a{02}/`
+            // `/a{2,1}/`
+            return regexSyntaxError('Parsed a braced quantifier that contained an illegal range (left>right)');
+          }
+
+          if (eof()) return regexSyntaxError('Encountered EOF while parsing curly quantifier');
+
+          // This is the path for the start of an _invalid_ bracket quantifier.
+          // This can only be valid in web compat mode without u-flag, where `{` becomes an ExtendedPatternCharacter
 
           if (webCompat === WEB_COMPAT_OFF) {
-            return regexSyntaxError('Encountered unescaped opening curly `{` and the previous character was not part of something quantifiable');
-          }
-
-          {
-            // web compat only:
-            // [v]: `/{/`
-            // [x]: `/{1}/`
-            // [x]: `/{1}?/`
-            // [v]: `/{?/`
-            // [v]: `/{/`
-            // [v]: `/{?/`
-            // [v]: `/{/`u
-            // [v]: `/{?/u`
-            // [v]: `/{/u`
-            // [v]: `/{?/u`
-            // IF we can parse a curly quantifier, THEN we throw a syntax error. Otherwise we just parse a `{`
-
-            // This will be an ExtendedPatternCharacter, InvalidBracedQuantifier, or syntax error
-            afterAtom = true;
-
-            let c = peek();
-            if (isAsciiNumber(c)) {
-              if (parseRegexCurlyQuantifier(c)) {
-                return regexSyntaxError('Encountered illegal curly quantifier without anything to quantify. This is `InvalidBracedQuantifier` and explicitly a syntax error');
-              }
-
-              // This in webcompat is `{` as `ExtendedAtom` is a `ExtendedPatternCharacter`, which does allows the curly
-              uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Encountered illegal curly quantifier without anything to quantify. This is `InvalidBracedQuantifier` and explicitly a syntax error');
-              break;
+            if (peeky($$COMMA_2C)) {
+              return regexSyntaxError('The first digit of a regex curly quantifier is mandatory');
             }
 
-            let reason =
-              c === $$COMMA_2C ? 'The first digit of a regex curly quantifier is mandatory' :
-              c === $$CURLY_R_7D ? 'A regex curly quantifier had no content' :
-                'Found invalid regex curly quantifier';
-            uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
-          }
-          break;
+            if (peeky($$CURLY_R_7D)) {
+              return regexSyntaxError('A regex curly quantifier had no content');
+            }
 
+            return regexSyntaxError('Found an unescaped `{` that was not the start of a valid quantifier');
+          }
+
+          // web compat only, ExtendedPatternCharacter:
+          // [v]: `/{/`
+          // [x]: `/{1}/`
+          // [x]: `/{1}?/`
+          // [v]: `/{?/`
+          // [v]: `/{/`
+          // [v]: `/{?/`
+          // [v]: `/{/`u
+          // [v]: `/{?/u`
+          // [v]: `/{/u`
+          // [v]: `/{?/u`
+
+          afterAtom = true;
+          uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found an unescaped `{` that was not the start of a valid quantifier');
+          break;
+        }
         case REGEX_ATOM_CURLYR: {
           ASSERT_skip($$CURLY_R_7D);
           let reason = 'Encountered unescaped closing curly `}` while not parsing a quantifier';
@@ -4193,23 +4226,26 @@ function Lexer(
         let a = peek();
         let va = getHexValue(a);
         if (va === HEX_OOB) {
-          let reason = 'First character of hex escape was invalid';
-          // I think the \x should be accepted as SourceCharacterIdentityEscape now...?
           if (webCompat === WEB_COMPAT_ON) {
-            updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-            // TODO: what's the code point value?
-            return REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-          } else {
-            regexSyntaxError(reason);
-            return REGEX_CHARCLASS_BAD;
+            // I think the \x should be accepted as SourceCharacterIdentityEscape now
+            updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'First character of hex escape was invalid');
+            return $$X_78 | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
           }
+
+          regexSyntaxError('First character of hex escape was invalid');
+          return REGEX_CHARCLASS_BAD;
         }
         ASSERT_skip(a);
 
         let b = peek();
         let vb = getHexValue(b);
         if (vb === HEX_OOB) {
-          // TODO: is this valid in webcompat?
+          if (webCompat === WEB_COMPAT_ON) {
+            // I think the \x should be accepted as SourceCharacterIdentityEscape now
+            updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Second character of hex escape was invalid');
+            return $$X_78 | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+          }
+
           regexSyntaxError('Second character of hex escape was invalid');
           return REGEX_CHARCLASS_BAD;
         }
@@ -4716,74 +4752,58 @@ function Lexer(
     return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
   }
   function parseRegexCurlyQuantifier(c) {
-    ASSERT(neof(), 'call site will have verified neof()');
-    ASSERT(c === peek(), 'c should be current peek()');
+    ASSERT(parseRegexCurlyQuantifier.length === arguments.length, 'arg count');
     ASSERT(isAsciiNumber(c), 'call site will have asserted that the first next char is a digit');
+
     // Parsed the curly, verified first next char is a digit
     // Verify the range is not {hi,lo}
+    // "Octal" numbers (starting with 0) seem to be fine
 
     // next should be a digit
-    let hasHi = false;
-    let max = 0;
-    let badNumber = false;
-
-    let a = c;
-    let min = a - $$0_30; // ascii for 0x30 is digit `0`
-    ASSERT_skip(c);
-    if (eof()) return false;
-    c = peek();
-
-    if (a === $$0_30) {
-      // - `/x{0}/`
-      //       ^
-      if (isAsciiNumber(c)) {
-        // - `/x{01}/`
-        //        ^
-        badNumber = true;
-      }
-    }
+    let min = 0;
     while (isAsciiNumber(c)) {
       min = (min * 10) + (c - $$0_30);
       ASSERT_skip(c);
-      if (eof()) return false;
+      if (eof()) return REGEX_PARTIAL_CURLY_QUANTIFIER;
       c = peek();
     }
 
-    if (c === $$COMMA_2C) {
-      ASSERT_skip($$COMMA_2C);
-      if (eof()) return false;
-      c = peek();
+    if (c !== $$COMMA_2C) {
+      if (c !== $$CURLY_R_7D) return REGEX_PARTIAL_CURLY_QUANTIFIER;
 
-      if (isAsciiNumber(c)) {
-        hasHi = true;
-        let b = c;
-        max = b - $$0_30; // ascii for 0x30 is digit `0`
-        ASSERT_skip(b);
-        if (eof()) return false;
-        c = peek();
-
-        if (b === $$0_30) {
-          // - `/x{0,0}/`
-          //         ^
-          if (isAsciiNumber(c)) {
-            // - `/x{01}/`
-            //        ^
-            badNumber = true;
-          }
-        }
-        while (isAsciiNumber(c)) {
-          max = (max * 10) + (c - $$0_30);
-          ASSERT_skip(c);
-          if (eof()) return false;
-          c = peek();
-        }
-      }
-    }
-    if (c === $$CURLY_R_7D) {
       ASSERT_skip($$CURLY_R_7D);
-      return !badNumber && (!hasHi || min <= max);
+
+      return REGEX_VALID_CURLY_QUANTIFIER;
     }
-    return false;
+
+    ASSERT_skip($$COMMA_2C);
+
+    if (eof()) return REGEX_PARTIAL_CURLY_QUANTIFIER;
+
+    c = peek();
+
+    if (!isAsciiNumber(c)) {
+      if (c !== $$CURLY_R_7D) return REGEX_PARTIAL_CURLY_QUANTIFIER;
+
+      ASSERT_skip($$CURLY_R_7D);
+
+      return REGEX_VALID_CURLY_QUANTIFIER;
+    }
+
+    let max = 0; // ascii for 0x30 is digit `0`
+    do {
+      max = (max * 10) + (c - $$0_30);
+      ASSERT_skip(c);
+      if (eof()) return REGEX_PARTIAL_CURLY_QUANTIFIER;
+      c = peek();
+    } while (isAsciiNumber(c));
+
+    if (c !== $$CURLY_R_7D) return REGEX_PARTIAL_CURLY_QUANTIFIER;
+
+    ASSERT_skip($$CURLY_R_7D);
+
+    if (min <= max) return REGEX_VALID_CURLY_QUANTIFIER;
+    return REGEX_INVALID_CURLY_QUANTIFIER;
   }
   function isSurrogateLead(c) {
     // "A sequence of two code units, where the first code unit c1 is in the range 0xD800 to 0xDBFF and the second code unit c2 is in the range 0xDC00 to 0xDFFF, is a surrogate pair and is interpreted as a code point with the value (c1 - 0xD800) × 0x400 + (c2 - 0xDC00) + 0x10000. (See 10.1.2)
@@ -5270,7 +5290,10 @@ function Lexer(
         return parseNewlineSolo();
 
       default:
-        return parseIdentUnicodeOrError(c);
+        let t = parseIdentUnicodeOrError(c);
+        if (t !== $ERROR) return t;
+
+        return parseWhitespaceUnicodeOrError(c);
     }
   }
 
@@ -5290,6 +5313,22 @@ function Lexer(
 
     if (!lastReportableLexerError) lastReportableLexerError = 'Unexpected unicode character: ' + c + ' (' + String.fromCharCode(c) + ')';
     return $ERROR;
+  }
+  function parseWhitespaceUnicodeOrError(c) {
+    // https://tc39.es/ecma262/#sec-white-space
+    // Scan for Space_Separator
+    // But only for c<=0xffff because:
+    // https://tc39.es/ecma262/#sec-tonumber-applied-to-the-string-type
+    // > The terminal symbols of this grammar are all composed of characters in the Unicode Basic Multilingual Plane (BMP).
+
+    // Last ditch effort. Let it be slow.
+    // It seems there are only 10 characters in the set of Space_Separators under 0xffff, so we can check explicitly.
+    // They are all Space_Separators except 2028, which is a line separator. And we can skip space and tab :)
+
+    // https://unicode.org/cldr/utility/list-unicodeset.jsp?a=[:Bidi_Class=White_Space:]
+    // \u000C \u0020 \u1680 \u2000-\u200A \u205F \u2028 \u3000
+
+    return [0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200a, 0x202F, 0x205F, 0x3000].includes(c) ? $SPACE : $ERROR;
   }
 
   function THROW(str, tokenStart, tokenStop) {

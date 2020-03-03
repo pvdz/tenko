@@ -333,6 +333,7 @@ import {
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,
+  COLLECT_TOKENS_TYPES,
 
   FAIL_HARD,
 
@@ -527,7 +528,7 @@ function hasNoFlag(flags, flag) {
 function Parser(code, options = {}) {
   let {
     goalMode: options_goalMode = GOAL_SCRIPT, // GOAL_SCRIPT | GOAL_MODULE | "script" | "module"
-    collectTokens: options_collectTokens = COLLECT_TOKENS_NONE, // COLLECT_TOKENS_NONE | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_ALL | "none" | "solid" | "all"
+    collectTokens: options_collectTokens = COLLECT_TOKENS_NONE, // COLLECT_TOKENS_NONE | COLLECT_TOKENS_SOLID | COLLECT_TOKENS_ALL | COLLECT_TOKENS_TYPES | "none" | "solid" | "all" | "types"
     webCompat: options_webCompat = WEB_COMPAT_ON,
     strictMode: options_strictMode = false,
     astRoot: options_astRoot = null,
@@ -574,6 +575,7 @@ function Parser(code, options = {}) {
     if (options_collectTokens === 'all') collectTokens = COLLECT_TOKENS_ALL;
     else if (options_collectTokens === 'solid') collectTokens = COLLECT_TOKENS_SOLID;
     else if (options_collectTokens === 'none') collectTokens = COLLECT_TOKENS_NONE;
+    else if (options_collectTokens === 'types') collectTokens = COLLECT_TOKENS_TYPES;
     else return THROW_RANGE('Unknown collectTokens value: `' + options_collectTokens + '`', tok_getStart(), tok_getStop());
   } else {
     collectTokens = options_collectTokens;
@@ -2346,9 +2348,11 @@ function Parser(code, options = {}) {
         // In web compat mode we can ignore errors when function statements cause dupe bindings when the binding
         // is only used for function declarations otherwise (so not another func statement!).
         return THROW_RANGE('Found a var binding that is duplicate of a lexical binding on the same or lower statement level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
-      case BINDING_TYPE_CATCH_IDENT:
       case BINDING_TYPE_CATCH_OTHER:
-        if (options_webCompat === WEB_COMPAT_OFF || hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
+        return THROW_RANGE('Can not create a binding for `' + $tp_bindingIdent_canon + '` because was already bound as a catch clause pattern binding', $tp_bindingIdent_start, $tp_bindingIdent_stop);
+      case BINDING_TYPE_CATCH_IDENT:
+        if (options_webCompat === WEB_COMPAT_OFF) {
+          // Note: this exception is not strict mode gated
           // https://tc39.es/ecma262/#sec-variablestatements-in-catch-blocks
           // > It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the VarDeclaredNames
           // > of Block unless CatchParameter is `CatchParameter: BindingIdentifier`.
@@ -2997,17 +3001,31 @@ function Parser(code, options = {}) {
       AST_set('generator', $tp_star_type === $PUNC_STAR);
       AST_set('async', $tp_async_type === $ID_async);
     } else if (acornCompat) {
-      AST_open(astProp, {
-        type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
-        loc: undefined,
-        // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
-        generator: $tp_star_type === $PUNC_STAR,
-        async: $tp_async_type === $ID_async,
-        expression: false,
-        id: undefined,
-        params: [],
-        body: undefined,
-      });
+      if (allowAsyncFunctions) {
+        AST_open(astProp, {
+          type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
+          loc: undefined,
+          // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
+          generator: $tp_star_type === $PUNC_STAR,
+          async: $tp_async_type === $ID_async,
+          expression: false,
+          id: undefined,
+          params: [],
+          body: undefined,
+        });
+      } else {
+        // Note: acorn will not add the `async` property if targeting a version that doesn't support async (nice ...)
+        AST_open(astProp, {
+          type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
+          loc: undefined,
+          // name value doesn't seem to be specced in estree but it makes sense to use the canonical name here
+          generator: $tp_star_type === $PUNC_STAR,
+          expression: false,
+          id: undefined,
+          params: [],
+          body: undefined,
+        });
+      }
     } else {
       AST_open(astProp, {
         type: isFuncDecl === IS_FUNC_DECL ? 'FunctionDeclaration' : 'FunctionExpression',
@@ -4931,7 +4949,7 @@ function Parser(code, options = {}) {
     }
 
     if (tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN) {
-      // [v]: `for (let [x] in y);`
+      // [x]: `for (let [x] in y);`
       //                ^
       // [v]: `for (let {x} of y);`
       //                ^
@@ -8398,6 +8416,17 @@ function Parser(code, options = {}) {
         async: $tp_async_type === $ID_async,
         body: undefined,
       });
+    } else if (acornCompat && !allowAsyncFunctions) {
+      // Do not add `async` property
+      AST_open(astProp, {
+        type: 'ArrowFunctionExpression',
+        loc: undefined,
+        params: [AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon)],
+        id: null,
+        generator: false,
+        expression: undefined, // TODO: init to bool
+        body: undefined,
+      });
     } else {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
@@ -9076,8 +9105,8 @@ function Parser(code, options = {}) {
     }
 
     ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, lexerFlags); // The arg to dynamic import is mandatory and an arbitrary expr
-    // Note: the import call arg sets the +IN flag in the grammar (can't use `in` operator). So that's why we set it too
-    let assignable = parseExpression(lexerFlags | LF_IN_FOR_LHS, acornCompat ? 'source' : 'arguments');
+
+    let assignable = parseExpression(lexerFlags, acornCompat ? 'source' : 'arguments');
 
     if (tok_getType() !== $PUNC_PAREN_CLOSE) {
       // Error path
@@ -9318,6 +9347,17 @@ function Parser(code, options = {}) {
           id: null,
           generator: false,
           async: false,
+          body: undefined,
+        });
+      } else if (acornCompat && !allowAsyncFunctions) {
+        // Do not add `async` property
+        AST_open(astProp, {
+          type: 'ArrowFunctionExpression',
+          loc: undefined,
+          params: [],
+          id: null,
+          generator: false,
+          expression: undefined, // TODO: init to bool
           body: undefined,
         });
       } else {
@@ -10166,6 +10206,17 @@ function Parser(code, options = {}) {
         async: true,
         body: undefined,
       });
+    } else if (acornCompat && !allowAsyncFunctions) {
+      // Do not add `async` property
+      AST_open(astProp, {
+        type: 'ArrowFunctionExpression',
+        loc: undefined,
+        params: [],
+        id: null,
+        generator: false,
+        expression: undefined, // TODO: init to bool
+        body: undefined,
+      });
     } else {
       AST_open(astProp, {
         type: 'ArrowFunctionExpression',
@@ -10197,6 +10248,17 @@ function Parser(code, options = {}) {
         id: null,
         generator: false,
         async: $tp_async_type === $ID_async,
+        body: undefined,
+      }, 'params');
+    } else if (acornCompat && !allowAsyncFunctions) {
+      // Do not add `async` property
+      AST_wrapClosedIntoArrayCustom(astProp, {
+        type: 'ArrowFunctionExpression',
+        loc: undefined,
+        params: undefined,
+        id: null,
+        generator: false,
+        expression: undefined, // TODO: init to bool
         body: undefined,
       }, 'params');
     } else {
@@ -13457,6 +13519,7 @@ export {
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,
+  COLLECT_TOKENS_TYPES,
 
   GOAL_MODULE,
   GOAL_SCRIPT,

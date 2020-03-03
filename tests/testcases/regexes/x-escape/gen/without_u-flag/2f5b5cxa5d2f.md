@@ -54,10 +54,41 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
+      expression: {
+        type: 'Literal',
+        loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
+        value: null,
+        regex: { pattern: '[\\xa]', flags: '' },
+        raw: '/[\\xa]/'
+      }
+    }
+  ]
+}
+
+tokens (3x):
+       REGEXN ASI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+/[\xa]/;
+````
+
+Produces same AST

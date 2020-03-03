@@ -22,6 +22,7 @@ import {
   GOAL_SCRIPT,
   GOAL_MODULE,
   COLLECT_TOKENS_ALL,
+  COLLECT_TOKENS_TYPES,
   COLLECT_TOKENS_NONE
 } from '../src/index.mjs';
 

@@ -31,6 +31,7 @@ const REGEX_CHARCLASS_WAS_RUBY = 1<<26; // For invalid u-escapes in ranges in ch
 const COLLECT_TOKENS_NONE = 0;
 const COLLECT_TOKENS_SOLID = 1; // non-whitespace
 const COLLECT_TOKENS_ALL = 2;
+const COLLECT_TOKENS_TYPES = 3; // all tokens, but only the type (an enum int)
 
 const WEB_COMPAT_OFF = false;
 const WEB_COMPAT_ON = true;
@@ -63,6 +64,13 @@ const VALID_DOUBLE_CHAR = -3;
 const FOR_NAMED_GROUP = true;
 const FOR_K_ESCAPE = false;
 
+
+// For regex curly quantifier, this tells the caller what was consumed exactly
+const REGEX_VALID_CURLY_QUANTIFIER = 1; // `{1}`, `{1,}`, `{1,2}`
+const REGEX_INVALID_CURLY_QUANTIFIER = 2; // `{2,1}`, `{01}`, `{01,}` `{1,02}`
+const REGEX_PARTIAL_CURLY_QUANTIFIER = 3; // `{a`, `{1a`, `{1,}` ,`{1,a}`, `{1,2a` (does not consume the invalid char)
+
+
 export {
   BAD_ESCAPE,
   GOOD_ESCAPE,
@@ -89,6 +97,7 @@ export {
   COLLECT_TOKENS_NONE,
   COLLECT_TOKENS_SOLID,
   COLLECT_TOKENS_ALL,
+  COLLECT_TOKENS_TYPES,
   WEB_COMPAT_OFF,
   WEB_COMPAT_ON,
   RETURN_ANY_TOKENS,
@@ -106,4 +115,7 @@ export {
   INVALID_IDENT_CHAR,
   VALID_SINGLE_CHAR,
   VALID_DOUBLE_CHAR,
+  REGEX_VALID_CURLY_QUANTIFIER,
+  REGEX_INVALID_CURLY_QUANTIFIER,
+  REGEX_PARTIAL_CURLY_QUANTIFIER,
 };

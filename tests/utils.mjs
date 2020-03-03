@@ -98,7 +98,7 @@ export class Tob {
     ASSERT(!data || data.indexOf('\n##'));
 
     this.file = file;
-    this.fileShort = file.slice(file.indexOf('tenko') + 'tenko/'.length);
+    this.fileShort = file.startsWith('tests/') ? file : file.slice(file.indexOf('tenko') + 'tenko/'.length);
     this.oldData = data;
     this.newData = data;
 
@@ -109,7 +109,9 @@ export class Tob {
     this.inputCode = '';
 
     this.parserRawOutput = {sloppy: {}, strict: {}, module: {}, web: {}}; // {r, e, tok, stdout}
-    this.skippedForParser = false;
+    this.compareSkippedExplicitVersion = false; // When comparing, tests with specific version are skipped because Babel does not support that (and they're usually just version guard checks)
+    this.compareWhiteListed = false; // Do we know why a test isn't matching Tenko's output? In that case ignore the error.
+    this.compareHadMatchFailure = false; // At least one test that ran had a mis-match with Tenko
 
     this.oldOutputSloppy = false;
     this.oldOutputSloppyAnnexB = false;

@@ -8,9 +8,7 @@
 >
 > https://tc39.github.io/ecma262/#sec-variablestatements-in-catch-blocks
 > 
-> > It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the VarDeclaredNames of Block
-> 
-> unless CatchParameter is CatchParameter:BindingIdentifier and that element is only bound by
+> > It is a Syntax Error if any element of the BoundNames of CatchParameter also occurs in the VarDeclaredNames of Block unless CatchParameter is CatchParameter:BindingIdentifier and that element is only bound by
 > - a VariableStatement,
 > - the VariableDeclarationList of a for statement,
 > - the ForBinding of a for-in statement, or

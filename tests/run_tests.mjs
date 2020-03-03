@@ -102,6 +102,10 @@ const SKIP_PRINTER = process.argv.includes('--no-printer') || USE_BUILD;
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
 
+if (TEST_BABEL && TEST_ACORN) throw new Error('Cannot test Babel and Acorn at the same time. Pick one.');
+if (TEST_ACORN) console.log('Running in Acorn compat mode and comparing to actual Acorn Parser output');
+if (TEST_BABEL) console.log('Running in Babel compat mode and comparing to actual Babel Parser output');
+
 if (process.argv.includes('-?') || process.argv.includes('--help')) {
   console.log(`
   Tenko Test Runner
@@ -161,6 +165,7 @@ if (AUTO_UPDATE && (a || b || c)) throw new Error('Cannot use --sloppy (etc) tog
 let COLLECT_TOKENS_NONE;
 let COLLECT_TOKENS_SOLID;
 let COLLECT_TOKENS_ALL;
+let COLLECT_TOKENS_TYPES;
 let GOAL_MODULE;
 let GOAL_SCRIPT;
 let WEB_COMPAT_ON;
@@ -188,8 +193,9 @@ if (NO_FATALS) console.log(BLINK + 'NO_FATALS enabled. Do not blindly commit res
 if (USE_BUILD) console.log('Using PROD build of Tenko');
 
 let stopAsap = false;
-let skippedOtherParserDelta = 0;
 let skippedOtherParserList = [];
+let unxepctedFails = [];
+let unexpectedPass = [];
 
 // use -s and call HIT in some part of the code to log all test cases that visit that particular branch(es)
 let wasHits = [];
@@ -357,8 +363,14 @@ function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
     [babelOk, babelFail, zasb] = compareBabel(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, INPUT_OVERRIDE || TARGET_FILE);
   }
   let acornOk, acornFail, zasa;
-  if (TEST_ACORN && (!Number.isFinite(tob.inputOptions.es) || TARGET_FILE || INPUT_OVERRIDE)) {
-    [acornOk, acornFail, zasa] = compareAcorn(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, tob.inputOptions.es, INPUT_OVERRIDE || TARGET_FILE);
+  // Acorn does support version, but also always annexb and no strict mode option
+  if (TEST_ACORN) {
+    if (tob.fileShort.startsWith('tests/testcases/regexes/range_surrogate_head_end/')) {
+      acornOk = false;
+      acornFail = 'infinite loop';
+    } else {
+      [acornOk, acornFail, zasa] = compareAcorn(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, tob.inputOptions.es, INPUT_OVERRIDE || TARGET_FILE);
+    }
   }
 
   let nodeFail = undefined;
@@ -427,24 +439,40 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     (r ? 'ast: ' + astToString(r.ast) + '\n\n' + formatTokens(r.tokens) : '')
   );
 
-  let outputBabel = '';
-  if (babelOk !== false) { // false means it didnt run at all
-    if (TEST_BABEL && !Number.isFinite(tob.inputOptions.es)) {
-      outputBabel = processBabelResult(babelOk, babelFail, !!e, zasb, tob, TEST_BABEL, INPUT_OVERRIDE);
-      if (outputBabel && !INPUT_OVERRIDE && !TARGET_FILE && ignoreTenkoTestForBabel(tob.file)) {
-        tob.skippedForParser = true;
-        outputBabel = '';
+  let babelMatchError = '';
+  if (TEST_BABEL && annexB && testVariant !== 'strict') {
+    // Babel does not support sloppy/strict switch and always enables annexb rules, so do not check other combos
+    if (Number.isFinite(tob.inputOptions.es)) {
+      tob.compareSkippedExplicitVersion = true;
+    } else {
+      ASSERT(!babelOk !== !babelFail, 'babel should have run, should either pass or fail, not both, not neither [file = ' + file +' ]');
+      tob.compareWhiteListed = ignoreTenkoTestForBabel(tob.fileShort);
+      babelMatchError = processBabelResult(babelOk, babelFail, !!e, zasb, tob, TEST_BABEL, INPUT_OVERRIDE);
+
+      if (babelMatchError && TARGET_FILE) {
+        console.log('babelMatchError:', BOLD, babelMatchError, RESET)
+        // throw new Error(babelMatchError)
+      }
+      if (babelMatchError) tob.compareHadMatchFailure = true;
+      if (!INPUT_OVERRIDE && !TARGET_FILE && tob.compareWhiteListed) {
+        babelMatchError = '';
       }
     }
   }
-  let outputAcorn = '';
-  if (acornOk !== false) { // false means it didnt run at all
-    if (TEST_ACORN && !Number.isFinite(tob.inputOptions.es)) {
-      outputAcorn = processAcornResult(acornOk, acornFail, !!e, zasa, tob, TEST_ACORN, INPUT_OVERRIDE);
-      if (outputAcorn && !INPUT_OVERRIDE && !TARGET_FILE && ignoreTenkoTestForAcorn(tob.file)) {
-        outputAcorn = '';
-        tob.skippedForParser = true;
-      }
+
+  let acornMatchError = '';
+  if (TEST_ACORN && annexB && testVariant !== 'strict') {
+    ASSERT(!acornOk !== !acornFail, 'acorn should have run, should either pass or fail, not both, not neither');
+    // Acorn does not support sloppy/strict switch and always enables annexb rules, so do not check other combos
+    tob.compareWhiteListed = ignoreTenkoTestForAcorn(tob.fileShort);
+    acornMatchError = processAcornResult(acornOk, acornFail, !!e, zasa, tob, TEST_ACORN, INPUT_OVERRIDE);
+    if (acornMatchError && TARGET_FILE) {
+      console.log('acornMatchError:', BOLD, acornMatchError, RESET)
+      // throw new Error(babelMatchError)
+    }
+    if (acornMatchError) tob.compareHadMatchFailure = true;
+    if (!INPUT_OVERRIDE && !TARGET_FILE && tob.compareWhiteListed) {
+      acornMatchError = '';
     }
   }
 
@@ -461,25 +489,25 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     case TEST_SLOPPY:
       if (annexB) {
         tob.newOutputSloppyAnnexB = outputTestString;
-        tob.newOutputSloppyAnnexBBabel = outputBabel;
+        tob.newOutputSloppyAnnexBBabel = babelMatchError;
         tob.newOutputSloppyAnnexBNode = nodeOutput;
-        tob.newOutputSloppyAnnexBAcorn = outputAcorn;
+        tob.newOutputSloppyAnnexBAcorn = acornMatchError;
       } else {
         tob.newOutputSloppy = outputTestString;
-        tob.newOutputSloppyBabel = outputBabel;
+        tob.newOutputSloppyBabel = babelMatchError;
         tob.newOutputSloppyNode = nodeOutput;
-        tob.newOutputSloppyAcorn = outputAcorn;
+        tob.newOutputSloppyAcorn = acornMatchError;
       }
       break;
     case TEST_STRICT:
       if (annexB) {
         tob.newOutputStrictAnnexB = outputTestString;
-        tob.newOutputStrictAnnexBBabel = outputBabel;
+        tob.newOutputStrictAnnexBBabel = babelMatchError;
         tob.newOutputStrictAnnexBNode = nodeOutput;
         tob.newOutputStrictAnnexBAcorn = '';
       } else {
         tob.newOutputStrict = outputTestString;
-        tob.newOutputStrictBabel = outputBabel;
+        tob.newOutputStrictBabel = babelMatchError;
         tob.newOutputStrictNode = nodeOutput;
         tob.newOutputStrictAcorn = '';
       }
@@ -487,12 +515,12 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     case TEST_MODULE:
       if (annexB) {
         tob.newOutputModuleAnnexB = outputTestString;
-        tob.newOutputModuleAnnexBBabel = outputBabel;
-        tob.newOutputModuleAnnexBAcorn = outputAcorn;
+        tob.newOutputModuleAnnexBBabel = babelMatchError;
+        tob.newOutputModuleAnnexBAcorn = acornMatchError;
       } else {
         tob.newOutputModule = outputTestString;
-        tob.newOutputModuleBabel = outputBabel;
-        tob.newOutputModuleAcorn = outputAcorn;
+        tob.newOutputModuleBabel = babelMatchError;
+        tob.newOutputModuleAcorn = acornMatchError;
       }
       break;
     default: FIXME;
@@ -750,6 +778,8 @@ async function loadTenkoAsync() {
     Tenko,
     COLLECT_TOKENS_SOLID,
     COLLECT_TOKENS_NONE ,
+    COLLECT_TOKENS_ALL,
+    COLLECT_TOKENS_TYPES,
     GOAL_MODULE,
     GOAL_SCRIPT,
     WEB_COMPAT_ON,
@@ -782,8 +812,11 @@ async function runAndRegenerateList(list, tenko) {
         console.log('Unable to show the diff... ' + e);
       }
     }
-
-    await writeNewOutput(list);
+    if (TEST_BABEL || TEST_ACORN) {
+      // Not writing new test output at all
+    } else {
+      await writeNewOutput(list);
+    }
   }
 }
 
@@ -880,22 +913,40 @@ async function main(tenko) {
       let tob = list[i];
       await runAndRegenerateList([tob], tenko);
       let count = String(i+1).padStart(String(list.length).length, ' ') + ' / ' + list.length;
-      if (tob.oldData === tob.newData) {
-        if (tob.skippedForParser) {
-          ++skippedOtherParserDelta;
-          skippedOtherParserList.push(tob.fileShort);
-          console.log(BOLD + GREEN + 'SKIP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file whitelisted to fail for other parser)');
-        } else {
-          console.log(BOLD + GREEN + 'PASS' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
-        }
-      }
-      else {
-        console.log(RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
+      if (tob.compareHadMatchFailure && !tob.compareWhiteListed) {
+        unxepctedFails.push(tob.fileShort);
+        console.log(BOLD + RED + 'BAD!' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file not whitelisted to fail but it failed anyways, investigate)');
+      } else if (tob.compareHadMatchFailure) {
+        ASSERT(tob.compareWhiteListed, 'then it is whitelisted');
+        skippedOtherParserList.push(tob.fileShort);
+        console.log(BOLD + GREEN + 'SKIP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file whitelisted to fail and it failed)');
+      } else if (tob.compareWhiteListed) {
+        ASSERT(!tob.compareHadMatchFailure, 'then it is whitelisted but did not fail');
+        unexpectedPass.push(tob.fileShort);
+        console.log(BOLD + RED + 'DROP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file whitelisted to fail but did not fail, remove from list)');
+      } else if (tob.compareSkippedExplicitVersion) {
+        skippedOtherParserList.push(tob.fileShort);
+        console.log(BOLD + GREEN + 'SKIP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file skipped because it targets a specific ES version and we dont care about those cases here)');
+      } else if (tob.oldData !== tob.newData) {
+        console.log(BOLD + RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
+      } else {
+        console.log(BOLD + GREEN + 'PASS' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
       }
     }
-    console.log('Ignored these files:');
-    console.log(skippedOtherParserList.sort().join('\n'))
-    console.log('Ignored the above ' + skippedOtherParserDelta + ' files that were known to parse differently to Tenko');
+    if (skippedOtherParserList.length) {
+      console.log(BOLD + 'Properly ignored these files:' + RESET);
+      // console.log(skippedOtherParserList.sort().join('\n'))
+    }
+    if (unexpectedPass.length) {
+      console.log(BOLD + 'These files were whitelisted but they already match:' + RESET);
+      console.log(unexpectedPass.sort().join('\n'))
+    }
+    if (unxepctedFails.length) {
+      console.log(BOLD + 'These files did not match and were not whitelisted:' + RESET);
+      console.log(unxepctedFails.sort().join('\n'))
+    }
+    console.log('Match status: whitelisted: ' + skippedOtherParserList.length + 'x, unexpected misses: ' + unxepctedFails.length + 'x, unexpected passes: ' + unexpectedPass.length + 'x');
+    if (unxepctedFails.length || unexpectedPass.length) console.log('Use -q to stop immediately on an unexpected miss/match');
   } else {
     await runAndRegenerateList(list, tenko);
   }
@@ -1011,8 +1062,7 @@ async function gen(tenko) {
     }
     console.log(
       'Wrote', wrote, 'new test files' +
-      (skipped ? ', skipped ' + skipped + ' existing files' : '') +
-      (skippedOtherParserDelta ? ', ignored ' + skippedOtherParserDelta + ' files that parsed differently with another parser' : ''),
+      (skipped ? ', skipped ' + skipped + ' existing files' : ''),
       'dir:', genDir.slice(path.join(dirname, '..').length+1)
     );
   }
@@ -1086,7 +1136,7 @@ The format is something like this:
 
 ${from||''}- Path: ${tob.fileShort}
 
-> :: ${path.dirname(tob.fileShort).split('/').filter(s => !['tests', 'testcases'].includes(s)).map(s => s.replace(/_/g, ' ')).join(' : ').replace(/ +/g, ' ').trim()}
+> :: ${path.dirname(tob.fileShort).split('/').filter(s => !['tests', 'testcases', ''].includes(s)).map(s => s.replace(/_/g, ' ')).join(' : ').replace(/ +/g, ' ').trim()}
 >
 > ::> ${path.basename(tob.fileShort, path.extname(tob.fileShort)).replace(/_/g, ' ').replace(/ +/g, ' ').trim()}
 `

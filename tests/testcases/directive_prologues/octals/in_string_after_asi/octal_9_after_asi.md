@@ -43,7 +43,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Octal escapes are only allowed in sloppy mode with web compat enabled
+    The grammar does not allow to escape the 8 or the 9 character
 
 start@1:0, error@3:2
 ╔══╦════════════════
@@ -60,48 +60,22 @@ start@1:0, error@3:2
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-`````
-throws: Lexer error!
-    Illegal legacy octal escape in strict mode
-
-start@1:0, error@3:2
-╔══╦════════════════
- 1 ║ function f(){
- 2 ║   "use strict"
- 3 ║   "x\9"
-   ║   ^^^^^------- error
- 4 ║ }
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as strict mode._
+_Output same as sloppy mode._
 
 ### Sloppy mode with AnnexB
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-throws: Parser error!
-  Octal in directive with strict mode directive or in strict mode is always illegal
-
-start@1:0, error@3:2
-╔══╦════════════════
- 1 ║ function f(){
- 2 ║   "use strict"
- 3 ║   "x\9"
-   ║   ^^^^^------- error
- 4 ║ }
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as strict mode._
+_Output same as sloppy mode._

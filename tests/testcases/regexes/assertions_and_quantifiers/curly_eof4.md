@@ -27,7 +27,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Encountered unescaped closing curly `}` while not parsing a quantifier
+    Regex: Encountered EOF while parsing curly quantifier
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -53,20 +53,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-throws: Lexer error!
-    Regex: Encountered unescaped closing curly `}` while not parsing a quantifier; Found EOF before regex was closed
-
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /a{12,1
-   ║ ^^^^^^^------- error
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
+_Output same as sloppy mode._
