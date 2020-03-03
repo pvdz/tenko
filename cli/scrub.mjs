@@ -161,14 +161,17 @@ function CallExpression(node) {
     }
     // The lexer `peeky()` is really just a local comparison. similar to the `peek()` optimization above
     if (node.callee.name === 'peeky') {
-      return 'cache === ' + $(node.arguments[0]);
+      // Note: allow `!peeky(x)`
+      return '(cache === ' + $(node.arguments[0]) + ')';
     }
     // `neof()` is really just `pointer < len`
     if (node.callee.name === 'neof') {
+      // Do not care about !neof() because that's what eof() is for
       return 'pointer < len';
     }
     // `eof()` is really just `pointer >= len`
     if (node.callee.name === 'eof') {
+      // Do not care about !eof() because that's what neof() is for
       return 'pointer >= len';
     }
 

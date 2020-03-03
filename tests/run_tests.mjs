@@ -97,7 +97,7 @@ const TEST_BABEL = COMPARE_BABEL && (!AUTO_UPDATE || CONFIRMED_UPDATE); // ignor
 const NO_FATALS = process.argv.includes('--no-fatals'); // asserts should not stop a full auto run (dev tool, rely on git etc for recovery...)
 const CONCISE = process.argv.includes('--concise');
 const USE_BUILD = process.argv.includes('-b') || process.argv.includes('--build');
-const SKIP_PRINTER = process.argv.includes('--no-printer') || USE_BUILD;
+const SKIP_PRINTER = process.argv.includes('--no-printer'); // || USE_BUILD;
 
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
@@ -729,12 +729,12 @@ async function writeNewOutput(list) {
         console.log('\n' + DIM + tob.fileShort + RESET);
         console.log(DIM + '\n./t f "' + tob.file + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
         let cont = await yn('Continue to overwrite test output?');
-        if (cont && !USE_BUILD) {
-          ++updated;
-          await promiseToWriteFile(file, newData);
-        } else if (USE_BUILD) {
+        if (USE_BUILD) {
           // Never write build output to test files ...
           console.log('Did NOT write to file because using prod builds to test');
+        } else if (cont) {
+          ++updated;
+          await promiseToWriteFile(file, newData);
         }
       } else {
         if (tob.continuePrint) {
@@ -797,14 +797,6 @@ async function runAndRegenerateList(list, tenko) {
   }
   else if (!SEARCH) {
     constructNewOutput(list);
-    if (USE_BUILD) {
-      // The prod build does not include a tostring for tokens so they get printed as plain objects do
-      // So when running with USE_BUILD we replace those token strings with the prod build output to cut down on the
-      // false positives with test mis-matches. Just don't commit them and you should be fine :)
-      list[0].oldData = list[0].oldData.replace(/\{#.*#\}/g, '[object Object]');
-      // Some false positives could be caused if the token string appears in the comments (like fuzzer output would do)
-      list[0].newData = list[0].newData.replace(/\{#.*#\}/g, '[object Object]');
-    }
     if (RUN_VERBOSE_IN_SERIAL && list[0].oldData !== list[0].newData) {
       try {
         showDiff(list[0]);
