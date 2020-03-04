@@ -538,10 +538,12 @@ function Parser(code, options = {}) {
     targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, Infinity
     exposeScopes: options_exposeScopes = false, // put scopes in the AST under `$scope` property?
     astUids = false, // add an incremental uid to all ast nodes for debugging
-    fullErrorContext = false, // do not trunc the input when throwing an error?
     ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
 
     templateNewlineNormalization = true, // normalize \r and \rn to \n in the `.raw` of template nodes? Estree spec says yes, but makes it hard to serialize lossless
+
+    errorCodeFrame = true, // Print input code at error point (you'll probably want this, it helps debugging a lot)
+    truncCodeFrame = true, // Print only context of error in the code frame? Or all the input regardless of size.
 
     // You can override the logging functions
     $log = console.log,
@@ -594,6 +596,9 @@ function Parser(code, options = {}) {
     gracefulErrors: FAIL_HARD,
     tokenStorage: options_tokenStorage,
     babelTokenCompat,
+
+    errorCodeFrame,
+    truncCodeFrame,
 
     $log,
     $warn,
@@ -663,7 +668,7 @@ function Parser(code, options = {}) {
     $log('Error in parser:', desc, 'remaining throw args;', args);
     // The "at eof" suffix also helps for reducing fuzz cases
     let fullErrmsg = 'Parser error! ' + desc + (tok_getType() === $EOF ? ' (at EOF)' : '');
-    tok_throw(fullErrmsg, tokenStart, tokenStop, '', fullErrorContext);
+    tok_throw(fullErrmsg, tokenStart, tokenStop, '');
   }
 
   let uid_counter = 0;

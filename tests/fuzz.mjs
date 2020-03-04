@@ -91,8 +91,10 @@ let p = (input, trimming) => {
     collectTokens: COLLECT_TOKENS_NONE,
     strictMode: false,
     webCompat: WEB_COMPAT_ON,
-    fullErrorContext: true,
     templateNewlineNormalization: false, // Fine for fuzzing. This way we can re-use the AST for a printer test
+
+    errorCodeFrame: true,
+    truncCodeFrame: false,
 
     // Collect output but don't print it in case the retry fails
     $log: (...args) => trimming || buffer.push(args), // shhh

@@ -68,7 +68,8 @@ function processSource(source, constMap, recordConstants, keepAsserts) {
     goalMode: GOAL_MODULE,
     collectTokens: COLLECT_TOKENS_NONE,
     webCompat: WEB_COMPAT_OFF, // Probably...
-    // fullErrorContext: true,
+    // errorCodeFrame: true,
+    // truncCodeFrame: true,
     exposeScopes: true, // constant inlining
 
     $log: () => {},
@@ -186,7 +187,9 @@ ${forEsm ? '};' : '});'}
       goalMode: GOAL_MODULE,
       collectTokens: COLLECT_TOKENS_NONE,
       webCompat: false, // Probably...
-      // fullErrorContext: true,
+
+      // errorCodeFrame: true,
+      // truncCodeFrame: true,
 
       // $log: () => {},
       // $warn: () => {},

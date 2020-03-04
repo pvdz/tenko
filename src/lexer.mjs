@@ -519,6 +519,9 @@ function Lexer(
     tokenStorageExternal,
     babelTokenCompat = false,
 
+    errorCodeFrame = true, // Print a code frame of input with context with errors?
+    truncCodeFrame = false, // Trunc large input codes to just a few lines around the point of error?
+
     // You can override the logging functions
     $log = console.log,
     $warn = console.warn,
@@ -5320,16 +5323,16 @@ function Lexer(
     $error('Throwing this error:', str);
     _THROW('Lexer error! ' + str, tokenStart, tokenStop); // TODO: add str as second param?
   }
-  function _THROW(str, tokenStart, tokenStop, msg = '', fullErrorContext = false) {
+  function _THROW(str, tokenStart, tokenStop, msg = '', withCodeFrame = errorCodeFrame, fullCodeFrameLocal = truncCodeFrame) {
     $log('\n');
-    let ectxt = getErrorContext(tokenStart, tokenStop, msg, fullErrorContext);
+    let ectxt = withCodeFrame ? getErrorContext(tokenStart, tokenStop, msg, fullCodeFrameLocal) : '(withCodeFrame=false)';
     ASSERT(ectxt[ectxt.length-1] === '\n', 'this is always the case so no need to append one, change if this changed');
     let context = '\n`````\n' + ectxt + '`````\n';
     $log('Error at:' + context);
     if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
     else $error(str);
   }
-  function getErrorContext(tokenStart, tokenStop, msg, fullErrorContext = false) {
+  function getErrorContext(tokenStart, tokenStop, msg, truncCodeFrame = false) {
     ASSERT(getErrorContext.length >= 2 && getErrorContext.length <= 4, 'arg count');
     ASSERT(tokenStart <= tokenStop, 'should have a positive length range', tokenStart, tokenStop);
 
@@ -5340,9 +5343,9 @@ function Lexer(
     // on newlines and determine the line numbers of other lines in the reported context that way.
 
     let inputOffset = 0;
-    if (!fullErrorContext && tokenStart > 100) inputOffset = tokenStart - 100;
+    if (truncCodeFrame && tokenStart > 100) inputOffset = tokenStart - 100;
     let inputLen = input.length - inputOffset;
-    if (!fullErrorContext && tokenStop + 100 < input.length) inputLen = (tokenStop + 100) - inputOffset;
+    if (truncCodeFrame && tokenStop + 100 < input.length) inputLen = (tokenStop + 100) - inputOffset;
 
     // Try to force-include the current offset if it's not too far away from the point of error (in some edge cases
     // it may still be megabytes away from each other and in that case we'll just omit the line/col reporting).

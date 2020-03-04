@@ -239,7 +239,7 @@ async function extractFiles(list) {
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test file extraction time');
   console.log('Total input size:', bytes, 'bytes');
 }
-function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
+function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code = tob.inputCode) {
   wasHits = [];
   hitsToReport = wasHits;
   let r, e = '';
@@ -259,6 +259,9 @@ function coreTest(tob, tenko, testVariant, annexB, code = tob.inputCode) {
         targetEsVersion: FORCED_ES_TARGET || tob.inputOptions.es,
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
+
+        errorCodeFrame: enableCodeFrame,
+        truncCodeFrame: true,
 
         $log: INPUT_OVERRIDE ? undefined : (...a) => stdout.push(a),
         $warn: INPUT_OVERRIDE ? undefined : (...a) => stdout.push(a),
@@ -539,9 +542,13 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
   await Promise.all(list.map(async (tob/*: Tob */) => {
     let {inputCode, inputOptions} = tob;
     bytes += inputCode.length;
-    if (REDUCING) reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, code), tob.file);
+    if (REDUCING) {
+      // Note: we disable code frame generation because it leads to a very noisy error message that includes the input
+      // code and line numbers. The test case minifier relies purely on the output error staying the same.
+      reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, false, code), tob.file);
+    }
     // This is quite memory expensive but much easier to work with
-    tob.parserRawOutput[testVariant+annexB] = coreTest(tob, tenko, testVariant, annexB);
+    tob.parserRawOutput[testVariant+annexB] = coreTest(tob, tenko, testVariant, annexB, true);
     if (CONCISE) return;
     let rawOutput = tob.parserRawOutput[testVariant+annexB];
     if (SEARCH) {

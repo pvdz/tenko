@@ -83,7 +83,9 @@ function parse(input, strict, module, annexB) {
       webCompat: !!annexB,
       acornCompat: ACORN_AST,
       babelCompat: BABEL_AST,
-      fullErrorContext: true,
+
+      errorCodeFrame: true,
+      truncCodeFrame: false,
 
       // Collect output but don't print it in case the retry fails
       $log: (...a) => stdout.push(a),
