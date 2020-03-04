@@ -4894,7 +4894,7 @@ function Parser(code, options = {}) {
     // var decls are assignable
     return IS_ASSIGNABLE;
   }
-  function parseForHeaderLet(lexerFlags, $tp_for_start, scoop, astProp) {
+  function parseForHeaderLet(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, scoop, astProp) {
     ASSERT(parseForHeaderLet.length === arguments.length, 'arg count');
 
     // - `for (let x of y);`
@@ -4910,11 +4910,12 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_let, lexerFlags); // div; if let is varname then next token can be next line statement start and if that starts with forward slash it's a div
 
+    let $tp_letArg_type = tok_getType();
     let $tp_letArg_stop = tok_getStop();
 
     // [v]: `for (let x of y);`
     //                ^
-    if (isIdentToken(tok_getType())) {
+    if (isIdentToken($tp_letArg_type)) {
       // [v]: `for (let x in y);`
       //                ^
       // [v]: `for (let x of y);`
@@ -4925,7 +4926,7 @@ function Parser(code, options = {}) {
       //                ^
       // [x]: `for (let of y);`
       //                ^
-      if (tok_getType() === $ID_in) {
+      if ($tp_letArg_type === $ID_in) {
         // Edge case makes `let` to be parsed as a var name in sloppy mode
         // TODO: actually, this is probably a syntax error because static semantics are applied after locking in parser choices...
         // [v]: `for (let in x)`
@@ -4940,7 +4941,7 @@ function Parser(code, options = {}) {
         return IS_ASSIGNABLE; // the `let` variable name is assignable
       }
 
-      if (tok_getType() === $ID_of) {
+      if ($tp_letArg_type === $ID_of) {
         // [x]: `for (let of y);`
         //                ^^
         return THROW_RANGE('A `for (let of ...)` is always illegal', $tp_for_start, $tp_letArg_stop);
@@ -4953,7 +4954,7 @@ function Parser(code, options = {}) {
       return IS_ASSIGNABLE; // decls are assignable
     }
 
-    if (tok_getType() === $PUNC_BRACKET_OPEN || tok_getType() === $PUNC_CURLY_OPEN) {
+    if ($tp_letArg_type === $PUNC_BRACKET_OPEN || $tp_letArg_type === $PUNC_CURLY_OPEN) {
       // [x]: `for (let [x] in y);`
       //                ^
       // [v]: `for (let {x} of y);`
@@ -5000,11 +5001,11 @@ function Parser(code, options = {}) {
     // [x]: `for (let() of y);`
     // [v]: `for (let();;);`
 
-    ASSERT(tok_getType() !== $PUNC_BRACKET_CLOSE, 'case handled above');
-    ASSERT(tok_getType() !== $ID_in, 'case handled above');
-    ASSERT(tok_getType() !== $ID_of, 'case handled above');
+    ASSERT($tp_letArg_type !== $PUNC_BRACKET_CLOSE, 'case handled above');
+    ASSERT($tp_letArg_type !== $ID_in, 'case handled above');
+    ASSERT($tp_letArg_type !== $ID_of, 'case handled above');
 
-    if (tok_getType() === $PUNC_SEMI) {
+    if ($tp_letArg_type === $PUNC_SEMI) {
       // [v]: `for (let;;);`
       //               ^
       AST_setIdent(astProp, $tp_letIdent_start, $tp_letIdent_stop, $tp_letIdent_line, $tp_letIdent_column, $tp_letIdent_canon);
@@ -5025,6 +5026,8 @@ function Parser(code, options = {}) {
     //                ^
 
     let assignable = parseValueAfterIdent(lexerFlags, $tp_letIdent_type, $tp_letIdent_start, $tp_letIdent_stop, $tp_letIdent_line, $tp_letIdent_column, $tp_letIdent_canon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_OK, astProp);
+
+    assignable = parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, assignable, astProp);
 
     if (tok_getType() === $ID_of) {
       // [x]: `for (let.a of x);`
@@ -5187,16 +5190,16 @@ function Parser(code, options = {}) {
     // - `for (x of y);`
     //         ^
 
-    let $tp_lhs_line = tok_getLine();
-    let $tp_lhs_column = tok_getColumn();
-    let $tp_lhs_start = tok_getStart();
-    let $tp_lhs_stop = tok_getStop();
+    let $tp_startOfForHeader_line = tok_getLine();
+    let $tp_startOfForHeader_column = tok_getColumn();
+    let $tp_startOfForHeader_start = tok_getStart();
+    let $tp_startOfForHeader_stop = tok_getStop();
 
-    let assignable = parseForHeaderLhs(lexerFlags, $tp_for_start, scoop, astProp);
+    let assignable = parseForHeaderLhs(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, scoop, astProp);
 
-    return parseForHeaderRest(lexerFlags, $tp_for_start, $tp_lhs_start, $tp_lhs_stop, $tp_lhs_line, $tp_lhs_column, awaitable, assignable, astProp);
+    return parseForHeaderRest(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, awaitable, assignable, astProp);
   }
-  function parseForHeaderLhs(lexerFlags, $tp_for_start, scoop, astProp) {
+  function parseForHeaderLhs(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, scoop, astProp) {
     ASSERT(parseForHeaderLhs.length === arguments.length, 'arg count');
 
     switch (tok_getType()) {
@@ -5204,7 +5207,7 @@ function Parser(code, options = {}) {
         return parseForHeaderVar(lexerFlags, scoop, astProp);
 
       case $ID_let:
-        return parseForHeaderLet(lexerFlags, $tp_for_start, scoop, astProp);
+        return parseForHeaderLet(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, scoop, astProp);
 
       case $ID_const:
         return parseForHeaderConst(lexerFlags, scoop, astProp);
@@ -5220,7 +5223,11 @@ function Parser(code, options = {}) {
         return parseForHeaderBracket(lexerFlags, astProp);
     }
 
-    return parseForHeaderOther(lexerFlags, astProp);
+    let assignable = parseForHeaderOther(lexerFlags, astProp);
+    // we are still in the `init` part of a classic for. keep parsing _with_ LF_IN_FOR_LHS from the current expression value.
+    // [v]: `for (a+b;;) c;`
+    //             ^
+    return parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, assignable, astProp);
   }
   function parseForHeaderRest(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, awaitable, assignable, astProp) {
     ASSERT(parseForHeaderRest.length === arguments.length, 'arg count');
@@ -5257,10 +5264,7 @@ function Parser(code, options = {}) {
       body: undefined,
     }, 'init');
 
-    // we are still in the `init` part of a classic for. keep parsing _with_ LF_IN_FOR_LHS from the current expression value.
-    // [v]: `for (a+b;;) c;`
-    //             ^
-    parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, assignable, 'init');
+    // parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, assignable, 'init');
 
     return parseForFromSemi(lexerFlags, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column);
   }
