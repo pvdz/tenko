@@ -3082,7 +3082,7 @@ function Parser(code, options = {}) {
         isFuncDecl === IS_FUNC_DECL &&
         fdState === FDS_VAR &&
         (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)
-      ) || $tp_functionNameToVerify_type === $ID_let ? BINDING_TYPE_FUNC_VAR : BINDING_TYPE_FUNC_LEX;
+      ) ? BINDING_TYPE_FUNC_VAR : BINDING_TYPE_FUNC_LEX;
 
       canonName = $tp_functionNameToVerify_canon;
 
