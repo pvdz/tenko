@@ -496,24 +496,9 @@ function getIdRestRegexSuperSlow() {
   if (ID_CONTINUE_REGEX) return ID_CONTINUE_REGEX;
   return ID_CONTINUE_REGEX = createUnicodeRegex('^\\p{ID_Continue}$');
 }
-let SPACE_SEPARATOR_REGEX = undefined;
-function getSpaceSeparatorSuperSlow() {
-  if (!SPACE_SEPARATOR_REGEX) {
-    SPACE_SEPARATOR_REGEX = createUnicodeRegex('[\\p{Space_Separator}]');
-  }
-  return SPACE_SEPARATOR_REGEX;
-}
 function createUnicodeRegex(pattern) {
   try {
     return new RegExp(pattern,'u');
-  } catch(e) {
-    console.warn('Tenko: Current nodejs version does not suppport unicode regexes or regex property escapes; Input contains unicode that requires it so Tenko is unable to properly parse input (' + e.message + ')');
-    return /|/;
-  }
-}
-function createSpaceSeparatorRegex(pattern) {
-  try {
-    return new RegExp('[\\p{Space_Separator}]','u');
   } catch(e) {
     console.warn('Tenko: Current nodejs version does not suppport unicode regexes or regex property escapes; Input contains unicode that requires it so Tenko is unable to properly parse input (' + e.message + ')');
     return /|/;
