@@ -8663,7 +8663,8 @@ function Parser(code, options = {}) {
               object: AST_popNode(astProp),
               property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
             });
-          } else if ($tp_q_type === $PUNC_BRACKET_OPEN) {
+          }
+          else if ($tp_q_type === $PUNC_BRACKET_OPEN) {
             // [v]: `value?.[x]`
             //              ^
 
@@ -8687,7 +8688,8 @@ function Parser(code, options = {}) {
             ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
 
             AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column,'OptionalMemberExpression');
-          } else if ($tp_q_type === $PUNC_PAREN_OPEN) {
+          }
+          else if ($tp_q_type === $PUNC_PAREN_OPEN) {
             // [v]: `value?.(x)`
             //              ^
 
@@ -8704,11 +8706,16 @@ function Parser(code, options = {}) {
             assignable = mergeAssignable(nowAssignable, assignable);
 
             AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'OptionalCallExpression');
-          } else if (isTemplateStart($tp_q_type)) {
+          }
+          else if (isTemplateStart($tp_q_type)) {
             // [v]: `` value?.`x` ``
             //                ^
 
             return THROW_RANGE('An value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
+          }
+          else if ($tp_q_type === $PUNC_QMARK_DOT) {
+            // [x]: `a?.?.b`
+            return THROW_RANGE('Cannot cannot `?.?.`, must have something in between', tok_getStart(), tok_getStop())
           }
 
           break;
