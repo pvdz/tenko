@@ -5325,11 +5325,11 @@ function Lexer(
   }
   function _THROW(str, tokenStart, tokenStop, msg = '', withCodeFrame = errorCodeFrame, fullCodeFrameLocal = truncCodeFrame) {
     $log('\n');
-    let ectxt = withCodeFrame ? getErrorContext(tokenStart, tokenStop, msg, fullCodeFrameLocal) : '(withCodeFrame=false)';
+    let ectxt = withCodeFrame ? getErrorContext(tokenStart, tokenStop, msg, fullCodeFrameLocal) : '(withCodeFrame=false)\n';
     ASSERT(ectxt[ectxt.length-1] === '\n', 'this is always the case so no need to append one, change if this changed');
     let context = '\n`````\n' + ectxt + '`````\n';
     $log('Error at:' + context);
-    if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n\n' + ectxt);
+    if (gracefulErrors === FAIL_HARD) throw new Error(str + '\n' + (withCodeFrame ? '\n' : '') + ectxt);
     else $error(str);
   }
   function getErrorContext(tokenStart, tokenStop, msg, truncCodeFrame = false) {

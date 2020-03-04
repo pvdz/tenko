@@ -545,7 +545,7 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
     if (REDUCING) {
       // Note: we disable code frame generation because it leads to a very noisy error message that includes the input
       // code and line numbers. The test case minifier relies purely on the output error staying the same.
-      reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, false, code), tob.file);
+      reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, false, code), `./t --${testVariant} ${annexB ? '--annexb' : ''} ${Number.isFinite(FORCED_ES_TARGET || tob.inputOptions.es) ? FORCED_ES_TARGET || tob.inputOptions.es : ''}`, tob.file);
     }
     // This is quite memory expensive but much easier to work with
     tob.parserRawOutput[testVariant+annexB] = coreTest(tob, tenko, testVariant, annexB, true);

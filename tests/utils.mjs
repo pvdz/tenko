@@ -105,7 +105,7 @@ export class Tob {
     this.aboveTheFold = '';
 
     this.inputHead = '';
-    this.inputOptions = {};
+    this.inputOptions = {}; // Passed on to Parser, es version, etc
     this.inputCode = '';
 
     this.parserRawOutput = {sloppy: {}, strict: {}, module: {}, web: {}}; // {r, e, tok, stdout}

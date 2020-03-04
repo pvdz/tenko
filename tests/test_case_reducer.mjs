@@ -18,9 +18,10 @@ const RESET = '\x1b[0m';
 function reduceAndExit(
   input/*: string*/,
   parse/*: (input: string) => {e, r, tok}*/,
+  cliCommandPrefix/*?: string*/, // This should be a `./t --module --annexb` composition of how to repro the end result
   file/*?: string*/
 ) {
-  reduceErrorInput(input, parse, file);
+  reduceErrorInput(input, parse, cliCommandPrefix, file);
   console.log('exit...');
   process.exit();
 }
@@ -32,8 +33,9 @@ function tokenToStringPart(str) {
 function reduceErrorInput(
   input/*: string*/,
   parse/*: (input: string) => {e, r, tok}*/,
+  cliCommandPrefix/*?: string*/, // This should be a `./t --module --annexb` composition of how to repro the end result
   file,/*?: string*/
-  verbose/*?: boolean*/ = true,
+  verbose/*?: boolean*/ = true
 ) {
   if (verbose) console.log(BOLD + '<reduce>' + RESET);
   let org = input;
@@ -197,10 +199,12 @@ function reduceErrorInput(
 
   if (verbose) {
     console.log(BOLD + '</reduce>' + RESET);
-    console.log('Input:');
+    console.log(`Input:`);
     console.log('```');
     console.log(input);
     console.log('```');
+    console.log('');
+    console.log(cliCommandPrefix + ' i \'' + input.replace(/'/g, '\\\'') + '\'\n');
   }
 
   return input;

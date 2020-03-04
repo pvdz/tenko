@@ -205,7 +205,7 @@ function cycle(input) {
   let {z, e: zefailed} = parseTenko(input, counts, false);
 
   if (TEST_NODE) {
-    fuzzAgainstNode(input, zefailed, counts, injectionMode, parseTenko);
+    fuzzAgainstNode(input, zefailed, counts, injectionMode, parseTenko, `./t --module --annexb`);
   }
 
   if (z && !NO_PRINTER) {

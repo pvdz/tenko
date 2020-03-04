@@ -7,7 +7,7 @@ import {
 const VERBOSE = false;
 const buffer = [];
 
-function fuzzAgainstNode(input, tfailed, counts, injectionMode, parseTenko) {
+function fuzzAgainstNode(input, tfailed, counts, injectionMode, parseTenko, cliCommandPrefix) {
   let parsedInput = input;
 
   let nodefailed = false;
@@ -75,7 +75,7 @@ function fuzzAgainstNode(input, tfailed, counts, injectionMode, parseTenko) {
         : input => {try { return {e: undefined, n: Function(input)}; } catch (e) { return {e} }};
 
       if (VERBOSE) buffer.push(['Trimming input (len was ' + input.length +')']);
-      input = reduceErrorInput(input, checker, undefined, true);
+      input = reduceErrorInput(input, checker, cliCommandPrefix, undefined, true);
       ++counts.reduced;
       if (VERBOSE) buffer.push(['Finished trimming (len now ' + input.length +', down from ' + beforeLen + ')']);
 
@@ -101,6 +101,7 @@ function fuzzAgainstNode(input, tfailed, counts, injectionMode, parseTenko) {
         // We will exit in this branch
 
         console.log('');
+        console.log('Repro prefix:', cliCommandPrefix);
         if (nodefailed) {
           console.log('Thrown by v8');
         } else {
@@ -115,10 +116,10 @@ function fuzzAgainstNode(input, tfailed, counts, injectionMode, parseTenko) {
 
         if (tfailed) {
           dumpFuzzOutput(input, parsedInput, errorMessage, 'Tenko failed but node did not');
-          warnOsd('Tenko');
+          warnOsd('Tenko fuzzing found problem');
         } else if (nodefailed) {
           dumpFuzzOutput(input, parsedInput, errorMessage, 'node failed but Tenko did not');
-          warnOsd('Tenko');
+          warnOsd('Tenko fuzzing found problem');
         }
 
         process.exit();

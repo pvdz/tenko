@@ -58,7 +58,7 @@ function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePr
       console.log('`````');
       console.log(code);
       console.log('`````');
-      reducedInput = reduceErrorInput(code, sameFunc.bind(undefined, testVariant, enableAnnexb, forTestFile));
+      reducedInput = reduceErrorInput(code, sameFunc.bind(undefined, testVariant, enableAnnexb, forTestFile), `./t --${testVariant} ${enableAnnexb ? '--annexb' : ''}`);
       console.log('Reduced!');
       console.log('-->', [reducedInput]);
 
