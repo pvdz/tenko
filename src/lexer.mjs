@@ -5105,7 +5105,8 @@ function Lexer(
     ASSERT_skip(d);
 
     let firstPart = (va << 12) | (vb << 8) | (vc << 4) | vd;
-    ASSERT(parseInt(String.fromCharCode(a, b, c, d), 16) === firstPart, 'confirm manual conversion works');
+
+    ASSERT(parseInt(String.fromCharCode(a, b, c, d), 16) === firstPart, 'confirm manual conversion works 1');
 
     // Pretty slow path but we're constructing a low+hi surrogate pair together here
     if (
@@ -5133,8 +5134,13 @@ function Lexer(
     let vg = getHexValue(g);
     let vh = getHexValue(h);
 
+    if ((ve | vf | vg | vh) > 15) {
+      // The invalid escape will be parsed next so no need to create an error here
+      return firstPart;
+    }
+
     let secondPart = (ve << 12) | (vf << 8) | (vg << 4) | vh;
-    ASSERT(parseInt(String.fromCharCode(e, f, g, h), 16) === secondPart, 'confirm manual conversion works');
+    ASSERT(parseInt(String.fromCharCode(e, f, g, h), 16) === secondPart, 'confirm manual conversion works 2');
 
     if (secondPart < 0xDC00 || secondPart > 0xDFFF) {
       return firstPart;
