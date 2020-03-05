@@ -8869,6 +8869,7 @@ function Parser(code, options = {}) {
     let nowAssignable = parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), 'property');
     // - `foo[await bar]`
     assignable = mergeAssignable(nowAssignable, assignable); // pass on piggies (yield, await, etc)
+    assignable = sansFlag(assignable, PIGGY_BACK_WAS_ARROW); // should not leak; `a[b=>c] in d` should pass
 
     if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
       return THROW_RANGE('Expected the closing bracket `]` for a dynamic property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
