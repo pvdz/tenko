@@ -29,13 +29,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An arrow function can not be part of an operator to the right
+  Unable to ASI
 
-start@1:0, error@2:0
+start@1:0, error@2:6
 ╔══╦════════════════
  1 ║ async async => {}
  2 ║ / x / g
-   ║ ^------- error
+   ║       ^------- error
 ╚══╩════════════════
 
 `````

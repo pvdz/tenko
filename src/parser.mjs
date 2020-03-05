@@ -3247,7 +3247,7 @@ function Parser(code, options = {}) {
     let finalFuncScope = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseFunctionFromParams(body)');
     ASSERT(!void(finalFuncScope._funcName = $tp_functionNameToVerify_start === 0 ? '<anon>' : tok_sliceInput($tp_functionNameToVerify_start, $tp_functionNameToVerify_stop)));
     if (options_exposeScopes) AST_set('$scope', finalFuncScope);
-    parseFunctionBody(lexerFlags, finalFuncScope, expressionState, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tp_functionNameToVerify_type, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, $tp_functionNameToVerify_canon);
+    parseFunctionBody(lexerFlags, finalFuncScope, expressionState, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tp_functionNameToVerify_type, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, $tp_functionNameToVerify_canon, false);
   }
   function parseFuncArguments(lexerFlags, scoop, bindingFrom, $tp_get_type, $tp_set_type) {
     // parseArguments
@@ -3308,7 +3308,7 @@ function Parser(code, options = {}) {
     return paramsSimple;
   }
 
-  function parseFunctionBody(lexerFlags, scoop, blockType, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tp_functionNameToVerify_type, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, $tp_functionNameToVerify_canon) {
+  function parseFunctionBody(lexerFlags, scoop, blockType, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tp_functionNameToVerify_type, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, $tp_functionNameToVerify_canon, isArrow) {
     ASSERT(parseFunctionBody.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
     ASSERT(typeof lexerFlags === 'number');
@@ -3336,8 +3336,15 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Missing function body closing curly, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
     }
 
-    if (blockType === IS_EXPRESSION) {
-      // arrow with block, function expression
+    if (isArrow) {
+      // block arrow cannot be lhs of expression, so division must be regex, on the next line
+      ASSERT_skipRex($PUNC_CURLY_CLOSE, lexerFlags);
+      if (tok_getNlwas() === true && isRegexToken(tok_getType())) {
+        // [v] `()=>{} \n /foo/`
+        ASSERT_ASI_REGEX_NEXT = true;
+      }
+    } else if (blockType === IS_EXPRESSION) {
+      // function expression
       ASSERT_skipDiv($PUNC_CURLY_CLOSE, lexerFlags);
     } else {
       ASSERT(blockType === IS_STATEMENT, 'either expression or not');
@@ -9197,7 +9204,12 @@ function Parser(code, options = {}) {
 
       let arrowScoop = SCOPE_addLayer(paramScoop, SCOPE_LAYER_FUNC_BODY, 'parseArrowFromPunc');
       ASSERT(arrowScoop._funcName = '(arrow has no name)');
-      parseFunctionBody(lexerFlags, arrowScoop, IS_EXPRESSION, paramsSimple, NO_DUPE_PARAMS, NO_DUPE_PARAMS, $UNTYPED, 0, 0, '');
+      // For all intentions and purposes, the next token after this arrow cannot be a division.
+      // If it's a regular expression it must be on the next line.
+      parseFunctionBody(lexerFlags, arrowScoop, IS_EXPRESSION, paramsSimple, NO_DUPE_PARAMS, NO_DUPE_PARAMS, $UNTYPED, 0, 0, '', true);
+      if (isRegexToken(tok_getType()) && !tok_getNlwas()) {
+        THROW_RANGE('Found a regex or division after an arrow, that is illegal', tok_getStart(), tok_getStop())
+      }
     } else {
       // Note: you cannot await in a regular arrow, so this is illegal:
       // - `async function f(fail = () => await x){}`
