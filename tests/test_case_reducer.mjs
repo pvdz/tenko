@@ -159,13 +159,13 @@ function reduceErrorInput(
     if (lastInput === input) {
       // This is a RC. Now check for wrappers, `try{x}finally{}` -> `x`
 
-      let t = input.replace(/try\{([\s\S]+)\}(?:finally|catch(?:\(\w\))?)\{\}/, '$1');
+      let t = input.replace(/try\{([\s\S]+)\}(?:finally|catch(?:\(\w\))?)\{\}?/, '$1');
       if (t !== input && same(t)) input = t;
 
-      t = input.replace(/try\{\}(?:finally|catch(?:\(\w\))?)\{([\s\S]+)\}/, '$1');
+      t = input.replace(/try\{\}(?:finally|catch(?:\(\w\))?)\{([\s\S]+)\}?/, '$1');
       if (t !== input && same(t)) input = t;
 
-      t = input.replace(/switch\([\w\d]\){case [\w\d]:([\s\S]+)}/, '$1');
+      t = input.replace(/switch\([\w\d]\){case [\w\d]:([\s\S]+)}?/, '$1');
       if (t !== input && same(t)) input = t;
 
       t = input.replace(/\((.*)\)/, '$1');
@@ -178,6 +178,12 @@ function reduceErrorInput(
       if (t !== input && same(t)) input = t;
 
       t = input.replace(/for\(;;(.*)\)/, '$1;');
+      if (t !== input && same(t)) input = t;
+
+      t = input.replace(/finally\s+[\w\d_$]+/, ' ');
+      if (t !== input && same(t)) input = t;
+
+      t = input.replace(/function\s+[\w\d_$]+\([\w\d_$]*\)\{.*\}?/, '$1');
       if (t !== input && same(t)) input = t;
     }
   }

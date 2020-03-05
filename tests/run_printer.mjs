@@ -208,6 +208,8 @@ function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MOD
       strictMode: testVariant === TEST_STRICT,
       webCompat: enableAnnexb,
 
+      errorCodeFrame: false,
+
       templateNewlineNormalization: false, // (!!)
 
       $log: () => {},

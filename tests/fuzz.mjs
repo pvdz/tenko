@@ -93,7 +93,7 @@ let p = (input, trimming) => {
     webCompat: WEB_COMPAT_ON,
     templateNewlineNormalization: false, // Fine for fuzzing. This way we can re-use the AST for a printer test
 
-    errorCodeFrame: true,
+    errorCodeFrame: false,
     truncCodeFrame: false,
 
     // Collect output but don't print it in case the retry fails
