@@ -165,7 +165,7 @@ function parseTenko(input, counts, trimming) {
   let z;
   try {
     counts.bytesParsed += input.length;
-    z = p(input, trimming);
+    z = p(input, false);
     if (!injectionMode) ++counts.tenkoPassedFuzz;
   } catch (e) {
     terror = e;
@@ -200,6 +200,15 @@ function cycle(input) {
   .replace(/[\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
   // replace other unicode gunk to an x for printing (we can do separate unicode runs later)
   .replace(/([^\x20-\x7f\n\r])/ug, 'x');
+
+  if (TEST_NODE) {
+    // Scrub some known errors prematurely
+    input = input
+    .replace(/\b0\d+[eE]?\d*(?:\.\d+)?/g, '901')
+    .replace(/async\s+\n/g, 'async ') // classes with async newline
+  }
+
+
   buffer = [];
 
   let {z, e: zefailed} = parseTenko(input, counts, false);

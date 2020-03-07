@@ -17,11 +17,11 @@ const RESET = '\x1b[0m';
 
 function reduceAndExit(
   input/*: string*/,
-  parse/*: (input: string) => {e, r, tok}*/,
+  checker/*: (input: string) => bool|string*/, // false: discard input, string is error message
   cliCommandPrefix/*?: string*/, // This should be a `./t --module --annexb` composition of how to repro the end result
   file/*?: string*/
 ) {
-  reduceErrorInput(input, parse, cliCommandPrefix, file);
+  reduceErrorInput(input, checker, cliCommandPrefix, file);
   console.log('exit...');
   process.exit();
 }
@@ -32,41 +32,42 @@ function tokenToStringPart(str) {
 }
 function reduceErrorInput(
   input/*: string*/,
-  parse/*: (input: string) => {e, r, tok}*/,
+  checker/*: (input: string) => bool|string*/, // false: discard input, string is error message
   cliCommandPrefix/*?: string*/, // This should be a `./t --module --annexb` composition of how to repro the end result
-  file,/*?: string*/
+  file/*?: string*/,
+  trimCache/*?: Map<string, string>*/ = new Map,
   verbose/*?: boolean*/ = true
 ) {
   if (verbose) console.log(BOLD + '<reduce>' + RESET);
   let org = input;
-  let trimCache = new Map;
   let asserts = new Set;
-  let inputError = parse(input).e;
-  if (!inputError) {
-    dumpFuzzOutput(input, input, 'Cannot use the test case reducer if the input does not throw. This input does not throw.', 'test case reducer');
-    // console.log(parse(input))
+  let inputError = checker(input, true); // First run
+  console.log('Input error:', [inputError]);
+  if (inputError !== false && typeof inputError !== 'string') {
+    dumpFuzzOutput(input, input, 'The checker function should return false (reject) or the error message (string) and nothing else', 'test case reducer');
     process.exit();
   }
-  if (inputError.message) inputError = inputError.message;
-  inputError = tokenToStringPart(inputError);
+
+  // inputError = tokenToStringPart(inputError);
   if (inputError && inputError.toLowerCase().includes('assert')) asserts.add(inputError);
+
   let same = (code, nocache) => {
     if (!code) return false;
     if (!nocache && trimCache.has(code)) {
       let err = trimCache.get(code);
-      if (verbose) console.log('CACHED!', code.replace(/\n/g, '\\n').replace(/\s/g, ' '), err === inputError, err || '<no error>');
+      if (verbose) console.log('CACHED!', code.replace(/\n/g, '\\n').replace(/\s/g, ' '), err === inputError, (err || '<no error>').trim());
       return err === inputError;
     }
-    let err = parse(code).e;
-    if (err) {
-      if (err.message) err = err.message;
-      err = tokenToStringPart(err);
-    }
+
+    let err = checker(code);
+    if (err === false) return false;
     if (err && err.toLowerCase().includes('assert')) asserts.add(err);
-    if (verbose) console.log('Tested!', code.replace(/\n/g, '\\n').replace(/\s/g, ' '), err === inputError, 'the error:', [err || '<no error>']);
+    if (verbose) console.log('Tested!' + (nocache?' (nocache)':''), code.replace(/\n/g, '\\n').replace(/\s/g, ' '), 'the error:', err === inputError ? '<same as input error>' : GREEN + (err || '<no error>').trim() + RESET);
     trimCache.set(code, err);
+
     return err === inputError;
   };
+
   if (verbose) console.log('<test case reducer>');
   if (verbose) console.log('Input error:', BOLD + inputError + RESET);
   trimCache.set(input, inputError);
@@ -156,6 +157,10 @@ function reduceErrorInput(
     input = trimPatten(same, input, /[\w\d$_]*\([\w\d$_]*\)\{\}[;,]?/g, '');
     input = trimPatten(same, input, /['"]use strict['"];/g, '');
 
+    // Known bad patterns
+    input = trimPatten(same, input, /\b0\d+[eE]?\d+/g, '1');
+
+
     if (lastInput === input) {
       // This is a RC. Now check for wrappers, `try{x}finally{}` -> `x`
 
@@ -165,7 +170,7 @@ function reduceErrorInput(
       t = input.replace(/try\{\}(?:finally|catch(?:\(\w\))?)\{([\s\S]+)\}?/, '$1');
       if (t !== input && same(t)) input = t;
 
-      t = input.replace(/switch\([\w\d]\){case [\w\d]:([\s\S]+)}?/, '$1');
+      t = input.replace(/switch\([\w\d]\){(?:case\s+)?[\w\d]:([\s\S]+)}?/, '$1');
       if (t !== input && same(t)) input = t;
 
       t = input.replace(/\((.*)\)/, '$1');
@@ -180,10 +185,18 @@ function reduceErrorInput(
       t = input.replace(/for\(;;(.*)\)/, '$1;');
       if (t !== input && same(t)) input = t;
 
-      t = input.replace(/finally\s+[\w\d_$]+/, ' ');
+      // console.debug('testing:', [input])
+      t = input.replace(/try\{\}catch(?:\([\w\d]+\))?\{\}finally\s*\{(.*)\}?/, '$1');
+      // console.debug('    -> :', [t])
       if (t !== input && same(t)) input = t;
 
       t = input.replace(/function\s+[\w\d_$]+\([\w\d_$]*\)\{.*\}?/, '$1');
+      if (t !== input && same(t)) input = t;
+
+      t = input.replace(/[\w]+\s*=/, '');
+      if (t !== input && same(t)) input = t;
+
+      t = input.replace(/extends\s+[\d\w$_]/, ' ');
       if (t !== input && same(t)) input = t;
     }
   }

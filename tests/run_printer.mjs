@@ -26,16 +26,18 @@ function sameFunc(testVariant, enableAnnexb, forTestFile, code) {
   try {
     inputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID);
   } catch (e) {
-    return {e: {message: '(Tenko rejected input)'}};
+    return '(Tenko rejected input: ' + e + ')'
   }
+
   // Now confirm this with the printed output of this ast.
   let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, inputAst.ast, forTestFile, false);
   if (printerStatus === 'fail-crash') {
-    console.log('status was fail :\'(');
+    console.log('printer hard crashed, that should not happen, exit now');
     console.log(msg);
-    process.exit()
+    process.exit(1);
   }
-  return {e: {message: printerStatus}, printerStatus};
+
+  return printerStatus;
 }
 
 function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePrinterError, ignoreProblems, logTime) {
@@ -58,7 +60,7 @@ function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePr
       console.log('`````');
       console.log(code);
       console.log('`````');
-      reducedInput = reduceErrorInput(code, sameFunc.bind(undefined, testVariant, enableAnnexb, forTestFile), `./t --${testVariant} ${enableAnnexb ? '--annexb' : ''}`);
+      reducedInput = reduceErrorInput(code, (code) => sameFunc(testVariant, enableAnnexb, forTestFile, code), `./t --${testVariant} ${enableAnnexb ? '--annexb' : ''}`);
       console.log('Reduced!');
       console.log('-->', [reducedInput]);
 
