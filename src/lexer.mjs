@@ -693,6 +693,8 @@ function Lexer(
       ++anyTokenCount;
       let startCol = pointer - currentColOffset;
       let startRow = currentLine;
+      lastCanonizedInput = '';
+      lastCanonizedInputLen = 0;
 
       nlwas = consumedNewlinesBeforeSolid; // Do not include the newlines for the token itself unless whitespace (ex: `` throw `\n` ``)
 
@@ -1009,9 +1011,6 @@ function Lexer(
   function parseAnyString(marker, lexerFlags) {
     ASSERT(parseAnyString.length === arguments.length, 'need 3 args');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
-
-    lastCanonizedInput = '';
-    lastCanonizedInputLen = 0;
 
     let pointerOffset = pointer;
     let badEscape = false;
@@ -1440,9 +1439,6 @@ function Lexer(
     // - `...`                         // "pure", no expression components
     // - `...${expr}...`               // tick_head and tick_tail, no body
     // - `...${expr}...${expr}...`     // tick_head, tick_body (the middle part), and tick_tail
-
-    lastCanonizedInput = '';
-    lastCanonizedInputLen = 0;
 
     lastOffset = pointer;
     let badEscapes = false;
@@ -5418,7 +5414,6 @@ function Lexer(
 
     let lc = pointerLine;
     let pre2 = pre.map(s => ' ' + ('' + lc++).padStart(maxPointerlineLen, ' ') + ' ║ ' + s.trimRight()).join('\n');
-    // .log('\n\nPre: [' + pre + ']')
     let post2 = post.map(s => ' ' + ('' + lc++).padStart(maxPointerlineLen, ' ') + ' ║ ' + s.trimRight()).join('\n');
     if ((''+lc).length > maxPointerlineLen) {
       maxPointerlineLen = (''+lc).length;
@@ -5429,7 +5424,6 @@ function Lexer(
       pre2 = pre.map(s => ' ' + ('' + lc++).padStart(maxPointerlineLen, ' ') + ' ║ ' + s.trimRight()).join('\n');
       post2 = post.map(s => ' ' + ('' + lc++).padStart(maxPointerlineLen, ' ') + ' ║ ' + s.trimRight()).join('\n');
     }
-    // .log('\n\nPost: [' + pre + ']')
 
     // Note: if the pointerLine is not 1 then the lastIndexOf must return a non-zero number that is the column on that line
     let col = pointerLine === 1 ? inputOffset : usedInput.lastIndexOf(inputOffset);
