@@ -122,25 +122,11 @@ function onRead(file, content) {
     console.log('-> ' + file);
   } else {
     console.log(BOLD, counter, RESET, 'Testing', BOLD, displayFile, RESET);
+    // Whitelist, currently unused
     switch (displayFile) {
-      case 'test262/test/annexB/language/expressions/object/__proto__-duplicate.js':
-        // - Claims it should fail due to double __proto__ but the spec has an exception
-        // - > In addition, it is not applied when initially parsing a CoverParenthesizedExpressionAndArrowParameterList or a CoverCallExpressionAndAsyncArrowHead.
-        // - And `({` is most definitely initially parsing a CoverParenthesizedExpressionAndArrowParameterList
-
-      // case 'test262/test/language/statements/break/S12.8_A1_T2.js':
-        // TODO: report incorrect reason for failure of test  (fails because the label does not appear in the labelSet,
-        //       since a break with label _can_ be valid)
-
-      // case 'test262/test/annexB/built-ins/RegExp/named-groups/non-unicode-malformed.js':
-        // TODO: discuss updating the spec on this wording. Currently the grammar would never allow the parser to parse a
-        //       `GroupName` in ~N mode, so the condition would never trigger for the parser to restart in `+N` mode.
-        //       Additionally, this test case implies that the missing name static semantics can be skipped, even though
-        //       either we parse the whole thing as an AtomEscape, in which case the semantics seem to apply (because
-        //       annexB doesn't update this rule), or it doesn't parse and the GroupName is invalid, but I don't think so.
-
-        console.log(BOLD, 'SKIP', RESET, '(see test runner code for reasoning)');
-        return;
+      // case 'test262/test/annexB/language/expressions/object/__proto__-duplicate.js':
+      //   console.log(BOLD, 'SKIP', RESET, '(see test runner code for reasoning)');
+      //   return;
     }
   }
 

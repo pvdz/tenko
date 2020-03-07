@@ -13,9 +13,34 @@ Each test case has its own file, printed as an `.md` file.
 
 The idea is that every test file has the complete output, either AST or error, when parsing the input with various (common) modes. We can then use source control (git) to verify and confirm the changes.
 
-With every test in its own file, parallelizing the test runner will be much easier.
+Many cases were auto-ported from an old system where they were part of a large array. As such their naming can be a bit awkward at times.
 
-Many cases were auto-ported from an old system where they were part of a large array. As such their naming can be a bit awkward at times and, at the time of writing, prevents anyone from checking this repo out on windows (todo).
+## Adding a new test case
+
+Instead of copy pasta, a new test case can be added with a fairly simple syntax. Create a new file like this:
+
+`````
+@ information here
+is put under the description at the top
+## PASS
+###
+rest is test case
+`````
+
+If a file inside `tests/testcases/**` starts with `@` then the test runner assumes it to be a new test file that it needs to generate.
+
+The file will be split on `###`.
+- The first part (sans the leading `@`) is used as extra information, which will appear at the top of the generated test file.
+- It may contain `## PASS` or `## FAIL` if all modes should pass/fail the input. Currently no support if only some modes pass/fail.
+- The remaining part after the first `###` is entirely the test case.
+
+Both parts will be trimmed from trailing whitespace on every line.
+
+When running test cases, these wip files are processed as if they are regular test cases. If you use the `-u` flag the file is automatically updated with a regular test case and its output.
+
+Once generated it can't really be undone, so use source control or your editor if this is relevant for you.
+
+TODO: include a way to specify parser options (you could always manually update the file afterwards and run `-u` again)
 
 ## Parsing a test case
 
@@ -27,7 +52,17 @@ All code or explicit content is wrapped in five (5) backticks (`` ` ``). Five sh
 
 The header of a file is not super structured right now. Just ignore it and scan passed it.
 
-The header may contain some description on the test which I ported from the old system.
+The header may contain some description on the test.
+
+Currently one hint the header may contain is whether to expect to pass or fail on all the test variants, and whether to skip the file entirely;
+
+```
+## PASS
+## FAIL
+## SKIP
+```
+
+Files that are marked to be skipped will not run at all. Files that are marked to pass/fail, will throw an assertion error if that's not the case.
 
 ### Input
 
@@ -47,7 +82,17 @@ By the time I migrated to this new system, I solved all the whitespace-specific 
 
 In certain test cases raw non-printable ascii codepoints and any unicode codepoints above the ascii range are required unescaped. However, it turned out that when writing some of these cases the file ended up corrupt (from the point of view of the test case).
 
-To prevent any risk of future corruption, all tests must encode unicode literals above ascii with a special escape sequence, chosen such that it would otherwise never end up in a test case;
+To prevent any risk of future corruption, all tests will automatically encode unicode non-printable ascii characters and any non-ascii characters with a special escape sequence, chosen such that it would otherwise never end up in a test case;
+
+```
+@{xHHHHH}@
+```
+
+The number of digits can be anything, like the ruby escape (`\u{HHHH}`) and the value is replaced with the actual character before executing the test. Any output will be re-encoded.
+
+While `\n` is not encoded, `\r` is because otherwise there's a risk of newline normalization and for some tests `\r` is a relevant distinction from `\n`. Similarly cases for surrogate characters without their surrogate sibling.
+
+Example:
 
 ```
 /(?<@{x2F9DF}@>foo)/
@@ -59,9 +104,7 @@ The above test will ultimately run on the string:
 /(?<輸>foo)/
 ```
 
-This is only necessary for safe transport. The irony is not lost on me.
-
-If an input test case contains literal characters outside the 32-126 range, it will automatically convert them to this escape when auto-updating the test.
+This is only necessary for safe transport and because markdown does not have an escape sequence to support this. The irony is not lost on me.
 
 ### Options
 
@@ -105,8 +148,10 @@ The sub blocks are:
   - This is almost the same as sloppy mode, except the parser is explicitly told to consider it starting in strict mode. So this is almost the same as adding a `"use strict"` directive at the top of the test case.
 - `### Module goal`
   - This is the output when parsing the input with the "module goal". That means it is in strict mode by default and it allows parsing `import` and `export` syntax.
-- `### Web compat mode`
-  - This is the same as sloppy mode while additionally enabling the web compat rules. This may affect "Annex B" cases like regular expressions, `for in`, and octal escapes.
+- `### Sloppy mode + annex B rules`
+  - This is the same as regular sloppy mode while additionally enabling the web compat rules. This may affect "Annex B" cases like regular expressions, `for in`, and octal escapes.
+- `### Module goal + annex B rules`
+  - This is the same as regular module goal while additionally enabling the web compat rules. This may affect certain "Annex B" cases.
 - `### AST Printer`
   - The printer in `./src/tools/printer.mjs` will attempt to print the first AST that passes. This serialization is then parsed again to validate that it results in the same AST. The result of this process is printed, including any deltas.
 
@@ -160,31 +205,6 @@ throws: Parser error!
          ^------- error
 `````
 ````````
-
-## Adding a new test case
-
-Instead of copy pasta, a new test case can be added with a fairly simple syntax:
-
-`````
-@ information here
-is put under the description at the top
-###
-rest is test case
-`````
-
-If a file inside `tests/testcases/**` starts with `@` then the test runner assumes it to be a new test file that it needs to generate.
-
-The file will be split on `###`. 
-- The first part (sans the leading `@`) is used as extra information, which will appear at the top of the generated test file.
-- The remaining part after the first `###` is entirely the test case.
-
-Both parts will be trimmed from trailing whitespace on every line. 
-
-When running test cases, these wip files are processed as if they are regular test cases. If you use the `-u` flag the file is automatically updated with a regular test case and its output.
-
-Once generated it can't really be undone, so use source control or your editor if this is relevant for you.
-
-TODO: include a way to specify parser options (you could always manually update the file afterwards and run `-u` again)
 
 ## Auto generated cases
 

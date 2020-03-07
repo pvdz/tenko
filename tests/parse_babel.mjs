@@ -302,7 +302,7 @@ function ignoreTenkoTestForBabel(shortFile) {
     tests/testcases/lexer_cases/numbers/legacy_octal/class_02.md
 
     // Faking a directive with tail
-    //    https://github.com/babel/babel/issues/10412
+    // Fixed: https://github.com/babel/babel/issues/10412
     tests/testcases/directive_prologues/octals/strict_mode_directive_as_tag_directive_test.md
     tests/testcases/strict_mode/asi/tails_that_prevent_ASI_so_it_is_not_a_directive_28029.md
     tests/testcases/strict_mode/asi/tails_that_prevent_ASI_so_it_is_not_a_directive_28129.md

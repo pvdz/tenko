@@ -172,9 +172,6 @@ function ignoreTenkoTestForAcorn(shortFile) {
     //    (Babel issue: https://github.com/babel/babel/issues/10410 )
     tests/testcases/functions/expression/regex_edge_case/with_async/expression/with_flag.md
     tests/testcases/functions/expression/regex_edge_case/with_async/expression/sans_flag.md
-    tests/testcases/parens/arrow/arrows_is_not_a_normal_expression_value/arrow_regex_with_newline.md
-    tests/testcases/parens/arrow/regex_edge_case/with_block/cannot_divide_an_arrow_and_cannot_asi_with_forward_slash_at_start_of_next_line_28regex_2b_flag29.md
-    tests/testcases/parens/arrow/regex_edge_case/with_block/cannot_divide_an_arrow_and_cannot_asi_with_forward_slash_at_start_of_next_line_28regex_no_flag29.md
 
     // Bug: \\p regex case that I think is valid
     //     https://github.com/acornjs/acorn/issues/879
@@ -287,13 +284,11 @@ function ignoreTenkoTestForAcorn(shortFile) {
 
     // Bug: "use strict" directive octal edge case
     //    https://github.com/acornjs/acorn/issues/921 (fixed)
-    //    https://github.com/babel/babel/issues/10412
+    //    https://github.com/babel/babel/issues/10412 (fixed)
     tests/testcases/directive_prologues/octals/in_string_after_asi/octal_8_after_asi.md
     tests/testcases/directive_prologues/octals/in_string_after_asi/octal_9_after_asi.md
     tests/testcases/directive_prologues/octals/in_string_before_directive/octal_8_after_asi.md
     tests/testcases/directive_prologues/octals/in_string_before_directive/octal_9_after_asi.md
-    tests/testcases/directive_prologues/octals/octal_escape_semi_template_after_use_strict.md
-    tests/testcases/directive_prologues/octals/strict_mode_directive_as_tag.md
     tests/testcases/directive_prologues/octals/strict_mode_directive_as_tag_directive_test.md
 
     // Bug: arrow expression that uses in-operator as lhs of for-header
@@ -415,47 +410,20 @@ function ignoreTenkoTestForAcorn(shortFile) {
     tests/testcases/group_or_arrow/arrow/position/gen/rhs_pow_asi/async_28x29_3d3e_ok.md
     tests/testcases/group_or_arrow/arrow/position/gen/rhs_pow_asi/async_28x_y29_3d3e_7b7d.md
     tests/testcases/group_or_arrow/arrow/position/gen/rhs_pow_asi/async_28x_y29_3d3e_ok.md
-    tests/testcases/group_or_arrow/arrow/regex_edge_case/with_block/cannot_divide_an_arrow_and_cannot_asi_with_forward_slash_at_start_of_next_line_28regex_2b_flag29.md
-    tests/testcases/group_or_arrow/arrow/regex_edge_case/with_block/cannot_divide_an_arrow_and_cannot_asi_with_forward_slash_at_start_of_next_line_28regex_no_flag29.md
     tests/testcases/new/new_operator/argument_special_cases/delete_async/async_arrow.md
     tests/testcases/new/new_operator/can_not_do_async_arrow.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60-60/async_args/asi_check_async_arrow_no_newline.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60-60/async_args/async_arrow.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60-60/reported_in_2314/2.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60-60/reported_in_2314/3.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602160/async_args/asi_check_async_arrow_no_newline.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602160/async_args/async_arrow.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602160/reported_in_2314/2.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602160/reported_in_2314/3.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602b60/async_args/asi_check_async_arrow_no_newline.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602b60/async_args/async_arrow.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602b60/reported_in_2314/2.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_602b60/reported_in_2314/3.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60delete60/async_args/asi_check_async_arrow_no_newline.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60delete60/async_args/async_arrow.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60delete60/reported_in_2314/2.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60delete60/reported_in_2314/3.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60typeof60/async_args/asi_check_async_arrow_no_newline.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60typeof60/async_args/async_arrow.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60typeof60/reported_in_2314/2.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60typeof60/reported_in_2314/3.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60void60/async_args/asi_check_async_arrow_no_newline.md
     tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60void60/async_args/async_arrow.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60void60/reported_in_2314/2.md
-    tests/testcases/unary_ops/generic_unary_tests_28GENERATED29/batch_for_60void60/reported_in_2314/3.md
-
-    // Bug: regex after asi after arrow cannot be division
-    //    https://github.com/acornjs/acorn/issues/920
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/2829_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/28x29_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/28x_y29_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/async_2829_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/async_28x29_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/async_28x_y29_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/async_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/async_async_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/async_x_3d3e_7b7d.md
-    tests/testcases/group_or_arrow/arrow/position/gen/arrow_asi_regex/x_3d3e_7b7d.md
 
     // Ignore: SequenceExpression loc range
     tests/testcases/group_or_arrow/group/single_line_location.md
@@ -489,18 +457,6 @@ function ignoreTenkoTestForAcorn(shortFile) {
     tests/testcases/string/escapes/nondirectives/rest/octal/escape_9.md
     tests/testcases/string/escapes/nondirectives/start/octal/escape_8.md
     tests/testcases/string/escapes/nondirectives/start/octal/escape_9.md
-    tests/testcases/tagged_templates/escapes/octal/escape_8.md
-    tests/testcases/tagged_templates/escapes/octal/escape_9.md
-    tests/testcases/templates/escapes/octal/escape_8.md
-    tests/testcases/templates/escapes/octal/escape_9.md
-    tests/testcases/lexer_cases/strings_template_head/octal_escapes/26.md
-    tests/testcases/lexer_cases/strings_template_body/octal_escapes/26.md
-    tests/testcases/lexer_cases/strings_template_body/octal_escapes/27.md
-    tests/testcases/lexer_cases/strings_template_head/octal_escapes/27.md
-    tests/testcases/lexer_cases/strings_template_static/octal_escapes/26.md
-    tests/testcases/lexer_cases/strings_template_static/octal_escapes/27.md
-    tests/testcases/lexer_cases/strings_template_tail/octal_escapes/26.md
-    tests/testcases/lexer_cases/strings_template_tail/octal_escapes/27.md
 
     // Acorn does not support ?? yet
     tests/testcases/nullish_coalescing/and_coal.md
@@ -514,12 +470,6 @@ function ignoreTenkoTestForAcorn(shortFile) {
     tests/testcases/nullish_coalescing/in_ternary3.md
     tests/testcases/nullish_coalescing/or_coal.md
     tests/testcases/nullish_coalescing/xor_coal.md
-
-    // Ignore. This is a test artifact (bigint serialization)
-    tests/testcases/numbers/bigint/legacy/87n.md
-    tests/testcases/numbers/bigint/legacy/8n.md
-    tests/testcases/numbers/bigint/legacy/98n.md
-    tests/testcases/numbers/bigint/legacy/9n.md
 
     // Acorn does not support ?. yet
     tests/testcases/optional_chaining/async_call.md
@@ -551,6 +501,8 @@ function ignoreTenkoTestForAcorn(shortFile) {
     tests/testcases/optional_chaining/spaced.md
     tests/testcases/optional_chaining/super_as_prop.md
     tests/testcases/optional_chaining/yield_var.md
+    tests/testcases/optional_chaining/for-semi.md
+    tests/testcases/optional_chaining/for-semi_tail.md
 
     // Bug: grammar case involving the N grammar flag for \\k
     //     https://github.com/acornjs/acorn/issues/927
@@ -576,6 +528,39 @@ function ignoreTenkoTestForAcorn(shortFile) {
     // Ignore (w/e): yield in arrow arg
     tests/testcases/yield/arguments_checks/arrow_func_args_in_block_scope/blocked_in_assigned_group.md
     tests/testcases/yield/arguments_checks/arrow_func_args_inside_generator/in_assigned_group.md
+
+    // await cannot have ** as arg because it is right associative
+    tests/testcases/exponentiation_op/statement/await_is_same_as_7e.md
+
+    // Illegal let cases
+    tests/testcases/let_declaration/var_paren_wrapped/let_in_x.md
+    tests/testcases/let_declaration/var_paren_wrapped/let_of_x_dot_for.md
+
+    // It seems acorn regressed on detecting {a=b} as a must-be-pattern
+    // Spec still disallows it in regular object literals
+    // > In certain contexts, ObjectLiteral is used as a cover grammar for a more restricted secondary grammar. The
+    // > CoverInitializedName production is necessary to fully cover these secondary grammars. However, use of this
+    // > production results in an early Syntax Error in normal contexts where an actual ObjectLiteral is expected.
+    tests/testcases/group_or_arrow/arrow/MUST_DESTRUCT_cases/array_without_nesting/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/group_or_arrow/arrow/MUST_DESTRUCT_cases/array_without_nesting/property_inside.md
+    tests/testcases/group_or_arrow/arrow/MUST_DESTRUCT_cases/group_toplevel/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/group_or_arrow/arrow/MUST_DESTRUCT_cases/nested_in_array/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/group_or_arrow/arrow/MUST_DESTRUCT_cases/nested_in_array/property_inside.md
+    tests/testcases/group_or_arrow/arrow/MUST_DESTRUCT_cases/nested_in_object/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/parens/arrow/MUST_DESTRUCT_cases/array_without_nesting/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/parens/arrow/MUST_DESTRUCT_cases/array_without_nesting/property_inside.md
+    tests/testcases/parens/arrow/MUST_DESTRUCT_cases/group_toplevel/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/parens/arrow/MUST_DESTRUCT_cases/nested_in_array/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/parens/arrow/MUST_DESTRUCT_cases/nested_in_array/property_inside.md
+    tests/testcases/parens/arrow/MUST_DESTRUCT_cases/nested_in_object/assignment_to_a_property_on_something_that_MUST_be_a_pattern.md
+    tests/testcases/random_stuff/2318/c2f19.md
+    tests/testcases/random_stuff/2318/c2f20.md
+    tests/testcases/random_stuff/2318/c2f21.md
+    tests/testcases/random_stuff/2318/c2f27.md
+    tests/testcases/random_stuff/2318/c2f28.md
+    tests/testcases/random_stuff/2318/gen/a2f_case/287ba3a_7bb_3d_07d2ex7d_3d_7b7d29_.md
+    tests/testcases/random_stuff/2318/gen/a2f_case/287brest7bb_3d_07d2ex7d_3d_7b7d29_.md
+    tests/testcases/random_stuff/2318/gen/a2f_case/5brest7ba_3d_07d2ex5d_3d_5b5d_.md
   `.split(/\n/g).map(s => s.trim()).includes(shortFile);
 }
 
@@ -585,247 +570,6 @@ function ignoreTest262Acorn(shortFile) {
   // As such I'm not longer putting in more effort than verifying on my end whether I agree with a mismatch.
 
   return `
-    // Bug: Escaped property name in objlit that is keyword is throwing an error
-    //    https://github.com/acornjs/acorn/issues/881
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-break-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-case-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-catch-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-class-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-const-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-continue-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-debugger-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-default-escaped-ext.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-default-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-delete-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-do-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-else-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-export-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-extends-escaped-ext.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-extends-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-finally-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-for-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-function-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-if-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-import-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-in-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-instanceof-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-new-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-return-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-super-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-switch-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-this-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-throw-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-try-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-typeof-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-var-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-void-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-while-escaped.js
-    test262/test/language/expressions/assignment/dstr/ident-name-prop-name-literal-with-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-break-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-case-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-catch-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-class-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-const-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-continue-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-debugger-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-default-escaped-ext.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-default-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-delete-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-do-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-else-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-export-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-extends-escaped-ext.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-extends-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-finally-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-for-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-function-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-if-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-import-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-in-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-instanceof-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-new-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-return-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-super-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-switch-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-this-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-throw-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-try-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-typeof-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-var-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-void-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-while-escaped.js
-    test262/test/language/expressions/assignment/member-expr-ident-name-with-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-break-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-case-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-catch-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-class-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-const-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-continue-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-debugger-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-default-escaped-ext.js
-    test262/test/language/expressions/class/ident-name-method-def-default-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-delete-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-do-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-else-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-export-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-extends-escaped-ext.js
-    test262/test/language/expressions/class/ident-name-method-def-extends-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-finally-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-for-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-function-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-if-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-import-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-in-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-instanceof-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-new-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-return-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-super-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-switch-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-this-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-throw-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-try-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-typeof-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-var-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-void-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-while-escaped.js
-    test262/test/language/expressions/class/ident-name-method-def-with-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-break-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-case-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-catch-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-class-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-const-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-continue-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-debugger-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-default-escaped-ext.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-default-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-delete-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-do-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-else-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-export-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-extends-escaped-ext.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-extends-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-finally-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-for-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-function-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-if-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-import-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-in-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-instanceof-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-new-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-return-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-super-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-switch-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-this-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-throw-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-try-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-typeof-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-var-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-void-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-while-escaped.js
-    test262/test/language/expressions/object/covered-ident-name-prop-name-literal-with-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-break-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-case-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-catch-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-class-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-const-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-continue-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-debugger-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-default-escaped-ext.js
-    test262/test/language/expressions/object/ident-name-method-def-default-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-delete-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-do-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-else-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-export-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-extends-escaped-ext.js
-    test262/test/language/expressions/object/ident-name-method-def-extends-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-finally-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-for-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-function-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-if-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-import-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-in-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-instanceof-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-new-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-return-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-super-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-switch-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-this-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-throw-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-try-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-typeof-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-var-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-void-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-while-escaped.js
-    test262/test/language/expressions/object/ident-name-method-def-with-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-break-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-case-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-catch-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-class-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-const-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-continue-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-debugger-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-default-escaped-ext.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-default-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-delete-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-do-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-else-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-export-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-extends-escaped-ext.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-extends-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-finally-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-for-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-function-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-if-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-import-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-in-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-instanceof-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-new-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-return-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-super-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-switch-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-this-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-throw-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-try-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-typeof-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-var-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-void-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-while-escaped.js
-    test262/test/language/expressions/object/ident-name-prop-name-literal-with-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-break-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-case-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-catch-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-class-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-const-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-continue-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-debugger-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-default-escaped-ext.js
-    test262/test/language/statements/class/ident-name-method-def-default-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-delete-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-do-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-else-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-export-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-extends-escaped-ext.js
-    test262/test/language/statements/class/ident-name-method-def-extends-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-finally-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-for-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-function-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-if-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-import-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-in-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-instanceof-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-new-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-return-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-super-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-switch-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-this-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-throw-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-try-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-typeof-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-var-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-void-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-while-escaped.js
-    test262/test/language/statements/class/ident-name-method-def-with-escaped.js
-
     // Bug: Multiline group causing invalid (?) location
     //   https://github.com/acornjs/acorn/issues/873
     test262/test/language/expressions/class/scope-name-lex-open-heritage.js
@@ -862,12 +606,6 @@ function ignoreTest262Acorn(shortFile) {
     test262/test/language/literals/string/line-continuation-single.js
     test262/test/language/literals/string/line-separator.js
     test262/test/language/literals/string/paragraph-separator.js
-
-    // Ignore (w/e): legacy octal bigint is illegal
-    test262/test/language/literals/bigint/non-octal-like-invalid-0008n.js
-    test262/test/language/literals/bigint/non-octal-like-invalid-012348n.js
-    test262/test/language/literals/bigint/non-octal-like-invalid-08n.js
-    test262/test/language/literals/bigint/non-octal-like-invalid-09n.js
 
     // Acorn doesn't support export from yet
     test262/test/language/module-code/eval-rqstd-once.js

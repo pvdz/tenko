@@ -21,7 +21,7 @@ REPL: https://pvdz.github.io/tenko/repl
   - Supports location data (matching Acorn/Babel for reference)
 - Tests
   - 33k input syntax tests
-  - Passes test262 suite (at least February 2020)
+  - Passes test262 suite (at least as per March 2020), without exception
 
 # Name
 
