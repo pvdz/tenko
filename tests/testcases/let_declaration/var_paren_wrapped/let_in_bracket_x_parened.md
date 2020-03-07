@@ -1,15 +1,15 @@
 # Tenko parser test case
 
-- Path: tests/testcases/parens/group/invalid_arrow_header_things_that_are_valid_in_a_group/5blet5d_in_group.md
+- Path: tests/testcases/let_declaration/var_paren_wrapped/let_in_bracket_x_parened.md
 
-> :: parens : group : invalid arrow header things that are valid in a group
+> :: let declaration : var paren wrapped
 >
-> ::> 5blet5d in group
+> ::> let in bracket x parened
 
 ## Input
 
 `````js
-(let);
+(let)[x] in x;
 `````
 
 ## Output
@@ -27,22 +27,43 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
       expression: {
-        type: 'Identifier',
-        loc:{start:{line:1,column:1},end:{line:1,column:4},source:''},
-        name: 'let'
+        type: 'BinaryExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+        left: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
+          object: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:1},end:{line:1,column:4},source:''},
+            name: 'let'
+          },
+          property: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
+            name: 'x'
+          },
+          computed: true
+        },
+        operator: 'in',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
+          name: 'x'
+        }
       }
     }
   ]
 }
 
-tokens (5x):
-       PUNC_PAREN_OPEN ID_let PUNC_PAREN_CLOSE PUNC_SEMI
+tokens (10x):
+       PUNC_PAREN_OPEN ID_let PUNC_PAREN_CLOSE PUNC_BRACKET_OPEN IDENT
+       PUNC_BRACKET_CLOSE ID_in IDENT PUNC_SEMI
 `````
 
 ### Strict mode
@@ -55,7 +76,7 @@ throws: Parser error!
 
 start@1:0, error@1:1
 ╔══╦════════════════
- 1 ║ (let);
+ 1 ║ (let)[x] in x;
    ║  ^^^------- error
 ╚══╩════════════════
 

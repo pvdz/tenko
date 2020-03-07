@@ -106,7 +106,7 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-do let; while (x);
+do (let); while (x);
 ````
 
 Produces same AST

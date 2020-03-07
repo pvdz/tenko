@@ -110,7 +110,7 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-if (x) ; else let;
+if (x) ; else (let);
 ````
 
 Produces same AST

@@ -4935,7 +4935,6 @@ function Parser(code, options = {}) {
       //                ^
       if ($tp_letArg_type === $ID_in) {
         // Edge case makes `let` to be parsed as a var name in sloppy mode
-        // TODO: actually, this is probably a syntax error because static semantics are applied after locking in parser choices...
         // [v]: `for (let in x)`
         //                ^^
         if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
@@ -5956,6 +5955,12 @@ function Parser(code, options = {}) {
 
     if (tok_getType() === $PUNC_COLON) {
       return parseLabeledStatementInstead(lexerFlags, scoop, labelSet, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, fdState, nestedLabels, astProp);
+    }
+
+    let $tp_next_type = tok_getType();
+
+    if ($tp_next_type === $ID_in || $tp_next_type === $ID_in) {
+      return THROW_RANGE('Cannot use `let` as a regular var name as the lhs of `in` or `instanceof` in a toplevel expression statement', tok_getStart(), tok_getStop()); // And why would you.
     }
 
     AST_open(astProp, {

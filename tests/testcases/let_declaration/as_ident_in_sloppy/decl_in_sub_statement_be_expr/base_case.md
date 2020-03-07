@@ -103,4 +103,10 @@ _Output same as strict mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy][annexb:no]
+Printer output different from input [sloppy][annexb:no]:
+
+````js
+if (x) (let);
+````
+
+Produces same AST

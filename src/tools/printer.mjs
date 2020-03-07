@@ -89,7 +89,6 @@ function BinaryExpression(node) {
 
   let left = $(node.left);
   switch (node.left.type) {
-    case 'Identifier':
     case 'Literal':
     case 'MemberExpression':
     case 'CallExpression':
@@ -98,6 +97,12 @@ function BinaryExpression(node) {
     case 'TaggedTemplateExpression':
     case 'TemplateLiteral':
     case 'ThisExpression':
+      break;
+    case 'Identifier':
+      // Prevent toplevel `let in x` cases, which should be `(let) in x`
+      if (left === 'let' && (node.operator === 'in' || node.operator === 'instanceof')) {
+        left = '(' + left + ')';
+      }
       break;
     default:
       left = '(' + left + ')';
@@ -320,7 +325,7 @@ function ExpressionStatement(node) {
     node.expression.type === 'ClassExpression' ||        // class{} -> (class{}) Else it's a decl or illegal
     // node.expression.type === 'BinaryExpression' ||    // a+b
     // node.expression.type === 'MemberExpression' ||    // a.b
-    // node.expression.type === 'Identifier' ||          // foo
+    (node.expression.type === 'Identifier' && node.expression.name === 'let') || // `let \n in x` vs `(let) in x`
     // node.expression.type === 'UnaryExpression' ||     // ~foo
     // node.expression.type === 'CallExpression' ||      // foo()
     // node.expression.type === 'AssignmentExpression'   // a=b
