@@ -1245,8 +1245,6 @@ if (INPUT_OVERRIDE) {
   getTestFiles(path.join(dirname, 'testcases'), '', files, true);
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test search discovery time');
   console.log('Read all test files, gathered', files.length, 'files');
-
-  files = files.filter(f => f.indexOf('test262') >= 0 === TEST262);
 }
 
 if (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE) {
