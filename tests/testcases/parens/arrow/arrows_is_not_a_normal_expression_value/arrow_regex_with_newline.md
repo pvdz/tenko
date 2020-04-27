@@ -5,10 +5,9 @@
 > :: parens : arrow : arrows is not a normal expression value
 >
 > ::> arrow regex with newline
+## PASS
 
 ## Input
-
-- `requireAst = true`
 
 `````js
 a => {}

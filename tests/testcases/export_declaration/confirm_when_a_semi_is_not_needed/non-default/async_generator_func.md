@@ -8,8 +8,6 @@
 
 ## Input
 
-- `skip = true`
-
 `````js
 export async function *f(){} foo
 `````

@@ -8,8 +8,6 @@
 
 ## Input
 
-- `skip = true`
-
 `````js
 class x { static "prot\u006ftype"(){} }
 `````

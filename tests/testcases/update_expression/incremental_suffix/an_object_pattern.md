@@ -8,8 +8,6 @@
 
 ## Input
 
-- `requireAst = true`
-
 `````js
 ({}++)
 `````

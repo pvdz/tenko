@@ -260,6 +260,8 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
 
+        astUids: tob.inputOptions.astUids || false,
+
         errorCodeFrame: enableCodeFrame,
         truncCodeFrame: true,
 

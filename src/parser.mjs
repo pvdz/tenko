@@ -3327,6 +3327,7 @@ function Parser(code, options = {}) {
       loc: undefined,
       body: [],
     });
+
     if (options_exposeScopes) AST_set('$scope', scoop);
 
     parseBodyPartsWithDirectives(lexerFlagsNoTemplate, scoop, UNDEF_EXPORTS, UNDEF_EXPORTS, paramsSimple, dupeParamErrorStart, dupeParamErrorStop, $tp_functionNameToVerify_type, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, $tp_functionNameToVerify_canon, NOT_GLOBAL_TOPLEVEL, 'body');

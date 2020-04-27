@@ -110,12 +110,14 @@ This is only necessary for safe transport and because markdown does not have an 
 
 A test case can have options. These will follow the `## Input` header as a dashed list and, if there's more content, this is the only content that is a dashed list.
 
+TNote that the list of supported options is hardcoded in the test runner (it will warn you for unhandled options).
+
 The format of each option is as follows:
 
 `````
 - `key = value`
-- `ES = 7`
-- `SKIP = true`
+- `es = 7`
+- `astUid = true`
 `````
 
 The options are specific to the testing framework, although I could see myself adding a more free form way of passing options down to the parser, later. The current style is still a little legacy from the old infra.

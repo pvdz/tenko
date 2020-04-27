@@ -12,8 +12,6 @@
 
 ## Input
 
-- `requireAst = true`
-
 `````js
 _ => {}
 /foo/g

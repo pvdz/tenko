@@ -5,10 +5,9 @@
 > :: group or arrow : arrow : regex edge case : with block
 >
 > ::> cannot divide an arrow and cannot asi with forward slash at start of next line 28regex no flag29
+## PASS
 
 ## Input
-
-- `requireAst = true`
 
 `````js
 _ => {}
