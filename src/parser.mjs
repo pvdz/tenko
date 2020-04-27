@@ -863,7 +863,7 @@ function Parser(code, options = {}) {
     ASSERT(typeof node === 'object' && (!node || typeof node.type === 'string'), 'should receive ast node to set or null', node);
     ASSERT(typeof astProp === 'string' && astProp !== 'undefined', 'prop should be string');
 
-    if (astUids) node.$uid = uid_counter++;
+    if (astUids && node) node.$uid = uid_counter++;
 
     let parentNode = _path[_path.length - 1];
 
