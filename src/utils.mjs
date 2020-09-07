@@ -7,8 +7,8 @@ function inspect(...args) {
   console.dir(args.length===1?args[0]:args, {depth: null});
 }
 
-function ASSERT(bool, desc, ...rest) {
-  if (!bool) THROW('Assertion fail: ' + (desc || '<no desc>'), ':', ...rest);
+function ASSERT(bool, desc = '<no desc>', ...rest) {
+  if (!bool) THROW('Assertion fail: ' + desc, ':', ...rest);
 }
 
 function THROW(str, ...rest) {
