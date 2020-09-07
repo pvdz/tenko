@@ -466,7 +466,6 @@ import {
   SCOPE_LAYER_FOR_HEADER,
   SCOPE_LAYER_BLOCK,
   SCOPE_LAYER_FUNC_PARAMS,
-  SCOPE_LAYER_TRY,
   SCOPE_LAYER_CATCH_HEAD,
   SCOPE_LAYER_CATCH_BODY,
   SCOPE_LAYER_FINALLY,
@@ -2063,7 +2062,7 @@ function Parser(code, options = {}) {
   function SCOPE_addLayer(scoop, scopeType, desc) {
     ASSERT(SCOPE_addLayer.length === arguments.length, 'arg count');
     ASSERT(typeof desc === 'string', 'desc debug is string', desc);
-    ASSERT([SCOPE_LAYER_GLOBAL, SCOPE_LAYER_FOR_HEADER, SCOPE_LAYER_BLOCK, SCOPE_LAYER_FUNC_PARAMS, SCOPE_LAYER_ARROW_PARAMS, SCOPE_LAYER_TRY, SCOPE_LAYER_CATCH_HEAD, SCOPE_LAYER_CATCH_BODY, SCOPE_LAYER_FINALLY, SCOPE_LAYER_SWITCH, SCOPE_LAYER_FUNC_ROOT, SCOPE_LAYER_FUNC_BODY, SCOPE_LAYER_FAKE_BLOCK].includes(scopeType), 'scopeType enum', scopeType);
+    ASSERT([SCOPE_LAYER_GLOBAL, SCOPE_LAYER_FOR_HEADER, SCOPE_LAYER_BLOCK, SCOPE_LAYER_FUNC_PARAMS, SCOPE_LAYER_ARROW_PARAMS, SCOPE_LAYER_CATCH_HEAD, SCOPE_LAYER_CATCH_BODY, SCOPE_LAYER_FINALLY, SCOPE_LAYER_SWITCH, SCOPE_LAYER_FUNC_ROOT, SCOPE_LAYER_FUNC_BODY, SCOPE_LAYER_FAKE_BLOCK].includes(scopeType), 'scopeType enum', scopeType);
     ASSERT(scoop === DO_NOT_BIND || scoop.isScope, 'expecting scoop', scoop);
 
     let scoopNew = {
@@ -6140,9 +6139,7 @@ function Parser(code, options = {}) {
       finalizer: undefined,
     });
 
-    let tryScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_TRY, 'parseTryStatement(try)');
-    ASSERT(tryScoop._funcName = '(try has no name)');
-    parseBlockStatement(lexerFlags, tryScoop, labelSet, 'block');
+    parseBlockStatement(lexerFlags, scoop, labelSet, 'block');
 
     let hasEither = false;
     if (tok_getType() === $ID_catch) {
@@ -13521,12 +13518,11 @@ function B(b) {
   ASSERT(false, 'B: unknown binding enum type: ' + b);
 }
 function S(s) {
-  ASSERT([SCOPE_LAYER_GLOBAL, SCOPE_LAYER_FOR_HEADER, SCOPE_LAYER_BLOCK, SCOPE_LAYER_FUNC_PARAMS, SCOPE_LAYER_ARROW_PARAMS, SCOPE_LAYER_TRY, SCOPE_LAYER_CATCH_HEAD, SCOPE_LAYER_CATCH_BODY, SCOPE_LAYER_FINALLY, SCOPE_LAYER_SWITCH, SCOPE_LAYER_FUNC_ROOT, SCOPE_LAYER_FUNC_BODY, SCOPE_LAYER_FAKE_BLOCK].includes(s), 'scopeType enum', s);
+  ASSERT([SCOPE_LAYER_GLOBAL, SCOPE_LAYER_FOR_HEADER, SCOPE_LAYER_BLOCK, SCOPE_LAYER_FUNC_PARAMS, SCOPE_LAYER_ARROW_PARAMS, SCOPE_LAYER_CATCH_HEAD, SCOPE_LAYER_CATCH_BODY, SCOPE_LAYER_FINALLY, SCOPE_LAYER_SWITCH, SCOPE_LAYER_FUNC_ROOT, SCOPE_LAYER_FUNC_BODY, SCOPE_LAYER_FAKE_BLOCK].includes(s), 'scopeType enum', s);
   if (s === SCOPE_LAYER_GLOBAL) return 'SCOPE_LAYER_GLOBAL';
   if (s === SCOPE_LAYER_FOR_HEADER) return 'SCOPE_LAYER_FOR_HEADER';
   if (s === SCOPE_LAYER_BLOCK) return 'SCOPE_LAYER_BLOCK';
   if (s === SCOPE_LAYER_FUNC_PARAMS) return 'SCOPE_LAYER_FUNC_PARAMS';
-  if (s === SCOPE_LAYER_TRY) return 'SCOPE_LAYER_TRY';
   if (s === SCOPE_LAYER_CATCH_HEAD) return 'SCOPE_LAYER_CATCH_HEAD';
   if (s === SCOPE_LAYER_CATCH_BODY) return 'SCOPE_LAYER_CATCH_BODY';
   if (s === SCOPE_LAYER_FINALLY) return 'SCOPE_LAYER_FINALLY';
