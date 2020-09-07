@@ -593,7 +593,7 @@ function Parser(code, options = {}) {
     returnTokens: babelCompat ? RETURN_COMMENT_TOKENS : RETURN_SOLID_TOKENS,
     webCompat: options_webCompat,
     gracefulErrors: FAIL_HARD,
-    tokenStorage: options_tokenStorage,
+    tokenStorageExternal: options_tokenStorage,
     babelTokenCompat,
 
     errorCodeFrame,
