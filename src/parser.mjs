@@ -2077,6 +2077,7 @@ function Parser(code, options = {}) {
     ASSERT(scoopNew._type = S(scopeType), '(debugging)');
     ASSERT(scoopNew.isScope = true, '(debugging)');
     ASSERT(scoopNew._desc = desc + '.scope', '(debugging)');
+    if (astUids) scoop.$uid = uid_counter++;
     return scoopNew;
   }
   function SCOPE_addFuncDeclName(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState) {
@@ -2125,7 +2126,7 @@ function Parser(code, options = {}) {
     ASSERT(scoop === DO_NOT_BIND || scoop.names === HAS_NO_BINDINGS || scoop.names instanceof Map, 'if scoop has names, it must be a Map', scoop.names);
     ASSERT_BINDING_TYPE(bindingType);
 
-    if (bindingType === BINDING_TYPE_VAR) {
+    if (bindingType === BINDING_TYPE_VAR || bindingType === BINDING_TYPE_FUNC_VAR) {
       SCOPE_addVarBinding(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType);
     }
     else {
@@ -3047,7 +3048,7 @@ function Parser(code, options = {}) {
     ASSERT($tp_async_type !== $ID_async || $tp_star_type !== $PUNC_STAR || allowAsyncGenerators, 'other places that parse `async` with a generator that lead here should have verified the es version by now');
 
     let innerScoop = SCOPE_createGlobal('parseFunctionAfterKeyword_main_func_scope');
-    ASSERT(innerScoop._ = 'func scope');
+    ASSERT(innerScoop._ = 'func scope (NOT "global") but the top-most scope layer for this function');
 
     // need to track whether the name was eval/args because if the func body is strict mode then it should still throw
     // retroactively for having that name. a bit annoying.
@@ -3095,6 +3096,10 @@ function Parser(code, options = {}) {
       if (isFuncDecl === IS_FUNC_DECL) {
         // TODO: add test case for catch shadow
         SCOPE_addFuncDeclName(lexerFlags, outerScoop, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, canonName, nameBindingType, fdState);
+      } else {
+        // Record the func expr name in the current layer, allow it to be shadowed.
+        // TODO: I believe this is read-only. I'm just adding this to unblock something else. But I guess there are tests to be created for shadowing / writing to a func expr name.
+        SCOPE_actuallyAddBinding(lexerFlags, innerScoop, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, canonName, BINDING_TYPE_FUNC_VAR);
       }
 
       // create new lexical binding to "hide" the function name.
@@ -3108,6 +3113,7 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Function decl missing required ident', tok_getStart(), tok_getStop()); // Pointing to `function` is probably better...?
     } else {
       AST_set('id', null);
+      innerScoop = SCOPE_addLayer(innerScoop, SCOPE_LAYER_FUNC_ROOT, 'function_has_no_id_but_whatever');
     }
 
     // reset the async lexer flags. some don't cross function boundaries
@@ -4845,10 +4851,6 @@ function Parser(code, options = {}) {
     // either be a binary (or even unary) operator (in, of, or anything else) or
     // a semi. we can then proceed parsing down that particular path.
 
-    // the for-header adds a special lex scope because there are special let/const/var rules in place we need to verify
-    scoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FOR_HEADER, 'parseForStatement(header)');
-    ASSERT(scoop._funcName = '(for has no name)');
-
     let $tp_for_line = tok_getLine();
     let $tp_for_column = tok_getColumn();
     let $tp_for_start = tok_getStart();
@@ -4872,13 +4874,27 @@ function Parser(code, options = {}) {
     } else if (tok_getType() !== $PUNC_PAREN_OPEN) {
       return THROW_RANGE('Missing opening paren of the `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', $tp_for_start, $tp_for_stop);
     }
+
     ASSERT_skipToExpressionStartSemi($PUNC_PAREN_OPEN, lexerFlags);
+
+    // If the next token is `var`, `let` or `const` then create a new scope layer. TODO: what about legacy `let` usage?
+    // the for-header adds a special lex scope because there are special let/const/var rules in place we need to verify
+    let hasOwnScope = false;
+    if (tok_getType() === $ID_let || tok_getType() === $ID_const || tok_getType() === $ID_var) {
+      scoop = SCOPE_addLayer(scoop, SCOPE_LAYER_FOR_HEADER, 'parseForStatement(header)');
+      ASSERT(scoop._funcName = '(for has no name)');
+      hasOwnScope = true;
+    }
+
     parseForHeader(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), $tp_for_start, scoop, awaitable, astProp);
     if (tok_getType() !== $PUNC_PAREN_CLOSE) {
       return THROW_RANGE('Missing closing paren of the `for` header, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
     }
     ASSERT_skipToStatementStart($PUNC_PAREN_CLOSE, lexerFlags);
     parseNestedBodyPart(lexerFlags | LF_IN_ITERATION, scoop, labelSet, NOT_LABELLED, FDS_ILLEGAL, PARENT_NOT_LABEL, 'body');
+
+    if (hasOwnScope && options_exposeScopes) AST_set('$scope', scoop);
+
     AST_close($tp_for_start, $tp_for_line, $tp_for_column, ['ForStatement', 'ForInStatement', 'ForOfStatement']);
   }
   function parseForHeaderVar(lexerFlags, scoop, astProp) {
@@ -6043,6 +6059,7 @@ function Parser(code, options = {}) {
     ASSERT_skipToSwitchBody($PUNC_CURLY_OPEN, lexerFlagsForSwitch);
 
     let casesScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_SWITCH, 'parseSwitchStatement');
+    if (options_exposeScopes) AST_set('$scope', casesScoop);
     ASSERT(casesScoop._funcName = '(switch has no name)');
     parseSwitchCases(lexerFlagsForSwitch | LF_IN_SWITCH, casesScoop, labelSet, 'cases');
 
@@ -6167,6 +6184,8 @@ function Parser(code, options = {}) {
       // create a scope for the catch body. this way var decls can search for the catch scope to assert new vars
       let catchBodyScoop = SCOPE_addLayer(catchHeadScoop, SCOPE_LAYER_CATCH_BODY, 'parseTryStatement(catch-body)');
       ASSERT(catchBodyScoop._funcName = '(catch has no name)');
+
+      if (options_exposeScopes) AST_set('$scope', catchBodyScoop);
 
       // Catch clause is optional since es10
 
