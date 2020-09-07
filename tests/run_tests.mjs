@@ -98,6 +98,7 @@ const NO_FATALS = process.argv.includes('--no-fatals'); // asserts should not st
 const CONCISE = process.argv.includes('--concise');
 const USE_BUILD = process.argv.includes('-b') || process.argv.includes('--build');
 const SKIP_PRINTER = process.argv.includes('--no-printer'); // || USE_BUILD;
+const EXPOSE_SCOPE = process.argv.includes('--expose-scope');
 
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
@@ -151,6 +152,7 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
     --force-write Always write the test cases to disk, even when no change was detected
     --no-fatals   Do not treat (test) assertion errors as fatals (dev tools only, rely on git etc for recovery)
     --concise     Do not dump AST and printer output to stdout. Parse and stop. Only works with -i or -f or -F
+    --expose-scope Add generated scope objects as \`.$scope\` property for nodes that generate a scope. Good luck that that that...
 `);
   process.exit();
 }
@@ -259,6 +261,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         targetEsVersion: FORCED_ES_TARGET || tob.inputOptions.es,
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
+        exposeScopes: EXPOSE_SCOPE,
 
         astUids: tob.inputOptions.astUids || false,
 
@@ -317,6 +320,8 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       });
       // Phase 2:
       function repeat(node, key, parent) {
+        if (key === '$scope') return; // Tenko can expose these optional, do not visit them here
+
         if (!Array.isArray(node)) {
           // node must be a plain object (because don't use anything else besides arrays)
           if (node.test_walked) {

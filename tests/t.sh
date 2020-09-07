@@ -48,7 +48,8 @@ ORG_ARGS="${@}"         # This is used to restart this process with cset for cpu
 STABLE=''               # Used with `./t stable`, `./t ??? --stable`, and `./t ??? --stabled`
 STABLE_ONLY_SETUP=''    # Used with `./t stable` (so not as flag)
 STABLE_NO_SETUP=''      # Used with `./t ??? --stabled`, which skips the setup (still need to restart in `cset` and `crt`)
-WRITE_ONLY=''               # Used in `./t coverag` to prevent generating and opening the html
+WRITE_ONLY=''           # Used in `./t coverag` to prevent generating and opening the html
+EXPOSE_SCOPE=''         # Add scopes to AST
 
 BOLD="\e[;1;1m";
 BOLD_RED="\e[1;31m";
@@ -109,6 +110,7 @@ Tenko CLI Toolkit help:
  --min         Only for f and i, for invalid input; minify the test case while keeping same error
  --min-printer Only for f and i, for inputs that cause bad printer behavior; minify the test case while keeping same error
  --no-printer  Do not run the printer-step (helps with debugging in certain cases)
+ --scope       Add the scope objects that the parser generates as \`.\$scope\` property to any AST node that created one
  --parser <ab> Run test with given parser (any of 'tenko', 'acorn', 'babel', 'ghost'). Only for selected commands.
  --acorn       Run in Acorn compat mode
  --test-acorn  Also compare AST of test cases to Acorn output
@@ -289,6 +291,7 @@ Tenko CLI Toolkit help:
     --min)          EXTRA='--min'         ;;
     --min-printer)  EXTRA='--min-printer' ;;
     --no-printer)   EXTRA='--no-printer'  ;;
+    --scope)        EXPOSE_SCOPE='--expose-scope';;
     --no-fatals)    EXTRA='--no-fatals'   ;;
     --concise)      EXTRA='--concise'     ;;
     -q)             EXTRA='-q'            ;;
@@ -663,7 +666,7 @@ case "${ACTION}" in
     ;;
 
     fuzz)
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/fuzz.mjs ${EXTRA} ${NODE} ${ANNEXB} ${BUILD} ${PSFIX} "${ARG}" ${INSPECT_ZEPAR}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/fuzz.mjs ${EXTRA} ${EXPOSE_SCOPE} ${NODE} ${ANNEXB} ${BUILD} ${PSFIX} "${ARG}" ${INSPECT_ZEPAR}
     ;;
 
     build)
@@ -1087,13 +1090,13 @@ case "${ACTION}" in
         if [[ ! -z "${PERFONE}" ]]; then # Regular node invokes
           STABLE_V8="--single-threaded --single-threaded-gc --predictable --predictable-gc-schedule --compilation-cache"
         fi
-        NODE_NO_WARNINGS=1 "${NODE_BIN}" ${INSPECT_NODE} ${STABLE_V8} --experimental-modules --max-old-space-size=8192 tests/perf.mjs ${BUILD} ${INSPECT_ZEPAR} ${DEVTOOLS} ${RESET} ${RECORD} ${EXTRA} n 1
+        NODE_NO_WARNINGS=1 "${NODE_BIN}" ${INSPECT_NODE} ${STABLE_V8} --experimental-modules --max-old-space-size=8192 tests/perf.mjs ${BUILD} ${INSPECT_ZEPAR} ${DEVTOOLS} ${RESET} ${RECORD} ${EXTRA} ${EXPOSE_SCOPE} n 1
         set +x
         I=1
         while true
         do
           # The process will exit 1 when the last benchmark is executed and the n param is given. Let's hope so :D
-          NODE_NO_WARNINGS=1 "${NODE_BIN}" ${INSPECT_NODE} ${STABLE_V8} --experimental-modules --max-old-space-size=8192 tests/perf.mjs ${BUILD} ${INSPECT_ZEPAR} ${DEVTOOLS} ${RESET} ${RECORD} ${EXTRA} n "${I}" || I=0
+          NODE_NO_WARNINGS=1 "${NODE_BIN}" ${INSPECT_NODE} ${STABLE_V8} --experimental-modules --max-old-space-size=8192 tests/perf.mjs ${BUILD} ${INSPECT_ZEPAR} ${DEVTOOLS} ${RESET} ${RECORD} ${EXTRA} ${EXPOSE_SCOPE} n "${I}" || I=0
           if [[ "${I}" -eq "0" ]]; then
             RESET=''
           fi
@@ -1107,7 +1110,7 @@ case "${ACTION}" in
     ;;
 
     hf)
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${NO_BUILDING} ${INSPECT_ZEPAR} ${ANNEXB}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules --max-old-space-size=8192 tests/hf.mjs ${BUILD} ${NO_BUILDING} ${INSPECT_ZEPAR} ${EXPOSE_SCOPE} ${ANNEXB}
     ;;
 
     coverage)
@@ -1154,7 +1157,7 @@ case "${ACTION}" in
       ;;
 
     *)
-      ${NODE_BIN} ${INSPECT_NODE} ${NODE_PROF} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs ${ACTION} "${ARG}" ${MODE} ${ACORN} ${BABEL} ${EXTRA} ${ES} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
+      ${NODE_BIN} ${INSPECT_NODE} ${NODE_PROF} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs ${ACTION} "${ARG}" ${MODE} ${ACORN} ${BABEL} ${EXTRA} ${EXPOSE_SCOPE} ${ES} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
     ;;
 esac
 set +x
