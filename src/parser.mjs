@@ -2046,11 +2046,11 @@ function Parser(code, options = {}) {
 
     // while this comment probably gets lost, the name is `scoop` for greppability since `scope` is too generic
     let scoop = {
-      parent: null,
       type: SCOPE_LAYER_GLOBAL,
       names: HAS_NO_BINDINGS, // Map (when necessary)
       dupeParamErrorStart: NO_DUPE_PARAMS, // 0 means "none", otherwise it's the linear (offset + 1) of the token, a value that is only used for reporting an error anyways
       dupeParamErrorStop: NO_DUPE_PARAMS, // (offset 0)
+      parent: null,
     };
 
     ASSERT(scoop._type = S(SCOPE_LAYER_GLOBAL), '(debugging)');
@@ -2066,13 +2066,13 @@ function Parser(code, options = {}) {
     ASSERT(scoop === DO_NOT_BIND || scoop.isScope, 'expecting scoop', scoop);
 
     let scoopNew = {
-      parent: scoop,
       type: scopeType,
       names: HAS_NO_BINDINGS, // Map (when necessary)
       // For arrows, dupe params can only be checked when seeing the arrow. `([a,a]);` is fine.
       // For function declarations in sloppy, this can only be validated once the inner directives are parsed
       dupeParamErrorStart: NO_DUPE_PARAMS, // 0 means "none", otherwise it's the linear (offset + 1) of the token, a value that is only used for reporting an error anyways
       dupeParamErrorStop: NO_DUPE_PARAMS, // 0 means "none", otherwise it's the linear (offset + 1) of the token, a value that is only used for reporting an error anyways
+      parent: scoop,
     };
     ASSERT(scoopNew._type = S(scopeType), '(debugging)');
     ASSERT(scoopNew.isScope = true, '(debugging)');
@@ -4858,7 +4858,6 @@ function Parser(code, options = {}) {
 
     let awaitable = tok_getType() === $ID_await;
     if (awaitable) {
-
       let $tp_await_stop = tok_getStop();
 
       if (!allowAsyncGenerators) {
@@ -6425,6 +6424,7 @@ function Parser(code, options = {}) {
       loc: undefined,
       expression: undefined,
     });
+
     // Note: an arrow would create a new scope and there is no other way to introduce a new binding from here on out
     parseExpressions(lexerFlags, 'expression');
     parseSemiOrAsi(lexerFlags);
@@ -9304,7 +9304,7 @@ function Parser(code, options = {}) {
     let $tp_firstTokenAfterParen_column = tok_getColumn();
     let $tp_firstTokenAfterParen_start = tok_getStart();
 
-    // notable remarks;
+    // Notable remarks;
     // - empty group `()` is the only one that must be followed by an arrow (`=>`) unless async
     // - if a group has a top level assignable it is only ever assignable if the group does not have a comma
     // - the `(x)` case is the only case to be compoundable (so `(x.y)+=z` is not valid)
