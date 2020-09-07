@@ -142,6 +142,14 @@
             <input type="radio" name="ast" id="$ast_babel" value="babel"/>
             <label for="$ast_babel">Babel</label>
           </span>
+
+          &nbsp;&mdash; opts &mdash;&nbsp;
+
+          <span class="mode_selector" title="Click here to include scope objects in the AST">
+            <input type="checkbox" id="$ast_scopes" name="ast_scopes" value="ast_scopes" />
+            <label for="$ast_scopes">Scopes</label>
+          </span>
+
         </div>
         <textarea id="ta_input" placeholder="enter code here" class="box tl" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
 // Note: Firefox (&lt;=63) crashes because of import(), >=66 seems to work fine

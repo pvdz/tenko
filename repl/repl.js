@@ -124,6 +124,7 @@ const update = e => {
       tokenStorage: tokens,
       collectTokens: COLLECT_TOKENS_ALL,
       targetEsVersion: version,
+      exposeScopes: !!$ast_scopes.checked,
     });
     threw = false;
   } finally {
@@ -169,6 +170,7 @@ function silentPassFail(code, mode/*:sloppy | webcompat | strict | module*/, ver
       strictMode: mode === 'strict',
       webCompat: mode === 'webcompat',
       targetEsVersion: version,
+      exposeScopes: !!$ast_scopes.checked,
       // Silence all output
       $log: () => {},
       $warn: () => {},
