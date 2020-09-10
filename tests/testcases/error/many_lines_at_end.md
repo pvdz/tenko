@@ -140,14 +140,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-start@104:?, error@106:10
-╔════╦═══════════════════
+start@104:77, error@106:10
+╔════╦════════════════════
  104 ║ nnoying in git diffs.
  105 ║   return returnValue.split('\n').map(s => s.trimRight()).join('\n')
  106 ║   problem here
      ║           ^^^^------- error
  107 ║ }
-╚════╩═══════════════════
+╚════╩════════════════════
 
 `````
 

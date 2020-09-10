@@ -140,8 +140,8 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-start@55:?, error@58:10
-╔═══╦══════════════════
+start@55:29, error@58:10
+╔═══╦═══════════════════
  55 ║ pointerLine += 1;
  56 ║     // Now pointerLine should be the line of the start of the input
  57 ║   }
@@ -149,7 +149,7 @@ start@55:?, error@58:10
     ║           ^^^^------- error
  59 ║   let maxPointerlineLen = (''+currentLine).length;
  60 ║   let gutterWidth = maxPointerlineLen + 4; // pa
-╚═══╩══════════════════
+╚═══╩═══════════════════
 
 `````
 

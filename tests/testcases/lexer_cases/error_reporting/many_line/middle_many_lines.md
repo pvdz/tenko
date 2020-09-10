@@ -77,8 +77,8 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-start@12:?, error@17:19
-╔═══╦══════════════════
+start@12:14, error@17:19
+╔═══╦═══════════════════
  12 ║ 6789
  13 ║ line13_x0123456789
  14 ║ line14_x0123456789
@@ -92,7 +92,7 @@ start@12:?, error@17:19
  21 ║ line21_x0123456789
  22 ║ line22_x0123456789
  23 ║ line
-╚═══╩══════════════════
+╚═══╩═══════════════════
 
 `````
 

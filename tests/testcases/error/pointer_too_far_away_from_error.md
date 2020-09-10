@@ -37,11 +37,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   The parameter header of an async arrow cannot contain `await` as varname nor as a keyword
 
-start@2:102, error@2:0
-╔══╦══════════════════
+start@2:0, error@2:0
+╔══╦════════════════
  2 ║ async(a = (a012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
    ║ ^^^^^------- error
-╚══╩══════════════════
+╚══╩════════════════
 
 `````
 

@@ -35,7 +35,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Regular expressions do not support line continuations (escaped newline)
 
-start@0:?, error@0:0
+start@0:0, error@0:0
 ╔══╦════════════════
  0 ║ /\
    ║ ^^^^------- error

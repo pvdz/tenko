@@ -5425,8 +5425,9 @@ function Lexer(
       post2 = post.map(s => ' ' + ('' + lc++).padStart(maxPointerlineLen, ' ') + ' ║ ' + s.trimRight()).join('\n');
     }
 
+    // The `usedInput` is a substring of input and starts mid-way a line. We want to know which column of that line.
     // Note: if the pointerLine is not 1 then the lastIndexOf must return a non-zero number that is the column on that line
-    let col = pointerLine === 1 ? inputOffset : usedInput.lastIndexOf(inputOffset);
+    let col = pointerLine === 1 ? inputOffset : ((inputOffset - input.lastIndexOf('\n', inputOffset))-1); // -1 to offset zero
 
     let top = 'start@' + pointerLine + ':' + (col<0?'?':col) + ', error@' + errorLine + ':' + (errorColumn<0?'?':errorColumn) + '\n';
     let bar = '═'.repeat(top.length - gutterWidth) + '\n';

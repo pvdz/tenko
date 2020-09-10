@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Unclosed multi line comment, early eof
 
-start@2:?, error@2:0
+start@2:0, error@2:0
 ╔══╦════════════════
  2 ║ /* x
    ║ ^^^^^------- error
