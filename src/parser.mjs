@@ -639,7 +639,7 @@ function Parser(code, options = {}) {
     }
   }
 
-  function ASSERT(bool, desc, ...rest) {
+  function ASSERT(bool, desc = '', ...rest) {
     if (!bool) {
       THROW_RANGE('Assertion fail: ' + (desc || '<no desc>') + '; ' + JSON.stringify(rest), tok_getStart(), tok_getStop(), ':', ...rest);
     }
