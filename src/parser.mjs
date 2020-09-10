@@ -567,7 +567,7 @@ function Parser(code, options = {}) {
   if (typeof options_goalMode === 'string') {
     if (options_goalMode === 'module') goalMode = GOAL_MODULE;
     else if (options_goalMode === 'script') goalMode = GOAL_SCRIPT;
-    else return THROW_RANGE('Unknown goal symbol value: `' + options_goalMode + '`', 0, 0);
+    else throw new Error('Unknown goal symbol value: `' + options_goalMode + '`');
   } else {
     goalMode = options_goalMode;
   }
@@ -577,7 +577,7 @@ function Parser(code, options = {}) {
     else if (options_collectTokens === 'solid') collectTokens = COLLECT_TOKENS_SOLID;
     else if (options_collectTokens === 'none') collectTokens = COLLECT_TOKENS_NONE;
     else if (options_collectTokens === 'types') collectTokens = COLLECT_TOKENS_TYPES;
-    else return THROW_RANGE('Unknown collectTokens value: `' + options_collectTokens + '`', 0, 0);
+    else throw new Error('Unknown collectTokens value: `' + options_collectTokens + '`');
   } else {
     collectTokens = options_collectTokens;
   }
