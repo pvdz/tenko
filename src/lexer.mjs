@@ -3596,7 +3596,7 @@ function Lexer(
           return regexSyntaxError(reason);
         }
       } else {
-        largestBackReference = Math.max(((c - $$0_30) * 10) + (d - $$0_30))
+        largestBackReference = Math.max(largestBackReference, ((c - $$0_30) * 10) + (d - $$0_30)); // TODO: test the case where largestBackReference was not properly maxed
       }
     } else {
       largestBackReference = Math.max(largestBackReference, c - $$0_30)
