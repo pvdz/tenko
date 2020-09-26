@@ -1610,8 +1610,8 @@ function isNumberStringRegex(type) {
   return (type & ($G_NUMBER | $G_STRING | $G_REGEX)) !== 0;
 }
 
-function toktypeToString(type, token, ignoreUnknown) {
-  ASSERT(ALL_TOKEN_TYPES.includes(typeof type === 'object' ? type.type : type), 'should be known type', 'type=', typeof type === 'object' ? type.type : type, 'ALL_TOKEN_TYPES=', ALL_TOKEN_TYPES, 'token=', token);
+function toktypeToString(type) {
+  ASSERT(ALL_TOKEN_TYPES.includes(typeof type === 'object' ? type.type : type), 'should be known type', 'type=', typeof type === 'object' ? type.type : type, 'ALL_TOKEN_TYPES=', ALL_TOKEN_TYPES);
 
   switch (typeof type === 'object' ? type.type : type) {
     case $UNTYPED: return 'UNTYPED';
@@ -1760,7 +1760,6 @@ function toktypeToString(type, token, ignoreUnknown) {
     case $ERROR: return 'ERROR';
   }
 
-  if (ignoreUnknown) return 'UNKNOWN[' + (typeof type === 'object' ? type.type : type) + ']';
   throw new Error('toktypeToString: UNKNOWN[' + JSON.stringify(type) + ']')
 }
 
