@@ -47,20 +47,6 @@ const FROM_OTHER_FUNC_ARG = DEVONLY() ? {FROM_OTHER_FUNC_ARG: 1} : 6;
 const COAL_SEEN_NEITHER = 0;
 const COAL_SEEN_NULLISH = 1;
 const COAL_SEEN_LOGICAL = 2;
-
-const BINDING_TYPE_NONE = DEVONLY() ? {BINDING_TYPE_NONE: 1} : 0;
-const BINDING_TYPE_ARG = DEVONLY() ? {BINDING_TYPE_ARG: 1} : 1;
-const BINDING_TYPE_VAR = DEVONLY() ? {BINDING_TYPE_VAR: 1} : 2;
-const BINDING_TYPE_FUNC_VAR = DEVONLY() ? {BINDING_TYPE_FUNC_VAR: 1} : 3;
-const BINDING_TYPE_FUNC_STMT = DEVONLY() ? {BINDING_TYPE_FUNC_STMT: 1} : 4; // A func decl inside a block or switch (for webcompat mode)
-const BINDING_TYPE_FUNC_LEX = DEVONLY() ? {BINDING_TYPE_FUNC_LEX: 1} : 5;
-const BINDING_TYPE_LET = DEVONLY() ? {BINDING_TYPE_LET: 1} : 6;
-const BINDING_TYPE_CONST = DEVONLY() ? {BINDING_TYPE_CONST: 1} : 7;
-const BINDING_TYPE_CLASS = DEVONLY() ? {BINDING_TYPE_CLASS: 1} : 8;
-const BINDING_TYPE_CATCH_IDENT = DEVONLY() ? {BINDING_TYPE_CATCH_IDENT: 1} : 9;
-const BINDING_TYPE_CATCH_OTHER = DEVONLY() ? {BINDING_TYPE_CATCH_OTHER: 1} : 10;
-
-const HAS_NO_BINDINGS = DEVONLY() ? {HAS_NO_BINDINGS: 1} : null;
 const ASSIGNMENT_IS_INIT = DEVONLY() ? {ASSIGNMENT_IS_INIT: 1} : true; // var foo = bar;  (not to be parsed by parseBinding
 const ASSIGNMENT_IS_DEFAULT = DEVONLY() ? {ASSIGNMENT_IS_DEFAULT: 1} : false; // (foo = bar) => foo  (parsed by parseBinding)
 const IS_EXPRESSION = DEVONLY() ? {IS_EXPRESSION: 1} : 1;
@@ -104,18 +90,6 @@ const ASSIGN_EXPR_IS_OK = DEVONLY() ? {ASSIGN_EXPR_IS_OK: 1} : true; // fine to 
 const ASSIGN_EXPR_IS_ERROR = DEVONLY() ? {ASSIGN_EXPR_IS_ERROR: 1} : false; // throw on actual assignments, but also arrows, yield, await, ternary
 const NO_ID_TO_VERIFY = DEVONLY() ? {NO_ID_TO_VERIFY: 1} : undefined;
 const NO_DUPE_PARAMS = DEVONLY() ? {NO_DUPE_PARAMS: 1} : 0;
-const SCOPE_LAYER_GLOBAL = DEVONLY() ? {SCOPE_LAYER_GLOBAL: 1} : 0;
-const SCOPE_LAYER_FOR_HEADER = DEVONLY() ? {SCOPE_LAYER_FOR_HEADER: 1} : 1;
-const SCOPE_LAYER_BLOCK = DEVONLY() ? {SCOPE_LAYER_BLOCK: 1} : 2;
-const SCOPE_LAYER_FUNC_PARAMS = DEVONLY() ? {SCOPE_LAYER_FUNC_PARAMS: 1} : 3;
-const SCOPE_LAYER_CATCH_HEAD = DEVONLY() ? {SCOPE_LAYER_CATCH_HEAD: 1} : 5;
-const SCOPE_LAYER_CATCH_BODY = DEVONLY() ? {SCOPE_LAYER_CATCH_BODY: 1} : 6;
-const SCOPE_LAYER_FINALLY = DEVONLY() ? {SCOPE_LAYER_FINALLY: 1} : 7;
-const SCOPE_LAYER_SWITCH = DEVONLY() ? {SCOPE_LAYER_SWITCH: 1} : 8;
-const SCOPE_LAYER_FUNC_ROOT = DEVONLY() ? {SCOPE_LAYER_FUNC_ROOT: 1} : 9;
-const SCOPE_LAYER_FUNC_BODY = DEVONLY() ? {SCOPE_LAYER_FUNC_BODY: 1} : 10;
-const SCOPE_LAYER_ARROW_PARAMS = DEVONLY() ? {SCOPE_LAYER_ARROW_PARAMS: 1} : 11;
-const SCOPE_LAYER_FAKE_BLOCK = DEVONLY() ? {SCOPE_LAYER_FAKE_BLOCK: 1} : 12;
 const DO_NOT_BIND = DEVONLY() ? {DO_NOT_BIND: 1} : null;
 const UNDEF_EXPORTS = DEVONLY() ? {UNDEF_EXPORTS: 1} : undefined;
 const FDS_ILLEGAL = DEVONLY() ? {FDS_ILLEGAL: 1} : 1; // function declaration not allowed, period
@@ -130,6 +104,33 @@ const NOT_LHSE = DEVONLY() ? {NOT_LHSE: 1} : false; // not requiring a "LeftHand
 const ONLY_LHSE = DEVONLY() ? {ONLY_LHSE: 1} : true; // restrict value to conform to a "LeftHandExpression" production.
 const PARENT_NOT_LABEL = null; // when the parent statement was not a label statement
 const EMPTY_LABEL_SET = null;
+
+// The scope constants are exported so make them `let` so they don't get scrubbed entirely
+// TODO: also means they won't be inlined so this may require a slightly more granular system
+let BINDING_TYPE_NONE = DEVONLY() ? {BINDING_TYPE_NONE: 1} : 0;
+let BINDING_TYPE_ARG = DEVONLY() ? {BINDING_TYPE_ARG: 1} : 1;
+let BINDING_TYPE_VAR = DEVONLY() ? {BINDING_TYPE_VAR: 1} : 2;
+let BINDING_TYPE_FUNC_VAR = DEVONLY() ? {BINDING_TYPE_FUNC_VAR: 1} : 3;
+let BINDING_TYPE_FUNC_STMT = DEVONLY() ? {BINDING_TYPE_FUNC_STMT: 1} : 4; // A func decl inside a block or switch (for webcompat mode)
+let BINDING_TYPE_FUNC_LEX = DEVONLY() ? {BINDING_TYPE_FUNC_LEX: 1} : 5;
+let BINDING_TYPE_LET = DEVONLY() ? {BINDING_TYPE_LET: 1} : 6;
+let BINDING_TYPE_CONST = DEVONLY() ? {BINDING_TYPE_CONST: 1} : 7;
+let BINDING_TYPE_CLASS = DEVONLY() ? {BINDING_TYPE_CLASS: 1} : 8;
+let BINDING_TYPE_CATCH_IDENT = DEVONLY() ? {BINDING_TYPE_CATCH_IDENT: 1} : 9;
+let BINDING_TYPE_CATCH_OTHER = DEVONLY() ? {BINDING_TYPE_CATCH_OTHER: 1} : 10;
+let HAS_NO_BINDINGS = DEVONLY() ? {HAS_NO_BINDINGS: 1} : null;
+let SCOPE_LAYER_GLOBAL = DEVONLY() ? {SCOPE_LAYER_GLOBAL: 1} : 0;
+let SCOPE_LAYER_FOR_HEADER = DEVONLY() ? {SCOPE_LAYER_FOR_HEADER: 1} : 1;
+let SCOPE_LAYER_BLOCK = DEVONLY() ? {SCOPE_LAYER_BLOCK: 1} : 2;
+let SCOPE_LAYER_FUNC_PARAMS = DEVONLY() ? {SCOPE_LAYER_FUNC_PARAMS: 1} : 3;
+let SCOPE_LAYER_CATCH_HEAD = DEVONLY() ? {SCOPE_LAYER_CATCH_HEAD: 1} : 5;
+let SCOPE_LAYER_CATCH_BODY = DEVONLY() ? {SCOPE_LAYER_CATCH_BODY: 1} : 6;
+let SCOPE_LAYER_FINALLY = DEVONLY() ? {SCOPE_LAYER_FINALLY: 1} : 7;
+let SCOPE_LAYER_SWITCH = DEVONLY() ? {SCOPE_LAYER_SWITCH: 1} : 8;
+let SCOPE_LAYER_FUNC_ROOT = DEVONLY() ? {SCOPE_LAYER_FUNC_ROOT: 1} : 9;
+let SCOPE_LAYER_FUNC_BODY = DEVONLY() ? {SCOPE_LAYER_FUNC_BODY: 1} : 10;
+let SCOPE_LAYER_ARROW_PARAMS = DEVONLY() ? {SCOPE_LAYER_ARROW_PARAMS: 1} : 11;
+let SCOPE_LAYER_FAKE_BLOCK = DEVONLY() ? {SCOPE_LAYER_FAKE_BLOCK: 1} : 12;
 
 // This `DEVONLY` function is only used to set objects for enum in a dev build. In a prod build these are stripped entirely
 // The "dsl" for this function is assuming usage in a ternary (`DEVONLY() ? devstuff : prodstuff`). Any other use is at the mercy of the DCE of the minifier.
