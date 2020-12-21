@@ -538,6 +538,7 @@ function Parser(code, options = {}) {
     exposeScopes: options_exposeScopes = false, // put scopes in the AST under `$scope` property?
     astUids = false, // add an incremental uid to all ast nodes for debugging
     ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
+    locationTracking: options_locationTracking = true, // Add the `loc` property to all entries? (Much faster without...)
 
     templateNewlineNormalization = true, // normalize \r and \rn to \n in the `.raw` of template nodes? Estree spec says yes, but makes it hard to serialize lossless
 
@@ -718,6 +719,10 @@ function Parser(code, options = {}) {
   function AST_getCloseLoc(startIndex, startLine, startColumn, endIndex, endLine, endColumn) {
     ASSERT(AST_getCloseLoc.length === arguments.length, 'arg count');
     ASSERT([startIndex, startLine, startColumn, endIndex, endLine, endColumn].every(d => typeof d === 'number' && d >= 0), 'should receive all numbers, all zero-positive');
+
+    if (!options_locationTracking) {
+      return undefined;
+    }
 
     if (options_ranges) {
       // Note: return two distinct object when using ranges to prevent deopt
