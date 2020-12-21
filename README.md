@@ -88,6 +88,8 @@ const {
     $error = console.error,
     // Value ot use for the `source` field of each `loc` object
     sourceField = '',
+    // Do not populate loc properties on AST nodes (property will be undefined). Since v<unpublished>
+    locationTracking = true,
   }
 );
 ```
