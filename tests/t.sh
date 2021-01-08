@@ -3,7 +3,8 @@
 # https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
 # https://stackoverflow.com/questions/7665/how-to-resolve-symbolic-links-in-a-shell-script
 # Move to the folder where this script lives (should be `**/tenko/tests/t.sh`)
-cd "$( dirname $(realpath "${BASH_SOURCE[0]}") )" >/dev/null 2>&1
+# Deferring to realpath through nodejs as per https://github.com/pvdz/tenko/issues/12
+cd "$( dirname $(node -e "console.log(require('fs').realpathSync('${BASH_SOURCE[0]}'))") )" >/dev/null 2>&1
 # Some recursive calls assume to be in project root. This makes it work when not called from there (like npm .bin/tenko)
 cd ..
 
