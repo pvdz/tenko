@@ -8799,14 +8799,14 @@ function Parser(code, options = {}) {
             loc: undefined,
             optional: false, // !!
             callee: undefined,
-            arguments: undefined,
+            arguments: [],
           }, 'callee');
 
           let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
 
           assignable = mergeAssignable(nowAssignable, assignable);
 
-          AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'CallExpression');
+          AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'OptionalCallExpression');
 
           break;
 
