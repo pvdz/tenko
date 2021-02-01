@@ -168,7 +168,7 @@ function parseTestFile(tob) {
   let {file, oldData} = tob;
   if (!oldData) return;
 
-  ASSERT(oldData.includes(INPUT_HEADER), 'missing input header in ' + tob.file + ' (did you mean to use `./t F` instead of `./t f`?)');
+  ASSERT(oldData.includes(INPUT_HEADER), 'missing input header (new files should start with `@`) in ' + tob.file + ' (did you mean to use `./t F` instead of `./t f`?)');
   tob.aboveTheFold = oldData.slice(0, oldData.indexOf(INPUT_HEADER));
   tob.shouldPass = tob.aboveTheFold.toLowerCase().includes('\n## pass\n');
   tob.shouldFail = tob.aboveTheFold.toLowerCase().includes('\n## fail\n');
