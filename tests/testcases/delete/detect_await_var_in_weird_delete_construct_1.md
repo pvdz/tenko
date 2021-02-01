@@ -40,6 +40,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:8},end:{line:1,column:20},source:''},
+          computed: true,
+          optional: false,
           object: {
             type: 'Literal',
             loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
@@ -50,8 +52,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:13},end:{line:1,column:18},source:''},
             name: 'await'
-          },
-          computed: true
+          }
         }
       }
     }

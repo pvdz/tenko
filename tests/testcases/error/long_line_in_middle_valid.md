@@ -99,6 +99,7 @@ ast: {
             expression: {
               type: 'CallExpression',
               loc:{start:{line:1,column:87},end:{line:1,column:166},source:''},
+              optional: false,
               callee: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:87},end:{line:1,column:93},source:''},
@@ -114,6 +115,8 @@ ast: {
                     left: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:94},end:{line:1,column:116},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:94},end:{line:1,column:109},source:''},
@@ -123,8 +126,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:110},end:{line:1,column:116},source:''},
                         name: 'length'
-                      },
-                      computed: false
+                      }
                     },
                     operator: '>=',
                     right: {
@@ -141,6 +143,8 @@ ast: {
                     left: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:125},end:{line:1,column:147},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:125},end:{line:1,column:140},source:''},
@@ -150,8 +154,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:141},end:{line:1,column:147},source:''},
                         name: 'length'
-                      },
-                      computed: false
+                      }
                     },
                     operator: '<=',
                     right: {
@@ -177,6 +180,7 @@ ast: {
             expression: {
               type: 'CallExpression',
               loc:{start:{line:1,column:169},end:{line:1,column:262},source:''},
+              optional: false,
               callee: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:169},end:{line:1,column:175},source:''},
@@ -325,6 +329,8 @@ ast: {
                   left: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:378},end:{line:1,column:390},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:378},end:{line:1,column:383},source:''},
@@ -334,8 +340,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:384},end:{line:1,column:390},source:''},
                       name: 'length'
-                    },
-                    computed: false
+                    }
                   },
                   operator: '-',
                   right: {
@@ -388,6 +393,8 @@ ast: {
                 right: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:450},end:{line:1,column:462},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:450},end:{line:1,column:455},source:''},
@@ -397,8 +404,7 @@ ast: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:456},end:{line:1,column:462},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 }
               }
             },
@@ -620,9 +626,12 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:727},end:{line:1,column:775},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:727},end:{line:1,column:738},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:727},end:{line:1,column:732},source:''},
@@ -632,8 +641,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:733},end:{line:1,column:738},source:''},
                       name: 'slice'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -708,9 +716,12 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:834},end:{line:1,column:874},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:834},end:{line:1,column:855},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:834},end:{line:1,column:843},source:''},
@@ -720,8 +731,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:844},end:{line:1,column:855},source:''},
                       name: 'lastIndexOf'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -756,9 +766,12 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:887},end:{line:1,column:919},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:887},end:{line:1,column:904},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:887},end:{line:1,column:896},source:''},
@@ -768,8 +781,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:897},end:{line:1,column:904},source:''},
                       name: 'indexOf'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -833,6 +845,8 @@ ast: {
                 right: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:941},end:{line:1,column:957},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:941},end:{line:1,column:950},source:''},
@@ -842,8 +856,7 @@ ast: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:951},end:{line:1,column:957},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 }
               }
             },
@@ -1208,9 +1221,12 @@ ast: {
                           right: {
                             type: 'CallExpression',
                             loc:{start:{line:1,column:1393},end:{line:1,column:1439},source:''},
+                            optional: false,
                             callee: {
                               type: 'MemberExpression',
                               loc:{start:{line:1,column:1393},end:{line:1,column:1414},source:''},
+                              computed: false,
+                              optional: false,
                               object: {
                                 type: 'Identifier',
                                 loc:{start:{line:1,column:1393},end:{line:1,column:1402},source:''},
@@ -1220,8 +1236,7 @@ ast: {
                                 type: 'Identifier',
                                 loc:{start:{line:1,column:1403},end:{line:1,column:1414},source:''},
                                 name: 'lastIndexOf'
-                              },
-                              computed: false
+                              }
                             },
                             arguments: [
                               {
@@ -1364,6 +1379,8 @@ ast: {
                 init: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:1583},end:{line:1,column:1606},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'BinaryExpression',
                     loc:{start:{line:1,column:1584},end:{line:1,column:1598},source:''},
@@ -1384,8 +1401,7 @@ ast: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1600},end:{line:1,column:1606},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 }
               }
             ]
@@ -1438,15 +1454,21 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:1662},end:{line:1,column:1697},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:1662},end:{line:1,column:1691},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:1662},end:{line:1,column:1685},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:1662},end:{line:1,column:1677},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1662},end:{line:1,column:1671},source:''},
@@ -1456,8 +1478,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1672},end:{line:1,column:1677},source:''},
                           name: 'slice'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -1477,8 +1498,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:1686},end:{line:1,column:1691},source:''},
                       name: 'split'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -1508,15 +1528,21 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:1711},end:{line:1,column:1757},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:1711},end:{line:1,column:1751},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:1711},end:{line:1,column:1745},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:1711},end:{line:1,column:1726},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1711},end:{line:1,column:1720},source:''},
@@ -1526,8 +1552,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1721},end:{line:1,column:1726},source:''},
                           name: 'slice'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -1557,8 +1582,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:1746},end:{line:1,column:1751},source:''},
                       name: 'split'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -1584,6 +1608,8 @@ ast: {
                 left: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:1767},end:{line:1,column:1777},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1767},end:{line:1,column:1770},source:''},
@@ -1593,8 +1619,7 @@ ast: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1771},end:{line:1,column:1777},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 },
                 operator: '>',
                 right: {
@@ -1611,9 +1636,13 @@ ast: {
                 left: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:1785},end:{line:1,column:1798},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:1785},end:{line:1,column:1791},source:''},
+                    computed: true,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:1785},end:{line:1,column:1788},source:''},
@@ -1624,15 +1653,13 @@ ast: {
                       loc:{start:{line:1,column:1789},end:{line:1,column:1790},source:''},
                       value: 0,
                       raw: '0'
-                    },
-                    computed: true
+                    }
                   },
                   property: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1792},end:{line:1,column:1798},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 },
                 operator: '===',
                 right: {
@@ -1653,9 +1680,12 @@ ast: {
                   expression: {
                     type: 'CallExpression',
                     loc:{start:{line:1,column:1811},end:{line:1,column:1822},source:''},
+                    optional: false,
                     callee: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:1811},end:{line:1,column:1820},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:1811},end:{line:1,column:1814},source:''},
@@ -1665,8 +1695,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:1815},end:{line:1,column:1820},source:''},
                         name: 'shift'
-                      },
-                      computed: false
+                      }
                     },
                     arguments: []
                   }
@@ -1701,6 +1730,8 @@ ast: {
                 left: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:1853},end:{line:1,column:1864},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1853},end:{line:1,column:1857},source:''},
@@ -1710,8 +1741,7 @@ ast: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1858},end:{line:1,column:1864},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 },
                 operator: '>',
                 right: {
@@ -1728,9 +1758,13 @@ ast: {
                 left: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:1872},end:{line:1,column:1900},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:1872},end:{line:1,column:1893},source:''},
+                    computed: true,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:1872},end:{line:1,column:1876},source:''},
@@ -1742,6 +1776,8 @@ ast: {
                       left: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:1877},end:{line:1,column:1888},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1877},end:{line:1,column:1881},source:''},
@@ -1751,8 +1787,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1882},end:{line:1,column:1888},source:''},
                           name: 'length'
-                        },
-                        computed: false
+                        }
                       },
                       operator: '-',
                       right: {
@@ -1761,15 +1796,13 @@ ast: {
                         value: 1,
                         raw: '1'
                       }
-                    },
-                    computed: true
+                    }
                   },
                   property: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1894},end:{line:1,column:1900},source:''},
                     name: 'length'
-                  },
-                  computed: false
+                  }
                 },
                 operator: '===',
                 right: {
@@ -1790,9 +1823,12 @@ ast: {
                   expression: {
                     type: 'CallExpression',
                     loc:{start:{line:1,column:1913},end:{line:1,column:1923},source:''},
+                    optional: false,
                     callee: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:1913},end:{line:1,column:1921},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:1913},end:{line:1,column:1917},source:''},
@@ -1802,8 +1838,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:1918},end:{line:1,column:1921},source:''},
                         name: 'pop'
-                      },
-                      computed: false
+                      }
                     },
                     arguments: []
                   }
@@ -1848,15 +1883,21 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:1963},end:{line:1,column:2062},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:1963},end:{line:1,column:2056},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:1963},end:{line:1,column:2051},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:1963},end:{line:1,column:1970},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1963},end:{line:1,column:1966},source:''},
@@ -1866,8 +1907,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:1967},end:{line:1,column:1970},source:''},
                           name: 'map'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -1903,9 +1943,12 @@ ast: {
                                 right: {
                                   type: 'CallExpression',
                                   loc:{start:{line:1,column:1982},end:{line:1,column:2026},source:''},
+                                  optional: false,
                                   callee: {
                                     type: 'MemberExpression',
                                     loc:{start:{line:1,column:1982},end:{line:1,column:2002},source:''},
+                                    computed: false,
+                                    optional: false,
                                     object: {
                                       type: 'BinaryExpression',
                                       loc:{start:{line:1,column:1983},end:{line:1,column:1992},source:''},
@@ -1932,8 +1975,7 @@ ast: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:1994},end:{line:1,column:2002},source:''},
                                       name: 'padStart'
-                                    },
-                                    computed: false
+                                    }
                                   },
                                   arguments: [
                                     {
@@ -1962,9 +2004,12 @@ ast: {
                             right: {
                               type: 'CallExpression',
                               loc:{start:{line:1,column:2037},end:{line:1,column:2050},source:''},
+                              optional: false,
                               callee: {
                                 type: 'MemberExpression',
                                 loc:{start:{line:1,column:2037},end:{line:1,column:2048},source:''},
+                                computed: false,
+                                optional: false,
                                 object: {
                                   type: 'Identifier',
                                   loc:{start:{line:1,column:2037},end:{line:1,column:2038},source:''},
@@ -1974,8 +2019,7 @@ ast: {
                                   type: 'Identifier',
                                   loc:{start:{line:1,column:2039},end:{line:1,column:2048},source:''},
                                   name: 'trimRight'
-                                },
-                                computed: false
+                                }
                               },
                               arguments: []
                             }
@@ -1987,8 +2031,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:2052},end:{line:1,column:2056},source:''},
                       name: 'join'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -2018,15 +2061,21 @@ ast: {
                 init: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:2077},end:{line:1,column:2177},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:2077},end:{line:1,column:2171},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:2077},end:{line:1,column:2166},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:2077},end:{line:1,column:2085},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:2077},end:{line:1,column:2081},source:''},
@@ -2036,8 +2085,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:2082},end:{line:1,column:2085},source:''},
                           name: 'map'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -2073,9 +2121,12 @@ ast: {
                                 right: {
                                   type: 'CallExpression',
                                   loc:{start:{line:1,column:2097},end:{line:1,column:2141},source:''},
+                                  optional: false,
                                   callee: {
                                     type: 'MemberExpression',
                                     loc:{start:{line:1,column:2097},end:{line:1,column:2117},source:''},
+                                    computed: false,
+                                    optional: false,
                                     object: {
                                       type: 'BinaryExpression',
                                       loc:{start:{line:1,column:2098},end:{line:1,column:2107},source:''},
@@ -2102,8 +2153,7 @@ ast: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:2109},end:{line:1,column:2117},source:''},
                                       name: 'padStart'
-                                    },
-                                    computed: false
+                                    }
                                   },
                                   arguments: [
                                     {
@@ -2132,9 +2182,12 @@ ast: {
                             right: {
                               type: 'CallExpression',
                               loc:{start:{line:1,column:2152},end:{line:1,column:2165},source:''},
+                              optional: false,
                               callee: {
                                 type: 'MemberExpression',
                                 loc:{start:{line:1,column:2152},end:{line:1,column:2163},source:''},
+                                computed: false,
+                                optional: false,
                                 object: {
                                   type: 'Identifier',
                                   loc:{start:{line:1,column:2152},end:{line:1,column:2153},source:''},
@@ -2144,8 +2197,7 @@ ast: {
                                   type: 'Identifier',
                                   loc:{start:{line:1,column:2154},end:{line:1,column:2163},source:''},
                                   name: 'trimRight'
-                                },
-                                computed: false
+                                }
                               },
                               arguments: []
                             }
@@ -2157,8 +2209,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:2167},end:{line:1,column:2171},source:''},
                       name: 'join'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -2181,6 +2232,8 @@ ast: {
               left: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:2184},end:{line:1,column:2198},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'BinaryExpression',
                   loc:{start:{line:1,column:2185},end:{line:1,column:2190},source:''},
@@ -2201,8 +2254,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:2192},end:{line:1,column:2198},source:''},
                   name: 'length'
-                },
-                computed: false
+                }
               },
               operator: '>',
               right: {
@@ -2230,6 +2282,8 @@ ast: {
                     right: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:2245},end:{line:1,column:2259},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'BinaryExpression',
                         loc:{start:{line:1,column:2246},end:{line:1,column:2251},source:''},
@@ -2250,8 +2304,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:2253},end:{line:1,column:2259},source:''},
                         name: 'length'
-                      },
-                      computed: false
+                      }
                     }
                   }
                 },
@@ -2319,15 +2372,21 @@ ast: {
                     right: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:2333},end:{line:1,column:2432},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:2333},end:{line:1,column:2426},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'CallExpression',
                           loc:{start:{line:1,column:2333},end:{line:1,column:2421},source:''},
+                          optional: false,
                           callee: {
                             type: 'MemberExpression',
                             loc:{start:{line:1,column:2333},end:{line:1,column:2340},source:''},
+                            computed: false,
+                            optional: false,
                             object: {
                               type: 'Identifier',
                               loc:{start:{line:1,column:2333},end:{line:1,column:2336},source:''},
@@ -2337,8 +2396,7 @@ ast: {
                               type: 'Identifier',
                               loc:{start:{line:1,column:2337},end:{line:1,column:2340},source:''},
                               name: 'map'
-                            },
-                            computed: false
+                            }
                           },
                           arguments: [
                             {
@@ -2374,9 +2432,12 @@ ast: {
                                     right: {
                                       type: 'CallExpression',
                                       loc:{start:{line:1,column:2352},end:{line:1,column:2396},source:''},
+                                      optional: false,
                                       callee: {
                                         type: 'MemberExpression',
                                         loc:{start:{line:1,column:2352},end:{line:1,column:2372},source:''},
+                                        computed: false,
+                                        optional: false,
                                         object: {
                                           type: 'BinaryExpression',
                                           loc:{start:{line:1,column:2353},end:{line:1,column:2362},source:''},
@@ -2403,8 +2464,7 @@ ast: {
                                           type: 'Identifier',
                                           loc:{start:{line:1,column:2364},end:{line:1,column:2372},source:''},
                                           name: 'padStart'
-                                        },
-                                        computed: false
+                                        }
                                       },
                                       arguments: [
                                         {
@@ -2433,9 +2493,12 @@ ast: {
                                 right: {
                                   type: 'CallExpression',
                                   loc:{start:{line:1,column:2407},end:{line:1,column:2420},source:''},
+                                  optional: false,
                                   callee: {
                                     type: 'MemberExpression',
                                     loc:{start:{line:1,column:2407},end:{line:1,column:2418},source:''},
+                                    computed: false,
+                                    optional: false,
                                     object: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:2407},end:{line:1,column:2408},source:''},
@@ -2445,8 +2508,7 @@ ast: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:2409},end:{line:1,column:2418},source:''},
                                       name: 'trimRight'
-                                    },
-                                    computed: false
+                                    }
                                   },
                                   arguments: []
                                 }
@@ -2458,8 +2520,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:2422},end:{line:1,column:2426},source:''},
                           name: 'join'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -2487,15 +2548,21 @@ ast: {
                     right: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:2445},end:{line:1,column:2545},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:2445},end:{line:1,column:2539},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'CallExpression',
                           loc:{start:{line:1,column:2445},end:{line:1,column:2534},source:''},
+                          optional: false,
                           callee: {
                             type: 'MemberExpression',
                             loc:{start:{line:1,column:2445},end:{line:1,column:2453},source:''},
+                            computed: false,
+                            optional: false,
                             object: {
                               type: 'Identifier',
                               loc:{start:{line:1,column:2445},end:{line:1,column:2449},source:''},
@@ -2505,8 +2572,7 @@ ast: {
                               type: 'Identifier',
                               loc:{start:{line:1,column:2450},end:{line:1,column:2453},source:''},
                               name: 'map'
-                            },
-                            computed: false
+                            }
                           },
                           arguments: [
                             {
@@ -2542,9 +2608,12 @@ ast: {
                                     right: {
                                       type: 'CallExpression',
                                       loc:{start:{line:1,column:2465},end:{line:1,column:2509},source:''},
+                                      optional: false,
                                       callee: {
                                         type: 'MemberExpression',
                                         loc:{start:{line:1,column:2465},end:{line:1,column:2485},source:''},
+                                        computed: false,
+                                        optional: false,
                                         object: {
                                           type: 'BinaryExpression',
                                           loc:{start:{line:1,column:2466},end:{line:1,column:2475},source:''},
@@ -2571,8 +2640,7 @@ ast: {
                                           type: 'Identifier',
                                           loc:{start:{line:1,column:2477},end:{line:1,column:2485},source:''},
                                           name: 'padStart'
-                                        },
-                                        computed: false
+                                        }
                                       },
                                       arguments: [
                                         {
@@ -2601,9 +2669,12 @@ ast: {
                                 right: {
                                   type: 'CallExpression',
                                   loc:{start:{line:1,column:2520},end:{line:1,column:2533},source:''},
+                                  optional: false,
                                   callee: {
                                     type: 'MemberExpression',
                                     loc:{start:{line:1,column:2520},end:{line:1,column:2531},source:''},
+                                    computed: false,
+                                    optional: false,
                                     object: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:2520},end:{line:1,column:2521},source:''},
@@ -2613,8 +2684,7 @@ ast: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:2522},end:{line:1,column:2531},source:''},
                                       name: 'trimRight'
-                                    },
-                                    computed: false
+                                    }
                                   },
                                   arguments: []
                                 }
@@ -2626,8 +2696,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:2535},end:{line:1,column:2539},source:''},
                           name: 'join'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -2684,9 +2753,12 @@ ast: {
                   alternate: {
                     type: 'CallExpression',
                     loc:{start:{line:1,column:2595},end:{line:1,column:2629},source:''},
+                    optional: false,
                     callee: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:2595},end:{line:1,column:2616},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:2595},end:{line:1,column:2604},source:''},
@@ -2696,8 +2768,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:2605},end:{line:1,column:2616},source:''},
                         name: 'lastIndexOf'
-                      },
-                      computed: false
+                      }
                     },
                     arguments: [
                       {
@@ -2888,9 +2959,12 @@ ast: {
                   left: {
                     type: 'CallExpression',
                     loc:{start:{line:1,column:2773},end:{line:1,column:2809},source:''},
+                    optional: false,
                     callee: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:2773},end:{line:1,column:2783},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Literal',
                         loc:{start:{line:1,column:2773},end:{line:1,column:2776},source:''},
@@ -2901,8 +2975,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:2777},end:{line:1,column:2783},source:''},
                         name: 'repeat'
-                      },
-                      computed: false
+                      }
                     },
                     arguments: [
                       {
@@ -2911,6 +2984,8 @@ ast: {
                         left: {
                           type: 'MemberExpression',
                           loc:{start:{line:1,column:2784},end:{line:1,column:2794},source:''},
+                          computed: false,
+                          optional: false,
                           object: {
                             type: 'Identifier',
                             loc:{start:{line:1,column:2784},end:{line:1,column:2787},source:''},
@@ -2920,8 +2995,7 @@ ast: {
                             type: 'Identifier',
                             loc:{start:{line:1,column:2788},end:{line:1,column:2794},source:''},
                             name: 'length'
-                          },
-                          computed: false
+                          }
                         },
                         operator: '-',
                         right: {
@@ -2972,9 +3046,12 @@ ast: {
                     right: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:2838},end:{line:1,column:2867},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:2838},end:{line:1,column:2848},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Literal',
                           loc:{start:{line:1,column:2838},end:{line:1,column:2841},source:''},
@@ -2985,8 +3062,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:2842},end:{line:1,column:2848},source:''},
                           name: 'repeat'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -3037,9 +3113,12 @@ ast: {
                     right: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:2896},end:{line:1,column:2925},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:2896},end:{line:1,column:2906},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Literal',
                           loc:{start:{line:1,column:2896},end:{line:1,column:2899},source:''},
@@ -3050,8 +3129,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:2900},end:{line:1,column:2906},source:''},
                           name: 'repeat'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -3178,9 +3256,12 @@ ast: {
                                             right: {
                                               type: 'CallExpression',
                                               loc:{start:{line:1,column:3002},end:{line:1,column:3048},source:''},
+                                              optional: false,
                                               callee: {
                                                 type: 'MemberExpression',
                                                 loc:{start:{line:1,column:3002},end:{line:1,column:3012},source:''},
+                                                computed: false,
+                                                optional: false,
                                                 object: {
                                                   type: 'Literal',
                                                   loc:{start:{line:1,column:3002},end:{line:1,column:3005},source:''},
@@ -3191,16 +3272,18 @@ ast: {
                                                   type: 'Identifier',
                                                   loc:{start:{line:1,column:3006},end:{line:1,column:3012},source:''},
                                                   name: 'repeat'
-                                                },
-                                                computed: false
+                                                }
                                               },
                                               arguments: [
                                                 {
                                                   type: 'CallExpression',
                                                   loc:{start:{line:1,column:3013},end:{line:1,column:3047},source:''},
+                                                  optional: false,
                                                   callee: {
                                                     type: 'MemberExpression',
                                                     loc:{start:{line:1,column:3013},end:{line:1,column:3021},source:''},
+                                                    computed: false,
+                                                    optional: false,
                                                     object: {
                                                       type: 'Identifier',
                                                       loc:{start:{line:1,column:3013},end:{line:1,column:3017},source:''},
@@ -3210,8 +3293,7 @@ ast: {
                                                       type: 'Identifier',
                                                       loc:{start:{line:1,column:3018},end:{line:1,column:3021},source:''},
                                                       name: 'max'
-                                                    },
-                                                    computed: false
+                                                    }
                                                   },
                                                   arguments: [
                                                     {
@@ -3253,9 +3335,12 @@ ast: {
                                         right: {
                                           type: 'CallExpression',
                                           loc:{start:{line:1,column:3065},end:{line:1,column:3101},source:''},
+                                          optional: false,
                                           callee: {
                                             type: 'MemberExpression',
                                             loc:{start:{line:1,column:3065},end:{line:1,column:3075},source:''},
+                                            computed: false,
+                                            optional: false,
                                             object: {
                                               type: 'Literal',
                                               loc:{start:{line:1,column:3065},end:{line:1,column:3068},source:''},
@@ -3266,16 +3351,18 @@ ast: {
                                               type: 'Identifier',
                                               loc:{start:{line:1,column:3069},end:{line:1,column:3075},source:''},
                                               name: 'repeat'
-                                            },
-                                            computed: false
+                                            }
                                           },
                                           arguments: [
                                             {
                                               type: 'CallExpression',
                                               loc:{start:{line:1,column:3076},end:{line:1,column:3100},source:''},
+                                              optional: false,
                                               callee: {
                                                 type: 'MemberExpression',
                                                 loc:{start:{line:1,column:3076},end:{line:1,column:3084},source:''},
+                                                computed: false,
+                                                optional: false,
                                                 object: {
                                                   type: 'Identifier',
                                                   loc:{start:{line:1,column:3076},end:{line:1,column:3080},source:''},
@@ -3285,8 +3372,7 @@ ast: {
                                                   type: 'Identifier',
                                                   loc:{start:{line:1,column:3081},end:{line:1,column:3084},source:''},
                                                   name: 'max'
-                                                },
-                                                computed: false
+                                                }
                                               },
                                               arguments: [
                                                 {
@@ -3309,9 +3395,12 @@ ast: {
                                       right: {
                                         type: 'CallExpression',
                                         loc:{start:{line:1,column:3107},end:{line:1,column:3142},source:''},
+                                        optional: false,
                                         callee: {
                                           type: 'MemberExpression',
                                           loc:{start:{line:1,column:3107},end:{line:1,column:3117},source:''},
+                                          computed: false,
+                                          optional: false,
                                           object: {
                                             type: 'Literal',
                                             loc:{start:{line:1,column:3107},end:{line:1,column:3110},source:''},
@@ -3322,16 +3411,18 @@ ast: {
                                             type: 'Identifier',
                                             loc:{start:{line:1,column:3111},end:{line:1,column:3117},source:''},
                                             name: 'repeat'
-                                          },
-                                          computed: false
+                                          }
                                         },
                                         arguments: [
                                           {
                                             type: 'CallExpression',
                                             loc:{start:{line:1,column:3118},end:{line:1,column:3141},source:''},
+                                            optional: false,
                                             callee: {
                                               type: 'MemberExpression',
                                               loc:{start:{line:1,column:3118},end:{line:1,column:3126},source:''},
+                                              computed: false,
+                                              optional: false,
                                               object: {
                                                 type: 'Identifier',
                                                 loc:{start:{line:1,column:3118},end:{line:1,column:3122},source:''},
@@ -3341,8 +3432,7 @@ ast: {
                                                 type: 'Identifier',
                                                 loc:{start:{line:1,column:3123},end:{line:1,column:3126},source:''},
                                                 name: 'max'
-                                              },
-                                              computed: false
+                                              }
                                             },
                                             arguments: [
                                               {
@@ -3415,6 +3505,8 @@ ast: {
                                   right: {
                                     type: 'MemberExpression',
                                     loc:{start:{line:1,column:3208},end:{line:1,column:3224},source:''},
+                                    computed: false,
+                                    optional: false,
                                     object: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:3208},end:{line:1,column:3217},source:''},
@@ -3424,8 +3516,7 @@ ast: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:3218},end:{line:1,column:3224},source:''},
                                       name: 'length'
-                                    },
-                                    computed: false
+                                    }
                                   }
                                 },
                                 consequent: {
@@ -3511,21 +3602,30 @@ ast: {
             argument: {
               type: 'CallExpression',
               loc:{start:{line:1,column:3321},end:{line:1,column:3379},source:''},
+              optional: false,
               callee: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:3321},end:{line:1,column:3373},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:3321},end:{line:1,column:3368},source:''},
+                  optional: false,
                   callee: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:3321},end:{line:1,column:3348},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:3321},end:{line:1,column:3344},source:''},
+                      optional: false,
                       callee: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:3321},end:{line:1,column:3338},source:''},
+                        computed: false,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:3321},end:{line:1,column:3332},source:''},
@@ -3535,8 +3635,7 @@ ast: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:3333},end:{line:1,column:3338},source:''},
                           name: 'split'
-                        },
-                        computed: false
+                        }
                       },
                       arguments: [
                         {
@@ -3551,8 +3650,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:3345},end:{line:1,column:3348},source:''},
                       name: 'map'
-                    },
-                    computed: false
+                    }
                   },
                   arguments: [
                     {
@@ -3572,9 +3670,12 @@ ast: {
                       body: {
                         type: 'CallExpression',
                         loc:{start:{line:1,column:3354},end:{line:1,column:3367},source:''},
+                        optional: false,
                         callee: {
                           type: 'MemberExpression',
                           loc:{start:{line:1,column:3354},end:{line:1,column:3365},source:''},
+                          computed: false,
+                          optional: false,
                           object: {
                             type: 'Identifier',
                             loc:{start:{line:1,column:3354},end:{line:1,column:3355},source:''},
@@ -3584,8 +3685,7 @@ ast: {
                             type: 'Identifier',
                             loc:{start:{line:1,column:3356},end:{line:1,column:3365},source:''},
                             name: 'trimRight'
-                          },
-                          computed: false
+                          }
                         },
                         arguments: []
                       }
@@ -3596,8 +3696,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:3369},end:{line:1,column:3373},source:''},
                   name: 'join'
-                },
-                computed: false
+                }
               },
               arguments: [
                 {

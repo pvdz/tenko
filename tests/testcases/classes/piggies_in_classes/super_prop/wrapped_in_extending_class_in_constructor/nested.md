@@ -114,6 +114,8 @@ ast: {
                                   callee: {
                                     type: 'MemberExpression',
                                     loc:{start:{line:1,column:61},end:{line:1,column:70},source:''},
+                                    computed: false,
+                                    optional: false,
                                     object: {
                                       type: 'Super',
                                       loc:{start:{line:1,column:61},end:{line:1,column:66},source:''}
@@ -122,8 +124,7 @@ ast: {
                                       type: 'Identifier',
                                       loc:{start:{line:1,column:67},end:{line:1,column:70},source:''},
                                       name: 'foo'
-                                    },
-                                    computed: false
+                                    }
                                   }
                                 }
                               }

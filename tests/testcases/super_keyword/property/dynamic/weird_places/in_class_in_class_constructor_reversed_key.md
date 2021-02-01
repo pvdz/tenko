@@ -101,6 +101,7 @@ ast: {
                           key: {
                             type: 'CallExpression',
                             loc:{start:{line:4,column:7},end:{line:4,column:24},source:''},
+                            optional: false,
                             callee: {
                               type: 'Super',
                               loc:{start:{line:4,column:7},end:{line:4,column:12},source:''}
@@ -109,6 +110,8 @@ ast: {
                               {
                                 type: 'MemberExpression',
                                 loc:{start:{line:4,column:13},end:{line:4,column:23},source:''},
+                                computed: true,
+                                optional: false,
                                 object: {
                                   type: 'Super',
                                   loc:{start:{line:4,column:13},end:{line:4,column:18},source:''}
@@ -117,8 +120,7 @@ ast: {
                                   type: 'Identifier',
                                   loc:{start:{line:4,column:19},end:{line:4,column:22},source:''},
                                   name: 'foo'
-                                },
-                                computed: true
+                                }
                               }
                             ]
                           },

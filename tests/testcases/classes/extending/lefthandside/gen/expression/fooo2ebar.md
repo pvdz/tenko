@@ -45,6 +45,8 @@ ast: {
         superClass: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:17},end:{line:1,column:25},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:17},end:{line:1,column:21},source:''},
@@ -54,8 +56,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:22},end:{line:1,column:25},source:''},
             name: 'bar'
-          },
-          computed: false
+          }
         },
         body: {
           type: 'ClassBody',

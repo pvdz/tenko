@@ -39,6 +39,8 @@ ast: {
       expression: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+        computed: false,
+        optional: false,
         object: {
           type: 'UnaryExpression',
           loc:{start:{line:1,column:1},end:{line:1,column:3},source:''},
@@ -54,8 +56,7 @@ ast: {
           type: 'Identifier',
           loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
           name: 'y'
-        },
-        computed: false
+        }
       }
     }
   ]

@@ -38,6 +38,7 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:0},end:{line:2,column:3},source:''},
+        optional: false,
         callee: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},

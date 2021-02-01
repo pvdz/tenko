@@ -74,6 +74,8 @@ ast: {
                       argument: {
                         type: 'MemberExpression',
                         loc:{start:{line:1,column:20},end:{line:1,column:32},source:''},
+                        computed: true,
+                        optional: false,
                         object: {
                           type: 'Identifier',
                           loc:{start:{line:1,column:20},end:{line:1,column:21},source:''},
@@ -82,6 +84,8 @@ ast: {
                         property: {
                           type: 'MemberExpression',
                           loc:{start:{line:1,column:22},end:{line:1,column:31},source:''},
+                          computed: false,
+                          optional: false,
                           object: {
                             type: 'Super',
                             loc:{start:{line:1,column:22},end:{line:1,column:27},source:''}
@@ -90,10 +94,8 @@ ast: {
                             type: 'Identifier',
                             loc:{start:{line:1,column:28},end:{line:1,column:31},source:''},
                             name: 'foo'
-                          },
-                          computed: false
-                        },
-                        computed: true
+                          }
+                        }
                       }
                     }
                   ]

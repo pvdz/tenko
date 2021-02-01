@@ -153,9 +153,12 @@ ast: {
               value: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:28},end:{line:1,column:42},source:''},
+                computed: true,
+                optional: false,
                 object: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:28},end:{line:1,column:39},source:''},
+                  optional: false,
                   callee: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:28},end:{line:1,column:37},source:''},
@@ -167,8 +170,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:40},end:{line:1,column:41},source:''},
                   name: 'a'
-                },
-                computed: true
+                }
               },
               shorthand: false
             },
@@ -186,6 +188,8 @@ ast: {
               value: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:46},end:{line:1,column:52},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'ThisExpression',
                   loc:{start:{line:1,column:46},end:{line:1,column:50},source:''}
@@ -194,8 +198,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:51},end:{line:1,column:52},source:''},
                   name: 'a'
-                },
-                computed: false
+                }
               },
               shorthand: false
             }

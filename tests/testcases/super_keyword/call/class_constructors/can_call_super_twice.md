@@ -74,6 +74,7 @@ ast: {
                     expression: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:36},end:{line:1,column:43},source:''},
+                      optional: false,
                       callee: {
                         type: 'Super',
                         loc:{start:{line:1,column:36},end:{line:1,column:41},source:''}
@@ -87,6 +88,7 @@ ast: {
                     expression: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:45},end:{line:1,column:52},source:''},
+                      optional: false,
                       callee: {
                         type: 'Super',
                         loc:{start:{line:1,column:45},end:{line:1,column:50},source:''}

@@ -42,7 +42,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:2,column:0},end:{line:2,column:4},source:''},
-        value: '\u0000',
+        value: '\x00',
         raw: '"\\0"'
       }
     }

@@ -75,6 +75,8 @@ ast: {
                     argument: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:42},end:{line:1,column:52},source:''},
+                      computed: true,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:42},end:{line:1,column:43},source:''},
@@ -83,13 +85,13 @@ ast: {
                       property: {
                         type: 'CallExpression',
                         loc:{start:{line:1,column:44},end:{line:1,column:51},source:''},
+                        optional: false,
                         callee: {
                           type: 'Super',
                           loc:{start:{line:1,column:44},end:{line:1,column:49},source:''}
                         },
                         arguments: []
-                      },
-                      computed: true
+                      }
                     }
                   }
                 ]

@@ -51,6 +51,7 @@ ast: {
             expression: {
               type: 'CallExpression',
               loc:{start:{line:1,column:14},end:{line:2,column:18},source:''},
+              optional: false,
               callee: {
                 type: 'Literal',
                 loc:{start:{line:1,column:14},end:{line:1,column:26},source:''},

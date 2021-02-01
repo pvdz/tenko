@@ -77,7 +77,7 @@ ast: {
           {
             type: 'Literal',
             loc:{start:{line:1,column:3},end:{line:1,column:8},source:''},
-            value: '\u0007',
+            value: '\x07',
             raw: "'\\07'"
           }
         ],

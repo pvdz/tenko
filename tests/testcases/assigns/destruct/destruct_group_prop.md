@@ -48,6 +48,8 @@ ast: {
             {
               type: 'MemberExpression',
               loc:{start:{line:1,column:2},end:{line:1,column:9},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
@@ -57,8 +59,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:6},end:{line:1,column:9},source:''},
                 name: 'foo'
-              },
-              computed: false
+              }
             }
           ]
         },

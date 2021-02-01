@@ -42,9 +42,12 @@ ast: {
             argument: {
               type: 'CallExpression',
               loc:{start:{line:1,column:4},end:{line:1,column:17},source:''},
+              optional: false,
               callee: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:4},end:{line:1,column:11},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'ArrayExpression',
                   loc:{start:{line:1,column:4},end:{line:1,column:7},source:''},
@@ -60,8 +63,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
                   name: 'map'
-                },
-                computed: false
+                }
               },
               arguments: [
                 {

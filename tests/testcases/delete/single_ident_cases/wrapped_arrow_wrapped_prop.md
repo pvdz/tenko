@@ -40,6 +40,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:8},end:{line:1,column:18},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'ArrowFunctionExpression',
             loc:{start:{line:1,column:9},end:{line:1,column:15},source:''},
@@ -64,8 +66,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
             name: 'x'
-          },
-          computed: false
+          }
         }
       }
     }

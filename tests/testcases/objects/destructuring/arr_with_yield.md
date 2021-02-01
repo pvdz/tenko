@@ -51,6 +51,8 @@ ast: {
               {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:10},end:{line:1,column:18},source:''},
+                computed: true,
+                optional: false,
                 object: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
@@ -60,8 +62,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
                   name: 'yield'
-                },
-                computed: true
+                }
               }
             ]
           },

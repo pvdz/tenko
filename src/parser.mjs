@@ -1272,6 +1272,7 @@ function Parser(code, options = {}) {
     AST_setNode(astProp, {
       type: 'CallExpression',
       loc: AST_getClosedLoc($tp_async_start, $tp_async_line, $tp_async_column),
+      optional: false,
       callee: AST_getIdentNode($tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon),
       arguments: args,
     });
@@ -8883,9 +8884,10 @@ function Parser(code, options = {}) {
     AST_setNode(astProp, {
       type: 'MemberExpression',
       loc: AST_getClosedLoc($tp_valueFirst_start, $tp_valueFirst_line,  $tp_valueFirst_column),
+      computed: false,
+      optional: false, // For optional chaining.
       object: AST_popNode(astProp),
       property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
-      computed: false,
     });
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setAssignable(assignable), isNewArg, NOT_LHSE, astProp);
   }
@@ -8895,9 +8897,10 @@ function Parser(code, options = {}) {
     AST_wrapClosedCustom(astProp, {
       type: 'MemberExpression',
       loc: undefined,
+      computed: true,
+      optional: false, // For optional chaining.
       object: undefined,
       property: undefined,
-      computed: true,
     }, 'object');
     ASSERT_skipToExpressionStart($PUNC_BRACKET_OPEN, lexerFlags);
     let nowAssignable = parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), 'property');
@@ -8933,6 +8936,7 @@ function Parser(code, options = {}) {
     AST_wrapClosedCustom(astProp, {
       type: 'CallExpression',
       loc: undefined,
+      optional: false,
       callee: undefined,
       arguments: [],
     }, 'callee');
@@ -9146,6 +9150,7 @@ function Parser(code, options = {}) {
       AST_open(astProp, {
         type: 'CallExpression',
         loc: undefined,
+        optional: false,
         callee: undefined,
         arguments: [],
       });
@@ -10187,6 +10192,7 @@ function Parser(code, options = {}) {
         AST_setNode(astProp, {
           type: 'CallExpression',
           loc: AST_getClosedLoc($tp_async_start, $tp_async_line, $tp_async_column),
+          optional: false,
           callee: AST_getIdentNode($tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon),
           arguments: [],
         });

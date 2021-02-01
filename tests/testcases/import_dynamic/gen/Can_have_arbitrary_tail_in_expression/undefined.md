@@ -38,6 +38,7 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+        optional: false,
         callee: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:3},source:''},
@@ -47,12 +48,16 @@ ast: {
           {
             type: 'CallExpression',
             loc:{start:{line:1,column:4},end:{line:1,column:23},source:''},
+            optional: false,
             callee: {
               type: 'MemberExpression',
               loc:{start:{line:1,column:4},end:{line:1,column:21},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'CallExpression',
                 loc:{start:{line:1,column:4},end:{line:1,column:17},source:''},
+                optional: false,
                 callee: {
                   type: 'Import',
                   loc:{start:{line:1,column:4},end:{line:1,column:10},source:''}
@@ -70,8 +75,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:18},end:{line:1,column:21},source:''},
                 name: 'den'
-              },
-              computed: false
+              }
             },
             arguments: []
           }

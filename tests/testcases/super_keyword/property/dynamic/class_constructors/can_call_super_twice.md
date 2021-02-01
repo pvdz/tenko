@@ -74,6 +74,8 @@ ast: {
                     expression: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:36},end:{line:1,column:46},source:''},
+                      computed: true,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:36},end:{line:1,column:41},source:''}
@@ -82,8 +84,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:42},end:{line:1,column:45},source:''},
                         name: 'dad'
-                      },
-                      computed: true
+                      }
                     }
                   },
                   {
@@ -92,6 +93,8 @@ ast: {
                     expression: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:48},end:{line:1,column:58},source:''},
+                      computed: true,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:48},end:{line:1,column:53},source:''}
@@ -100,8 +103,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:54},end:{line:1,column:57},source:''},
                         name: 'dad'
-                      },
-                      computed: true
+                      }
                     }
                   }
                 ]

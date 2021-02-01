@@ -59,6 +59,7 @@ ast: {
             superClass: {
               type: 'CallExpression',
               loc:{start:{line:2,column:18},end:{line:2,column:26},source:''},
+              optional: false,
               callee: {
                 type: 'Identifier',
                 loc:{start:{line:2,column:18},end:{line:2,column:23},source:''},

@@ -54,6 +54,8 @@ ast: {
             expression: {
               type: 'MemberExpression',
               loc:{start:{line:1,column:13},end:{line:1,column:27},source:''},
+              computed: true,
+              optional: false,
               object: {
                 type: 'Literal',
                 loc:{start:{line:1,column:13},end:{line:1,column:15},source:''},
@@ -73,8 +75,7 @@ ast: {
                   loc:{start:{line:1,column:20},end:{line:1,column:26},source:''},
                   name: 'target'
                 }
-              },
-              computed: true
+              }
             }
           }
         ]

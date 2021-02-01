@@ -42,6 +42,8 @@ ast: {
             {
               type: 'MemberExpression',
               loc:{start:{line:1,column:1},end:{line:1,column:20},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'FunctionExpression',
                 loc:{start:{line:1,column:1},end:{line:1,column:13},source:''},
@@ -59,8 +61,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:14},end:{line:1,column:20},source:''},
                 name: 'length'
-              },
-              computed: false
+              }
             }
           ]
         },

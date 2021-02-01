@@ -37,6 +37,7 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+        optional: false,
         callee: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
@@ -50,6 +51,8 @@ ast: {
             callee: {
               type: 'MemberExpression',
               loc:{start:{line:1,column:6},end:{line:1,column:13},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'Literal',
                 loc:{start:{line:1,column:6},end:{line:1,column:9},source:''},
@@ -61,8 +64,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
                 name: 'foo'
-              },
-              computed: false
+              }
             }
           }
         ]

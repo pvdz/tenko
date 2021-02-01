@@ -39,6 +39,8 @@ ast: {
       init: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:5},end:{line:1,column:26},source:''},
+        computed: true,
+        optional: false,
         object: {
           type: 'FunctionExpression',
           loc:{start:{line:1,column:5},end:{line:1,column:18},source:''},
@@ -66,8 +68,7 @@ ast: {
             loc:{start:{line:1,column:24},end:{line:1,column:25},source:''},
             name: 'y'
           }
-        },
-        computed: true
+        }
       },
       test: null,
       update: null,

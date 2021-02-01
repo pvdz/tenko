@@ -42,9 +42,12 @@ ast: {
             {
               type: 'MemberExpression',
               loc:{start:{line:1,column:2},end:{line:1,column:23},source:''},
+              computed: true,
+              optional: false,
               object: {
                 type: 'CallExpression',
                 loc:{start:{line:1,column:2},end:{line:1,column:10},source:''},
+                optional: false,
                 callee: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:2},end:{line:1,column:8},source:''},
@@ -55,14 +58,14 @@ ast: {
               property: {
                 type: 'CallExpression',
                 loc:{start:{line:1,column:11},end:{line:1,column:22},source:''},
+                optional: false,
                 callee: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:11},end:{line:1,column:20},source:''},
                   name: 'targetKey'
                 },
                 arguments: []
-              },
-              computed: true
+              }
             }
           ]
         },

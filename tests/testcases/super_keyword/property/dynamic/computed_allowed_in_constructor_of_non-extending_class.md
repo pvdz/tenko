@@ -70,6 +70,8 @@ ast: {
                     expression: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:25},end:{line:1,column:35},source:''},
+                      computed: true,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:25},end:{line:1,column:30},source:''}
@@ -78,8 +80,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:31},end:{line:1,column:34},source:''},
                         name: 'foo'
-                      },
-                      computed: true
+                      }
                     }
                   }
                 ]

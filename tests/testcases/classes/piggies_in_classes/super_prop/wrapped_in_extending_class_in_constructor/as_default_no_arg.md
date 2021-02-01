@@ -110,6 +110,8 @@ ast: {
                                 right: {
                                   type: 'MemberExpression',
                                   loc:{start:{line:1,column:56},end:{line:1,column:65},source:''},
+                                  computed: false,
+                                  optional: false,
                                   object: {
                                     type: 'Super',
                                     loc:{start:{line:1,column:56},end:{line:1,column:61},source:''}
@@ -118,8 +120,7 @@ ast: {
                                     type: 'Identifier',
                                     loc:{start:{line:1,column:62},end:{line:1,column:65},source:''},
                                     name: 'foo'
-                                  },
-                                  computed: false
+                                  }
                                 }
                               }
                             ],

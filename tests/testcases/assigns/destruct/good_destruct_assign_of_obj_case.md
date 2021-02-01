@@ -99,6 +99,8 @@ ast: {
                   argument: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:41},end:{line:1,column:46},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:41},end:{line:1,column:44},source:''},
@@ -108,8 +110,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:45},end:{line:1,column:46},source:''},
                       name: 'x'
-                    },
-                    computed: false
+                    }
                   }
                 }
               ]
@@ -134,6 +135,8 @@ ast: {
                   argument: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:60},end:{line:1,column:64},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'ObjectExpression',
                       loc:{start:{line:1,column:60},end:{line:1,column:62},source:''},
@@ -143,8 +146,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:63},end:{line:1,column:64},source:''},
                       name: 'x'
-                    },
-                    computed: false
+                    }
                   }
                 }
               ]
@@ -169,6 +171,8 @@ ast: {
                   argument: {
                     type: 'MemberExpression',
                     loc:{start:{line:1,column:78},end:{line:1,column:82},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'ArrayExpression',
                       loc:{start:{line:1,column:78},end:{line:1,column:80},source:''},
@@ -178,8 +182,7 @@ ast: {
                       type: 'Identifier',
                       loc:{start:{line:1,column:81},end:{line:1,column:82},source:''},
                       name: 'x'
-                    },
-                    computed: false
+                    }
                   }
                 }
               ]

@@ -50,9 +50,12 @@ ast: {
             value: {
               type: 'CallExpression',
               loc:{start:{line:1,column:9},end:{line:1,column:28},source:''},
+              optional: false,
               callee: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:9},end:{line:1,column:24},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'ArrayExpression',
                   loc:{start:{line:1,column:9},end:{line:1,column:19},source:''},
@@ -73,8 +76,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:20},end:{line:1,column:24},source:''},
                   name: 'join'
-                },
-                computed: false
+                }
               },
               arguments: [
                 {

@@ -44,6 +44,7 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:11},end:{line:1,column:25},source:''},
+        optional: false,
         callee: {
           type: 'Identifier',
           loc:{start:{line:1,column:11},end:{line:1,column:14},source:''},
@@ -64,6 +65,8 @@ ast: {
       expression: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:27},end:{line:1,column:40},source:''},
+        computed: false,
+        optional: false,
         object: {
           type: 'Identifier',
           loc:{start:{line:1,column:27},end:{line:1,column:36},source:''},
@@ -73,8 +76,7 @@ ast: {
           type: 'Identifier',
           loc:{start:{line:1,column:37},end:{line:1,column:40},source:''},
           name: 'foo'
-        },
-        computed: false
+        }
       }
     },
     {
@@ -83,6 +85,8 @@ ast: {
       expression: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:42},end:{line:1,column:56},source:''},
+        computed: true,
+        optional: false,
         object: {
           type: 'Identifier',
           loc:{start:{line:1,column:42},end:{line:1,column:51},source:''},
@@ -92,8 +96,7 @@ ast: {
           type: 'Identifier',
           loc:{start:{line:1,column:52},end:{line:1,column:55},source:''},
           name: 'foo'
-        },
-        computed: true
+        }
       }
     },
     {
@@ -105,6 +108,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:58},end:{line:1,column:71},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:58},end:{line:1,column:67},source:''},
@@ -114,8 +119,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:68},end:{line:1,column:71},source:''},
             name: 'foo'
-          },
-          computed: false
+          }
         },
         operator: '=',
         right: {
@@ -134,6 +138,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:79},end:{line:1,column:93},source:''},
+          computed: true,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:79},end:{line:1,column:88},source:''},
@@ -143,8 +149,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:89},end:{line:1,column:92},source:''},
             name: 'foo'
-          },
-          computed: true
+          }
         },
         operator: '=',
         right: {

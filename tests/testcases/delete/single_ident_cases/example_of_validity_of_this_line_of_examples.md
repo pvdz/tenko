@@ -40,9 +40,13 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:7},end:{line:1,column:25},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:7},end:{line:1,column:21},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'Literal',
               loc:{start:{line:1,column:7},end:{line:1,column:11},source:''},
@@ -53,15 +57,13 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:12},end:{line:1,column:21},source:''},
               name: '__proto__'
-            },
-            computed: false
+            }
           },
           property: {
             type: 'Identifier',
             loc:{start:{line:1,column:22},end:{line:1,column:25},source:''},
             name: 'foo'
-          },
-          computed: false
+          }
         }
       }
     }

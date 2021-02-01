@@ -50,6 +50,7 @@ ast: {
           left: {
             type: 'CallExpression',
             loc:{start:{line:1,column:5},end:{line:1,column:18},source:''},
+            optional: false,
             callee: {
               type: 'Import',
               loc:{start:{line:1,column:5},end:{line:1,column:11},source:''}

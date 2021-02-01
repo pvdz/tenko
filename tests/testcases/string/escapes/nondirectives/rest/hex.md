@@ -86,7 +86,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:2,column:0},end:{line:2,column:8},source:''},
-        value: 'xyz \u0001',
+        value: 'xyz \x01',
         raw: "'xyz \\1'"
       }
     },
@@ -96,7 +96,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:3,column:0},end:{line:3,column:10},source:''},
-        value: 'xyz \u0001',
+        value: 'xyz \x01',
         raw: "'xyz \\x01'"
       }
     },

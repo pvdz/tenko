@@ -74,6 +74,8 @@ ast: {
         right: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:18},end:{line:1,column:29},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Literal',
             loc:{start:{line:1,column:18},end:{line:1,column:24},source:''},
@@ -85,8 +87,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:25},end:{line:1,column:29},source:''},
             name: 'exec'
-          },
-          computed: false
+          }
         }
       }
     }

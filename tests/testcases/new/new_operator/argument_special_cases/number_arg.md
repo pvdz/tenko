@@ -39,9 +39,13 @@ ast: {
         callee: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:4},end:{line:1,column:28},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:4},end:{line:1,column:16},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'Literal',
               loc:{start:{line:1,column:4},end:{line:1,column:6},source:''},
@@ -52,15 +56,13 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:7},end:{line:1,column:16},source:''},
               name: '__proto__'
-            },
-            computed: false
+            }
           },
           property: {
             type: 'Identifier',
             loc:{start:{line:1,column:17},end:{line:1,column:28},source:''},
             name: 'constructor'
-          },
-          computed: false
+          }
         }
       }
     }

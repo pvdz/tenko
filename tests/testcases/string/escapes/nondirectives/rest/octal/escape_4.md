@@ -82,7 +82,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:2,column:0},end:{line:2,column:8},source:''},
-        value: 'a \u0004 b',
+        value: 'a \x04 b',
         raw: "'a \\4 b'"
       }
     }

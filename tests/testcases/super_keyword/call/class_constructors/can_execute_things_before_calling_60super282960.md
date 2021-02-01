@@ -105,6 +105,7 @@ ast: {
                     expression: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:52},end:{line:1,column:59},source:''},
+                      optional: false,
                       callee: {
                         type: 'Super',
                         loc:{start:{line:1,column:52},end:{line:1,column:57},source:''}

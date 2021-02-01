@@ -55,6 +55,8 @@ ast: {
         callee: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:4},end:{line:1,column:11},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:4},end:{line:1,column:7},source:''},
@@ -64,8 +66,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
             name: 'Bar'
-          },
-          computed: false
+          }
         }
       }
     }

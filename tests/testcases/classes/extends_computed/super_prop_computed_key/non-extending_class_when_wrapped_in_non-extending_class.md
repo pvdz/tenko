@@ -85,6 +85,8 @@ ast: {
                           key: {
                             type: 'MemberExpression',
                             loc:{start:{line:1,column:30},end:{line:1,column:39},source:''},
+                            computed: false,
+                            optional: false,
                             object: {
                               type: 'Super',
                               loc:{start:{line:1,column:30},end:{line:1,column:35},source:''}
@@ -93,8 +95,7 @@ ast: {
                               type: 'Identifier',
                               loc:{start:{line:1,column:36},end:{line:1,column:39},source:''},
                               name: 'foo'
-                            },
-                            computed: false
+                            }
                           },
                           static: false,
                           computed: true,

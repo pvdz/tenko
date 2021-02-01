@@ -53,7 +53,7 @@ ast: {
               type: 'TemplateElement',
               loc:{start:{line:1,column:4},end:{line:1,column:6},source:''},
               tail: true,
-              value: { raw: '\\0', cooked: '\u0000' }
+              value: { raw: '\\0', cooked: '\x00' }
             }
           ]
         }

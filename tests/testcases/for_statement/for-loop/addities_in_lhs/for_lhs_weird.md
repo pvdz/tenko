@@ -52,6 +52,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:5},end:{line:1,column:9},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'ArrayExpression',
             loc:{start:{line:1,column:5},end:{line:1,column:7},source:''},
@@ -61,8 +63,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
             name: 'w'
-          },
-          computed: false
+          }
         },
         operator: '^=',
         right: {
@@ -92,6 +93,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:3,column:5},end:{line:3,column:10},source:''},
+          computed: true,
+          optional: false,
           object: {
             type: 'ArrayExpression',
             loc:{start:{line:3,column:5},end:{line:3,column:7},source:''},
@@ -101,8 +104,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:3,column:8},end:{line:3,column:9},source:''},
             name: 'y'
-          },
-          computed: true
+          }
         },
         operator: '<<=',
         right: {
@@ -132,6 +134,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:5,column:5},end:{line:5,column:9},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'ArrayExpression',
             loc:{start:{line:5,column:5},end:{line:5,column:7},source:''},
@@ -141,8 +145,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:5,column:8},end:{line:5,column:9},source:''},
             name: 'u'
-          },
-          computed: false
+          }
         },
         operator: '|=',
         right: {
@@ -172,6 +175,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:7,column:5},end:{line:7,column:10},source:''},
+          computed: true,
+          optional: false,
           object: {
             type: 'ObjectExpression',
             loc:{start:{line:7,column:5},end:{line:7,column:7},source:''},
@@ -181,8 +186,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:7,column:8},end:{line:7,column:9},source:''},
             name: 'y'
-          },
-          computed: true
+          }
         },
         operator: '^=',
         right: {

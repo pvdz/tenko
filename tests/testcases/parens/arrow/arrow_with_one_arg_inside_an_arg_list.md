@@ -35,6 +35,7 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:26},source:''},
+        optional: false,
         callee: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
@@ -44,6 +45,7 @@ ast: {
           {
             type: 'CallExpression',
             loc:{start:{line:1,column:2},end:{line:1,column:22},source:''},
+            optional: false,
             callee: {
               type: 'ArrowFunctionExpression',
               loc:{start:{line:1,column:3},end:{line:1,column:15},source:''},

@@ -40,9 +40,13 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+            computed: true,
+            optional: false,
             object: {
               type: 'Identifier',
               loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
@@ -52,15 +56,13 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:2},end:{line:1,column:5},source:''},
               name: 'foo'
-            },
-            computed: true
+            }
           },
           property: {
             type: 'Identifier',
             loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
             name: 'c'
-          },
-          computed: false
+          }
         },
         operator: '=',
         right: {
@@ -81,6 +83,7 @@ ast: {
                 argument: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:25},end:{line:1,column:32},source:''},
+                  optional: false,
                   callee: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:25},end:{line:1,column:30},source:''},

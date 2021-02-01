@@ -51,6 +51,8 @@ ast: {
         body: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:13},end:{line:1,column:20},source:''},
+          computed: true,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:13},end:{line:1,column:15},source:''},
@@ -60,8 +62,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:16},end:{line:1,column:19},source:''},
             name: 'foo'
-          },
-          computed: true
+          }
         }
       }
     }

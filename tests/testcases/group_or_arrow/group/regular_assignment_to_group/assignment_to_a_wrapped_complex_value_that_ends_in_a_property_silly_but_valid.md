@@ -38,18 +38,26 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:1},end:{line:1,column:12},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'CallExpression',
             loc:{start:{line:1,column:1},end:{line:1,column:10},source:''},
+            optional: false,
             callee: {
               type: 'MemberExpression',
               loc:{start:{line:1,column:1},end:{line:1,column:8},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'CallExpression',
                 loc:{start:{line:1,column:1},end:{line:1,column:6},source:''},
+                optional: false,
                 callee: {
                   type: 'MemberExpression',
                   loc:{start:{line:1,column:1},end:{line:1,column:4},source:''},
+                  computed: false,
+                  optional: false,
                   object: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:1},end:{line:1,column:2},source:''},
@@ -59,8 +67,7 @@ ast: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
                     name: 'b'
-                  },
-                  computed: false
+                  }
                 },
                 arguments: []
               },
@@ -68,8 +75,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
                 name: 'c'
-              },
-              computed: false
+              }
             },
             arguments: []
           },
@@ -77,8 +83,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
             name: 'd'
-          },
-          computed: false
+          }
         },
         operator: '=',
         right: {

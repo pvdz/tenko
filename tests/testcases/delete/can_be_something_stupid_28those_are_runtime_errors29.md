@@ -40,6 +40,7 @@ ast: {
         argument: {
           type: 'CallExpression',
           loc:{start:{line:1,column:7},end:{line:1,column:12},source:''},
+          optional: false,
           callee: {
             type: 'Identifier',
             loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},

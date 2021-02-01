@@ -110,7 +110,7 @@ ast: {
             expression: {
               type: 'Literal',
               loc:{start:{line:2,column:2},end:{line:2,column:6},source:''},
-              value: '\u0005',
+              value: '\x05',
               raw: '"\\5"'
             },
             directive: '\\5'

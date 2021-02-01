@@ -73,7 +73,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:1,column:0},end:{line:1,column:36},source:''},
-        value: 'start ;7 @{xaa}@ @{xabc}@ \u0000 finish',
+        value: 'start ;7 @{xaa}@ @{xabc}@ \x00 finish',
         raw: "'start \\0737 \\xaa \\u{abc} \\0 finish'"
       },
       directive: 'start \\0737 \\xaa \\u{abc} \\0 finish'

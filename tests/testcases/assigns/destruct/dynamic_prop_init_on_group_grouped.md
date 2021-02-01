@@ -49,9 +49,12 @@ ast: {
               left: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:2},end:{line:1,column:10},source:''},
+                computed: true,
+                optional: false,
                 object: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:3},end:{line:1,column:6},source:''},
+                  optional: false,
                   callee: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
@@ -63,8 +66,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
                   name: 'y'
-                },
-                computed: true
+                }
               },
               right: {
                 type: 'Identifier',

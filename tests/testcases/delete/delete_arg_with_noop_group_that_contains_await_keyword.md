@@ -54,9 +54,12 @@ ast: {
           argument: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:18},end:{line:1,column:44},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'CallExpression',
               loc:{start:{line:1,column:23},end:{line:1,column:35},source:''},
+              optional: false,
               callee: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:23},end:{line:1,column:26},source:''},
@@ -78,8 +81,7 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:41},end:{line:1,column:44},source:''},
               name: 'bar'
-            },
-            computed: false
+            }
           }
         }
       }

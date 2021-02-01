@@ -40,6 +40,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:8},end:{line:1,column:19},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:11},end:{line:1,column:14},source:''},
@@ -49,8 +51,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
             name: 'x'
-          },
-          computed: false
+          }
         }
       }
     }

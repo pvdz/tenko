@@ -42,6 +42,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:7},end:{line:1,column:21},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'ArrowFunctionExpression',
             loc:{start:{line:1,column:8},end:{line:1,column:16},source:''},
@@ -66,8 +68,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:18},end:{line:1,column:21},source:''},
             name: 'foo'
-          },
-          computed: false
+          }
         }
       }
     }

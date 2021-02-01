@@ -90,6 +90,7 @@ ast: {
                           value: {
                             type: 'CallExpression',
                             loc:{start:{line:1,column:46},end:{line:1,column:53},source:''},
+                            optional: false,
                             callee: {
                               type: 'Super',
                               loc:{start:{line:1,column:46},end:{line:1,column:51},source:''}

@@ -105,6 +105,8 @@ ast: {
                     expression: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:52},end:{line:1,column:61},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:52},end:{line:1,column:57},source:''}
@@ -113,8 +115,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:58},end:{line:1,column:61},source:''},
                         name: 'mom'
-                      },
-                      computed: false
+                      }
                     }
                   }
                 ]

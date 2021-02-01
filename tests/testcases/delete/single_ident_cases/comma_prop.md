@@ -40,6 +40,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:7},end:{line:1,column:15},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'SequenceExpression',
             loc:{start:{line:1,column:8},end:{line:1,column:12},source:''},
@@ -60,8 +62,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},
             name: 'c'
-          },
-          computed: false
+          }
         }
       }
     }

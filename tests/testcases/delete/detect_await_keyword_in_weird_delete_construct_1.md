@@ -54,6 +54,8 @@ ast: {
           argument: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:19},end:{line:1,column:33},source:''},
+            computed: true,
+            optional: false,
             object: {
               type: 'Literal',
               loc:{start:{line:1,column:19},end:{line:1,column:22},source:''},
@@ -68,8 +70,7 @@ ast: {
                 loc:{start:{line:1,column:30},end:{line:1,column:31},source:''},
                 name: 'x'
               }
-            },
-            computed: true
+            }
           }
         }
       }

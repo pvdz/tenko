@@ -60,6 +60,8 @@ ast: {
                     value: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
@@ -69,8 +71,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
                         name: 'b'
-                      },
-                      computed: false
+                      }
                     },
                     shorthand: false
                   }

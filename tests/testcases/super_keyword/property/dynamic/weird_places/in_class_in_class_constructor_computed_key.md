@@ -101,6 +101,8 @@ ast: {
                           key: {
                             type: 'MemberExpression',
                             loc:{start:{line:4,column:7},end:{line:4,column:21},source:''},
+                            computed: true,
+                            optional: false,
                             object: {
                               type: 'Super',
                               loc:{start:{line:4,column:7},end:{line:4,column:12},source:''}
@@ -108,13 +110,13 @@ ast: {
                             property: {
                               type: 'CallExpression',
                               loc:{start:{line:4,column:13},end:{line:4,column:20},source:''},
+                              optional: false,
                               callee: {
                                 type: 'Super',
                                 loc:{start:{line:4,column:13},end:{line:4,column:18},source:''}
                               },
                               arguments: []
-                            },
-                            computed: true
+                            }
                           },
                           static: false,
                           computed: true,

@@ -63,6 +63,8 @@ ast: {
               left: {
                 type: 'MemberExpression',
                 loc:{start:{line:2,column:2},end:{line:2,column:15},source:''},
+                computed: true,
+                optional: false,
                 object: {
                   type: 'YieldExpression',
                   loc:{start:{line:2,column:3},end:{line:2,column:8},source:''},
@@ -72,8 +74,7 @@ ast: {
                 property: {
                   type: 'ThisExpression',
                   loc:{start:{line:2,column:10},end:{line:2,column:14},source:''}
-                },
-                computed: true
+                }
               },
               operator: '=',
               right: {

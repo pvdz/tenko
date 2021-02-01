@@ -74,6 +74,7 @@ ast: {
                     expression: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:36},end:{line:1,column:40},source:''},
+                      optional: false,
                       callee: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:36},end:{line:1,column:37},source:''},
@@ -94,6 +95,8 @@ ast: {
                     expression: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:42},end:{line:1,column:51},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:42},end:{line:1,column:47},source:''}
@@ -102,8 +105,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:48},end:{line:1,column:51},source:''},
                         name: 'mom'
-                      },
-                      computed: false
+                      }
                     }
                   }
                 ]

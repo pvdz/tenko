@@ -59,6 +59,7 @@ ast: {
       declaration: {
         type: 'CallExpression',
         loc:{start:{line:1,column:15},end:{line:1,column:24},source:''},
+        optional: false,
         callee: {
           type: 'Identifier',
           loc:{start:{line:1,column:15},end:{line:1,column:20},source:''},

@@ -71,6 +71,8 @@ ast: {
                     expression: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:26},end:{line:1,column:35},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:26},end:{line:1,column:31},source:''}
@@ -79,8 +81,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:32},end:{line:1,column:35},source:''},
                         name: 'mom'
-                      },
-                      computed: false
+                      }
                     }
                   }
                 ]

@@ -70,6 +70,7 @@ ast: {
                 right: {
                   type: 'CallExpression',
                   loc:{start:{line:1,column:25},end:{line:1,column:40},source:''},
+                  optional: false,
                   callee: {
                     type: 'Identifier',
                     loc:{start:{line:1,column:25},end:{line:1,column:28},source:''},

@@ -82,6 +82,8 @@ ast: {
                           right: {
                             type: 'MemberExpression',
                             loc:{start:{line:1,column:28},end:{line:1,column:38},source:''},
+                            computed: true,
+                            optional: false,
                             object: {
                               type: 'Super',
                               loc:{start:{line:1,column:28},end:{line:1,column:33},source:''}
@@ -90,8 +92,7 @@ ast: {
                               type: 'Identifier',
                               loc:{start:{line:1,column:34},end:{line:1,column:37},source:''},
                               name: 'bar'
-                            },
-                            computed: true
+                            }
                           }
                         }
                       ],

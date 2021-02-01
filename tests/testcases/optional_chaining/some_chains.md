@@ -232,9 +232,13 @@ ast: {
                   object: {
                     type: 'MemberExpression',
                     loc:{start:{line:5,column:0},end:{line:5,column:5},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'MemberExpression',
                       loc:{start:{line:5,column:0},end:{line:5,column:3},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:5,column:0},end:{line:5,column:1},source:''},
@@ -244,15 +248,13 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:5,column:2},end:{line:5,column:3},source:''},
                         name: 'z'
-                      },
-                      computed: false
+                      }
                     },
                     property: {
                       type: 'Identifier',
                       loc:{start:{line:5,column:4},end:{line:5,column:5},source:''},
                       name: 'a'
-                    },
-                    computed: false
+                    }
                   },
                   property: {
                     type: 'Identifier',
@@ -331,6 +333,8 @@ ast: {
                     callee: {
                       type: 'MemberExpression',
                       loc:{start:{line:7,column:0},end:{line:7,column:3},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:7,column:0},end:{line:7,column:1},source:''},
@@ -340,8 +344,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:7,column:2},end:{line:7,column:3},source:''},
                         name: 'z'
-                      },
-                      computed: false
+                      }
                     },
                     arguments: [
                       {
@@ -394,12 +397,18 @@ ast: {
       expression: {
         type: 'MemberExpression',
         loc:{start:{line:9,column:0},end:{line:9,column:16},source:''},
+        computed: false,
+        optional: false,
         object: {
           type: 'MemberExpression',
           loc:{start:{line:9,column:0},end:{line:9,column:14},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'MemberExpression',
             loc:{start:{line:9,column:0},end:{line:9,column:12},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'OptionalMemberExpression',
               loc:{start:{line:9,column:1},end:{line:9,column:9},source:''},
@@ -442,22 +451,19 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:9,column:11},end:{line:9,column:12},source:''},
               name: 'x'
-            },
-            computed: false
+            }
           },
           property: {
             type: 'Identifier',
             loc:{start:{line:9,column:13},end:{line:9,column:14},source:''},
             name: 'x'
-          },
-          computed: false
+          }
         },
         property: {
           type: 'Identifier',
           loc:{start:{line:9,column:15},end:{line:9,column:16},source:''},
           name: 'x'
-        },
-        computed: false
+        }
       }
     },
     {
@@ -571,9 +577,13 @@ ast: {
                   object: {
                     type: 'MemberExpression',
                     loc:{start:{line:13,column:1},end:{line:13,column:6},source:''},
+                    computed: false,
+                    optional: false,
                     object: {
                       type: 'MemberExpression',
                       loc:{start:{line:13,column:1},end:{line:13,column:4},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:13,column:1},end:{line:13,column:2},source:''},
@@ -583,15 +593,13 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:13,column:3},end:{line:13,column:4},source:''},
                         name: 'z'
-                      },
-                      computed: false
+                      }
                     },
                     property: {
                       type: 'Identifier',
                       loc:{start:{line:13,column:5},end:{line:13,column:6},source:''},
                       name: 'a'
-                    },
-                    computed: false
+                    }
                   },
                   property: {
                     type: 'Identifier',
@@ -670,6 +678,8 @@ ast: {
                     callee: {
                       type: 'MemberExpression',
                       loc:{start:{line:15,column:1},end:{line:15,column:4},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Identifier',
                         loc:{start:{line:15,column:1},end:{line:15,column:2},source:''},
@@ -679,8 +689,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:15,column:3},end:{line:15,column:4},source:''},
                         name: 'z'
-                      },
-                      computed: false
+                      }
                     },
                     arguments: [
                       {

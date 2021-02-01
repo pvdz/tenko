@@ -44,6 +44,7 @@ ast: {
           left: {
             type: 'CallExpression',
             loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+            optional: false,
             callee: {
               type: 'Import',
               loc:{start:{line:1,column:0},end:{line:1,column:6},source:''}

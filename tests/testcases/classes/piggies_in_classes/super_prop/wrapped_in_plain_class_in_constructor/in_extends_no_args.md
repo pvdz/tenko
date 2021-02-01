@@ -75,6 +75,8 @@ ast: {
                     superClass: {
                       type: 'MemberExpression',
                       loc:{start:{line:1,column:46},end:{line:1,column:55},source:''},
+                      computed: false,
+                      optional: false,
                       object: {
                         type: 'Super',
                         loc:{start:{line:1,column:46},end:{line:1,column:51},source:''}
@@ -83,8 +85,7 @@ ast: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:52},end:{line:1,column:55},source:''},
                         name: 'foo'
-                      },
-                      computed: false
+                      }
                     },
                     body: {
                       type: 'ClassBody',

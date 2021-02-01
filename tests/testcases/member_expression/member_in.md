@@ -42,6 +42,8 @@ ast: {
         left: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+          computed: true,
+          optional: false,
           object: {
             type: 'Literal',
             loc:{start:{line:1,column:1},end:{line:1,column:2},source:''},
@@ -67,8 +69,7 @@ ast: {
               loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
               name: 'y'
             }
-          },
-          computed: true
+          }
         },
         operator: 'in',
         right: {

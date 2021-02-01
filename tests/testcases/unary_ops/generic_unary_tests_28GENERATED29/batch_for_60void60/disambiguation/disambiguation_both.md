@@ -45,6 +45,8 @@ ast: {
           argument: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'Identifier',
               loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
@@ -54,8 +56,7 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
               name: 'def'
-            },
-            computed: false
+            }
           }
         },
         operator: '+',
@@ -67,6 +68,8 @@ ast: {
           argument: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:18},end:{line:1,column:21},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'Identifier',
               loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
@@ -76,8 +79,7 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:20},end:{line:1,column:21},source:''},
               name: 'x'
-            },
-            computed: false
+            }
           }
         }
       }

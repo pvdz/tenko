@@ -35,9 +35,12 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
+        optional: false,
         callee: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Literal',
             loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
@@ -49,8 +52,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
             name: 'bar'
-          },
-          computed: false
+          }
         },
         arguments: []
       }

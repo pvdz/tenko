@@ -42,6 +42,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:7},end:{line:1,column:17},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Literal',
             loc:{start:{line:1,column:7},end:{line:1,column:12},source:''},
@@ -52,8 +54,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:13},end:{line:1,column:17},source:''},
             name: 'prop'
-          },
-          computed: false
+          }
         }
       }
     }

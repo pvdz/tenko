@@ -37,6 +37,8 @@ ast: {
       expression: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:29},source:''},
+        computed: false,
+        optional: false,
         object: {
           type: 'TemplateLiteral',
           loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
@@ -81,8 +83,7 @@ ast: {
           type: 'Identifier',
           loc:{start:{line:1,column:23},end:{line:1,column:29},source:''},
           name: 'length'
-        },
-        computed: false
+        }
       }
     }
   ]

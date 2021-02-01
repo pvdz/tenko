@@ -37,6 +37,8 @@ ast: {
       left: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:5},end:{line:1,column:26},source:''},
+        computed: false,
+        optional: false,
         object: {
           type: 'ClassExpression',
           loc:{start:{line:1,column:5},end:{line:1,column:24},source:''},
@@ -82,8 +84,7 @@ ast: {
           type: 'Identifier',
           loc:{start:{line:1,column:25},end:{line:1,column:26},source:''},
           name: 'x'
-        },
-        computed: false
+        }
       },
       right: {
         type: 'Identifier',

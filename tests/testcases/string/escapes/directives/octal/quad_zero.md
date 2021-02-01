@@ -75,7 +75,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
-        value: '\u00000',
+        value: '\x000',
         raw: '"\\0000"'
       },
       directive: '\\0000'

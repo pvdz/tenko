@@ -51,9 +51,12 @@ ast: {
             value: {
               type: 'CallExpression',
               loc:{start:{line:1,column:7},end:{line:1,column:19},source:''},
+              optional: false,
               callee: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:7},end:{line:1,column:16},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'ArrayExpression',
                   loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
@@ -69,8 +72,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:11},end:{line:1,column:16},source:''},
                   name: 'slice'
-                },
-                computed: false
+                }
               },
               arguments: [
                 {

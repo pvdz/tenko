@@ -50,6 +50,8 @@ ast: {
             left: {
               type: 'MemberExpression',
               loc:{start:{line:1,column:32},end:{line:1,column:39},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'Literal',
                 loc:{start:{line:1,column:32},end:{line:1,column:37},source:''},
@@ -60,8 +62,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:38},end:{line:1,column:39},source:''},
                 name: 'x'
-              },
-              computed: false
+              }
             },
             right: {
               type: 'Identifier',

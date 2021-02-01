@@ -82,6 +82,7 @@ ast: {
                       body: {
                         type: 'CallExpression',
                         loc:{start:{line:1,column:48},end:{line:1,column:55},source:''},
+                        optional: false,
                         callee: {
                           type: 'Super',
                           loc:{start:{line:1,column:48},end:{line:1,column:53},source:''}

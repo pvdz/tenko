@@ -50,6 +50,7 @@ ast: {
             expression: {
               type: 'CallExpression',
               loc:{start:{line:1,column:14},end:{line:1,column:33},source:''},
+              optional: false,
               callee: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},

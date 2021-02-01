@@ -125,6 +125,7 @@ ast: {
                           argument: {
                             type: 'CallExpression',
                             loc:{start:{line:5,column:11},end:{line:8,column:15},source:''},
+                            optional: false,
                             callee: {
                               type: 'FunctionExpression',
                               loc:{start:{line:5,column:11},end:{line:8,column:8},source:''},

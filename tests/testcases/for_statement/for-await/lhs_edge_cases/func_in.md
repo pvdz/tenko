@@ -58,6 +58,8 @@ ast: {
             left: {
               type: 'MemberExpression',
               loc:{start:{line:2,column:13},end:{line:2,column:39},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'FunctionExpression',
                 loc:{start:{line:2,column:13},end:{line:2,column:34},source:''},
@@ -95,8 +97,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:2,column:35},end:{line:2,column:39},source:''},
                 name: 'prop'
-              },
-              computed: false
+              }
             },
             right: {
               type: 'Identifier',

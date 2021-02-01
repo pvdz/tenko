@@ -45,6 +45,8 @@ ast: {
           argument: {
             type: 'MemberExpression',
             loc:{start:{line:1,column:7},end:{line:1,column:12},source:''},
+            computed: false,
+            optional: false,
             object: {
               type: 'Identifier',
               loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
@@ -54,14 +56,15 @@ ast: {
               type: 'Identifier',
               loc:{start:{line:1,column:9},end:{line:1,column:12},source:''},
               name: 'abc'
-            },
-            computed: false
+            }
           }
         },
         operator: '+',
         right: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:15},end:{line:1,column:18},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'Identifier',
             loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
@@ -71,8 +74,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
             name: 'x'
-          },
-          computed: false
+          }
         }
       }
     }

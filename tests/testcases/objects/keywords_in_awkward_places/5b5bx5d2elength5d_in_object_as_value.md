@@ -50,6 +50,8 @@ ast: {
             value: {
               type: 'MemberExpression',
               loc:{start:{line:1,column:5},end:{line:1,column:15},source:''},
+              computed: false,
+              optional: false,
               object: {
                 type: 'ArrayExpression',
                 loc:{start:{line:1,column:5},end:{line:1,column:8},source:''},
@@ -65,8 +67,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:1,column:9},end:{line:1,column:15},source:''},
                 name: 'length'
-              },
-              computed: false
+              }
             },
             shorthand: false
           }

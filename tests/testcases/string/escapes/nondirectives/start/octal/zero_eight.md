@@ -84,7 +84,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:2,column:0},end:{line:2,column:5},source:''},
-        value: '\u00008',
+        value: '\x008',
         raw: '"\\08"'
       }
     }

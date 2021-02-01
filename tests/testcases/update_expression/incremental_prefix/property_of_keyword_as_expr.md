@@ -38,6 +38,8 @@ ast: {
         argument: {
           type: 'MemberExpression',
           loc:{start:{line:1,column:3},end:{line:1,column:9},source:''},
+          computed: false,
+          optional: false,
           object: {
             type: 'ThisExpression',
             loc:{start:{line:1,column:3},end:{line:1,column:7},source:''}
@@ -46,8 +48,7 @@ ast: {
             type: 'Identifier',
             loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
             name: 'x'
-          },
-          computed: false
+          }
         },
         operator: '++',
         prefix: true

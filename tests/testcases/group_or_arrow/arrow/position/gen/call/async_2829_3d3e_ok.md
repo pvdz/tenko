@@ -45,6 +45,7 @@ ast: {
         body: {
           type: 'CallExpression',
           loc:{start:{line:1,column:12},end:{line:1,column:16},source:''},
+          optional: false,
           callee: {
             type: 'Identifier',
             loc:{start:{line:1,column:12},end:{line:1,column:14},source:''},

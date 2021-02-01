@@ -37,6 +37,7 @@ ast: {
       expression: {
         type: 'CallExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:15},source:''},
+        optional: false,
         callee: {
           type: 'NewExpression',
           loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},

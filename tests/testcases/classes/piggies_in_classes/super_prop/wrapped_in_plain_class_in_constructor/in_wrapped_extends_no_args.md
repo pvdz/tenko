@@ -75,6 +75,7 @@ ast: {
                     superClass: {
                       type: 'CallExpression',
                       loc:{start:{line:1,column:46},end:{line:1,column:60},source:''},
+                      optional: false,
                       callee: {
                         type: 'Identifier',
                         loc:{start:{line:1,column:46},end:{line:1,column:49},source:''},
@@ -84,6 +85,8 @@ ast: {
                         {
                           type: 'MemberExpression',
                           loc:{start:{line:1,column:50},end:{line:1,column:59},source:''},
+                          computed: false,
+                          optional: false,
                           object: {
                             type: 'Super',
                             loc:{start:{line:1,column:50},end:{line:1,column:55},source:''}
@@ -92,8 +95,7 @@ ast: {
                             type: 'Identifier',
                             loc:{start:{line:1,column:56},end:{line:1,column:59},source:''},
                             name: 'foo'
-                          },
-                          computed: false
+                          }
                         }
                       ]
                     },

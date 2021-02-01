@@ -35,6 +35,8 @@ ast: {
       left: {
         type: 'MemberExpression',
         loc:{start:{line:1,column:5},end:{line:1,column:17},source:''},
+        computed: false,
+        optional: false,
         object: {
           type: 'ObjectExpression',
           loc:{start:{line:1,column:5},end:{line:1,column:13},source:''},
@@ -53,6 +55,8 @@ ast: {
               value: {
                 type: 'MemberExpression',
                 loc:{start:{line:1,column:9},end:{line:1,column:12},source:''},
+                computed: false,
+                optional: false,
                 object: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
@@ -62,8 +66,7 @@ ast: {
                   type: 'Identifier',
                   loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
                   name: 'c'
-                },
-                computed: false
+                }
               },
               shorthand: false
             }
@@ -73,8 +76,7 @@ ast: {
           type: 'Identifier',
           loc:{start:{line:1,column:14},end:{line:1,column:17},source:''},
           name: 'foo'
-        },
-        computed: false
+        }
       },
       right: {
         type: 'Identifier',

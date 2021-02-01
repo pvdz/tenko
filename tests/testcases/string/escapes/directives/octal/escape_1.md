@@ -75,7 +75,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
-        value: 'a \u0001 b',
+        value: 'a \x01 b',
         raw: "'a \\1 b'"
       },
       directive: 'a \\1 b'

@@ -80,7 +80,7 @@ ast: {
       expression: {
         type: 'Literal',
         loc:{start:{line:2,column:0},end:{line:2,column:29},source:''},
-        value: '\u000b7 \u0018 \u0005 \u0000 finish',
+        value: '\x0B7 \x18 \x05 \x00 finish',
         raw: "'\\0137 \\x18 \\u{05} \\0 finish'"
       }
     }

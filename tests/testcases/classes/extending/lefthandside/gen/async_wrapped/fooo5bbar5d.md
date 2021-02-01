@@ -59,6 +59,8 @@ ast: {
             superClass: {
               type: 'MemberExpression',
               loc:{start:{line:2,column:18},end:{line:2,column:27},source:''},
+              computed: true,
+              optional: false,
               object: {
                 type: 'Identifier',
                 loc:{start:{line:2,column:18},end:{line:2,column:22},source:''},
@@ -68,8 +70,7 @@ ast: {
                 type: 'Identifier',
                 loc:{start:{line:2,column:23},end:{line:2,column:26},source:''},
                 name: 'bar'
-              },
-              computed: true
+              }
             },
             body: {
               type: 'ClassBody',

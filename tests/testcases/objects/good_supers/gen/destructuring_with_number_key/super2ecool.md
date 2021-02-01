@@ -99,6 +99,8 @@ ast: {
                             value: {
                               type: 'MemberExpression',
                               loc:{start:{line:3,column:11},end:{line:3,column:21},source:''},
+                              computed: false,
+                              optional: false,
                               object: {
                                 type: 'Super',
                                 loc:{start:{line:3,column:11},end:{line:3,column:16},source:''}
@@ -107,8 +109,7 @@ ast: {
                                 type: 'Identifier',
                                 loc:{start:{line:3,column:17},end:{line:3,column:21},source:''},
                                 name: 'cool'
-                              },
-                              computed: false
+                              }
                             },
                             shorthand: false
                           }
