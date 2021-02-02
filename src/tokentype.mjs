@@ -134,6 +134,7 @@ const $L_PERCENT =  ++__$flag_leaf;
 const $L_PERCENT_EQ =  ++__$flag_leaf;
 const $L_AND =  ++__$flag_leaf;
 const $L_AND_AND =  ++__$flag_leaf;
+const $L_AND_AND_EQ =  ++__$flag_leaf;
 const $L_AND_EQ =  ++__$flag_leaf;
 const $L_PAREN_OPEN =  ++__$flag_leaf;
 const $L_PAREN_CLOSE =  ++__$flag_leaf;
@@ -173,6 +174,7 @@ const $L_GT_GT_GT_EQ =  ++__$flag_leaf;
 const $L_QMARK =  ++__$flag_leaf;
 const $L_QMARK_DOT =  ++__$flag_leaf;
 const $L_QMARK_QMARK =  ++__$flag_leaf;
+const $L_QMARK_QMARK_EQ =  ++__$flag_leaf;
 const $L_BRACKET_OPEN =  ++__$flag_leaf;
 const $L_BRACKET_CLOSE =  ++__$flag_leaf;
 const $L_CARET =  ++__$flag_leaf;
@@ -180,6 +182,7 @@ const $L_CARET_EQ =  ++__$flag_leaf;
 const $L_CURLY_OPEN =  ++__$flag_leaf;
 const $L_OR =  ++__$flag_leaf;
 const $L_OR_OR =  ++__$flag_leaf;
+const $L_OR_OR_EQ =  ++__$flag_leaf;
 const $L_OR_EQ =  ++__$flag_leaf;
 const $L_CURLY_CLOSE =  ++__$flag_leaf;
 const $L_TILDE =  ++__$flag_leaf;
@@ -272,6 +275,7 @@ const $PUNC_PERCENT = $L_PERCENT | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_PERCENT_EQ = $L_PERCENT_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_AND = $L_AND | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_AND_AND = $L_AND_AND | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
+const $PUNC_AND_AND_EQ = $L_AND_AND_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_AND_EQ = $L_AND_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_PAREN_OPEN = $L_PAREN_OPEN | $G_PUNCTUATOR;
 const $PUNC_PAREN_CLOSE = $L_PAREN_CLOSE | $G_PUNCTUATOR;
@@ -311,6 +315,7 @@ const $PUNC_GT_GT_GT_EQ = $L_GT_GT_GT_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_QMARK = $L_QMARK | $G_PUNCTUATOR;
 const $PUNC_QMARK_DOT = $L_QMARK_DOT | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_QMARK_QMARK = $L_QMARK_QMARK | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
+const $PUNC_QMARK_QMARK_EQ = $L_QMARK_QMARK | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_BRACKET_OPEN = $L_BRACKET_OPEN | $G_PUNCTUATOR;
 const $PUNC_BRACKET_CLOSE = $L_BRACKET_CLOSE | $G_PUNCTUATOR;
 const $PUNC_CARET = $L_CARET | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
@@ -318,6 +323,7 @@ const $PUNC_CARET_EQ = $L_CARET_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_CURLY_OPEN = $L_CURLY_OPEN | $G_PUNCTUATOR;
 const $PUNC_OR = $L_OR | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
 const $PUNC_OR_OR = $L_OR_OR | $G_BINOP_NONASSIGN | $G_PUNCTUATOR;
+const $PUNC_OR_OR_EQ = $L_OR_OR_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_OR_EQ = $L_OR_EQ | $G_BINOP_ASSIGN | $G_PUNCTUATOR;
 const $PUNC_CURLY_CLOSE = $L_CURLY_CLOSE | $G_PUNCTUATOR;
 const $PUNC_TILDE = $L_TILDE | $G_PUNCTUATOR;
@@ -1694,6 +1700,7 @@ function toktypeToString(type) {
     case $PUNC_PERCENT_EQ: return 'PUNC_PERCENT_EQ';
     case $PUNC_AND: return 'PUNC_AND';
     case $PUNC_AND_AND: return 'PUNC_AND_AND';
+    case $PUNC_AND_AND_EQ: return 'PUNC_AND_AND';
     case $PUNC_AND_EQ: return 'PUNC_AND_EQ';
     case $PUNC_PAREN_OPEN: return 'PUNC_PAREN_OPEN';
     case $PUNC_PAREN_CLOSE: return 'PUNC_PAREN_CLOSE';
@@ -1733,6 +1740,7 @@ function toktypeToString(type) {
     case $PUNC_QMARK: return 'PUNC_QMARK';
     case $PUNC_QMARK_DOT: return 'QMARK_DOT';
     case $PUNC_QMARK_QMARK: return 'QMARK_QMARK';
+    case $PUNC_QMARK_QMARK_EQ: return 'QMARK_QMARK';
     case $PUNC_BRACKET_OPEN: return 'PUNC_BRACKET_OPEN';
     case $PUNC_BRACKET_CLOSE: return 'PUNC_BRACKET_CLOSE';
     case $PUNC_CARET: return 'PUNC_CARET';
@@ -1740,6 +1748,7 @@ function toktypeToString(type) {
     case $PUNC_CURLY_OPEN: return 'PUNC_CURLY_OPEN';
     case $PUNC_OR: return 'PUNC_OR';
     case $PUNC_OR_OR: return 'PUNC_OR_OR';
+    case $PUNC_OR_OR_EQ: return 'PUNC_OR_OR';
     case $PUNC_OR_EQ: return 'PUNC_OR_EQ';
     case $PUNC_CURLY_CLOSE: return 'PUNC_CURLY_CLOSE';
     case $PUNC_TILDE: return 'PUNC_TILDE';
@@ -1863,6 +1872,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $PUNC_PERCENT_EQ,
   $PUNC_AND,
   $PUNC_AND_AND,
+  $PUNC_AND_AND_EQ,
   $PUNC_AND_EQ,
   $PUNC_PAREN_OPEN,
   $PUNC_PAREN_CLOSE,
@@ -1902,6 +1912,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $PUNC_QMARK,
   $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
+  $PUNC_QMARK_QMARK_EQ,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -1909,6 +1920,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $PUNC_CURLY_OPEN,
   $PUNC_OR,
   $PUNC_OR_OR,
+  $PUNC_OR_OR_EQ,
   $PUNC_OR_EQ,
   $PUNC_CURLY_CLOSE,
   $PUNC_TILDE,
@@ -3278,6 +3290,7 @@ export {
   $PUNC_PERCENT_EQ,
   $PUNC_AND,
   $PUNC_AND_AND,
+  $PUNC_AND_AND_EQ,
   $PUNC_AND_EQ,
   $PUNC_PAREN_OPEN,
   $PUNC_PAREN_CLOSE,
@@ -3317,6 +3330,7 @@ export {
   $PUNC_QMARK,
   $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
+  $PUNC_QMARK_QMARK_EQ,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -3324,6 +3338,7 @@ export {
   $PUNC_CURLY_OPEN,
   $PUNC_OR,
   $PUNC_OR_OR,
+  $PUNC_OR_OR_EQ,
   $PUNC_OR_EQ,
   $PUNC_CURLY_CLOSE,
   $PUNC_TILDE,

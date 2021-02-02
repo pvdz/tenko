@@ -245,6 +245,7 @@ import {
   $PUNC_PERCENT_EQ,
   $PUNC_AND,
   $PUNC_AND_AND,
+  $PUNC_AND_AND_EQ,
   $PUNC_AND_EQ,
   $PUNC_PAREN_OPEN,
   $PUNC_PAREN_CLOSE,
@@ -284,6 +285,7 @@ import {
   $PUNC_QMARK,
   $PUNC_QMARK_DOT,
   $PUNC_QMARK_QMARK,
+  $PUNC_QMARK_QMARK_EQ,
   $PUNC_BRACKET_OPEN,
   $PUNC_BRACKET_CLOSE,
   $PUNC_CARET,
@@ -291,6 +293,7 @@ import {
   $PUNC_CURLY_OPEN,
   $PUNC_OR,
   $PUNC_OR_OR,
+  $PUNC_OR_OR_EQ,
   $PUNC_OR_EQ,
   $PUNC_CURLY_CLOSE,
   $PUNC_TILDE,
@@ -543,6 +546,7 @@ function Lexer(
   const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportOptionalChaining = targetEsVersion === 11 || targetEsVersion === Infinity;
+  const supportLogicCompound = targetEsVersion === 12 || targetEsVersion === Infinity;
 
   let pointer = 0;
   let len = input.length;
@@ -1383,8 +1387,18 @@ function Lexer(
           case $$DASH_2D:
             return $PUNC_MIN_MIN;
           case $$AND_26:
+            if (neof() && peeky($$IS_3D)) {
+              ASSERT_skip($$IS_3D);
+              if (supportLogicCompound) return $PUNC_AND_AND_EQ;
+              return THROW('The logical compound operator (`&&=`) is only supported since ES2021, currently targeting a lower version', pointer - 3, pointer);
+            }
             return $PUNC_AND_AND;
           case $$OR_7C:
+            if (neof() && peeky($$IS_3D)) {
+              ASSERT_skip($$IS_3D);
+              if (supportLogicCompound) return $PUNC_AND_AND_EQ;
+              return THROW('The logical compound operator (`||=`) is only supported since ES2021, currently targeting a lower version', pointer - 3, pointer);
+            }
             return $PUNC_OR_OR;
           // <SCRUB ASSERTS>
           default:
@@ -2366,11 +2380,23 @@ function Lexer(
   }
 
   function parseQmark() {
-    // ? ?? ?.
+    // ? ?? ??= ?.
     if (eof()) return $PUNC_QMARK;
 
     if (peeky($$QMARK_3F)) {
       ASSERT_skip($$QMARK_3F);
+
+      if (neof()) {
+        if (peeky($$IS_3D)) {
+          ASSERT_skip($$IS_3D);
+
+          if (supportLogicCompound) {
+            return $PUNC_QMARK_QMARK_EQ;
+          }
+
+          return THROW('The logical compound operator (`??=`) is only supported since ES2021, currently targeting a lower version', pointer - 3, pointer);
+        }
+      }
 
       if (supportNullishCoalescing) {
         return $PUNC_QMARK_QMARK;
