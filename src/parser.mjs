@@ -537,7 +537,7 @@ function Parser(code, options = {}) {
     tokenStorage: options_tokenStorage,
     getLexer = null,
     allowGlobalReturn = false, // you may need this to parse arbitrary code or eval code for example
-    targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, Infinity
+    targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, 12, 2015, 2016, 2017, 2018, 2019, 2020, 2021, Infinity
     exposeScopes: options_exposeScopes = false, // put scopes in the AST under `$scope` property?
     astUids = false, // add an incremental uid to all ast nodes for debugging
     ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
@@ -567,6 +567,10 @@ function Parser(code, options = {}) {
     // parsers use Directive nodes. So I'm clearly overlooking something silly. *shrug*
     /* (This comment prevents the buildscript from detecting the ast prefix) */AST_directiveNodes = false,
   } = options;
+
+  if (targetEsVersion >= 2015 && targetEsVersion <= 2021) {
+    targetEsVersion -= 2009; // es6 = 2015, etc. 2015-2009=6
+  }
 
   let goalMode = GOAL_SCRIPT;
   if (typeof options_goalMode === 'string') {
@@ -660,7 +664,7 @@ function Parser(code, options = {}) {
   let allowExportStarAs = (targetEsVersion >= VERSION_EXPORT_STAR_AS || targetEsVersion === VERSION_WHATEVER);
 
   ASSERT(goalMode === GOAL_SCRIPT || goalMode === GOAL_MODULE);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 11) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 or infin');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 12) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 12 2015 2016 2017 2018 2019 2020 2021 or Infinity');
 
   if (getLexer) getLexer(tok);
 

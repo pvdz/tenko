@@ -72,8 +72,8 @@ const {
     getLexer = null, // getLexer(lexer)
     // You use this to parse `eval` code
     allowGlobalReturn = false,
-    // Target a very specific ecmascript version (like, reject async)
-    targetEsVersion = lastVersion, // (currently es11)
+    // Target a very specific ecmascript version (like, reject async). Number; 6 - 12, or 2015 - 2021, or Infinity.
+    targetEsVersion = lastVersion, // (Last supported version is currently ES2021)
     // Leave built up scope information in the ASTs (good luck)
     exposeScopes = false,
     // Assign each node a unique incremental id

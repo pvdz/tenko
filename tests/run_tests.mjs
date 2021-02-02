@@ -84,6 +84,7 @@ const TARGET_ES8 = process.argv.includes('--es8');
 const TARGET_ES9 = process.argv.includes('--es9');
 const TARGET_ES10 = process.argv.includes('--es10');
 const TARGET_ES11 = process.argv.includes('--es11');
+const TARGET_ES12 = process.argv.includes('--es12');
 const TESTS_ONLY = process.argv.includes('-n'); // skip constructing updated test files, dont write anything. Used for code coverage
 const RUN_VERBOSE_IN_SERIAL = process.argv.includes('--serial') || (!SEARCH && !TESTS_ONLY && (INPUT_OVERRIDE || TARGET_FILE || STOP_AFTER_TEST_FAIL || STOP_AFTER_FILE_FAIL));
 const FORCE_WRITE = process.argv.includes('--force-write');
@@ -157,7 +158,7 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
   process.exit();
 }
 
-const FORCED_ES_TARGET = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10  : TARGET_ES11 ? 11 : undefined;
+const FORCED_ES_TARGET = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10 : TARGET_ES11 ? 11 : TARGET_ES12 ? 12 : undefined;
 if (FORCED_ES_TARGET) console.log('Forcing target version: ES' + FORCED_ES_TARGET);
 
 if (AUTO_UPDATE && (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE)) throw new Error('Cannot use auto update and auto generate together');

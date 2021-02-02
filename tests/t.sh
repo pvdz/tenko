@@ -103,6 +103,8 @@ Tenko CLI Toolkit help:
  c8            Run c8 on \`./t u\` to get test code coverage. Generates text and html output, runs server to view html.
  coverage      Alias for c8
  deoptigate    Run deoptigate (see doptie.js for file config)
+ 6 ... 12      Parse according to the rules of this particular version of the spec
+ 2015 ... 2021 Parse according to the rules of this particular version of the spec
  --sloppy      Enable sloppy script mode, do not auto-enable other modes
  --strict      Enable strict script mode, do not auto-enable other modes
  --module      Enable module goal mode, do not auto-enable other modes
@@ -142,7 +144,6 @@ Tenko CLI Toolkit help:
  --input-mde <mode>    For p6, this tells the parser in what mode to parse the input file (sloppy, strict, module, web)
  --output-file <path>  For p6, this is where the report is written
  --write-only  For code coverage, just update the COVERAGE.md file, don't open the html in a browser
- 6 ... 11      Parse according to the rules of this particular version of the spec
         "
       exit
       ;;
@@ -389,6 +390,14 @@ Tenko CLI Toolkit help:
     9)  ES='--es9'  ;;
     10) ES='--es10' ;;
     11) ES='--es11' ;;
+    12) ES='--es12' ;;
+    2015) ES='--es6'  ;;
+    2016) ES='--es7'  ;;
+    2017) ES='--es8'  ;;
+    2018) ES='--es9'  ;;
+    2019) ES='--es10' ;;
+    2020) ES='--es11' ;;
+    2021) ES='--es12' ;;
 
     # special flags for fuzzer
 
