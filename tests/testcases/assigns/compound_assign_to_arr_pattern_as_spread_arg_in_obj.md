@@ -1,19 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/for-loop/lhs_edge_cases/pattern_compound_assign_arr.md
+- Path: tests/testcases/assigns/compound_assign_to_arr_pattern_as_spread_arg_in_obj.md
 
-> :: for statement : for-loop : lhs edge cases
+> :: assigns
 >
-> ::> pattern compound assign arr
+> ::> compound assign to arr pattern as spread arg in obj
 >
-> Can't have destructuring assignment with compound assignment.
+> Reported in https://github.com/pvdz/tenko/issues/10
+>
+> The compound assignment is illegal, no matter where it appears.
 
 ## FAIL
 
 ## Input
 
 `````js
-for([]/=y;;)x
+({...[x] /= y});
 `````
 
 ## Output
@@ -32,10 +34,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can not compound assign to a pattern
 
-start@1:0, error@1:6
+start@1:0, error@1:9
 ╔══╦════════════════
- 1 ║ for([]/=y;;)x
-   ║       ^^------- error
+ 1 ║ ({...[x] /= y});
+   ║          ^^------- error
 ╚══╩════════════════
 
 `````

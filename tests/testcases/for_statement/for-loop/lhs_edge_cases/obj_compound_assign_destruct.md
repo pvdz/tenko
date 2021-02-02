@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/for-loop/lhs_edge_cases/pattern_compound_assign_arr.md
+- Path: tests/testcases/for_statement/for-loop/lhs_edge_cases/obj_compound_assign_destruct.md
 
 > :: for statement : for-loop : lhs edge cases
 >
-> ::> pattern compound assign arr
+> ::> obj compound assign destruct
 >
-> Can't have destructuring assignment with compound assignment.
+> This is an object that may either assign destruct or not destruct at all because of the property `a.b` in the property.
 
 ## FAIL
 
 ## Input
 
 `````js
-for([]/=y;;)x
+for ({x:a.b} /= x ;;) ;
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Can not compound assign to a pattern
+  Cannot compound assign to an object or array pattern
 
-start@1:0, error@1:6
-╔══╦════════════════
- 1 ║ for([]/=y;;)x
-   ║       ^^------- error
-╚══╩════════════════
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ for ({x:a.b} /= x ;;) ;
+   ║              ^^------- error
+╚══╩═════════════════
 
 `````
 

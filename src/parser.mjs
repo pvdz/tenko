@@ -10291,6 +10291,12 @@ function Parser(code, options = {}) {
     // For example: `[{a = b} = x]` vs `[{a = b}.c]`
 
     let destructible = parseArrayLiteralPattern(lexerFlagsBeforeParen, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp);
+
+    const $tp_next_type = tok_getType();
+    if ($tp_next_type !== $PUNC_EQ && hasAnyFlag($tp_next_type, $G_BINOP_ASSIGN)) {
+      THROW_RANGE('Can not compound assign to a pattern', tok_getStart(), tok_getStop());
+    }
+
     return destructible;
   }
   function parseArrayLiteralPattern(lexerFlagsBeforeParen, scoop, bindingType, skipInit, exportedNames, exportedBindings, _astProp) {
@@ -12927,6 +12933,7 @@ function Parser(code, options = {}) {
       // - `{...x/y};`
       // - `{...x, y};`       // cant destruct (obj rest must be last)
       // - `{...this, y};`    // cant destruct (obj rest must be last)
+      // - `{...[a] /= b}`    // illegal
 
       // - `async(...x/y);`   // async call
 
@@ -13071,7 +13078,14 @@ function Parser(code, options = {}) {
       // - `({...[][x]} = x);`
       // - `([...[][x]] = x);`
       let nowDestruct = parseArrayLiteralPattern(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
-      if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
+
+      const $tp_afterPattern_type = tok_getType();
+
+      if ($tp_afterPattern_type !== $PUNC_EQ && hasAnyFlag($tp_afterPattern_type, $G_BINOP_ASSIGN)) {
+        // - `[...[x] /= y];`
+        // - `[...{x} /= y];`
+        THROW_RANGE('Can not compound assign to a pattern', tok_getStart(), tok_getStop());
+      } else if ($tp_afterPattern_type !== $PUNC_EQ && $tp_afterPattern_type !== closingPuncType && $tp_afterPattern_type !== $PUNC_COMMA) {
         // - `({...[].x} = x);`
         destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_argStart_start, $tp_argStart_stop, $tp_argStart_line, $tp_argStart_column, assignable, nowDestruct, closingPuncType, astProp);
       } else {
@@ -13080,7 +13094,7 @@ function Parser(code, options = {}) {
         // - `({ ...[x] }) => {}`
         // - `{...[] = c}`
         // - `[...[] = c]`
-        if (closingPuncType === $PUNC_CURLY_CLOSE && tok_getType() !== $PUNC_EQ) {
+        if (closingPuncType === $PUNC_CURLY_CLOSE && $tp_afterPattern_type !== $PUNC_EQ) {
           destructible |= nowDestruct | CANT_DESTRUCT;
         } else {
           destructible |= nowDestruct;
@@ -13127,7 +13141,13 @@ function Parser(code, options = {}) {
 
       let nowDestruct = parseObjectAndAssign(lexerFlags, scoop, bindingType, SKIP_INIT, exportedNames, exportedBindings, astProp);
       ASSERT(tok_getType() !== $PUNC_EQ || (nowDestruct|CANT_DESTRUCT), 'rest can never have default so if there was an assignment dont let it be destructible');
-      if (tok_getType() !== $PUNC_EQ && tok_getType() !== closingPuncType && tok_getType() !== $PUNC_COMMA) {
+      const $tp_afterPattern_type = tok_getType();
+
+      if ($tp_afterPattern_type !== $PUNC_EQ && hasAnyFlag($tp_afterPattern_type, $G_BINOP_ASSIGN)) {
+        // - `{...[x] /= y};`
+        // - `{...{x} /= y};`
+        THROW_RANGE('Can not compound assign to a pattern', tok_getStart(), tok_getStop());
+      } else if ($tp_afterPattern_type !== $PUNC_EQ && $tp_afterPattern_type !== closingPuncType && $tp_afterPattern_type !== $PUNC_COMMA) {
         // - `({ ...{}.x } = x);`
         //          ^
         destructible = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_curly_start, $tp_curly_stop, $tp_curly_line, $tp_curly_column, assignable, nowDestruct, closingPuncType, astProp);
@@ -13140,7 +13160,7 @@ function Parser(code, options = {}) {
         // - `{...{}}`
         // - `[...{}]`                 // TODO: parse or runtime error? or potentially valid? What if the object is an iterable?
         destructible |= nowDestruct;
-        if (closingPuncType === $PUNC_CURLY_CLOSE && tok_getType() !== $PUNC_EQ) {
+        if (closingPuncType === $PUNC_CURLY_CLOSE && $tp_afterPattern_type !== $PUNC_EQ) {
           destructible |= CANT_DESTRUCT;
         }
       }
