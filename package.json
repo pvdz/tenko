@@ -1,8 +1,8 @@
 {
   "name": "tenko",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "author": "Peter van der Zee",
-  "description": "A \"pixel perfect\" 100% spec compliant ES2020 JavaScript parser written in JS.",
+  "description": "A \"pixel perfect\" 100% spec compliant ES2021 JavaScript parser written in JS.",
   "main": "build/tenko.prod.js",
   "module": "build/tenko.prod.mjs",
   "bin": "./t",
@@ -37,6 +37,7 @@
     "es2018",
     "es2019",
     "es2020",
+    "es2021",
     "parser",
     "parsing",
     "lexer",

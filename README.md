@@ -5,7 +5,7 @@ A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, p
 REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
-  - Anything stage 4 up to ES11 / ES2020
+  - Anything stage 4 up to ES2021
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
