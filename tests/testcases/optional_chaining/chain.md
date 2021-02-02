@@ -35,75 +35,79 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
-        optional: true,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
           computed: false,
+          optional: true,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
-            optional: true,
-            computed: true,
+            type: 'MemberExpression',
+            loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+            computed: false,
+            optional: false,
             object: {
-              type: 'OptionalCallExpression',
-              loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
+              type: 'MemberExpression',
+              loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+              computed: true,
               optional: true,
-              callee: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
+              object: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
                 optional: true,
-                computed: false,
-                object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
-                  optional: true,
+                callee: {
+                  type: 'MemberExpression',
+                  loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
                   computed: false,
+                  optional: true,
                   object: {
-                    type: 'Identifier',
-                    loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-                    name: 'a'
+                    type: 'MemberExpression',
+                    loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
+                    computed: false,
+                    optional: true,
+                    object: {
+                      type: 'Identifier',
+                      loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+                      name: 'a'
+                    },
+                    property: {
+                      type: 'Identifier',
+                      loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
+                      name: 'b'
+                    }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
-                    name: 'b'
+                    loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
+                    name: 'c'
                   }
                 },
-                property: {
-                  type: 'Identifier',
-                  loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-                  name: 'c'
-                }
+                arguments: [
+                  {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+                    name: 'd'
+                  }
+                ]
               },
-              arguments: [
-                {
-                  type: 'Identifier',
-                  loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
-                  name: 'd'
-                }
-              ]
+              property: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
+                name: 'e'
+              }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
-              name: 'e'
+              loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
+              name: 'f'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
-            name: 'f'
+            loc:{start:{line:1,column:21},end:{line:1,column:22},source:''},
+            name: 'g'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:21},end:{line:1,column:22},source:''},
-          name: 'g'
         }
       }
     }
@@ -145,7 +149,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(a?.b?.c?.(d))?.[e]?.f?.g;
+(a?.b?.c?.(d)?.[e].f?.g);
 ````
 
 Produces same AST

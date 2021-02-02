@@ -39,19 +39,23 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:3,column:1},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:3,column:1},source:''},
-        optional: true,
-        computed: false,
-        object: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          name: 'a'
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:3,column:0},end:{line:3,column:1},source:''},
-          name: 'b'
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:3,column:1},source:''},
+          computed: false,
+          optional: true,
+          object: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+            name: 'a'
+          },
+          property: {
+            type: 'Identifier',
+            loc:{start:{line:3,column:0},end:{line:3,column:1},source:''},
+            name: 'b'
+          }
         }
       }
     }
@@ -91,7 +95,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a?.b;
+(a?.b);
 ````
 
 Produces same AST

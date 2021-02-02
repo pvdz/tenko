@@ -6,7 +6,7 @@ import {
   $$A_61, $$A_UC_41,
   $$B_62, $$B_UC_42, $$C_UC_43,
   $$D_64, $$D_UC_44,
-  $$E_65, $$E_UC_45, $$G_67,
+  $$E_65, $$E_UC_45, $$G_67, $$H_68,
   $$I_69,
   $$I_UC_49,
   $$L_6C, $$L_UC_4C,
@@ -154,10 +154,10 @@ function CallExpression(node) {
     || node.callee.type === 'TemplateLiteral'   // `foo`()          Probably an error
     || node.callee.type === 'ThisExpression'    //  this()          Could technically work
   ) {
-    return $(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+    return $(node.callee) + (node.optional ? '?.' : '') + '(' + node.arguments.map($).join(', ') + ')';
   }
 
-  return $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  return $w(node.callee) + (node.optional ? '?.' : '') + '(' + node.arguments.map($).join(', ') + ')';
 }
 function CatchClause(node) {
   assert(node.type, 'CatchClause');
@@ -191,6 +191,11 @@ function ClassMethod(node) {
     $(node.body) +
     ';'
   );
+}
+function ChainExpression(node) {
+  assert(node.type, 'ChainExpression');
+  // Wrap because the AST for `a?.b?.c` is different from `(a?.b)?.c`
+  return $w(node.expression);
 }
 function CommentBlock(node) {
   assert(node.type, 'CommentBlock');
@@ -474,9 +479,16 @@ function MemberExpression(node) {
     (node.object.type === 'Identifier' && node.object.name === 'let') || // `(let)[x]`
     node.object.type === 'AssignmentExpression'             // a=b.c -> (a=b).c
   ) {
+    // Need to wrap object
+    if (node.optional) {
+      return $w(node.object) + (node.computed ? '?.[' + $(node.property) + ']' : ('?.' + $(node.property)));
+    }
     return $w(node.object) + (node.computed ? '[' + $(node.property) + ']' : ('.' + $(node.property)));
   }
 
+  if (node.optional) {
+    return $(node.object) + (node.computed ? '?.[' + $(node.property) + ']' : ('?.' + $(node.property)));
+  }
   return $(node.object) + (node.computed ? '[' + $(node.property) + ']' : ('.' + $(node.property)));
 }
 function MetaProperty(node) {
@@ -554,19 +566,6 @@ function ObjectProperty(node) {
   if (node.body) return node.body.map($).join('\n');
   // Babel
   return Property(node);
-}
-function OptionalCallExpression(node) {
-  assert(node.type, 'OptionalCallExpression');
-  if (Array.isArray(node.arguments)) {
-    return $(node.callee) + '?.(' + node.arguments.map($).join(', ') + ')';
-  }
-
-  return $(node.callee) + '?.(' + $(node.arguments) + ')';
-}
-function OptionalMemberExpression(node) {
-  assert(node.type, 'OptionalMemberExpression');
-  if (node.computed) return $w(node.object) + '?.[' + $(node.property) + ']';
-  return $(node.object) + '?.' + $(node.property);
 }
 function Program(node) {
   assert(node.type, 'Program');
@@ -747,18 +746,17 @@ let jumpTable = [
     if (c === $$E_UC_45) return ThisExpression(node);
     if (c === $$W_77) return ThrowStatement(node);
     if (c === $$E_65) return WhileStatement(node);
-    if (c === $$O_6F) return OptionalCallExpression(node);
     return YieldExpression(node);
   },
   (node, fromFor, type, c) => {
     if (c === $$S_73) return AssignmentExpression(node);
     if (c === $$L_6C) return ClassMethod(node);
+    if (c === $$H_68) return ChainExpression(node);
     return FunctionExpression(node);
   },
   (node, fromFor, type, c) => {
     c = type.charCodeAt(0);
     if (c === $$N_UC_4E) return NewExpression(node);
-    if (c === $$O_UC_4F) return OptionalMemberExpression(node);
     return RegExpLiteral(node);
   },
   (node, fromFor, type, c) => {

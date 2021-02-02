@@ -21,6 +21,7 @@ const LF_STRICT_MODE = 1 << ++__$flag_lf;
 const LF_SUPER_CALL = 1 << ++__$flag_lf; // can call `super()`
 const LF_SUPER_PROP = 1 << ++__$flag_lf; // can read `super.foo` (there are cases where you can doo this but not `super()`)
 const LF_NOT_KEYWORD = 1 << ++__$flag_lf; // skip keyword check for next ident parse (like member expression property)
+const LF_CHAINING = 1 << ++__$flag_lf; // Currently in an optional chain. If we encounter `?.` do not add another `ChainExpression` node.
 ASSERT(__$flag_lf < 32, 'cannot use more than 32 flags');
 // start of the first statement without knowing strict mode status:
 // - div means regular expression
@@ -98,6 +99,10 @@ function L(flags) {
     flags ^= LF_NOT_KEYWORD;
     s.push('LF_NOT_KEYWORD');
   }
+  if (flags & LF_CHAINING) {
+    flags ^= LF_CHAINING;
+    s.push('LF_CHAIING');
+  }
   if (flags) {
     throw new Error('UNKNOWN_FLAGS: ' + flags.toString(2) + ' (was: ' + bak.toString(2) + '), so far: [' + s.join('|') + ']');
   }
@@ -124,6 +129,7 @@ export {
   LF_SUPER_CALL,
   LF_SUPER_PROP,
   LF_NOT_KEYWORD,
+  LF_CHAINING,
 
   L,
 };

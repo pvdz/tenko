@@ -34,30 +34,34 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-          optional: true,
-          computed: true,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
+          computed: false,
+          optional: false,
           object: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-            name: 'd'
+            type: 'MemberExpression',
+            loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+            computed: true,
+            optional: true,
+            object: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+              name: 'd'
+            },
+            property: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
+              name: 'e'
+            }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
-            name: 'e'
+            loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
+            name: 'f'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
-          name: 'f'
         }
       }
     }
@@ -98,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(d)?.[e]?.f;
+(d?.[e].f);
 ````
 
 Produces same AST

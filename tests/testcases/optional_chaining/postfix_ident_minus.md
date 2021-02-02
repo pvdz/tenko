@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI
+  Cannot postfix `--` a non-assignable value
 
 start@1:0, error@1:4
 ╔══╦════════════════

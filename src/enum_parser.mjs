@@ -53,6 +53,8 @@ const IS_EXPRESSION = DEVONLY() ? {IS_EXPRESSION: 1} : 1;
 const IS_STATEMENT = DEVONLY() ? {IS_STATEMENT: 1} : 2;
 const IS_NEW_ARG = DEVONLY() ? {IS_NEW_ARG: 1} : 3;
 const NOT_NEW_ARG = DEVONLY() ? {NOT_NEW_ARG: 1} : 4;
+const IS_OPTIONAL = DEVONLY() ? {IS_OPTIONAL: 1} : 1;
+const NOT_OPTIONAL = DEVONLY() ? {NOT_OPTIONAL: 1} : 2;
 const MIGHT_DESTRUCT = 0; // any kind of destructuring or lack thereof is okay
 const CANT_DESTRUCT = 1 << 0; // it is impossible to destructure this
 const DESTRUCT_ASSIGN_ONLY = 1 << 1; // the only way this can destruct is by assignment
@@ -236,6 +238,8 @@ export {
   IS_STATEMENT,
   IS_NEW_ARG,
   NOT_NEW_ARG,
+  IS_OPTIONAL,
+  NOT_OPTIONAL,
   MIGHT_DESTRUCT,
   CANT_DESTRUCT,
   DESTRUCT_ASSIGN_ONLY,

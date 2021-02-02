@@ -33,7 +33,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An value containing the optional chaining operator cannot be followed by a template
+  A value containing the optional chaining operator cannot be followed by a template
 
 start@1:0, error@2:0
 ╔══╦════════════════

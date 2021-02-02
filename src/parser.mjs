@@ -131,6 +131,7 @@ import {
   LF_SUPER_CALL,
   LF_SUPER_PROP,
   LF_NOT_KEYWORD,
+  LF_CHAINING,
 
   L,
 } from './lexerflags.mjs';
@@ -425,6 +426,8 @@ import {
   IS_STATEMENT,
   IS_NEW_ARG,
   NOT_NEW_ARG,
+  IS_OPTIONAL,
+  NOT_OPTIONAL,
   MIGHT_DESTRUCT,
   CANT_DESTRUCT,
   DESTRUCT_ASSIGN_ONLY,
@@ -8611,27 +8614,16 @@ function Parser(code, options = {}) {
 
     switch (tok_getType()) {
       case $PUNC_DOT: // niet nodig
-        return _parseValueTailDotProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp);
+        return _parseValueTailDotProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, NOT_OPTIONAL, astProp);
       case $PUNC_BRACKET_OPEN: // niet nodig
-        return _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp);
+        return _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, NOT_OPTIONAL, astProp);
       case $PUNC_PAREN_OPEN: // niet nodig
-        return _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp);
+        return _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, NOT_OPTIONAL, astProp);
       case $PUNC_QMARK_DOT:
-        // [v]: `` value?.bar ``
-        // [v]: `` value?.() ``
-        // [v]: `` value?.[foo] ``
-        // [v]: `` value?.`foo` ``
-        // [x]: `` value?.bar`tag` ``
-        // [x]: `` value?.()`tag` ``
-        // [x]: `` value?.[foo]`tag` ``
-        // [x]: `` value?.`foo``tag` ``
-        // [v]: `` value?.super ``
-
         if (isNewArg === IS_NEW_ARG) {
           return THROW_RANGE('Cannot use `?.` in the arg of `new`', tok_getStart(), tok_getStop());
         }
-
-        return parseOptionalValueTailOuter(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, astProp);
+        return _parseValueChainTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, astProp);
       case $TICK_PURE:
       case $TICK_HEAD:
       case $TICK_BAD_PURE:
@@ -8649,227 +8641,98 @@ function Parser(code, options = {}) {
     if (isNewArg === IS_NEW_ARG) return _parseValueTailNewArg(assignable);
     return assignable;
   }
-  function parseOptionalValueTailOuter(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, astProp) {
-    ASSERT(parseOptionalValueTailOuter.length === arguments.length, 'arg count');
+  function _parseValueChainTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, astProp) {
+    ASSERT(_parseValueChainTail.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $PUNC_QMARK_DOT, 'should call this when we know next is a `?.`');
 
-    // a?.b.c        optional(a, member(b, c))               member(optional(a, b), c)
-    // a.b?.c        optional(member(a, b), c)               optional(member(a, b), c)
-    // a?.b?.c       optional(a, optional(b, c))             optional(optional(a, b), c)
-    // a.b.?.c.d     member(a, optional(b, member(a, b))     member(a, member(optional(b, c), d))
+    // Just encountered a `?.` token
+
+    // Estree finally formalized this struct in https://github.com/estree/estree/pull/204
+    // The entire optional chain is wrapped in a ChainExpression element
+    // The structure is then the same as a regular member expression chain and the `optional` property for each node tells you
+    // whether or not it was an optional chain. This used to be different in Tenko v1, which used OptionalMemberExpression etc.
+
+    // a?.b.c        chain(member(member(a, b, true), c, false))
+    // a.b?.c        member(chain(member(a, b, false), c, true))
+    // a?.b?.c       chain(member(member(a, b, true), c, true))
+    // a.b.?.c.d     member(chain(member(member(a, b, false), c, true), d, false)
     //
-    // a?.b.c;     vs   (a?.b).c;
-    // a?.b.c.d;   vs   (a?.b).c.d;
+    // a?.b.c;      vs   (a?.b).c;
+    // a?.b.c.d;    vs   (a?.b).c.d;
     // a?.b?.c.d;   vs   (a?.b)?.c.d.e;   vs   (a?.b?.c).d.e;   vs   ((a?.b)?.c).d.e;
 
-    do {
+    // [v]: `` value?.bar ``
+    // [v]: `` value?.() ``
+    // [v]: `` value?.[foo] ``
+    // [x]: `` value?.`foo` ``
+    // [x]: `` value?.bar`tag` ``
+    // [x]: `` value?.()`tag` ``
+    // [x]: `` value?.[foo]`tag` ``
+    // [x]: `` value?.`foo``tag` ``
+    // [v]: `` value?.super ``
 
-      let $tp_next_type = tok_getType();
 
-      switch ($tp_next_type) {
+    const injecting = hasNoFlag(lexerFlags, LF_CHAINING)
+    if (injecting) {
+      AST_wrapClosedCustom(astProp, {
+        type: 'ChainExpression',
+        loc: undefined,
+        expression: undefined,
+      }, 'expression');
+      lexerFlags = lexerFlags | LF_CHAINING;
+      astProp = 'expression';
+    }
 
-        case $PUNC_QMARK_DOT:
-          // <x> ?.
+    ASSERT_skipAny('?.', lexerFlags);
 
-          ASSERT_skipAny($PUNC_QMARK_DOT, lexerFlags);
+    let $tp_qdotTail_type = tok_getType();
 
-          let $tp_q_type = tok_getType();
+    if (hasAnyFlag($tp_qdotTail_type, $G_TICK)) {
+      return THROW_RANGE('A value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
+    }
 
-          if (isIdentToken($tp_q_type)) {
-            // [v]: `value?.foo.bar`
-            //              ^
+    if (isIdentToken($tp_qdotTail_type)) {
+      // x?.y
+      // This is the same logic as parsing an ident property tail, except it already consumed the dot and it's never assignable
 
-            let $tp_ident_type = tok_getType();
-            let $tp_ident_line = tok_getLine();
-            let $tp_ident_column = tok_getColumn();
-            let $tp_ident_start = tok_getStart();
-            let $tp_ident_stop = tok_getStop();
-            let $tp_ident_canon = tok_getCanoN();
+      let $tp_ident_line = tok_getLine();
+      let $tp_ident_column = tok_getColumn();
+      let $tp_ident_start = tok_getStart();
+      let $tp_ident_stop = tok_getStop();
+      let $tp_ident_canon = tok_getCanoN();
 
-            if (!isIdentToken($tp_ident_type)) THROW_RANGE('Expected ident after dot', $tp_ident_start, $tp_ident_stop);
+      ASSERT_skipDiv($G_IDENT, lexerFlags); // x.y / z is division
+      AST_setNode(astProp, {
+        type: 'MemberExpression',
+        loc: AST_getClosedLoc($tp_valueFirst_start, $tp_valueFirst_line,  $tp_valueFirst_column),
+        computed: false,
+        optional: true, // For optional chaining.
+        object: AST_popNode(astProp),
+        property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
+      });
+      const nextAssignable = parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setNotAssignable(assignable), NOT_NEW_ARG, NOT_LHSE, astProp);
+      if (injecting) AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'ChainExpression');
 
-            ASSERT_skipDiv($G_IDENT, lexerFlags);
+      return setNotAssignable(nextAssignable);
+    }
 
-            AST_setNode(astProp, {
-              type: 'OptionalMemberExpression',
-              loc: AST_getClosedLoc($tp_valueFirst_start, $tp_valueFirst_line,  $tp_valueFirst_column),
-              optional: true, // False for non-optional tails after an optional
-              computed: false,
-              object: AST_popNode(astProp),
-              property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
-            });
-          }
-          else if ($tp_q_type === $PUNC_BRACKET_OPEN) {
-            // [v]: `value?.[x]`
-            //              ^
+    if ($tp_qdotTail_type === $PUNC_BRACKET_OPEN) {
+      // x?.[y]
+      const nextAssignable = _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, NOT_NEW_ARG, IS_OPTIONAL, astProp);
+      if (injecting) AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'ChainExpression');
+      return setNotAssignable(nextAssignable);
+    }
 
-            ASSERT_skipAny($PUNC_BRACKET_OPEN, lexerFlags);
+    if ($tp_qdotTail_type === $PUNC_PAREN_OPEN) {
+      // x?.(y)
+      const nextAssignable = _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, NOT_NEW_ARG, IS_OPTIONAL, astProp);
+      if (injecting) AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'ChainExpression');
+      return setNotAssignable(nextAssignable);
+    }
 
-            AST_wrapClosedCustom(astProp, {
-              type: 'OptionalMemberExpression',
-              loc: undefined,
-              optional: true, // False for non-optional tails after an optional
-              computed: true,
-              object: undefined,
-              property: undefined,
-            }, 'object');
-
-            parseExpression(lexerFlags, 'property');
-
-            if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-              return THROW_RANGE('Expected the closing `]` char of a dynamic property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-            }
-
-            ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
-
-            AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column,'OptionalMemberExpression');
-          }
-          else if ($tp_q_type === $PUNC_PAREN_OPEN) {
-            // [v]: `value?.(x)`
-            //              ^
-
-            AST_wrapClosedCustom(astProp, {
-              type: 'OptionalCallExpression',
-              loc: undefined,
-              optional: true, // False for non-optional tails after an optional
-              callee: undefined,
-              arguments: [],
-            }, 'callee');
-
-            let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
-
-            assignable = mergeAssignable(nowAssignable, assignable);
-
-            AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'OptionalCallExpression');
-          }
-          else if (isTemplateStart($tp_q_type)) {
-            // [v]: `` value?.`x` ``
-            //                ^
-
-            return THROW_RANGE('An value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
-          }
-          else if ($tp_q_type === $PUNC_QMARK_DOT) {
-            // [x]: `a?.?.b`
-            return THROW_RANGE('Cannot cannot `?.?.`, must have something in between', tok_getStart(), tok_getStop())
-          }
-
-          break;
-
-        case $PUNC_DOT:
-          // [v]: `value?.foo.bar`
-          //                 ^
-          // [v]: `value?.[foo].bar`
-          //                   ^
-          // [v]: `value?.(foo).bar`
-          //                   ^
-
-          ASSERT_skipAny($PUNC_DOT, lexerFlags);
-
-          let $tp_ident_type = tok_getType();
-          let $tp_ident_line = tok_getLine();
-          let $tp_ident_column = tok_getColumn();
-          let $tp_ident_start = tok_getStart();
-          let $tp_ident_stop = tok_getStop();
-          let $tp_ident_canon = tok_getCanoN();
-
-          if (!isIdentToken($tp_ident_type)) THROW_RANGE('Expected ident after dot', $tp_ident_start, $tp_ident_stop);
-
-          ASSERT_skipDiv($G_IDENT, lexerFlags);
-
-          AST_setNode(astProp, {
-            type: 'OptionalMemberExpression',
-            loc: AST_getClosedLoc($tp_valueFirst_start, $tp_valueFirst_line,  $tp_valueFirst_column),
-            optional: false, // !!
-            computed: false,
-            object: AST_popNode(astProp),
-            property: AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon),
-          });
-
-          break;
-
-        case $PUNC_PAREN_OPEN:
-          // [v]: `value?.foo(bar)`
-          //                 ^
-          // [v]: `value?.[foo](bar)`
-          //                   ^
-          // [v]: `value?.(foo)(bar)`
-          //                   ^
-
-          AST_wrapClosedCustom(astProp, {
-            type: 'OptionalCallExpression',
-            loc: undefined,
-            optional: false, // !!
-            callee: undefined,
-            arguments: [],
-          }, 'callee');
-
-          let nowAssignable = parseCallArgs(lexerFlags, 'arguments');
-
-          assignable = mergeAssignable(nowAssignable, assignable);
-
-          AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'OptionalCallExpression');
-
-          break;
-
-        case $PUNC_BRACKET_OPEN:
-          // [v]: `value?.foo[bar]`
-          //                 ^
-          // [v]: `value?.[foo][bar]`
-          //                   ^
-          // [v]: `value?.(foo)[bar]`
-          //                   ^
-
-          ASSERT_skipAny($PUNC_BRACKET_OPEN, lexerFlags);
-
-          AST_wrapClosedCustom(astProp, {
-            type: 'OptionalMemberExpression',
-            loc: undefined,
-            optional: false, // !!
-            computed: true,
-            object: undefined,
-            property: undefined,
-          }, 'object');
-
-          parseExpression(lexerFlags, 'property');
-
-          if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
-            return THROW_RANGE('Expected the closing `]` char of a dynamic property, found`' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
-          }
-
-          ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
-
-          assignable = parseOptionalValueTailOuter(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, 'property');
-
-          AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column,'OptionalMemberExpression');
-
-          break;
-
-        // case $PUNC_PLUS_PLUS:
-        //   return THROW_RANGE('An value containing the optional chaining operator is not assignable so `++` is illegal here', tok_getStart(), tok_getStop());
-        //
-        // case $PUNC_MIN_MIN:
-        //   return THROW_RANGE('An value containing the optional chaining operator is not assignable so `--` is illegal here', tok_getStart(), tok_getStop());
-
-        default:
-          if (isTemplateStart($tp_next_type)) {
-            // [v]: `` value?.foo`bar` ``
-            //                 ^
-            // [v]: `` value?.[foo]`bar` ``
-            //                   ^
-            // [v]: `` value?.(foo)`bar` ``
-            //                   ^
-
-            return THROW_RANGE('An value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
-          }
-
-          return setNotAssignable(assignable);
-      }
-
-    } while(true);
-
-    ASSERT(false, 'unreachable');
+    return THROW_RANGE('Unexpected input after `?.`; expecting an identifier (property), opening square bracket (computed property), or opening parenthesis (call)', tok_getStart(), tok_getStop());
   }
-  function _parseValueTailDotProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
+  function _parseValueTailDotProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, isOptional, astProp) {
     // parseMemberExpression dot
 
     ASSERT_skipToIdentOrDie('.', lexerFlags | LF_NOT_KEYWORD);
@@ -8891,14 +8754,14 @@ function Parser(code, options = {}) {
     });
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setAssignable(assignable), isNewArg, NOT_LHSE, astProp);
   }
-  function _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
+  function _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, isOptional, astProp) {
     // parseMemberExpression dynamic
     // parseDynamicProperty
     AST_wrapClosedCustom(astProp, {
       type: 'MemberExpression',
       loc: undefined,
       computed: true,
-      optional: false, // For optional chaining.
+      optional: isOptional === IS_OPTIONAL, // For optional chaining.
       object: undefined,
       property: undefined,
     }, 'object');
@@ -8916,7 +8779,7 @@ function Parser(code, options = {}) {
     AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'MemberExpression');
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setAssignable(assignable), isNewArg, NOT_LHSE, astProp); // member expressions are assignable
   }
-  function _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
+  function _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, isOptional, astProp) {
     ASSERT(_parseValueTailCall.length === arguments.length, 'arg count');
     ASSERT_VALID(tok_getType() === $PUNC_PAREN_OPEN, 'at paren');
 
@@ -8936,7 +8799,7 @@ function Parser(code, options = {}) {
     AST_wrapClosedCustom(astProp, {
       type: 'CallExpression',
       loc: undefined,
-      optional: false,
+      optional: isOptional === IS_OPTIONAL,
       callee: undefined,
       arguments: [],
     }, 'callee');
@@ -8950,6 +8813,10 @@ function Parser(code, options = {}) {
     ASSERT(_parseValueTailTemplate.length === arguments.length, 'arg count');
     // parseTaggedTemplate
     // Note: in es9+ (only) it is legal for _tagged_ templates to contain illegal escapes (`isBadTickToken(tok_getType())`)
+
+    if (hasAnyFlag(lexerFlags, LF_CHAINING)) {
+      throw THROW_RANGE('A value containing the optional chaining operator cannot be followed by a template', tok_getStart(), tok_getStop());
+    }
 
     // Tagged template is like a call but slightly special (and a very particular AST)
     AST_wrapClosedCustom(astProp, {

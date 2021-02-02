@@ -49,21 +49,25 @@ ast: {
               name: 'x'
             },
             right: {
-              type: 'OptionalCallExpression',
+              type: 'ChainExpression',
               loc:{start:{line:1,column:5},end:{line:1,column:15},source:''},
-              optional: true,
-              callee: {
-                type: 'Identifier',
-                loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
-                name: 'a'
-              },
-              arguments: [
-                {
+              expression: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:5},end:{line:1,column:15},source:''},
+                optional: true,
+                callee: {
                   type: 'Identifier',
-                  loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
-                  name: 'await'
-                }
-              ]
+                  loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+                  name: 'a'
+                },
+                arguments: [
+                  {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
+                    name: 'await'
+                  }
+                ]
+              }
             }
           }
         ],
@@ -125,7 +129,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(x = a?.(await)) => (y);
+(x = (a?.(await))) => (y);
 ````
 
 Produces same AST

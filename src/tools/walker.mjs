@@ -21,7 +21,7 @@ import {
   $$A_61, $$A_UC_41,
   $$B_62, $$B_UC_42, $$C_UC_43,
   $$D_64, $$D_UC_44,
-  $$E_65, $$E_UC_45, $$G_67,
+  $$E_65, $$E_UC_45, $$G_67, $$H_68,
   $$I_69,
   $$I_UC_49,
   $$L_6C, $$L_UC_4C,
@@ -125,6 +125,10 @@ function ClassMethod(node, parent, prop, index) {
     $(node.value, node, 'value');
     $(node.body, node, 'body');
   }
+}
+function ChainExpression(node, parent, prop, index) {
+  assert(node.type, 'ChainExpression');
+  $(node.expression, node, 'expression');
 }
 function CommentBlock(node, parent, prop, index) {
   assert(node.type, 'CommentBlock');
@@ -329,16 +333,6 @@ function ObjectProperty(node, parent, prop, index) {
     Property(node, parent, prop, index);
   }
 }
-function OptionalCallExpression(node) {
-  assert(node.type, 'OptionalCallExpression');
-  $(node.callee);
-  node.arguments.forEach((e, i) => $(e, node, 'arguments', i));
-}
-function OptionalMemberExpression(node) {
-  assert(node.type, 'OptionalMemberExpression');
-  $(node.object);
-  $(node.property);
-}
 function Program(node, parent, prop, index) {
   assert(node.type, 'Program');
   node.body.forEach((e, i) => $(e, node, 'body', i));
@@ -493,18 +487,17 @@ let jumpTable = [
     if (c === $$E_UC_45) return ThisExpression(node, parent, prop, index);
     if (c === $$W_77) return ThrowStatement(node, parent, prop, index);
     if (c === $$E_65) return WhileStatement(node, parent, prop, index);
-    if (c === $$O_6F) return OptionalCallExpression(node);
     return YieldExpression(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {
     if (c === $$S_73) return AssignmentExpression(node, parent, prop, index);
     if (c === $$L_6C) return ClassMethod(node, parent, prop, index);
+    if (c === $$H_68) return ChainExpression(node, parent, prop, index);
     return FunctionExpression(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {
     c = type.charCodeAt(0);
     if (c === $$N_UC_4E) return NewExpression(node, parent, prop, index);
-    if (c === $$O_UC_4F) return OptionalMemberExpression(node);
     return RegExpLiteral(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {

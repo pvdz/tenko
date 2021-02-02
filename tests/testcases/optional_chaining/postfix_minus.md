@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI
+  Unexpected input after `?.`; expecting an identifier (property), opening square bracket (computed property), or opening parenthesis (call)
 
 start@1:0, error@1:3
 ╔══╦════════════════

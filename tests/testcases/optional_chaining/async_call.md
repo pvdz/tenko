@@ -35,21 +35,25 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
       expression: {
-        type: 'OptionalCallExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
-        optional: true,
-        callee: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
-          name: 'async'
-        },
-        arguments: [
-          {
+        expression: {
+          type: 'CallExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
+          optional: true,
+          callee: {
             type: 'Identifier',
-            loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
-            name: 'foo'
-          }
-        ]
+            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+            name: 'async'
+          },
+          arguments: [
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
+              name: 'foo'
+            }
+          ]
+        }
       }
     }
   ]
@@ -88,7 +92,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async?.(foo);
+(async?.(foo));
 ````
 
 Produces same AST

@@ -53,19 +53,23 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:2,column:0},end:{line:2,column:4},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:2,column:0},end:{line:2,column:4},source:''},
-        optional: true,
-        computed: false,
-        object: {
-          type: 'Identifier',
-          loc:{start:{line:2,column:0},end:{line:2,column:1},source:''},
-          name: 'a'
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:2,column:3},end:{line:2,column:4},source:''},
-          name: 'b'
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:2,column:0},end:{line:2,column:4},source:''},
+          computed: false,
+          optional: true,
+          object: {
+            type: 'Identifier',
+            loc:{start:{line:2,column:0},end:{line:2,column:1},source:''},
+            name: 'a'
+          },
+          property: {
+            type: 'Identifier',
+            loc:{start:{line:2,column:3},end:{line:2,column:4},source:''},
+            name: 'b'
+          }
         }
       }
     }
@@ -106,7 +110,7 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 x--;
-a?.b;
+(a?.b);
 ````
 
 Produces same AST

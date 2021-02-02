@@ -67,59 +67,63 @@ ast: {
         },
         arguments: [
           {
-            type: 'OptionalMemberExpression',
+            type: 'ChainExpression',
             loc:{start:{line:2,column:2},end:{line:2,column:17},source:''},
-            optional: false,
-            computed: false,
-            object: {
-              type: 'OptionalCallExpression',
-              loc:{start:{line:2,column:2},end:{line:2,column:15},source:''},
+            expression: {
+              type: 'MemberExpression',
+              loc:{start:{line:2,column:2},end:{line:2,column:17},source:''},
+              computed: false,
               optional: false,
-              callee: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:2,column:2},end:{line:2,column:13},source:''},
+              object: {
+                type: 'CallExpression',
+                loc:{start:{line:2,column:2},end:{line:2,column:15},source:''},
                 optional: false,
-                computed: false,
-                object: {
-                  type: 'OptionalCallExpression',
-                  loc:{start:{line:2,column:2},end:{line:2,column:11},source:''},
-                  optional: true,
-                  callee: {
-                    type: 'MemberExpression',
-                    loc:{start:{line:2,column:2},end:{line:2,column:7},source:''},
-                    computed: false,
-                    optional: false,
-                    object: {
-                      type: 'CallExpression',
-                      loc:{start:{line:2,column:2},end:{line:2,column:5},source:''},
+                callee: {
+                  type: 'MemberExpression',
+                  loc:{start:{line:2,column:2},end:{line:2,column:13},source:''},
+                  computed: false,
+                  optional: false,
+                  object: {
+                    type: 'CallExpression',
+                    loc:{start:{line:2,column:2},end:{line:2,column:11},source:''},
+                    optional: true,
+                    callee: {
+                      type: 'MemberExpression',
+                      loc:{start:{line:2,column:2},end:{line:2,column:7},source:''},
+                      computed: false,
                       optional: false,
-                      callee: {
-                        type: 'Identifier',
-                        loc:{start:{line:2,column:2},end:{line:2,column:3},source:''},
-                        name: 'a'
+                      object: {
+                        type: 'CallExpression',
+                        loc:{start:{line:2,column:2},end:{line:2,column:5},source:''},
+                        optional: false,
+                        callee: {
+                          type: 'Identifier',
+                          loc:{start:{line:2,column:2},end:{line:2,column:3},source:''},
+                          name: 'a'
+                        },
+                        arguments: []
                       },
-                      arguments: []
+                      property: {
+                        type: 'Identifier',
+                        loc:{start:{line:2,column:6},end:{line:2,column:7},source:''},
+                        name: 'b'
+                      }
                     },
-                    property: {
-                      type: 'Identifier',
-                      loc:{start:{line:2,column:6},end:{line:2,column:7},source:''},
-                      name: 'b'
-                    }
+                    arguments: []
                   },
-                  arguments: []
+                  property: {
+                    type: 'Identifier',
+                    loc:{start:{line:2,column:12},end:{line:2,column:13},source:''},
+                    name: 'c'
+                  }
                 },
-                property: {
-                  type: 'Identifier',
-                  loc:{start:{line:2,column:12},end:{line:2,column:13},source:''},
-                  name: 'c'
-                }
+                arguments: []
               },
-              arguments: []
-            },
-            property: {
-              type: 'Identifier',
-              loc:{start:{line:2,column:16},end:{line:2,column:17},source:''},
-              name: 'd'
+              property: {
+                type: 'Identifier',
+                loc:{start:{line:2,column:16},end:{line:2,column:17},source:''},
+                name: 'd'
+              }
             }
           }
         ]
@@ -166,7 +170,7 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 const a = {};
-$(a().b?.()?.c?.()?.d);
+$((a().b?.().c().d));
 ````
 
 Produces same AST

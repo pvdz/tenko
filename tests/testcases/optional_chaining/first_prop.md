@@ -35,30 +35,34 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
-          optional: true,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-            name: 'a'
+            type: 'MemberExpression',
+            loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
+            computed: false,
+            optional: true,
+            object: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+              name: 'a'
+            },
+            property: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
+              name: 'b'
+            }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
+            loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
             name: 'b'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
-          name: 'b'
         }
       }
     }
@@ -98,7 +102,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a?.b?.b;
+(a?.b.b);
 ````
 
 Produces same AST

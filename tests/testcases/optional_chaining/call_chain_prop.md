@@ -35,31 +35,35 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-        optional: true,
-        computed: true,
-        object: {
-          type: 'OptionalCallExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
+          computed: true,
           optional: true,
-          callee: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-            name: 'c'
-          },
-          arguments: [
-            {
+          object: {
+            type: 'CallExpression',
+            loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+            optional: true,
+            callee: {
               type: 'Identifier',
-              loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
-              name: 'd'
-            }
-          ]
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
-          name: 'e'
+              loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+              name: 'c'
+            },
+            arguments: [
+              {
+                type: 'Identifier',
+                loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
+                name: 'd'
+              }
+            ]
+          },
+          property: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
+            name: 'e'
+          }
         }
       }
     }
@@ -100,7 +104,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(c?.(d))?.[e];
+(c?.(d)?.[e]);
 ````
 
 Produces same AST

@@ -37,21 +37,25 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
       expression: {
-        type: 'OptionalCallExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-        optional: true,
-        callee: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          name: 'a'
-        },
-        arguments: [
-          {
+        expression: {
+          type: 'CallExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+          optional: true,
+          callee: {
             type: 'Identifier',
-            loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
-            name: 'x'
-          }
-        ]
+            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+            name: 'a'
+          },
+          arguments: [
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
+              name: 'x'
+            }
+          ]
+        }
       }
     }
   ]
@@ -90,7 +94,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a?.(x);
+(a?.(x));
 ````
 
 Produces same AST

@@ -135,6 +135,7 @@ import {
   LF_SUPER_CALL,
   LF_SUPER_PROP,
   LF_NOT_KEYWORD,
+  LF_CHAINING,
 
   L,
 } from './lexerflags.mjs';

@@ -50,74 +50,78 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:15},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
-            optional: false,
+            type: 'MemberExpression',
+            loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
-              optional: false,
+              type: 'MemberExpression',
+              loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
               computed: false,
+              optional: false,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-                optional: false,
+                type: 'MemberExpression',
+                loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
                 computed: false,
+                optional: false,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
                   computed: false,
+                  optional: false,
                   object: {
-                    type: 'Identifier',
-                    loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-                    name: 'a'
+                    type: 'MemberExpression',
+                    loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
+                    computed: false,
+                    optional: true,
+                    object: {
+                      type: 'Identifier',
+                      loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+                      name: 'a'
+                    },
+                    property: {
+                      type: 'Identifier',
+                      loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
+                      name: 'b'
+                    }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
-                    name: 'b'
+                    loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+                  loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
+                loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
+              loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
+            loc:{start:{line:1,column:13},end:{line:1,column:14},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:13},end:{line:1,column:14},source:''},
-          name: 'x'
         }
       }
     },
@@ -125,74 +129,78 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:3,column:0},end:{line:3,column:18},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:3,column:0},end:{line:3,column:17},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:3,column:0},end:{line:3,column:15},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:3,column:0},end:{line:3,column:17},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:3,column:0},end:{line:3,column:13},source:''},
-            optional: true,
+            type: 'MemberExpression',
+            loc:{start:{line:3,column:0},end:{line:3,column:15},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:3,column:0},end:{line:3,column:10},source:''},
-              optional: true,
+              type: 'MemberExpression',
+              loc:{start:{line:3,column:0},end:{line:3,column:13},source:''},
               computed: false,
+              optional: true,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:3,column:0},end:{line:3,column:7},source:''},
-                optional: true,
+                type: 'MemberExpression',
+                loc:{start:{line:3,column:0},end:{line:3,column:10},source:''},
                 computed: false,
+                optional: true,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:3,column:0},end:{line:3,column:4},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:3,column:0},end:{line:3,column:7},source:''},
                   computed: false,
+                  optional: true,
                   object: {
-                    type: 'Identifier',
-                    loc:{start:{line:3,column:0},end:{line:3,column:1},source:''},
-                    name: 'a'
+                    type: 'MemberExpression',
+                    loc:{start:{line:3,column:0},end:{line:3,column:4},source:''},
+                    computed: false,
+                    optional: true,
+                    object: {
+                      type: 'Identifier',
+                      loc:{start:{line:3,column:0},end:{line:3,column:1},source:''},
+                      name: 'a'
+                    },
+                    property: {
+                      type: 'Identifier',
+                      loc:{start:{line:3,column:3},end:{line:3,column:4},source:''},
+                      name: 'b'
+                    }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:3,column:3},end:{line:3,column:4},source:''},
-                    name: 'b'
+                    loc:{start:{line:3,column:6},end:{line:3,column:7},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:3,column:6},end:{line:3,column:7},source:''},
+                  loc:{start:{line:3,column:9},end:{line:3,column:10},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:3,column:9},end:{line:3,column:10},source:''},
+                loc:{start:{line:3,column:12},end:{line:3,column:13},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:3,column:12},end:{line:3,column:13},source:''},
+              loc:{start:{line:3,column:14},end:{line:3,column:15},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:3,column:14},end:{line:3,column:15},source:''},
+            loc:{start:{line:3,column:16},end:{line:3,column:17},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:3,column:16},end:{line:3,column:17},source:''},
-          name: 'x'
         }
       }
     },
@@ -200,96 +208,100 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:5,column:0},end:{line:5,column:22},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:5,column:0},end:{line:5,column:21},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:5,column:0},end:{line:5,column:19},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:5,column:0},end:{line:5,column:21},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:5,column:0},end:{line:5,column:17},source:''},
-            optional: true,
+            type: 'MemberExpression',
+            loc:{start:{line:5,column:0},end:{line:5,column:19},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:5,column:0},end:{line:5,column:14},source:''},
-              optional: true,
+              type: 'MemberExpression',
+              loc:{start:{line:5,column:0},end:{line:5,column:17},source:''},
               computed: false,
+              optional: true,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:5,column:0},end:{line:5,column:11},source:''},
-                optional: true,
+                type: 'MemberExpression',
+                loc:{start:{line:5,column:0},end:{line:5,column:14},source:''},
                 computed: false,
+                optional: true,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:5,column:0},end:{line:5,column:8},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:5,column:0},end:{line:5,column:11},source:''},
                   computed: false,
+                  optional: true,
                   object: {
                     type: 'MemberExpression',
-                    loc:{start:{line:5,column:0},end:{line:5,column:5},source:''},
+                    loc:{start:{line:5,column:0},end:{line:5,column:8},source:''},
                     computed: false,
-                    optional: false,
+                    optional: true,
                     object: {
                       type: 'MemberExpression',
-                      loc:{start:{line:5,column:0},end:{line:5,column:3},source:''},
+                      loc:{start:{line:5,column:0},end:{line:5,column:5},source:''},
                       computed: false,
                       optional: false,
                       object: {
-                        type: 'Identifier',
-                        loc:{start:{line:5,column:0},end:{line:5,column:1},source:''},
-                        name: 'z'
+                        type: 'MemberExpression',
+                        loc:{start:{line:5,column:0},end:{line:5,column:3},source:''},
+                        computed: false,
+                        optional: false,
+                        object: {
+                          type: 'Identifier',
+                          loc:{start:{line:5,column:0},end:{line:5,column:1},source:''},
+                          name: 'z'
+                        },
+                        property: {
+                          type: 'Identifier',
+                          loc:{start:{line:5,column:2},end:{line:5,column:3},source:''},
+                          name: 'z'
+                        }
                       },
                       property: {
                         type: 'Identifier',
-                        loc:{start:{line:5,column:2},end:{line:5,column:3},source:''},
-                        name: 'z'
+                        loc:{start:{line:5,column:4},end:{line:5,column:5},source:''},
+                        name: 'a'
                       }
                     },
                     property: {
                       type: 'Identifier',
-                      loc:{start:{line:5,column:4},end:{line:5,column:5},source:''},
-                      name: 'a'
+                      loc:{start:{line:5,column:7},end:{line:5,column:8},source:''},
+                      name: 'b'
                     }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:5,column:7},end:{line:5,column:8},source:''},
-                    name: 'b'
+                    loc:{start:{line:5,column:10},end:{line:5,column:11},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:5,column:10},end:{line:5,column:11},source:''},
+                  loc:{start:{line:5,column:13},end:{line:5,column:14},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:5,column:13},end:{line:5,column:14},source:''},
+                loc:{start:{line:5,column:16},end:{line:5,column:17},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:5,column:16},end:{line:5,column:17},source:''},
+              loc:{start:{line:5,column:18},end:{line:5,column:19},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:5,column:18},end:{line:5,column:19},source:''},
+            loc:{start:{line:5,column:20},end:{line:5,column:21},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:5,column:20},end:{line:5,column:21},source:''},
-          name: 'x'
         }
       }
     },
@@ -297,97 +309,101 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:7,column:0},end:{line:7,column:25},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:7,column:0},end:{line:7,column:24},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:7,column:0},end:{line:7,column:22},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:7,column:0},end:{line:7,column:24},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:7,column:0},end:{line:7,column:20},source:''},
-            optional: true,
+            type: 'MemberExpression',
+            loc:{start:{line:7,column:0},end:{line:7,column:22},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:7,column:0},end:{line:7,column:17},source:''},
-              optional: true,
+              type: 'MemberExpression',
+              loc:{start:{line:7,column:0},end:{line:7,column:20},source:''},
               computed: false,
+              optional: true,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:7,column:0},end:{line:7,column:14},source:''},
-                optional: true,
+                type: 'MemberExpression',
+                loc:{start:{line:7,column:0},end:{line:7,column:17},source:''},
                 computed: false,
+                optional: true,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:7,column:0},end:{line:7,column:11},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:7,column:0},end:{line:7,column:14},source:''},
                   computed: false,
+                  optional: true,
                   object: {
-                    type: 'OptionalCallExpression',
-                    loc:{start:{line:7,column:0},end:{line:7,column:8},source:''},
+                    type: 'MemberExpression',
+                    loc:{start:{line:7,column:0},end:{line:7,column:11},source:''},
+                    computed: false,
                     optional: true,
-                    callee: {
-                      type: 'MemberExpression',
-                      loc:{start:{line:7,column:0},end:{line:7,column:3},source:''},
-                      computed: false,
-                      optional: false,
-                      object: {
-                        type: 'Identifier',
-                        loc:{start:{line:7,column:0},end:{line:7,column:1},source:''},
-                        name: 'z'
+                    object: {
+                      type: 'CallExpression',
+                      loc:{start:{line:7,column:0},end:{line:7,column:8},source:''},
+                      optional: true,
+                      callee: {
+                        type: 'MemberExpression',
+                        loc:{start:{line:7,column:0},end:{line:7,column:3},source:''},
+                        computed: false,
+                        optional: false,
+                        object: {
+                          type: 'Identifier',
+                          loc:{start:{line:7,column:0},end:{line:7,column:1},source:''},
+                          name: 'z'
+                        },
+                        property: {
+                          type: 'Identifier',
+                          loc:{start:{line:7,column:2},end:{line:7,column:3},source:''},
+                          name: 'z'
+                        }
                       },
-                      property: {
-                        type: 'Identifier',
-                        loc:{start:{line:7,column:2},end:{line:7,column:3},source:''},
-                        name: 'z'
-                      }
+                      arguments: [
+                        {
+                          type: 'Identifier',
+                          loc:{start:{line:7,column:6},end:{line:7,column:7},source:''},
+                          name: 'a'
+                        }
+                      ]
                     },
-                    arguments: [
-                      {
-                        type: 'Identifier',
-                        loc:{start:{line:7,column:6},end:{line:7,column:7},source:''},
-                        name: 'a'
-                      }
-                    ]
+                    property: {
+                      type: 'Identifier',
+                      loc:{start:{line:7,column:10},end:{line:7,column:11},source:''},
+                      name: 'b'
+                    }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:7,column:10},end:{line:7,column:11},source:''},
-                    name: 'b'
+                    loc:{start:{line:7,column:13},end:{line:7,column:14},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:7,column:13},end:{line:7,column:14},source:''},
+                  loc:{start:{line:7,column:16},end:{line:7,column:17},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:7,column:16},end:{line:7,column:17},source:''},
+                loc:{start:{line:7,column:19},end:{line:7,column:20},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:7,column:19},end:{line:7,column:20},source:''},
+              loc:{start:{line:7,column:21},end:{line:7,column:22},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:7,column:21},end:{line:7,column:22},source:''},
+            loc:{start:{line:7,column:23},end:{line:7,column:24},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:7,column:23},end:{line:7,column:24},source:''},
-          name: 'x'
         }
       }
     },
@@ -410,41 +426,45 @@ ast: {
             computed: false,
             optional: false,
             object: {
-              type: 'OptionalMemberExpression',
+              type: 'ChainExpression',
               loc:{start:{line:9,column:1},end:{line:9,column:9},source:''},
-              optional: false,
-              computed: false,
-              object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:9,column:1},end:{line:9,column:7},source:''},
-                optional: false,
+              expression: {
+                type: 'MemberExpression',
+                loc:{start:{line:9,column:1},end:{line:9,column:9},source:''},
                 computed: false,
+                optional: false,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:9,column:1},end:{line:9,column:5},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:9,column:1},end:{line:9,column:7},source:''},
                   computed: false,
+                  optional: false,
                   object: {
-                    type: 'Identifier',
-                    loc:{start:{line:9,column:1},end:{line:9,column:2},source:''},
-                    name: 'a'
+                    type: 'MemberExpression',
+                    loc:{start:{line:9,column:1},end:{line:9,column:5},source:''},
+                    computed: false,
+                    optional: true,
+                    object: {
+                      type: 'Identifier',
+                      loc:{start:{line:9,column:1},end:{line:9,column:2},source:''},
+                      name: 'a'
+                    },
+                    property: {
+                      type: 'Identifier',
+                      loc:{start:{line:9,column:4},end:{line:9,column:5},source:''},
+                      name: 'b'
+                    }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:9,column:4},end:{line:9,column:5},source:''},
-                    name: 'b'
+                    loc:{start:{line:9,column:6},end:{line:9,column:7},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:9,column:6},end:{line:9,column:7},source:''},
+                  loc:{start:{line:9,column:8},end:{line:9,column:9},source:''},
                   name: 'x'
                 }
-              },
-              property: {
-                type: 'Identifier',
-                loc:{start:{line:9,column:8},end:{line:9,column:9},source:''},
-                name: 'x'
               }
             },
             property: {
@@ -470,74 +490,82 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:11,column:0},end:{line:11,column:20},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:11,column:0},end:{line:11,column:19},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:11,column:0},end:{line:11,column:17},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:11,column:0},end:{line:11,column:19},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:11,column:0},end:{line:11,column:15},source:''},
-            optional: true,
+            type: 'MemberExpression',
+            loc:{start:{line:11,column:0},end:{line:11,column:17},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:11,column:0},end:{line:11,column:12},source:''},
-              optional: true,
+              type: 'MemberExpression',
+              loc:{start:{line:11,column:0},end:{line:11,column:15},source:''},
               computed: false,
+              optional: true,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:11,column:1},end:{line:11,column:8},source:''},
-                optional: true,
+                type: 'MemberExpression',
+                loc:{start:{line:11,column:0},end:{line:11,column:12},source:''},
                 computed: false,
+                optional: true,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:11,column:1},end:{line:11,column:5},source:''},
-                  optional: true,
-                  computed: false,
-                  object: {
-                    type: 'Identifier',
-                    loc:{start:{line:11,column:1},end:{line:11,column:2},source:''},
-                    name: 'a'
-                  },
-                  property: {
-                    type: 'Identifier',
-                    loc:{start:{line:11,column:4},end:{line:11,column:5},source:''},
-                    name: 'b'
+                  type: 'ChainExpression',
+                  loc:{start:{line:11,column:1},end:{line:11,column:8},source:''},
+                  expression: {
+                    type: 'MemberExpression',
+                    loc:{start:{line:11,column:1},end:{line:11,column:8},source:''},
+                    computed: false,
+                    optional: true,
+                    object: {
+                      type: 'MemberExpression',
+                      loc:{start:{line:11,column:1},end:{line:11,column:5},source:''},
+                      computed: false,
+                      optional: true,
+                      object: {
+                        type: 'Identifier',
+                        loc:{start:{line:11,column:1},end:{line:11,column:2},source:''},
+                        name: 'a'
+                      },
+                      property: {
+                        type: 'Identifier',
+                        loc:{start:{line:11,column:4},end:{line:11,column:5},source:''},
+                        name: 'b'
+                      }
+                    },
+                    property: {
+                      type: 'Identifier',
+                      loc:{start:{line:11,column:7},end:{line:11,column:8},source:''},
+                      name: 'x'
+                    }
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:11,column:7},end:{line:11,column:8},source:''},
+                  loc:{start:{line:11,column:11},end:{line:11,column:12},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:11,column:11},end:{line:11,column:12},source:''},
+                loc:{start:{line:11,column:14},end:{line:11,column:15},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:11,column:14},end:{line:11,column:15},source:''},
+              loc:{start:{line:11,column:16},end:{line:11,column:17},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:11,column:16},end:{line:11,column:17},source:''},
+            loc:{start:{line:11,column:18},end:{line:11,column:19},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:11,column:18},end:{line:11,column:19},source:''},
-          name: 'x'
         }
       }
     },
@@ -545,96 +573,100 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:13,column:0},end:{line:13,column:24},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:13,column:0},end:{line:13,column:23},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:13,column:0},end:{line:13,column:21},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:13,column:0},end:{line:13,column:23},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:13,column:0},end:{line:13,column:19},source:''},
-            optional: true,
+            type: 'MemberExpression',
+            loc:{start:{line:13,column:0},end:{line:13,column:21},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:13,column:0},end:{line:13,column:16},source:''},
-              optional: true,
+              type: 'MemberExpression',
+              loc:{start:{line:13,column:0},end:{line:13,column:19},source:''},
               computed: false,
+              optional: true,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:13,column:0},end:{line:13,column:13},source:''},
-                optional: true,
+                type: 'MemberExpression',
+                loc:{start:{line:13,column:0},end:{line:13,column:16},source:''},
                 computed: false,
+                optional: true,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:13,column:0},end:{line:13,column:10},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:13,column:0},end:{line:13,column:13},source:''},
                   computed: false,
+                  optional: true,
                   object: {
                     type: 'MemberExpression',
-                    loc:{start:{line:13,column:1},end:{line:13,column:6},source:''},
+                    loc:{start:{line:13,column:0},end:{line:13,column:10},source:''},
                     computed: false,
-                    optional: false,
+                    optional: true,
                     object: {
                       type: 'MemberExpression',
-                      loc:{start:{line:13,column:1},end:{line:13,column:4},source:''},
+                      loc:{start:{line:13,column:1},end:{line:13,column:6},source:''},
                       computed: false,
                       optional: false,
                       object: {
-                        type: 'Identifier',
-                        loc:{start:{line:13,column:1},end:{line:13,column:2},source:''},
-                        name: 'z'
+                        type: 'MemberExpression',
+                        loc:{start:{line:13,column:1},end:{line:13,column:4},source:''},
+                        computed: false,
+                        optional: false,
+                        object: {
+                          type: 'Identifier',
+                          loc:{start:{line:13,column:1},end:{line:13,column:2},source:''},
+                          name: 'z'
+                        },
+                        property: {
+                          type: 'Identifier',
+                          loc:{start:{line:13,column:3},end:{line:13,column:4},source:''},
+                          name: 'z'
+                        }
                       },
                       property: {
                         type: 'Identifier',
-                        loc:{start:{line:13,column:3},end:{line:13,column:4},source:''},
-                        name: 'z'
+                        loc:{start:{line:13,column:5},end:{line:13,column:6},source:''},
+                        name: 'a'
                       }
                     },
                     property: {
                       type: 'Identifier',
-                      loc:{start:{line:13,column:5},end:{line:13,column:6},source:''},
-                      name: 'a'
+                      loc:{start:{line:13,column:9},end:{line:13,column:10},source:''},
+                      name: 'b'
                     }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:13,column:9},end:{line:13,column:10},source:''},
-                    name: 'b'
+                    loc:{start:{line:13,column:12},end:{line:13,column:13},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:13,column:12},end:{line:13,column:13},source:''},
+                  loc:{start:{line:13,column:15},end:{line:13,column:16},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:13,column:15},end:{line:13,column:16},source:''},
+                loc:{start:{line:13,column:18},end:{line:13,column:19},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:13,column:18},end:{line:13,column:19},source:''},
+              loc:{start:{line:13,column:20},end:{line:13,column:21},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:13,column:20},end:{line:13,column:21},source:''},
+            loc:{start:{line:13,column:22},end:{line:13,column:23},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:13,column:22},end:{line:13,column:23},source:''},
-          name: 'x'
         }
       }
     },
@@ -642,97 +674,105 @@ ast: {
       type: 'ExpressionStatement',
       loc:{start:{line:15,column:0},end:{line:15,column:27},source:''},
       expression: {
-        type: 'OptionalMemberExpression',
+        type: 'ChainExpression',
         loc:{start:{line:15,column:0},end:{line:15,column:26},source:''},
-        optional: false,
-        computed: false,
-        object: {
-          type: 'OptionalMemberExpression',
-          loc:{start:{line:15,column:0},end:{line:15,column:24},source:''},
-          optional: false,
+        expression: {
+          type: 'MemberExpression',
+          loc:{start:{line:15,column:0},end:{line:15,column:26},source:''},
           computed: false,
+          optional: false,
           object: {
-            type: 'OptionalMemberExpression',
-            loc:{start:{line:15,column:0},end:{line:15,column:22},source:''},
-            optional: true,
+            type: 'MemberExpression',
+            loc:{start:{line:15,column:0},end:{line:15,column:24},source:''},
             computed: false,
+            optional: false,
             object: {
-              type: 'OptionalMemberExpression',
-              loc:{start:{line:15,column:0},end:{line:15,column:19},source:''},
-              optional: true,
+              type: 'MemberExpression',
+              loc:{start:{line:15,column:0},end:{line:15,column:22},source:''},
               computed: false,
+              optional: true,
               object: {
-                type: 'OptionalMemberExpression',
-                loc:{start:{line:15,column:0},end:{line:15,column:16},source:''},
-                optional: true,
+                type: 'MemberExpression',
+                loc:{start:{line:15,column:0},end:{line:15,column:19},source:''},
                 computed: false,
+                optional: true,
                 object: {
-                  type: 'OptionalMemberExpression',
-                  loc:{start:{line:15,column:1},end:{line:15,column:12},source:''},
-                  optional: true,
+                  type: 'MemberExpression',
+                  loc:{start:{line:15,column:0},end:{line:15,column:16},source:''},
                   computed: false,
+                  optional: true,
                   object: {
-                    type: 'OptionalCallExpression',
-                    loc:{start:{line:15,column:1},end:{line:15,column:9},source:''},
-                    optional: true,
-                    callee: {
+                    type: 'ChainExpression',
+                    loc:{start:{line:15,column:1},end:{line:15,column:12},source:''},
+                    expression: {
                       type: 'MemberExpression',
-                      loc:{start:{line:15,column:1},end:{line:15,column:4},source:''},
+                      loc:{start:{line:15,column:1},end:{line:15,column:12},source:''},
                       computed: false,
-                      optional: false,
+                      optional: true,
                       object: {
-                        type: 'Identifier',
-                        loc:{start:{line:15,column:1},end:{line:15,column:2},source:''},
-                        name: 'z'
+                        type: 'CallExpression',
+                        loc:{start:{line:15,column:1},end:{line:15,column:9},source:''},
+                        optional: true,
+                        callee: {
+                          type: 'MemberExpression',
+                          loc:{start:{line:15,column:1},end:{line:15,column:4},source:''},
+                          computed: false,
+                          optional: false,
+                          object: {
+                            type: 'Identifier',
+                            loc:{start:{line:15,column:1},end:{line:15,column:2},source:''},
+                            name: 'z'
+                          },
+                          property: {
+                            type: 'Identifier',
+                            loc:{start:{line:15,column:3},end:{line:15,column:4},source:''},
+                            name: 'z'
+                          }
+                        },
+                        arguments: [
+                          {
+                            type: 'Identifier',
+                            loc:{start:{line:15,column:7},end:{line:15,column:8},source:''},
+                            name: 'a'
+                          }
+                        ]
                       },
                       property: {
                         type: 'Identifier',
-                        loc:{start:{line:15,column:3},end:{line:15,column:4},source:''},
-                        name: 'z'
+                        loc:{start:{line:15,column:11},end:{line:15,column:12},source:''},
+                        name: 'b'
                       }
-                    },
-                    arguments: [
-                      {
-                        type: 'Identifier',
-                        loc:{start:{line:15,column:7},end:{line:15,column:8},source:''},
-                        name: 'a'
-                      }
-                    ]
+                    }
                   },
                   property: {
                     type: 'Identifier',
-                    loc:{start:{line:15,column:11},end:{line:15,column:12},source:''},
-                    name: 'b'
+                    loc:{start:{line:15,column:15},end:{line:15,column:16},source:''},
+                    name: 'x'
                   }
                 },
                 property: {
                   type: 'Identifier',
-                  loc:{start:{line:15,column:15},end:{line:15,column:16},source:''},
+                  loc:{start:{line:15,column:18},end:{line:15,column:19},source:''},
                   name: 'x'
                 }
               },
               property: {
                 type: 'Identifier',
-                loc:{start:{line:15,column:18},end:{line:15,column:19},source:''},
+                loc:{start:{line:15,column:21},end:{line:15,column:22},source:''},
                 name: 'x'
               }
             },
             property: {
               type: 'Identifier',
-              loc:{start:{line:15,column:21},end:{line:15,column:22},source:''},
+              loc:{start:{line:15,column:23},end:{line:15,column:24},source:''},
               name: 'x'
             }
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:15,column:23},end:{line:15,column:24},source:''},
+            loc:{start:{line:15,column:25},end:{line:15,column:26},source:''},
             name: 'x'
           }
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:15,column:25},end:{line:15,column:26},source:''},
-          name: 'x'
         }
       }
     }
@@ -791,14 +831,14 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a?.b?.x?.x?.x?.x?.x;
-a?.b?.x?.x?.x?.x?.x;
-z.z.a?.b?.x?.x?.x?.x?.x;
-z.z?.(a)?.b?.x?.x?.x?.x?.x;
-a?.b?.x?.x.x.x.x;
-a?.b?.x?.x?.x?.x?.x;
-z.z.a?.b?.x?.x?.x?.x?.x;
-z.z?.(a)?.b?.x?.x?.x?.x?.x;
+(a?.b.x.x.x.x.x);
+(a?.b?.x?.x?.x.x.x);
+(z.z.a?.b?.x?.x?.x.x.x);
+(z.z?.(a)?.b?.x?.x?.x.x.x);
+(a?.b.x.x).x.x.x;
+((a?.b?.x)?.x?.x.x.x);
+(z.z.a?.b?.x?.x?.x.x.x);
+((z.z?.(a)?.b)?.x?.x?.x.x.x);
 ````
 
 Produces same AST
