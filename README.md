@@ -88,6 +88,10 @@ const {
     $error = console.error,
     // Value ot use for the `source` field of each `loc` object
     sourceField = '',
+    // Generate a `range: {start: number, end: number}` property on all loc objects (does not require `locationTracking`)
+    ranges = false,
+    // Generate a `range: [start: number, end: number]` property on all nodes. `input.slice(range[0], range[1])` should get you the text for a node.
+    nodeRange = false,
     // Do not populate loc properties on AST nodes (property will be undefined). Since v<unpublished>
     locationTracking = true,
   }

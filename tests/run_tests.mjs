@@ -262,6 +262,9 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
         exposeScopes: EXPOSE_SCOPE,
+        ranges: tob.inputOptions.ranges || false,
+        nodeRange: tob.inputOptions.nodeRange || false,
+        locationTracking: tob.inputOptions.locationTracking || true,
 
         astUids: tob.inputOptions.astUids || false,
 
@@ -321,6 +324,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       // Phase 2:
       function repeat(node, key, parent) {
         if (key === '$scope') return; // Tenko can expose these optional, do not visit them here
+        if (key === 'range') return;
 
         if (!Array.isArray(node)) {
           // node must be a plain object (because don't use anything else besides arrays)

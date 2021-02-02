@@ -276,7 +276,7 @@ function parseTestFile(tob) {
       return obj;
     }, {});
 
-  const {es, astUids, ...unsupported} = tob.inputOptions
+  const {es, astUids, locationTracking, ranges, nodeRange, ...unsupported} = tob.inputOptions
 
   ASSERT(JSON.stringify(unsupported) === '{}', 'options have hardcoded support in the test suite so if a new option needs support, make sure to connect it first, then update this assert. Unhandled options: ' + JSON.stringify(unsupported) + ', file: ' + tob.fileShort);
 }
