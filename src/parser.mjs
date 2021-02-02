@@ -1008,17 +1008,22 @@ function Parser(code, options = {}) {
     if (babelCompat) return AST_babelGetNumberNode($tp_number_type, $tp_number_start, $tp_number_stop, $tp_number_line, $tp_number_column);
 
     let str = tok_sliceInput($tp_number_start, $tp_number_stop);
+
+    // Remove numeric separators before using parseFloat/parseInt on it. Should be safe to drop them unconditionally.
+    // If perf is a concern I could always manually check this, or even pass a hint from the lexer. But meh.
+    let descored = str.includes('_') ? str.replace(/_/g, '') : str;
+
     let value =
-      $tp_number_type === $NUMBER_DEC ? parseFloat(str) : // parseFloat also deals with `e` cases
-      $tp_number_type === $NUMBER_HEX ? parseInt(str.slice(2), 16) :
-      $tp_number_type === $NUMBER_BIN ? parseInt(str.slice(2), 2) :
-      $tp_number_type === $NUMBER_OCT ? parseInt(str.slice(2), 8) :
+      $tp_number_type === $NUMBER_DEC ? parseFloat(descored) : // parseFloat also deals with `e` cases
+      $tp_number_type === $NUMBER_HEX ? parseInt(descored.slice(2), 16) :
+      $tp_number_type === $NUMBER_BIN ? parseInt(descored.slice(2), 2) :
+      $tp_number_type === $NUMBER_OCT ? parseInt(descored.slice(2), 8) :
       (
         ASSERT($tp_number_type === $NUMBER_OLD, 'number types are enum and bigint should not reach this'),
-        ASSERT(str !== '0', 'a zero should just be a decimal'),
-        str.includes('8') || str.includes('9')
-        ? parseFloat(str.slice(1))
-        : parseInt(str.slice(1), 8)
+        ASSERT(descored !== '0', 'a zero should just be a decimal'),
+          descored.includes('8') || descored.includes('9')
+        ? parseFloat(descored.slice(1))
+        : parseInt(descored.slice(1), 8)
       );
 
     const node = {

@@ -992,7 +992,7 @@ function Lexer(
   function parseNumberFromDot(c) {
     ASSERT_skip(c);
     if (neof()) {
-      let d = skipDigits();
+      let d = skipDigitsWithSeparators(true);
       parseExponentMaybe(d);
     }
     verifyCharAfterNumber();
@@ -1560,7 +1560,7 @@ function Lexer(
 
     if (isAsciiNumber(c)) {
       skip();
-      if (neof()) skipDigits();
+      if (neof()) skipDigits(); // Do not allow underscores here
 
       if ((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
         if (!lastReportableLexerError) lastReportableLexerError = '"Illegal" octal escape in strict mode';
@@ -1634,8 +1634,12 @@ function Lexer(
       return $NUMBER_DEC;
     }
 
+    // https://github.com/tc39/proposal-numeric-separator/blob/main/spec.md
+    // Every two digits can have at most one underscore between them. They are not allowed in other positions.
+    // Numeric separators are not allowed in legacy octals (but are in any other type of number).
+
     // optionally skip digits now. we dont care if that actually happens (we already know there was at least one)
-    let c = skipDigits();
+    let c = skipDigitsWithSeparators(true);
     if (eof()) {
       // verifyCharAfterNumber(); // No need ;)
       return $NUMBER_DEC;
@@ -1667,7 +1671,63 @@ function Lexer(
     verifyCharAfterNumber();
     return $NUMBER_DEC;
   }
+  function skipDigitsWithSeparators(canStartWithSeparator) {
+    // This function skips digits and allows at most one underscore between two digits.
+    // If an underscore is encountered then another digit MUST follow.
+    // canStartWithSeparator indicates whether the caller already validated at least one digit
+    // The numeric separator is not allowed next to `0b`, `0x`, or `0o`, nor next to the dot, `e`, `E`, or `n`.
+    // So: just between two digits :)
+
+    let c = peek();
+
+    if (canStartWithSeparator) {
+      while (c === $$LODASH_5F) {
+        ASSERT_skip($$LODASH_5F);
+        if (eof()) return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
+        c = peek();
+
+        if (!isAsciiNumber(c)) {
+          return THROW('A numeric separator must be preceded and followed by a digit, found a different character', startForError, pointer);
+        }
+
+        ASSERT_skip(c);
+        if (eof()) {
+          return 0;
+        }
+        c = peek();
+      }
+    }
+
+    while (isAsciiNumber(c)) {
+      ASSERT_skip(c);
+      if (eof()) {
+        // monomorphism but meh. caller should check EOF state before using return value
+        return 0;
+      }
+      c = peek();
+
+      // Every digit may be followed by one underscore, which must then be followed by at least one more digit.
+      if (c === $$LODASH_5F) {
+        ASSERT_skip($$LODASH_5F);
+        if (eof()) return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
+        c = peek();
+
+        if (!isAsciiNumber(c)) {
+          return THROW('A numeric separator must be preceded and followed by a digit, found a different character', startForError, pointer);
+        }
+
+        ASSERT_skip(c);
+        if (eof()) {
+          return 0;
+        }
+        c = peek();
+      }
+    }
+
+    return c;
+  }
   function skipDigits() {
+    // Does not parse underscores (!). Used for legacy octal, for example.
     let c = peek();
     while (isAsciiNumber(c)) {
       ASSERT_skip(c);
@@ -1707,7 +1767,8 @@ function Lexer(
 
       if (eof()) return;
 
-      skipDigits();
+      // Apparently the exponent can also have numerical separators (because why not)
+      skipDigitsWithSeparators(true);
 
       return;
     }
@@ -1722,14 +1783,14 @@ function Lexer(
 
     if (eof()) return;
 
-    skipDigits();
+    skipDigitsWithSeparators(true);
   }
   function parseFromFractionDot() {
     ASSERT_skip($$DOT_2E);
     // optionally skip digits now. we dont care if that actually happens. trailing dot is allowed on decimals
     if (eof()) return;
 
-    let c = skipDigits(); // No need to check EOF. If `c` is not `e` or `E` then it stops anyways.
+    let c = skipDigitsWithSeparators(false); // No need to check EOF. If `c` is not `e` or `E` then it stops anyways.
     parseExponentMaybe(c);
   }
   function parseHex() {
@@ -1740,8 +1801,8 @@ function Lexer(
 
     // at least one digit is required
     let c = peek();
-    let cv = getHexValue(c);
 
+    const cv = getHexValue(c);
     if (cv === HEX_OOB) {
       if (!lastReportableLexerError) lastReportableLexerError = '`0x` is illegal without a digit';
       return $ERROR;
@@ -1753,11 +1814,25 @@ function Lexer(
       if (eof()) return $NUMBER_HEX;
 
       c = peek();
-      cv = getHexValue(c);
 
-      if (cv === HEX_OOB) {
-        break;
+      if (c === $$LODASH_5F) {
+        ASSERT_skip($$LODASH_5F);
+        if (eof()) {
+          return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
+        }
+        c = peek();
+
+        const cv = getHexValue(c);
+        if (cv === HEX_OOB) {
+          return THROW('A numeric separator must be preceded and followed by a digit, found a different character', startForError, pointer);
+        }
+      } else {
+        const cv = getHexValue(c);
+        if (cv === HEX_OOB) {
+          break;
+        }
       }
+
       ASSERT_skip(c);
     } while (true);
 
@@ -1791,7 +1866,20 @@ function Lexer(
     do {
       if (eof()) return $NUMBER_OCT;
       c = peek();
-      if (!isOctal(c)) break;
+
+      if (c === $$LODASH_5F) {
+        ASSERT_skip($$LODASH_5F);
+        if (eof()) {
+          return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
+        }
+        c = peek();
+
+        if (!isOctal(c)) {
+          return THROW('A numeric separator must be preceded and followed by a digit, found a different character', startForError, pointer);
+        }
+      } else {
+        if (!isOctal(c)) break;
+      }
       ASSERT_skip(c);
     } while (true);
 
@@ -1824,7 +1912,21 @@ function Lexer(
     do {
       if (eof()) return $NUMBER_BIN;
       c = peek();
-      if (!isBinary(c)) break;
+
+      if (c === $$LODASH_5F) {
+        ASSERT_skip($$LODASH_5F);
+        if (eof()) {
+          return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
+        }
+        c = peek();
+
+        if (!isBinary(c)) {
+          return THROW('A numeric separator must be preceded and followed by a digit, found a different character', startForError, pointer);
+        }
+      } else {
+        if (!isBinary(c)) break;
+      }
+
       ASSERT_skip(c);
     } while (true);
 
