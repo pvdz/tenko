@@ -1,15 +1,15 @@
 # Tenko parser test case
 
-- Path: tests/testcases/assigns/bin_-3d.md
+- Path: tests/testcases/assigns/compound/or.md
 
-> :: assigns
+> :: assigns : compound
 >
-> ::> bin -3d
+> ::> or
 
 ## Input
 
 `````js
-a -= b
+a |= b
 `````
 
 ## Output
@@ -40,7 +40,7 @@ ast: {
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
           name: 'a'
         },
-        operator: '-=',
+        operator: '|=',
         right: {
           type: 'Identifier',
           loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
@@ -52,7 +52,7 @@ ast: {
 }
 
 tokens (5x):
-       IDENT PUNC_MIN_EQ IDENT ASI
+       IDENT PUNC_OR_EQ IDENT ASI
 `````
 
 ### Strict mode
@@ -84,7 +84,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a -= b;
+a |= b;
 ````
 
 Produces same AST

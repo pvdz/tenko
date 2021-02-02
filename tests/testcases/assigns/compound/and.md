@@ -1,10 +1,10 @@
 # Tenko parser test case
 
-- Path: tests/testcases/assigns/bin_263d.md
+- Path: tests/testcases/assigns/compound/and.md
 
-> :: assigns
+> :: assigns : compound
 >
-> ::> bin 263d
+> ::> and
 
 ## Input
 

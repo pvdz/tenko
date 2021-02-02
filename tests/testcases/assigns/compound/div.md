@@ -1,15 +1,15 @@
 # Tenko parser test case
 
-- Path: tests/testcases/assigns/bin_5e3d.md
+- Path: tests/testcases/assigns/compound/div.md
 
-> :: assigns
+> :: assigns : compound
 >
-> ::> bin 5e3d
+> ::> div
 
 ## Input
 
 `````js
-a ^= b
+a /= b
 `````
 
 ## Output
@@ -40,7 +40,7 @@ ast: {
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
           name: 'a'
         },
-        operator: '^=',
+        operator: '/=',
         right: {
           type: 'Identifier',
           loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
@@ -52,7 +52,7 @@ ast: {
 }
 
 tokens (5x):
-       IDENT PUNC_CARET_EQ IDENT ASI
+       IDENT PUNC_DIV_EQ IDENT ASI
 `````
 
 ### Strict mode
@@ -84,7 +84,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a ^= b;
+a /= b;
 ````
 
 Produces same AST

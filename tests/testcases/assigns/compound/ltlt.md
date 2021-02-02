@@ -1,15 +1,15 @@
 # Tenko parser test case
 
-- Path: tests/testcases/assigns/bin_2a3d.md
+- Path: tests/testcases/assigns/compound/ltlt.md
 
-> :: assigns
+> :: assigns : compound
 >
-> ::> bin 2a3d
+> ::> ltlt
 
 ## Input
 
 `````js
-a *= b
+a <<= b
 `````
 
 ## Output
@@ -27,23 +27,23 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
       expression: {
         type: 'AssignmentExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
         left: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
           name: 'a'
         },
-        operator: '*=',
+        operator: '<<=',
         right: {
           type: 'Identifier',
-          loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+          loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
           name: 'b'
         }
       }
@@ -52,7 +52,7 @@ ast: {
 }
 
 tokens (5x):
-       IDENT PUNC_STAR_EQ IDENT ASI
+       IDENT PUNC_LT_LT_EQ IDENT ASI
 `````
 
 ### Strict mode
@@ -84,7 +84,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-a *= b;
+a <<= b;
 ````
 
 Produces same AST
