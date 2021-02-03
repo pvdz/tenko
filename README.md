@@ -1,6 +1,6 @@
 # Tenko
 
-A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6-ES11.
+A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2021.
 
 REPL: https://pvdz.github.io/tenko/repl
 
@@ -212,6 +212,14 @@ There are many flags. Some are specific to an action, others are generic. Some e
 9                    Run as close to the rules as of ES9  / ES2018 as possible
 10                   Run as close to the rules as of ES10 / ES2019 as possible
 11                   Run as close to the rules as of ES11 / ES2020 as possible
+12                   Run as close to the rules as of ES11 / ES2021 as possible
+2015
+2016
+2017
+2018
+2019
+2020
+2021
 
 --min                Given a broken input, brute force minify the input while maintaining the same error message
 --acorn              Output a Acorn compatible AST
