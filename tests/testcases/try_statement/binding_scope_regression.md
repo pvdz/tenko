@@ -91,25 +91,35 @@ ast: {
             ],
             '$scope': {
               type: { SCOPE_LAYER_BLOCK: 1 },
-              names: Map(1) {
-                'AAAAAAAAAAAAAAAAAAAA' => { BINDING_TYPE_LET: 1 }
-              },
+              names: { HAS_NO_BINDINGS: 1 },
               dupeParamErrorStart: { NO_DUPE_PARAMS: 1 },
               dupeParamErrorStop: { NO_DUPE_PARAMS: 1 },
               parent: {
-                type: { SCOPE_LAYER_GLOBAL: 1 },
-                names: { HAS_NO_BINDINGS: 1 },
+                type: { SCOPE_LAYER_BLOCK: 1 },
+                names: Map(1) {
+                  'AAAAAAAAAAAAAAAAAAAA' => { BINDING_TYPE_LET: 1 }
+                },
                 dupeParamErrorStart: { NO_DUPE_PARAMS: 1 },
                 dupeParamErrorStop: { NO_DUPE_PARAMS: 1 },
-                parent: null,
-                _type: 'SCOPE_LAYER_GLOBAL',
+                parent: {
+                  type: { SCOPE_LAYER_GLOBAL: 1 },
+                  names: { HAS_NO_BINDINGS: 1 },
+                  dupeParamErrorStart: { NO_DUPE_PARAMS: 1 },
+                  dupeParamErrorStop: { NO_DUPE_PARAMS: 1 },
+                  parent: null,
+                  _type: 'SCOPE_LAYER_GLOBAL',
+                  isScope: true,
+                  _: 'root scope'
+                },
+                _type: 'SCOPE_LAYER_BLOCK',
                 isScope: true,
-                _: 'root scope'
+                _desc: 'parsePunctuatorStatement.block.scope',
+                _funcName: '(block has no name)'
               },
               _type: 'SCOPE_LAYER_BLOCK',
               isScope: true,
-              _desc: 'parsePunctuatorStatement.block.scope',
-              _funcName: '(block has no name)'
+              _desc: 'parseTryStatement(try).scope',
+              _funcName: '(try has no name)'
             }
           },
           handler: {

@@ -6236,7 +6236,12 @@ function Parser(code, options = {}) {
       finalizer: undefined,
     });
 
-    parseBlockStatement(lexerFlags, scoop, labelSet, 'block');
+    // create a scope for the try block
+    let tryScoop = SCOPE_addLayer(scoop, SCOPE_LAYER_BLOCK, 'parseTryStatement(try)');
+    ASSERT(tryScoop._funcName = '(try has no name)');
+    // Do not put it on this node. Put it on the block.
+
+    parseBlockStatement(lexerFlags, tryScoop, labelSet, 'block');
 
     let hasEither = false;
     if (tok_getType() === $ID_catch) {
