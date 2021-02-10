@@ -6,6 +6,9 @@
   "main": "build/tenko.prod.js",
   "module": "build/tenko.prod.mjs",
   "bin": "./t",
+  "scripts": {
+    "publish": "./t z; npm publish"
+  },
   "devDependencies": {
     "@babel/parser": "7.8.7",
     "acorn": "7.1.1",
