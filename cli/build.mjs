@@ -8,6 +8,8 @@ import Terser from 'terser';
 
 console.time('Finished build script (');
 
+const packageJson = JSON.parse(fs.readFileSync( './package.json', 'utf8')); // can't import .json (yet)
+
 // node does not expose __dirname under module mode, but we can use import.meta to get it
 let filePath = import.meta.url.replace(/^file:\/\//,'');
 let dirname = path.dirname(filePath);
@@ -104,6 +106,7 @@ function generate(builds, filename) {
   console.group('Generating', BOLD + filename + RESET, '(ESM?', forEsm, ')');
 
   let build = `
+// Tenko version (as per package.json at build time): v${packageJson.version}
 
 ${NATIVE_SYMBOLS ? `
 const allFuncs = [];
