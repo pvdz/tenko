@@ -1,6 +1,6 @@
 {
   "name": "tenko",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "Peter van der Zee",
   "description": "A \"pixel perfect\" 100% spec compliant ES2021 JavaScript parser written in JS.",
   "main": "build/tenko.prod.js",

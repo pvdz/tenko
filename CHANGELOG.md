@@ -1,5 +1,10 @@
 # Tenko Changelog
 
+## v2.0.1
+
+- Fixed scope tracking for `try` block. It was duplicating the parent scope.
+- Enabled the parser option `scopeTracking` to be used in tests (imagine that)
+
 ## v2.0.0:
 
 - Breaking change: Optional chaining now uses the Estree spec that was merged back in June.
