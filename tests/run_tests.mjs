@@ -262,7 +262,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         targetEsVersion: FORCED_ES_TARGET || tob.inputOptions.es,
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
-        exposeScopes: EXPOSE_SCOPE,
+        exposeScopes: tob.inputOptions.exposeScopes || EXPOSE_SCOPE,
         ranges: tob.inputOptions.ranges || false,
         nodeRange: tob.inputOptions.nodeRange || false,
         locationTracking: tob.inputOptions.locationTracking || true,
