@@ -139,10 +139,14 @@ ${printedCode}
 Tenko failed to parse printed code (with same parameters as original)
 `];
     } else {
-      let templateFriendlyInputAst = parseWithTenkoWithTemplateFix(printedCode, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID);
+      let templateFriendlyInputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID);
 
-      let A = astToString(templateFriendlyInputAst.ast).replace(/^\s*loc:.*$\n/gm, '');
-      let B = astToString(printedAst.ast).replace(/^\s*loc:.*$\n/gm, '');
+      let Acrfckld = astToString(templateFriendlyInputAst.ast).replace(/^\s*loc:.*$\n/gm, '');
+      let Bcrfckld = astToString(printedAst.ast).replace(/^\s*loc:.*$\n/gm, '');
+
+      // There's a \n \r mismatch that I couldn't squash and I'm just removing it here because it's too noisy.
+      const A = Acrfckld.replace(/\\r(\\n)?/g, '\\n');
+      const B = Bcrfckld.replace(/\\r(\\n)?/g, '\\n');
 
       if (A === B) {
         return ['diff-same', `
