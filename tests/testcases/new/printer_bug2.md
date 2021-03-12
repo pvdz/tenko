@@ -1,17 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/regular_expression_disambiguation/tokenizer_hints/new/after_new_sans_flag.md
+- Path: tests/testcases/new/printer_bug2.md
 
-> :: regexes : regular expression disambiguation : tokenizer hints : new
+> :: new
 >
-> ::> after new sans flag
+> ::> printer bug2
 >
-> like, RegExp.prototype.expando = function(){}; new /foo/expando(); would be valid and work and confuse you to heck
+> This was incorrectly printed because the argument must be wrapped in parenthesis.
+
+This case has parens around the argument
 
 ## Input
 
 `````js
-new /foo/.expando()
+new (x().y)();
 `````
 
 ## Output
@@ -29,31 +31,35 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
       expression: {
         type: 'NewExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
         arguments: [],
         callee: {
           type: 'MemberExpression',
-          loc:{start:{line:1,column:4},end:{line:1,column:17},source:''},
+          loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
           computed: false,
           optional: false,
           object: {
-            type: 'Literal',
-            loc:{start:{line:1,column:4},end:{line:1,column:9},source:''},
-            value: null,
-            regex: { pattern: 'foo', flags: '' },
-            raw: '/foo/'
+            type: 'CallExpression',
+            loc:{start:{line:1,column:5},end:{line:1,column:8},source:''},
+            optional: false,
+            callee: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+              name: 'x'
+            },
+            arguments: []
           },
           property: {
             type: 'Identifier',
-            loc:{start:{line:1,column:10},end:{line:1,column:17},source:''},
-            name: 'expando'
+            loc:{start:{line:1,column:9},end:{line:1,column:10},source:''},
+            name: 'y'
           }
         }
       }
@@ -61,9 +67,10 @@ ast: {
   ]
 }
 
-tokens (8x):
-       ID_new REGEXN PUNC_DOT IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       ASI
+tokens (12x):
+       ID_new PUNC_PAREN_OPEN IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_DOT IDENT PUNC_PAREN_CLOSE PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_SEMI
 `````
 
 ### Strict mode
@@ -92,10 +99,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy][annexb:no]:
-
-````js
-new (/foo/.expando)();
-````
-
-Produces same AST
+Printer output was same as input [sloppy][annexb:no]

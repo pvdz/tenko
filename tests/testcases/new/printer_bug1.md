@@ -1,15 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/new/new_operator/callee_cases/with_parens/ident_member.md
+- Path: tests/testcases/new/printer_bug1.md
 
-> :: new : new operator : callee cases : with parens
+> :: new
 >
-> ::> ident member
+> ::> printer bug1
+>
+> This was incorrectly printed because the argument must be wrapped in parenthesis.
+
+This case does not have parens around the argument
 
 ## Input
 
 `````js
-new Foo.Bar()
+new x().y;
 `````
 
 ## Output
@@ -27,30 +31,30 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
       expression: {
-        type: 'NewExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
-        arguments: [],
-        callee: {
-          type: 'MemberExpression',
-          loc:{start:{line:1,column:4},end:{line:1,column:11},source:''},
-          computed: false,
-          optional: false,
-          object: {
+        type: 'MemberExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+        computed: false,
+        optional: false,
+        object: {
+          type: 'NewExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
+          arguments: [],
+          callee: {
             type: 'Identifier',
-            loc:{start:{line:1,column:4},end:{line:1,column:7},source:''},
-            name: 'Foo'
-          },
-          property: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:8},end:{line:1,column:11},source:''},
-            name: 'Bar'
+            loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
+            name: 'x'
           }
+        },
+        property: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+          name: 'y'
         }
       }
     }
@@ -58,8 +62,8 @@ ast: {
 }
 
 tokens (8x):
-       ID_new IDENT PUNC_DOT IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       ASI
+       ID_new IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_DOT IDENT
+       PUNC_SEMI
 `````
 
 ### Strict mode
@@ -88,10 +92,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy][annexb:no]:
-
-````js
-new (Foo.Bar)();
-````
-
-Produces same AST
+Printer output was same as input [sloppy][annexb:no]

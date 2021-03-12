@@ -90,7 +90,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-new Foo.Bar();
+new (Foo.Bar)();
 ````
 
 Produces same AST

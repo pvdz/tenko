@@ -516,7 +516,7 @@ function NewExpression(node) {
     || node.callee.type === 'Import'
     || node.callee.type === 'Identifier'
     || node.callee.type === 'Literal'
-    || node.callee.type === 'MemberExpression'
+    // || node.callee.type === 'MemberExpression'         // new x().y -> new (x().y)
     // || node.callee.type === 'CallExpression'           // new x()() -> new (x())()
     || node.callee.type === 'ArrayExpression'             // new []     Runtime error...?
     || node.callee.type === 'ObjectExpression'            // new {}     Runtime error...?
