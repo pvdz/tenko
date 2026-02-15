@@ -229,6 +229,7 @@ import {
   $ID_while,
   $ID_with,
   $ID_yield,
+  $ID_PRIVATE_IDENT,
   $NUMBER_HEX,
   $NUMBER_DEC,
   $NUMBER_BIN,
@@ -338,6 +339,7 @@ import {
   START_OR,
   START_BSLASH,
   START_QMARK,
+  START_PRIVATE_IDENT,
   START_ERROR,
 
   STRING_PART,
@@ -884,6 +886,8 @@ function Lexer(
         return parseBackslash(); // An ident that starts with a unicode escape can be valid
       case START_QMARK:
         return parseQmark();
+      case START_PRIVATE_IDENT:
+        return parsePrivateIdentifier();
     }
 
     THROW('Unknown input', pointer - 1, pointer);
@@ -2532,6 +2536,23 @@ function Lexer(
     }
 
     return $PUNC_QMARK;
+  }
+
+  function parsePrivateIdentifier() {
+    // Already consumed '#'; parse IdentifierName and return $ID_PRIVATE_IDENT.
+    // lastCanonizedInput is set by parseIdentifierRest to the name (without '#').
+    if (eof()) {
+      if (!lastReportableLexerError) lastReportableLexerError = 'Private identifier expected after #';
+      return $ERROR;
+    }
+    let c2 = peek();
+    if (isIdentStart(c2, pointer) === INVALID_IDENT_CHAR) {
+      return THROW('Private identifier must start with a valid IdentifierStart character', pointer, pointer + 1);
+    }
+    skip();
+    let t = parseIdentifierRest(String.fromCharCode(c2), 1);
+    if (t === $ERROR) return $ERROR;
+    return $ID_PRIVATE_IDENT;
   }
 
   function regexSyntaxError(desc, ...rest) {

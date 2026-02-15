@@ -32,15 +32,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The ... argument must be destructible in an arrow header, found something that was not destructible
+  Cannot use this name (`yield`) as a variable name because: Cannot use this reserved word as a variable name inside a generator
 
-start@1:0, error@2:11
-╔══╦═════════════════
+start@1:0, error@2:6
+╔══╦════════════════
  1 ║ function * g() {
  2 ║   (...yield) => x
-   ║            ^------- error
+   ║       ^^^^^------- error
  3 ║ }
-╚══╩═════════════════
+╚══╩════════════════
 
 `````
 
@@ -48,13 +48,25 @@ start@1:0, error@2:11
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot use this name (`yield`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
+
+start@1:0, error@2:6
+╔══╦════════════════
+ 1 ║ function * g() {
+ 2 ║   (...yield) => x
+   ║       ^^^^^------- error
+ 3 ║ }
+╚══╩════════════════
+
+`````
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+_Output same as strict mode._
 
 ### Sloppy mode with AnnexB
 
@@ -66,4 +78,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as strict mode._

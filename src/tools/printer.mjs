@@ -104,6 +104,9 @@ function BinaryExpression(node) {
         left = '(' + left + ')';
       }
       break;
+    case 'PrivateIdentifier':
+      // #x in obj
+      break;
     default:
       left = '(' + left + ')';
   }
@@ -683,6 +686,14 @@ function UnaryExpression(node) {
 
   return node.operator + ('!+-~'.includes(node.operator)?'':' ') + $w(node.argument);
 }
+function PrivateIdentifier(node) {
+  assert(node.type, 'PrivateIdentifier');
+  return '#' + node.name;
+}
+function PropertyDefinition(node) {
+  assert(node.type, 'PropertyDefinition');
+  return (node.static ? 'static ' : '') + $(node.key) + (node.value != null ? ' = ' + $(node.value) : '') + ';';
+}
 function UpdateExpression(node) {
   assert(node.type, 'UpdateExpression');
   return (node.prefix ? node.operator : '') + $(node.argument) + (node.prefix ? '' : node.operator);
@@ -719,6 +730,8 @@ let jumpTable = [
       if (c === $$D_UC_44) return ExportDefaultDeclaration(node);
       return ExportNamespaceSpecifier(node);
     }
+    if (type === 'PrivateIdentifier') return PrivateIdentifier(node);
+    if (type === 'PropertyDefinition') return PropertyDefinition(node);
     return UpdateExpression(node);
   },
   (node, fromFor, type, c) => {
@@ -739,6 +752,7 @@ let jumpTable = [
     if (c === $$A_61) return ClassExpression(node);
     if (c === $$M_6D) return CommentBlock(node);
     if (c === $$P_70) return EmptyStatement(node);
+    if (type === 'PrivateIdentifier') return PrivateIdentifier(node);
     return ForStatement(node);
   },
   (node, fromFor, type, c) => {

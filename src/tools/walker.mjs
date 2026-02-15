@@ -296,6 +296,15 @@ function MethodDefinition(node, parent, prop, index) {
   $(node.key, node, 'key');
   $(node.value, node, 'value');
 }
+function PrivateIdentifier(node, parent, prop, index) {
+  assert(node.type, 'PrivateIdentifier');
+  // no children (name is a string)
+}
+function PropertyDefinition(node, parent, prop, index) {
+  assert(node.type, 'PropertyDefinition');
+  $(node.key, node, 'key');
+  if (node.value) $(node.value, node, 'value');
+}
 function NewExpression(node, parent, prop, index) {
   assert(node.type, 'NewExpression');
   $(node.callee, node, 'callee')
@@ -453,6 +462,8 @@ let jumpTable = [
       if (c === $$D_UC_44) return ExportDefaultDeclaration(node, parent, prop, index);
       return ExportNamespaceSpecifier(node, parent, prop, index);
     }
+    if (type === 'PrivateIdentifier') return PrivateIdentifier(node, parent, prop, index);
+    if (type === 'PropertyDefinition') return PropertyDefinition(node, parent, prop, index);
     return UpdateExpression(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {
@@ -473,6 +484,7 @@ let jumpTable = [
     if (c === $$A_61) return ClassExpression(node, parent, prop, index);
     if (c === $$M_6D) return CommentBlock(node, parent, prop, index);
     if (c === $$P_70) return EmptyStatement(node, parent, prop, index);
+    if (type === 'PrivateIdentifier') return PrivateIdentifier(node, parent, prop, index);
     return ForStatement(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {

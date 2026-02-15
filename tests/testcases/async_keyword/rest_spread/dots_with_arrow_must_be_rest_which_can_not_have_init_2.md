@@ -26,12 +26,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Tried to assign to a value that was not assignable in arr/obj lit/patt
+  Cannot use this name (`true`) as a variable name because: Cannot never use this reserved word as a variable name
 
-start@1:0, error@1:17
+start@1:0, error@1:13
 ╔══╦═════════════════
  1 ║ async (a, ...true=b) => a;
-   ║                  ^------- error
+   ║              ^^^^------- error
 ╚══╩═════════════════
 
 `````

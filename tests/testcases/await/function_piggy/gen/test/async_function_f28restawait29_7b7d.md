@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Await is illegal as default arg value
+  Cannot use this name (`await`) as a variable name because: Await not allowed here
 
 start@1:0, error@1:20
 ╔══╦═════════════════
@@ -48,7 +48,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
+
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ async function f(...await) {}
+   ║                     ^^^^^------- error
+╚══╩═════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -60,4 +70,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

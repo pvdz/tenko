@@ -8,6 +8,7 @@ const LF_NO_FLAGS = 0;
 const LF_CAN_NEW_DOT_TARGET = 1 << ++__$flag_lf; // current scope is inside at least one regular (non-arrow) function
 const LF_FOR_REGEX = 1 << ++__$flag_lf;
 const LF_IN_ASYNC = 1 << ++__$flag_lf;
+const LF_IN_CLASS_BODY = 1 << ++__$flag_lf; // inside a class body (so #x in obj and this.#x are in scope)
 const LF_IN_CONSTRUCTOR = 1 << ++__$flag_lf; // inside a class constructor (not a regular function) that is not static
 const LF_IN_FOR_LHS = 1 << ++__$flag_lf; // inside the initial part of a for-header, prevents `in` being parsed as an operator, hint for checks when destructuring pattern as lhs
 const LF_IN_FUNC_ARGS = 1 << ++__$flag_lf; // throws for await expression
@@ -54,6 +55,10 @@ function L(flags) {
   if (flags & LF_IN_GENERATOR) {
     flags ^= LF_IN_GENERATOR;
     s.push('LF_IN_GENERATOR');
+  }
+  if (flags & LF_IN_CLASS_BODY) {
+    flags ^= LF_IN_CLASS_BODY;
+    s.push('LF_IN_CLASS_BODY');
   }
   if (flags & LF_IN_CONSTRUCTOR) {
     flags ^= LF_IN_CONSTRUCTOR;
@@ -116,6 +121,7 @@ export {
   LF_CAN_NEW_DOT_TARGET,
   LF_FOR_REGEX,
   LF_IN_ASYNC,
+  LF_IN_CLASS_BODY,
   LF_IN_CONSTRUCTOR,
   LF_IN_FOR_LHS,
   LF_IN_FUNC_ARGS,

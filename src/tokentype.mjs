@@ -124,6 +124,7 @@ const $L_ID_void = ++__$flag_leaf;
 const $L_ID_while = ++__$flag_leaf;
 const $L_ID_with = ++__$flag_leaf;
 const $L_ID_yield = ++__$flag_leaf;
+const $L_ID_PRIVATE_IDENT = ++__$flag_leaf; // # followed by IdentifierName (private class field/method name)
 
 // Punctuators
 
@@ -259,6 +260,7 @@ const $ID_void = $L_ID_void | $G_IDENT;
 const $ID_while = $L_ID_while | $G_IDENT;
 const $ID_with = $L_ID_with | $G_IDENT;
 const $ID_yield = $L_ID_yield | $G_IDENT;
+const $ID_PRIVATE_IDENT = $L_ID_PRIVATE_IDENT | $G_IDENT;
 const $NUMBER_HEX = $L_NUMBER_HEX | $G_NUMBER;
 const $NUMBER_DEC = $L_NUMBER_DEC | $G_NUMBER;
 const $NUMBER_BIN = $L_NUMBER_BIN | $G_NUMBER;
@@ -1684,6 +1686,7 @@ function toktypeToString(type) {
     case $ID_while: return 'ID_while';
     case $ID_with: return 'ID_with';
     case $ID_yield: return 'ID_yield';
+    case $ID_PRIVATE_IDENT: return 'ID_PRIVATE_IDENT';
     case $NUMBER_HEX: return 'NUMBER_HEX';
     case $NUMBER_DEC: return 'NUMBER_DEC';
     case $NUMBER_BIN: return 'NUMBER_BIN';
@@ -1856,6 +1859,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $ID_while,
   $ID_with,
   $ID_yield,
+  $ID_PRIVATE_IDENT,
   $NUMBER_HEX,
   $NUMBER_DEC,
   $NUMBER_BIN,
@@ -1942,7 +1946,7 @@ ASSERT(ALL_TOKEN_TYPES = [
 ]);
 // </SCRUB ASSERTS TO COMMENT>
 
-let MAX_START_VALUE = 26; // For quick check difference START or token type
+let MAX_START_VALUE = 27; // For quick check difference START or token type
 let __$flag_start = 0; // This name is hardcoded in the build script...
 const START_SPACE = __$flag_start++;
 const START_ID = __$flag_start++;
@@ -1969,6 +1973,7 @@ const START_GT = __$flag_start++;
 const START_OR = __$flag_start++;
 const START_BSLASH = __$flag_start++;
 const START_QMARK = __$flag_start++;
+const START_PRIVATE_IDENT = __$flag_start++; // # then IdentifierName (ES2022 private)
 const START_ERROR = __$flag_start++;
 // <SCRUB ASSERTS TO COMMENT>
 ASSERT(__$flag_start === MAX_START_VALUE, 'keep in sync (update if START symbols were added/removed)');
@@ -2096,7 +2101,7 @@ let tokenStartJumpTable = [
   START_SPACE,            // 0x20   yes   space
   START_EXCL,             // 0x21   no3   ! :: ! != !==
   START_STRING,           // 0x22   no*   "
-  START_ERROR,            // 0x23   yes   #
+  START_PRIVATE_IDENT,    // 0x23   no*   # :: #ident (private)
   START_ID,               // 0x24   no*   $
   START_PERCENT,          // 0x25   no2   % :: % %=
   START_AND,              // 0x26   no3   & :: & && &=
@@ -3113,7 +3118,7 @@ let stringEscapeStartJumpTable = [
 
 // <SCRUB ASSERTS TO COMMENT>
 let ALL_START_TYPES;
-ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, START_STRING, START_ZERO, START_DECIMAL, START_TEMPLATE, START_ID, START_KEY, START_PERCENT, START_AND, START_STAR, START_PLUS, START_MIN, START_DOT, START_DIV, START_CARET, START_LT, START_EQ, START_GT, START_BSLASH, START_OR, START_CURLY_CLOSE, START_QMARK, START_ERROR]);
+ASSERT(ALL_START_TYPES = [START_SPACE, START_NL_SOLO, START_CR, START_EXCL, START_STRING, START_ZERO, START_DECIMAL, START_TEMPLATE, START_ID, START_KEY, START_PERCENT, START_AND, START_STAR, START_PLUS, START_MIN, START_DOT, START_DIV, START_CARET, START_LT, START_EQ, START_GT, START_BSLASH, START_OR, START_CURLY_CLOSE, START_QMARK, START_PRIVATE_IDENT, START_ERROR]);
 // </SCRUB ASSERTS TO COMMENT>
 
 function getTokenStart(c) {
@@ -3274,6 +3279,7 @@ export {
   $ID_while,
   $ID_with,
   $ID_yield,
+  $ID_PRIVATE_IDENT,
   $NUMBER_HEX,
   $NUMBER_DEC,
   $NUMBER_BIN,
@@ -3383,6 +3389,7 @@ export {
   START_OR,
   START_BSLASH,
   START_QMARK,
+  START_PRIVATE_IDENT,
   START_ERROR,
 
   STRING_PART,

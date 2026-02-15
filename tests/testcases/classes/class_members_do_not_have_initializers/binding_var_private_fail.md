@@ -1,15 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/class_members_do_not_have_initializers.md
+- Path: tests/testcases/classes/class_members_do_not_have_initializers/binding_var_private_fail.md
 
-> :: classes
+> :: classes : class members do not have initializers
 >
-> ::> class members do not have initializers
+> ::> binding var private fail
+>
+> Private identifiers are not allowed as var binding.
+
+## FAIL
 
 ## Input
 
 `````js
-class x {foo = x}
+var #x = 1;
 `````
 
 ## Output
@@ -26,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Either the current modifier is unknown or the input that followed was unexpected
+  Cannot use this name (`#x`) as a variable name because: Private identifiers are only valid in class bodies and in expressions (e.g. this.#x, #x in obj), not as bindings
 
-start@1:0, error@1:13
-╔══╦═════════════════
- 1 ║ class x {foo = x}
-   ║              ^------- error
-╚══╩═════════════════
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ var #x = 1;
+   ║     ^^------- error
+╚══╩════════════════
 
 `````
 
