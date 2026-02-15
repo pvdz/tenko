@@ -676,6 +676,8 @@ function Parser(code, options = {}) {
   // Explicit override: true = allow, false = disallow, undefined = use version (allow when ES2022+)
   let allowToplevelAwait = options_toplevelAwait === true || (options_toplevelAwait !== false && options_toplevelAwait !== true && allowToplevelAwaitByVersion);
 
+  let allowClassStaticBlock = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022
+
   ASSERT(goalMode === GOAL_SCRIPT || goalMode === GOAL_MODULE);
   ASSERT((targetEsVersion >= 6 && targetEsVersion <= 13) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 2015 2016 2017 2018 2019 2020 2021 2022 or Infinity');
 
@@ -4068,6 +4070,27 @@ function Parser(code, options = {}) {
     if (tok_getType() === $PUNC_EQ) {
       return THROW_RANGE('A statement can not start with object destructuring assignment (because block)', tok_getStart(), tok_getStop());
     }
+  }
+
+  function parseStaticBlock(lexerFlags, astProp, enclosingScoop) {
+    ASSERT(parseStaticBlock.length === arguments.length, 'arg count');
+    ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'static block must start with {');
+    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI);
+    let $tp_curly_start = tok_getStart();
+    let $tp_curly_line = tok_getLine();
+    let $tp_curly_column = tok_getColumn();
+    ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlagsNoTemplate);
+    let scoop = (enclosingScoop != null && enclosingScoop !== DO_NOT_BIND && enclosingScoop.isScope)
+      ? SCOPE_addLayer(enclosingScoop, SCOPE_LAYER_BLOCK, 'StaticBlock')
+      : (SCOPE_addLayer(SCOPE_createGlobal('StaticBlock'), SCOPE_LAYER_BLOCK, 'StaticBlock'));
+    AST_open(astProp, { type: 'StaticBlock', loc: undefined, body: [] });
+    if (options_exposeScopes) AST_set('$scope', scoop);
+    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
+      parseNestedBodyPart(lexerFlagsNoTemplate, scoop, EMPTY_LABEL_SET, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL, 'body');
+    }
+    ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, lexerFlags);
+    AST_close($tp_curly_start, $tp_curly_line, $tp_curly_column, 'StaticBlock');
+    return CANT_DESTRUCT;
   }
 
   function parseBreakStatement(lexerFlags, labelSet, astProp) {
@@ -12019,7 +12042,7 @@ function Parser(code, options = {}) {
 
     let $tp_name_canon = parseClassId(lexerFlags, optionalIdent, scoop);
 
-    _parseClass(lexerFlags, originalOuterLexerFlags, IS_STATEMENT);
+    _parseClass(lexerFlags, originalOuterLexerFlags, IS_STATEMENT, scoop);
 
     AST_close($tp_class_start, $tp_class_line, $tp_class_column, 'ClassDeclaration');
 
@@ -12052,7 +12075,7 @@ function Parser(code, options = {}) {
     // overwrite it, so there's no need to record/track it
     parseClassId(lexerFlags, IDENT_OPTIONAL, DO_NOT_BIND);
 
-    let assignable = _parseClass(lexerFlags, originalOuterLexerFlags, IS_EXPRESSION);
+    let assignable = _parseClass(lexerFlags, originalOuterLexerFlags, IS_EXPRESSION, undefined);
     AST_close($tp_class_start, $tp_class_line, $tp_class_column, 'ClassExpression');
 
     // The `await/yield` flags only describe the `extends` part. Additionally the class as a whole is not assignable.
@@ -12108,7 +12131,7 @@ function Parser(code, options = {}) {
 
     return $tp_bindingName_canon;
   }
-  function _parseClass(outerLexerFlags, originalOuterLexerFlags, isExpression) {
+  function _parseClass(outerLexerFlags, originalOuterLexerFlags, isExpression, enclosingScoop) {
     ASSERT(arguments.length === _parseClass.length, 'expecting all args');
     ASSERT(hasAllFlags(outerLexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(typeof originalOuterLexerFlags === 'number', 'originalOuterLexerFlags number');
@@ -12157,11 +12180,11 @@ function Parser(code, options = {}) {
 
     // note: generator and async state is not reset because computed method names still use the outer state
     // Note: this `assignable` is relevant for passing back await/yield flags
-    assignable |= parseClassBody(innerLexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, 'body');
+    assignable |= parseClassBody(innerLexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, 'body', enclosingScoop);
 
     return assignable;
   }
-  function parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, astProp) {
+  function parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, astProp, enclosingScoop) {
     ASSERT(parseClassBody.length === arguments.length, 'expecting all args');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
@@ -12177,12 +12200,12 @@ function Parser(code, options = {}) {
       loc: undefined,
       body: [],
     });
-    let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, 'body');
+    let assignable = _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, 'body', enclosingScoop);
     AST_close($tp_curly_start, $tp_curly_line, $tp_curly_column, 'ClassBody');
     // Note: returning `assignable` is relevant for passing back await/yield flags that could occur in computed key exprs
     return assignable;
   }
-  function _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, astProp) {
+  function _parseClassBody(lexerFlags, outerLexerFlags, originalOuterLexerFlags, isExpression, astProp, enclosingScoop) {
     ASSERT(_parseClassBody.length === arguments.length, 'arg count');
     ASSERT(hasAllFlags(lexerFlags, LF_STRICT_MODE), 'should be set by caller');
     ASSERT(hasNoFlag(lexerFlags, LF_IN_CONSTRUCTOR), 'should be unset by caller');
@@ -12212,7 +12235,7 @@ function Parser(code, options = {}) {
       let $tp_memberStart_start = tok_getStart();
       let $tp_memberStart_stop = tok_getStop();
 
-      let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, astProp);
+      let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, astProp, enclosingScoop);
       if (hasAnyFlag(destructNow, PIGGY_BACK_WAS_CONSTRUCTOR)) {
         if (hasConstructor) {
           // TODO: we can juggle this "has constructor" state into the class parsers and throw there with a better loc
@@ -12250,7 +12273,7 @@ function Parser(code, options = {}) {
 
     return destructibleForPiggies;
   }
-  function parseClassMethod(lexerFlags, outerLexerFlags, astProp) {
+  function parseClassMethod(lexerFlags, outerLexerFlags, astProp, enclosingScoop) {
     // parseProperty parseMethod
     ASSERT(parseClassMethod.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
@@ -12295,9 +12318,9 @@ function Parser(code, options = {}) {
       // - `class x {static async key(){}}`
       // - `class x {static async *key(){}}`
       // - `class x {static constructor(){}}`
-      // - `class x {static(){}}`
-      // - `class x {static static(){}}`
+      // - `class x {static(){}}`                   // ES2022: static blocks
       //             ^
+      // - `class x {static static(){}}`
       // - `class x {static get constructor(){}}`
 
       isStatic = true;
@@ -12311,6 +12334,12 @@ function Parser(code, options = {}) {
       // = `class x { static / foo(){} }`
       ASSERT_skipAny($ID_static, lexerFlags);
 
+      if (tok_getType() === $PUNC_CURLY_OPEN) {
+        if (!allowClassStaticBlock) {
+          return THROW_RANGE('Class static block is not supported in the currently targeted language version', $tp_static_start, tok_getStop());
+        }
+        return parseStaticBlock(lexerFlags, astProp, enclosingScoop);
+      }
       if (tok_getType() === $PUNC_PAREN_OPEN) {
         // The `static` ident here is the name of a method, not a modifier
         // - `class x {static(){}}`

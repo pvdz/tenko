@@ -5,6 +5,9 @@
 - Support ES2022 (version 13): top-level await in Module is now allowed when `targetEsVersion` is 13 (or 2022) or higher.
   - When `toplevelAwait` is left undefined (default), top-level await is allowed in Module goal for ES2022+.
   - Explicit override: `toplevelAwait: true` forces it on (e.g. for older targets); `toplevelAwait: false` forces it off.
+- Support ES2022 class static blocks: `static { ... }` in class bodies.
+  - Parser emits ESTree node type `StaticBlock` with `body` (array of statements). Gated by `targetEsVersion` 13 (or 2022); use `--es13` or `es = 13` in tests for static block.
+  - Printer and walker support `StaticBlock`. Scope of a static block correctly chains to the enclosing scope (for class declarations), so `var` in a static block is attributed to the enclosing function/script and duplicate var/lex checks apply as for a normal block.
 - Parser and lexer now accept `targetEsVersion` 6–13 (or 2015–2022). CLI and test runner support `--es13` and `2022`.
 - Fixed a bug in the printer for `new` with MemberExpression argument
   - It would not wrap the argument in parenthesis if it was a member expression, leading to ambiguous case bugs like `new f().g()` vs `new (f().g)()`.

@@ -99,6 +99,10 @@ function ClassBody(node, parent, prop, index) {
   assert(node.type, 'ClassBody');
   node.body.forEach((e, i) => $(e, node, 'body', i));
 }
+function StaticBlock(node, parent, prop, index) {
+  assert(node.type, 'StaticBlock');
+  node.body.forEach((e, i) => $(e, node, 'body', i));
+}
 function ClassDeclaration(node, parent, prop, index) {
   assert(node.type, 'ClassDeclaration');
   if (node.id) $(node.id, node, 'id'); // Optional for default exports
@@ -602,6 +606,7 @@ let jumpTable = [
     return TryStatement(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {
+    if (type === 'StaticBlock') return StaticBlock(node, parent, prop, index);
     return DoWhileStatement(node, parent, prop, index);
   },
 ];

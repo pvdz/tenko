@@ -130,6 +130,10 @@ function BlockStatement(node) {
   assert(node.type, 'BlockStatement');
   return '{' + node.body.map($).join('\n') + '}';
 }
+function StaticBlock(node) {
+  assert(node.type, 'StaticBlock');
+  return 'static {' + node.body.map($).join('\n') + '}';
+}
 function BooleanLiteral(node) {
   assert(node.type, 'BooleanLiteral');
   return node.value;
@@ -868,6 +872,7 @@ let jumpTable = [
     return TryStatement(node);
   },
   (node, fromFor, type, c) => {
+    if (type === 'StaticBlock') return StaticBlock(node);
     return DoWhileStatement(node);
   },
 ];
