@@ -6,7 +6,6 @@
 > :: import dynamic : gen : NoIn
 >
 > ::> undefined
-## PASS
 
 ## Input
 

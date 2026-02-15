@@ -6,12 +6,9 @@
 > :: random stuff : 2318 : gen : a2f case
 >
 > ::> var x
->
-> 1680 is a "space" so this should pass
-
-## PASS
 
 ## Input
+
 
 `````js
 var@{x1680}@x;

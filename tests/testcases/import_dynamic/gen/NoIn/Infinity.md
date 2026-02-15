@@ -6,7 +6,6 @@
 > :: import dynamic : gen : NoIn
 >
 > ::> Infinity
-## PASS
 
 ## Input
 
