@@ -1,11 +1,11 @@
 # Tenko
 
-A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2021.
+A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2022.
 
 REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
-  - Anything stage 4 up to ES2021
+  - Anything stage 4 up to ES2022
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
@@ -72,8 +72,10 @@ const {
     getLexer = null, // getLexer(lexer)
     // You use this to parse `eval` code
     allowGlobalReturn = false,
-    // Target a very specific ecmascript version (like, reject async). Number; 6 - 12, or 2015 - 2021, or Infinity.
-    targetEsVersion = lastVersion, // (Last supported version is currently ES2021)
+    // Target a very specific ecmascript version (like, reject async). Number; 6 - 13, or 2015 - 2022, or Infinity.
+    targetEsVersion = lastVersion, // (Last supported version is currently ES2022)
+    // Top-level await in Module: undefined = allow when target ES2022+; true = force on; false = force off
+    toplevelAwait = undefined,
     // Leave built up scope information in the ASTs (good luck)
     exposeScopes = false,
     // Assign each node a unique incremental id
@@ -214,7 +216,8 @@ There are many flags. Some are specific to an action, others are generic. Some e
 9                    Run as close to the rules as of ES9  / ES2018 as possible
 10                   Run as close to the rules as of ES10 / ES2019 as possible
 11                   Run as close to the rules as of ES11 / ES2020 as possible
-12                   Run as close to the rules as of ES11 / ES2021 as possible
+12                   Run as close to the rules as of ES12 / ES2021 as possible
+13                   Run as close to the rules as of ES13 / ES2022 as possible (includes top-level await in Module)
 2015
 2016
 2017
@@ -222,6 +225,7 @@ There are many flags. Some are specific to an action, others are generic. Some e
 2019
 2020
 2021
+2022
 
 --min                Given a broken input, brute force minify the input while maintaining the same error message
 --acorn              Output a Acorn compatible AST

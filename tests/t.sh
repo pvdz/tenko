@@ -391,6 +391,7 @@ Tenko CLI Toolkit help:
     10) ES='--es10' ;;
     11) ES='--es11' ;;
     12) ES='--es12' ;;
+    13) ES='--es13' ;;
     2015) ES='--es6'  ;;
     2016) ES='--es7'  ;;
     2017) ES='--es8'  ;;
@@ -398,6 +399,7 @@ Tenko CLI Toolkit help:
     2019) ES='--es10' ;;
     2020) ES='--es11' ;;
     2021) ES='--es12' ;;
+    2022) ES='--es13' ;;
 
     # special flags for fuzzer
 

@@ -2,6 +2,10 @@
 
 ## v2.0.2 (wip)
 
+- Support ES2022 (version 13): top-level await in Module is now allowed when `targetEsVersion` is 13 (or 2022) or higher.
+  - When `toplevelAwait` is left undefined (default), top-level await is allowed in Module goal for ES2022+.
+  - Explicit override: `toplevelAwait: true` forces it on (e.g. for older targets); `toplevelAwait: false` forces it off.
+- Parser and lexer now accept `targetEsVersion` 6–13 (or 2015–2022). CLI and test runner support `--es13` and `2022`.
 - Fixed a bug in the printer for `new` with MemberExpression argument
   - It would not wrap the argument in parenthesis if it was a member expression, leading to ambiguous case bugs like `new f().g()` vs `new (f().g)()`.
   - Not publishing a new version as I think people fetch the printer straight from repo, not from npm. Prove me wrong.

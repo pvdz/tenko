@@ -539,7 +539,7 @@ function Lexer(
   ASSERT(typeof input === 'string', 'input string should be string; ' + typeof input);
   ASSERT(targetEsVersion !== undefined, 'undefined should become default', targetEsVersion);
   ASSERT(typeof targetEsVersion === 'number', 'targetEsVersion should be a number', typeof targetEsVersion);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 12) || targetEsVersion === Infinity, 'only support v6~12 (ES2015-ES2021) right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 13) || targetEsVersion === Infinity, 'only support v6~13 (ES2015-ES2022) right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
 
   const supportRegexPropertyEscapes = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;

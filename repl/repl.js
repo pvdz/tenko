@@ -158,6 +158,8 @@ function scheduleOverall(input, currentMode, currentVersion) {
     $ver_es9.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 9);
     $ver_es10.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 10);
     $ver_es11.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 11);
+    $ver_es12.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 12);
+    $ver_es13.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 13);
   }, 100);
 }
 

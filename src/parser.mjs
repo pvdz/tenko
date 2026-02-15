@@ -379,6 +379,7 @@ import {
   VERSION_OPTIONAL_CATCH,
   VERSION_DYNAMIC_IMPORT,
   VERSION_EXPORT_STAR_AS,
+  VERSION_TOPLEVEL_AWAIT,
   VERSION_WHATEVER,
   IS_ASYNC,
   NOT_ASYNC,
@@ -540,13 +541,13 @@ function Parser(code, options = {}) {
     tokenStorage: options_tokenStorage,
     getLexer = null,
     allowGlobalReturn = false, // you may need this to parse arbitrary code or eval code for example
-    targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, 12, 2015, 2016, 2017, 2018, 2019, 2020, 2021, Infinity
+    targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, 12, 13, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, Infinity
     exposeScopes: options_exposeScopes = false, // put scopes in the AST under `$scope` property?
     astUids = false, // add an incremental uid to all ast nodes for debugging
     ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
     nodeRange: options_nodeRange = false, // Add a `range` to each node itself, being an array. `input.slice(range[0], range[1])` should get you the text of the node.
     locationTracking: options_locationTracking = true, // Add the `loc` property to all entries? (Much faster without...)
-    toplevelAwait: options_toplevelAwait = false,
+    toplevelAwait: options_toplevelAwait = undefined, // undefined = allow in Module when target ES2022+; true = force on; false = force off
     allowDuplicateLabel: options_allowDuplicateLabel = false, // Allow labels to occur more than once in the same statement-tree? Syntactically invalid but this flag prevents the error being thrown.
 
     templateNewlineNormalization = true, // normalize \r and \rn to \n in the `.raw` of template nodes? Estree spec says yes, but makes it hard to serialize lossless
@@ -575,8 +576,8 @@ function Parser(code, options = {}) {
     /* (This comment prevents the buildscript from detecting the ast prefix) */AST_directiveNodes = false,
   } = options;
 
-  if (targetEsVersion >= 2015 && targetEsVersion <= 2021) {
-    targetEsVersion -= 2009; // es6 = 2015, etc. 2015-2009=6
+  if (targetEsVersion >= 2015 && targetEsVersion <= 2022) {
+    targetEsVersion -= 2009; // es6 = 2015, etc. 2015-2009=6, 2022-2009=13
   }
 
   let goalMode = GOAL_SCRIPT;
@@ -671,9 +672,12 @@ function Parser(code, options = {}) {
   let allowOptionalCatchBinding = targetEsVersion >= VERSION_OPTIONAL_CATCH || targetEsVersion === VERSION_WHATEVER;
   let allowDynamicImport = (targetEsVersion >= VERSION_DYNAMIC_IMPORT || targetEsVersion === VERSION_WHATEVER);
   let allowExportStarAs = (targetEsVersion >= VERSION_EXPORT_STAR_AS || targetEsVersion === VERSION_WHATEVER);
+  let allowToplevelAwaitByVersion = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER);
+  // Explicit override: true = allow, false = disallow, undefined = use version (allow when ES2022+)
+  let allowToplevelAwait = options_toplevelAwait === true || (options_toplevelAwait !== false && options_toplevelAwait !== true && allowToplevelAwaitByVersion);
 
   ASSERT(goalMode === GOAL_SCRIPT || goalMode === GOAL_MODULE);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 12) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 12 2015 2016 2017 2018 2019 2020 2021 or Infinity');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 13) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 2015 2016 2017 2018 2019 2020 2021 2022 or Infinity');
 
   if (getLexer) getLexer(tok);
 
@@ -3921,7 +3925,7 @@ function Parser(code, options = {}) {
     // in script: must be considered an await-expression when inside async, must be considered a var name otherwise
     // (`await` when not a keyword _is_ assignable)
 
-    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (options_toplevelAwait && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
+    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
       return parseAwaitKeyword(lexerFlags, $tp_await_start, $tp_await_stop, $tp_await_line, $tp_await_column, isNewArg, astProp);
     }
 
