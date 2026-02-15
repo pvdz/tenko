@@ -167,13 +167,20 @@ function ClassBody(node) {
   assert(node.type, 'ClassBody');
   return '{' + node.body.map($).join('\n') + '}';
 }
+function needsExtendsParens(superClass) {
+  // Wrap only when needed; unwrapped CallExpression/MemberExpression/Identifier preserve LF_IN_GLOBAL for top-level await.
+  const noParen = ['Identifier', 'MemberExpression', 'CallExpression', 'NewExpression'];
+  return !noParen.includes(superClass.type);
+}
 function ClassDeclaration(node) {
   assert(node.type, 'ClassDeclaration');
-  return 'class' + (node.id ? ' ' + $(node.id) : '') + (node.superClass ? ' extends (' + $(node.superClass) + ') ' : '') + $(node.body);
+  const ext = node.superClass ? ' extends ' + (needsExtendsParens(node.superClass) ? '(' + $(node.superClass) + ')' : $(node.superClass)) + ' ' : '';
+  return 'class' + (node.id ? ' ' + $(node.id) : '') + ext + $(node.body);
 }
 function ClassExpression(node) {
   assert(node.type, 'ClassExpression');
-  return 'class' + (node.id ? ' ' + $(node.id) : '') + (node.superClass ? ' extends (' + $(node.superClass) + ') ' : '') + $(node.body);
+  const ext = node.superClass ? ' extends ' + (needsExtendsParens(node.superClass) ? '(' + $(node.superClass) + ')' : $(node.superClass)) + ' ' : '';
+  return 'class' + (node.id ? ' ' + $(node.id) : '') + ext + $(node.body);
 }
 function ClassMethod(node) {
   assert(node.type, 'ClassMethod');

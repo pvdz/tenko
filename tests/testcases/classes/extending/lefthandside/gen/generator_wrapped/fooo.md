@@ -108,7 +108,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function* P() {class D extends (fooo) {}}
+function* P() {class D extends fooo {}}
 ````
 
 Produces same AST

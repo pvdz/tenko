@@ -81,15 +81,48 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+      expression: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:4},source:''},
+          name: 'call'
+        },
+        arguments: [
+          {
+            type: 'AwaitExpression',
+            loc:{start:{line:1,column:5},end:{line:1,column:13},source:''},
+            argument: {
+              type: 'ArrayExpression',
+              loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
+              elements: [
+                {
+                  type: 'Literal',
+                  loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
+                  value: 1,
+                  raw: '1'
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:10
-╔══╦═════════════════
- 1 ║ call(await[1])
-   ║           ^------- error
-╚══╩═════════════════
-
+tokens (9x):
+       IDENT PUNC_PAREN_OPEN ID_await PUNC_BRACKET_OPEN NUMBER_DEC
+       PUNC_BRACKET_CLOSE PUNC_PAREN_CLOSE ASI
 `````
 
 ### Sloppy mode with AnnexB

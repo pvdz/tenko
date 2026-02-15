@@ -49,12 +49,12 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  Cannot assign to lhs (starting with `await`) because it is not a valid assignment target
 
-start@1:0, error@1:18
+start@1:0, error@1:26
 ╔══╦═════════════════
  1 ║ s = {"foo": await /fail/g = x} = x
-   ║                   ^------- error
+   ║                           ^------- error
 ╚══╩═════════════════
 
 `````

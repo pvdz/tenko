@@ -49,15 +49,28 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
+  body: [
+    {
+      type: 'ExportDefaultDeclaration',
+      loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
+      declaration: {
+        type: 'AwaitExpression',
+        loc:{start:{line:1,column:15},end:{line:1,column:22},source:''},
+        argument: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:21},end:{line:1,column:22},source:''},
+          name: 'x'
+        }
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:21
-╔══╦═════════════════
- 1 ║ export default await x
-   ║                      ^------- error
-╚══╩═════════════════
-
+tokens (6x):
+       ID_export ID_default ID_await IDENT ASI
 `````
 
 ### Sloppy mode with AnnexB
@@ -71,3 +84,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+export default await (x);
+````
+
+Produces same AST

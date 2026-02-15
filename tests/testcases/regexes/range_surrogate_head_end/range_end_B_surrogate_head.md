@@ -66,8 +66,8 @@ ast: {
         type: 'Literal',
         loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
         value: null,
-        regex: { pattern: '[\\B-@{xd800}@]', flags: '' },
-        raw: '/[\\B-@{xd800}@]/'
+        regex: { pattern: '[\\B-\ud800]', flags: '' },
+        raw: '/[\\B-\ud800]/'
       }
     }
   ]

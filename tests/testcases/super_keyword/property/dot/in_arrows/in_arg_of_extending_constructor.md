@@ -158,7 +158,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x extends (y) {constructor(){return (a = super.foo) => (a);};}
+class x extends y {constructor(){return (a = super.foo) => (a);};}
 ````
 
 Produces same AST

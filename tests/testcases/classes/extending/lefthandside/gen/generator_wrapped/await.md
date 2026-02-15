@@ -120,7 +120,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function* P() {class D extends (await) {}}
+function* P() {class D extends await {}}
 ````
 
 Produces same AST

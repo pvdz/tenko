@@ -289,8 +289,12 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
     }
 
     // Test the ast printer
-    // We only really need to test it once for whatever run passes
+    // We only really need to test it once for whatever run passes. Pass parse options so re-parse uses same options (e.g. alwaysAllowOctalEscapes).
     if (!SKIP_PRINTER && !tob.printerOutput) {
+      const printerParseOptions = {};
+      if (tob.inputOptions.alwaysAllowOctalEscapes) printerParseOptions.alwaysAllowOctalEscapes = true;
+      const esVersion = FORCED_ES_TARGET ?? tob.inputOptions.es;
+      if (esVersion !== undefined && esVersion !== null) printerParseOptions.targetEsVersion = esVersion;
       tob.printerOutput = testPrinter(
         code,
         testVariant,
@@ -299,10 +303,11 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         !INPUT_OVERRIDE && !TARGET_FILE && (AUTO_UPDATE && !CONFIRMED_UPDATE),
         REDUCING_PRINTER,
         !REDUCING_PRINTER || BABEL_COMPAT || ACORN_COMPAT,
-        verbose
+        verbose,
+        printerParseOptions
       );
       if (tob.printerOutput[2] !== 'same' && tob.printerOutput[2] !== 'diff-same') {
-        tob.continuePrint = 'Printer output needs attention [' + tob.printerOutput[2] + ']';
+        tob.continuePrint = 'Printer output needs attention [' + tob.printerOutput[2] + ']' + (tob.printerOutput[1] ? '\n' + tob.printerOutput[1] : '');
       }
 
       // Assert that the walker works properly. The first phase adds a new key to each node and throws an error if

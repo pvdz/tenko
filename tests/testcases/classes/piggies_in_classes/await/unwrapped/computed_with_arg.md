@@ -47,15 +47,62 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+  body: [
+    {
+      type: 'ClassDeclaration',
+      loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+      id: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
+        name: 'x'
+      },
+      superClass: null,
+      body: {
+        type: 'ClassBody',
+        loc:{start:{line:1,column:8},end:{line:1,column:25},source:''},
+        body: [
+          {
+            type: 'MethodDefinition',
+            loc:{start:{line:1,column:10},end:{line:1,column:23},source:''},
+            key: {
+              type: 'AwaitExpression',
+              loc:{start:{line:1,column:11},end:{line:1,column:18},source:''},
+              argument: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
+                name: 'y'
+              }
+            },
+            static: false,
+            computed: true,
+            kind: 'method',
+            value: {
+              type: 'FunctionExpression',
+              loc:{start:{line:1,column:10},end:{line:1,column:23},source:''},
+              generator: false,
+              async: false,
+              id: null,
+              params: [],
+              body: {
+                type: 'BlockStatement',
+                loc:{start:{line:1,column:21},end:{line:1,column:23},source:''},
+                body: []
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:17
-╔══╦═════════════════
- 1 ║ class x { [await y](){} }
-   ║                  ^------- error
-╚══╩═════════════════
-
+tokens (13x):
+       ID_class IDENT PUNC_CURLY_OPEN PUNC_BRACKET_OPEN ID_await IDENT
+       PUNC_BRACKET_CLOSE PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_CURLY_OPEN PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE
 `````
 
 ### Sloppy mode with AnnexB
@@ -69,3 +116,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+class x{[await (y)](){};}
+````
+
+Produces same AST

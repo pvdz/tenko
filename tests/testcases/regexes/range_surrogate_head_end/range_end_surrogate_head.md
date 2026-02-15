@@ -40,8 +40,8 @@ ast: {
         type: 'Literal',
         loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
         value: null,
-        regex: { pattern: '[\\u000f-@{xd800}@]', flags: '' },
-        raw: '/[\\u000f-@{xd800}@]/'
+        regex: { pattern: '[\\u000f-\ud800]', flags: '' },
+        raw: '/[\\u000f-\ud800]/'
       }
     }
   ]

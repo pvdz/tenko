@@ -7,8 +7,6 @@
 > ::> allow octals
 > Normally the result is bad but now it's good yay
 
-## PASS
-
 It would throw without the option
 
 ## Input
@@ -154,21 +152,12 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy][annexb:no][diff-fail]:
+Printer output different from input [sloppy][annexb:no]:
 
-Original input:
-````js
-function f() {
-  "use strict";
-  console.log('Take that! \44\44');
-}
-f();
-````
-Printed code with different AST:
 ````js
 function f() {"use strict";
 console.log('Take that! \44\44');}
 f();
 ````
 
-Tenko failed to parse printed code (with same parameters as original)
+Produces same AST

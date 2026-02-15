@@ -80,7 +80,7 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  Expected to parse a value
 
 start@1:0, error@1:25
 ╔══╦═════════════════
@@ -107,7 +107,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x extends (feh(await)) {}
+class x extends feh(await) {}
 ````
 
 Produces same AST

@@ -67,15 +67,35 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+      expression: {
+        type: 'AwaitExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:10},source:''},
+        argument: {
+          type: 'UnaryExpression',
+          loc:{start:{line:1,column:6},end:{line:1,column:10},source:''},
+          operator: '-',
+          prefix: true,
+          argument: {
+            type: 'Literal',
+            loc:{start:{line:1,column:8},end:{line:1,column:10},source:''},
+            value: 25,
+            raw: '25'
+          }
+        }
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:6
-╔══╦════════════════
- 1 ║ await - 25
-   ║       ^------- error
-╚══╩════════════════
-
+tokens (5x):
+       ID_await PUNC_MIN NUMBER_DEC ASI
 `````
 
 ### Sloppy mode with AnnexB

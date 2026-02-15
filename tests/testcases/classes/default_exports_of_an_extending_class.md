@@ -92,10 +92,4 @@ _Output same as module mode._
 
 ## AST Printer
 
-Printer output different from input [module][annexb:no]:
-
-````js
-export default class extends (F) {}
-````
-
-Produces same AST
+Printer output was same as input [module][annexb:no]

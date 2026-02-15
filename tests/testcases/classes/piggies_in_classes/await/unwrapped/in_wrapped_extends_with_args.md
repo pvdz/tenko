@@ -47,15 +47,51 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:32},source:''},
+  body: [
+    {
+      type: 'ClassDeclaration',
+      loc:{start:{line:1,column:0},end:{line:1,column:32},source:''},
+      id: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
+        name: 'x'
+      },
+      superClass: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:16},end:{line:1,column:28},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:16},end:{line:1,column:19},source:''},
+          name: 'feh'
+        },
+        arguments: [
+          {
+            type: 'AwaitExpression',
+            loc:{start:{line:1,column:20},end:{line:1,column:27},source:''},
+            argument: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:26},end:{line:1,column:27},source:''},
+              name: 'y'
+            }
+          }
+        ]
+      },
+      body: {
+        type: 'ClassBody',
+        loc:{start:{line:1,column:29},end:{line:1,column:32},source:''},
+        body: []
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:26
-╔══╦═════════════════
- 1 ║ class x extends feh(await y) { }
-   ║                           ^------- error
-╚══╩═════════════════
-
+tokens (11x):
+       ID_class IDENT ID_extends IDENT PUNC_PAREN_OPEN ID_await IDENT
+       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
 `````
 
 ### Sloppy mode with AnnexB
@@ -69,3 +105,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+class x extends feh(await (y)) {}
+````
+
+Produces same AST

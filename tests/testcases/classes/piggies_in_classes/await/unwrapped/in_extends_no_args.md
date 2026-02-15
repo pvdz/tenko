@@ -95,7 +95,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x extends (await) {}
+class x extends await {}
 ````
 
 Produces same AST

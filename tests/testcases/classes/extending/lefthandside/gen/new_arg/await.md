@@ -64,12 +64,12 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function (at EOF)
+  Cannot `await` as the arg of `new` (at EOF)
 
-start@1:0, error@1:9
+start@1:0, error@1:4
 ╔══╦════════════════
  1 ║ new await
-   ║          ^------- error at EOF
+   ║     ^^^^^------- error
 ╚══╩════════════════
 
 `````

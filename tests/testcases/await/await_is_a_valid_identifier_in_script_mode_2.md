@@ -63,12 +63,12 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  Next token should be `=>` but was `` (at EOF)
 
-start@1:0, error@1:5
+start@1:0, error@1:7
 ╔══╦════════════════
  1 ║ await()
-   ║      ^------- error
+   ║        ^------- error at EOF
 ╚══╩════════════════
 
 `````

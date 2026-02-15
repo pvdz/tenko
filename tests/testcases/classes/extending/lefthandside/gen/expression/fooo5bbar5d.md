@@ -103,7 +103,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(class B extends (fooo[bar]) {});
+(class B extends fooo[bar] {});
 ````
 
 Produces same AST

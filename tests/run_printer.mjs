@@ -18,19 +18,19 @@ const TEST_SLOPPY = 'sloppy';
 const TEST_STRICT = 'strict';
 const TEST_MODULE = 'module';
 
-function sameFunc(testVariant, enableAnnexb, forTestFile, code) {
+function sameFunc(testVariant, enableAnnexb, forTestFile, code, parseOptions) {
   ASSERT(sameFunc.length === arguments.length, 'arg count');
 
   // Get updated AST for new input (it might crash. In fact, is very likely to be illegal)
   let inputAst;
   try {
-    inputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID);
+    inputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, parseOptions);
   } catch (e) {
     return '(Tenko rejected input: ' + e + ')'
   }
 
   // Now confirm this with the printed output of this ast.
-  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, inputAst.ast, forTestFile, false);
+  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, inputAst.ast, forTestFile, false, parseOptions);
   if (printerStatus === 'fail-crash') {
     console.log('printer hard crashed, that should not happen, exit now');
     console.log(msg);
@@ -40,10 +40,10 @@ function sameFunc(testVariant, enableAnnexb, forTestFile, code) {
   return printerStatus;
 }
 
-function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePrinterError, ignoreProblems, logTime) {
+function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePrinterError, ignoreProblems, logTime, parseOptions) {
   ASSERT(testPrinter.length === arguments.length, 'arg count');
 
-  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime);
+  let [printerStatus, msg] = _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime, parseOptions);
 
   if (!ignoreProblems && printerStatus !== 'same' && printerStatus !== 'diff-same') {
     let reducedInput;
@@ -60,7 +60,7 @@ function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePr
       console.log('`````');
       console.log(code);
       console.log('`````');
-      reducedInput = reduceErrorInput(code, (code) => sameFunc(testVariant, enableAnnexb, forTestFile, code), `./t --${testVariant} ${enableAnnexb ? '--annexb' : ''}`);
+      reducedInput = reduceErrorInput(code, (code) => sameFunc(testVariant, enableAnnexb, forTestFile, code, parseOptions), `./t --${testVariant} ${enableAnnexb ? '--annexb' : ''}`);
       console.log('Reduced!');
       console.log('-->', [reducedInput]);
 
@@ -91,7 +91,7 @@ function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePr
   return [code, msg, printerStatus];
 }
 
-function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime) {
+function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime, parseOptions) {
   ASSERT(_testPrinter.length === arguments.length, 'arg count');
 
   // Test the ast printer
@@ -114,14 +114,19 @@ function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime
   } else if (printedCode === code) {
     return ['same', `\n## AST Printer\n\nPrinter output was same as input [${testVariant}][annexb:${enableAnnexb?'yes':'no'}]\n`];
   } else {
-    // Parse the input again, check whether the AST equal to before (it ought to be)
+    // Parse the input again, check whether the AST equal to before (it ought to be). Use same parse options as original (e.g. alwaysAllowOctalEscapes) so printed code round-trips.
+    const reparseOptions = parseOptions || {};
 
     let printedAst;
+    let reparseError;
     try {
-      printedAst = parseWithTenkoWithTemplateFix(printedCode, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID)
-    } catch (e) {}
+      printedAst = parseWithTenkoWithTemplateFix(printedCode, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, reparseOptions);
+    } catch (e) {
+      reparseError = e;
+    }
 
     if (!printedAst) {
+      const errDetail = reparseError ? '\nRe-parse error: ' + (reparseError.message || reparseError) + '\nParse options used: ' + JSON.stringify(reparseOptions) : '';
       return ['diff-fail', `
 ## AST Printer
 
@@ -136,10 +141,10 @@ Printed code with different AST:
 ${printedCode}
 \`\`\`\`
 
-Tenko failed to parse printed code (with same parameters as original)
+Tenko failed to parse printed code (with same parameters as original)${errDetail}
 `];
     } else {
-      let templateFriendlyInputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID);
+      let templateFriendlyInputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, reparseOptions);
 
       let Acrfckld = astToString(templateFriendlyInputAst.ast).replace(/^\s*loc:.*$\n/gm, '');
       let Bcrfckld = astToString(printedAst.ast).replace(/^\s*loc:.*$\n/gm, '');
@@ -203,8 +208,9 @@ ${d}
   throw new Error('unreachable');
 }
 
-function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID) {
+function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, parseOptions) {
   ASSERT(parseWithTenkoWithTemplateFix.length === arguments.length, 'arg count');
+  parseOptions = parseOptions ?? {};
 
   return Tenko(
     code,
@@ -221,6 +227,7 @@ function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MOD
       $log: () => {},
       $warn: () => {},
       $error: () => {},
+      ...parseOptions,
     },
   );
 }
