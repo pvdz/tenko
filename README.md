@@ -94,6 +94,8 @@ const {
     nodeRange = false,
     // Do not populate loc properties on AST nodes (property will be undefined). Since v<unpublished>
     locationTracking = true,
+    // Prevent syntax error for octal escapes regardless of strict mode or anything else
+    alwaysAllowOctalEscapes = false,
   }
 );
 ```

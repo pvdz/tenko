@@ -271,6 +271,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
 
         errorCodeFrame: enableCodeFrame,
         truncCodeFrame: true,
+        alwaysAllowOctalEscapes: tob.inputOptions.alwaysAllowOctalEscapes || false,
 
         $log: verbose ? undefined : (...a) => stdout.push(a),
         $warn: verbose ? undefined : (...a) => stdout.push(a),

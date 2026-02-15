@@ -106,7 +106,7 @@ function generate(builds, filename) {
   console.group('Generating', BOLD + filename + RESET, '(ESM?', forEsm, ')');
 
   let build = `
-// Tenko version (as per package.json at build time): v${packageJson.version}
+// Tenko version (as per package.json at build time): v${packageJson.version}, ${new Date().toISOString().slice(0, 10)}
 
 ${NATIVE_SYMBOLS ? `
 const allFuncs = [];

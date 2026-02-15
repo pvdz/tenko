@@ -546,6 +546,8 @@ function Parser(code, options = {}) {
     ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
     nodeRange: options_nodeRange = false, // Add a `range` to each node itself, being an array. `input.slice(range[0], range[1])` should get you the text of the node.
     locationTracking: options_locationTracking = true, // Add the `loc` property to all entries? (Much faster without...)
+    toplevelAwait: options_toplevelAwait = false,
+    allowDuplicateLabel: options_allowDuplicateLabel = false, // Allow labels to occur more than once in the same statement-tree? Syntactically invalid but this flag prevents the error being thrown.
 
     templateNewlineNormalization = true, // normalize \r and \rn to \n in the `.raw` of template nodes? Estree spec says yes, but makes it hard to serialize lossless
 
@@ -563,6 +565,8 @@ function Parser(code, options = {}) {
     babelCompat = false,
     babelTokenCompat = false, // Add locs to tokens
     acornCompat = false,
+
+    alwaysAllowOctalEscapes = false, // Prevent syntax error for octal escapes regardless of strict mode or anything else
 
     // Should we parse directives as their own AST nodes? (Other parsers do not, they just use ExpressionStatement)
     // I'm super confused since I read https://github.com/estree/estree/pull/99 as that directives get their own node
@@ -607,6 +611,8 @@ function Parser(code, options = {}) {
     gracefulErrors: FAIL_HARD,
     tokenStorageExternal: options_tokenStorage,
     babelTokenCompat,
+
+    alwaysAllowOctalEscapes,
 
     errorCodeFrame,
     truncCodeFrame,
@@ -3915,7 +3921,7 @@ function Parser(code, options = {}) {
     // in script: must be considered an await-expression when inside async, must be considered a var name otherwise
     // (`await` when not a keyword _is_ assignable)
 
-    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
+    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (options_toplevelAwait && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
       return parseAwaitKeyword(lexerFlags, $tp_await_start, $tp_await_stop, $tp_await_line, $tp_await_column, isNewArg, astProp);
     }
 
@@ -6459,7 +6465,7 @@ function Parser(code, options = {}) {
 
     let set = labelSet;
     while (set) {
-      if (set.statementLabels.has($tp_ident_canon)) {
+      if (set.statementLabels.has($tp_ident_canon) && !options_allowDuplicateLabel) {
         return THROW_RANGE('Saw the same label twice which is not allowed', $tp_ident_start, $tp_ident_stop);
       }
       set = set.parentLabels;

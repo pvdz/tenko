@@ -5,6 +5,7 @@
 - Fixed a bug in the printer for `new` with MemberExpression argument
   - It would not wrap the argument in parenthesis if it was a member expression, leading to ambiguous case bugs like `new f().g()` vs `new (f().g)()`.
   - Not publishing a new version as I think people fetch the printer straight from repo, not from npm. Prove me wrong.
+- Added the option `alwaysAllowOctalEscapes` to always allow to parse octal escapes, even in strict mode etc.
 
 ## v2.0.1
 

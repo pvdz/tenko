@@ -523,6 +523,8 @@ function Lexer(
     tokenStorageExternal,
     babelTokenCompat = false,
 
+    alwaysAllowOctalEscapes = false, // Prevent syntax error for octal escapes regardless of strict mode or anything else
+
     errorCodeFrame = true, // Print a code frame of input with context with errors?
     truncCodeFrame = false, // Trunc large input codes to just a few lines around the point of error?
 
@@ -1275,7 +1277,7 @@ function Lexer(
     // Tagged templates: are allowed to have bad escapes although they will cause `.value` to be `null` in the AST
     // (Note that we do not know here whether the template will be tagged or just a literal, so just return BAD_ESCAPE)
 
-    if (webCompat === WEB_COMPAT_OFF || forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
+    if (!alwaysAllowOctalEscapes && (webCompat === WEB_COMPAT_OFF || forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE)) {
       // If octals are invalid, then the nul escape can not be followed by 8 or 9 either
       // Note: in templates, octals are never valid escapes so `\08` is always a bad escape regardless of mode
       if (a === $$0_30 && (b < $$0_30 || b > $$9_39)) {
