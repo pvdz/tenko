@@ -545,6 +545,7 @@ function Lexer(
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
+  const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
   const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportOptionalChaining = targetEsVersion === 11 || targetEsVersion === Infinity;
@@ -4809,8 +4810,9 @@ function Lexer(
     return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag, or as a webcompat edge case');
   }
   function parseRegexFlags() {
-    // there are 5 valid flags and in unicode mode each flag may only occur once
+    // Valid flags: g, i, m, u, y, s (es9), d (es2022). In unicode mode each flag may only occur once.
     // 12.2.8.1: "It is a Syntax Error if FlagText of RegularExpressionLiteral contains any code points other than "g", "i", "m", "u", or"y", or if it contains the same code point more than once."
+    // (s and d were added in ES2018 and ES2022.)
 
     let g = 0;
     let i = 0;
@@ -4818,6 +4820,7 @@ function Lexer(
     let u = 0;
     let y = 0;
     let s = 0;
+    let d = 0;
     while (neof()) {
       let c = peek();
       switch (c) {
@@ -4842,6 +4845,12 @@ function Lexer(
           }
           ++s; // dotall flag was added in es9 / es2018
           break;
+        case $$D_64:
+          if (!supportRegexIndices) {
+            return THROW('The indices flag `d` is not supported in the currently targeted language version', pointer, pointer);
+          }
+          ++d; // indices (hasIndices) flag was added in es2022
+          break;
         default:
           if (isAsciiLetter(c) || c === $$BACKSLASH_5C) {
             // Unknown flags are considered syntax errors by the semantics and flags cannot be escaped
@@ -4849,7 +4858,7 @@ function Lexer(
           }
 
           // If any flags occurred more than once, the or below will result in >1
-          if ((g|i|m|u|y|s) > 1) {
+          if ((g|i|m|u|y|s|d) > 1) {
             return regexSyntaxError('Encountered at least one regex flag twice');
           }
 
@@ -4860,7 +4869,7 @@ function Lexer(
     }
 
     // If any flags occurred more than once, the or below will result in >1
-    if ((g|i|m|u|y|s) > 1) {
+    if ((g|i|m|u|y|s|d) > 1) {
       return regexSyntaxError('Encountered at least one regex flag twice');
     }
 
