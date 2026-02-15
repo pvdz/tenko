@@ -80,6 +80,7 @@ Tenko CLI Toolkit help:
 
  i <code>      Run test with custom input. Runs sloppy and sloppy webcompat by default. (stdin not supported)
  f <path>      Run a specific .md parser test file (the a/ b/ \"diff\" prefix is checked)
+ ff <path>     Run a test file (or folder of .md files, recursively) and force-write output (like \`./t U\` for one file or tree)
  F <path>      Run a specific file and consider its entire contents to be test input
  g             Regenerate _all_ auto generated files
  G             Autogenerate only files that don't already exist
@@ -166,6 +167,22 @@ Tenko CLI Toolkit help:
         ARG="${ARG:2}"
         echo "Assuming the file name is prefixed with a/ or b/ from a git diff, slicing off the first two chars"
         echo "Will use input file: ${ARG}"
+      fi
+      ;;
+    ff)
+      # Run one test file (or folder recursively) and force-write its output (like ./t U for one file)
+      ACTION='-u --force-write -f'
+      shift
+      ARG=$1
+      if [[ ! -f "${ARG}" && ( "${ARG}" == a/* || "${ARG}" == b/* ) && -f "${ARG:2}" ]]; then
+        ARG="${ARG:2}"
+      fi
+      if [[ -d "${ARG}" ]]; then
+        find "${ARG}" -type f -name '*.md' | sort | while IFS= read -r f; do
+          echo "Force-updating ${f}..."
+          ${NODE_BIN} ${INSPECT_NODE} ${NODE_PROF} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs -u --force-write -f "${f}" ${MODE} ${ACORN} ${BABEL} ${EXTRA} ${EXPOSE_SCOPE} ${ES} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
+        done
+        exit 0
       fi
       ;;
     F)
