@@ -3921,11 +3921,11 @@ function Parser(code, options = {}) {
     ASSERT($tp_await_start !== tok_getStart(), 'await should have been skipped');
     ASSERT_ASSIGN_EXPR(allowAssignment);
 
-    // in module: only if lexerFlags allow await (inside async code)
+    // in module: only if lexerFlags allow await (inside async code) or top-level await (ES2022+)
     // in script: must be considered an await-expression when inside async, must be considered a var name otherwise
-    // (`await` when not a keyword _is_ assignable)
+    // (`await` when not a keyword _is_ assignable). Top-level await is only valid in Module, not Script.
 
-    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
+    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
       return parseAwaitKeyword(lexerFlags, $tp_await_start, $tp_await_stop, $tp_await_line, $tp_await_column, isNewArg, astProp);
     }
 
