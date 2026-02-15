@@ -425,7 +425,11 @@ Tenko CLI Toolkit help:
       ;;
 
     *)
-      echo "t: Unsupported action or option... \`$1\` Use --help for options"
+      if [[ "$1" == -* ]]; then
+        echo "t: Unknown option: \`$1\`. Use --help for options."
+      else
+        echo "t: Unexpected extra argument: \`$1\`. Commands like f, ff, F, fu, T accept only one file or folder. Use --help for options."
+      fi
       exit 1
       ;;
   esac
