@@ -140,30 +140,6 @@ function onRead(file, content) {
   let negative = /\n\s*negative:/.test(header) && !/\n\s*phase:\s*runtime/.test(header) && !header.includes('phase: resolution');
   let webcompat = file.includes('annexB');
 
-  if (features.includes('class-fields-public')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage ?: class-fields-public)');
-  } else if (features.includes('class-fields-private')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage ?: class-fields-private)');
-  } else if (features.includes('class-static-fields-public')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage ?: class-static-fields-public)');
-  } else if (features.includes('class-static-fields-private')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage ?: class-static-fields-private)');
-  } else if (features.includes('class-methods-private')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3: class-methods-private)');
-  } else if (features.includes('class-static-methods-private')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3?: class-static-methods-private)');
-  } else if (features.includes('import.meta')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3: import.meta)');
-  } else if (features.includes('numeric-separator-literal')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3: numeric-separator-literal)');
-  } else if (features.includes('optional-chaining')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3: optional-chaining)');
-  } else if (features.includes('top-level-await')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3: top-level-await)');
-  } else if (features.includes('optional-chaining')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 4: `?.`)');
-  }
-
   let printedOnce = false;
   if (!flags.includes('onlyStrict') && !flags.includes('module')) {
     // This is the sloppy or web run (governed by the test config!)
