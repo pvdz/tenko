@@ -49,6 +49,7 @@ const $L_NL_CRLF = ++__$flag_leaf;
 const $L_COMMENT_SINGLE = ++__$flag_leaf;
 const $L_COMMENT_MULTI = ++__$flag_leaf;
 const $L_COMMENT_HTML = ++__$flag_leaf;
+const $L_COMMENT_HASHBANG = ++__$flag_leaf;
 const $L_IDENT = 0; // This is a hack which causes the leaf bits to be clear. This way (value | $IDENT) yields, at least, $IDENT without destroying an $ID_foo special keyword
 const $L_NUMBER_HEX = ++__$flag_leaf;
 const $L_NUMBER_DEC = ++__$flag_leaf;
@@ -204,6 +205,7 @@ const $NL_CRLF = $L_NL_CRLF | $G_WHITE | $G_NEWLINE;
 const $COMMENT_SINGLE = $L_COMMENT_SINGLE | $G_COMMENT | $G_WHITE;
 const $COMMENT_MULTI = $L_COMMENT_MULTI | $G_COMMENT | $G_WHITE;
 const $COMMENT_HTML = $L_COMMENT_HTML | $G_COMMENT | $G_WHITE;
+const $COMMENT_HASHBANG = $L_COMMENT_HASHBANG | $G_COMMENT | $G_WHITE;
 const $IDENT = $L_IDENT | $G_IDENT;
 const $ID_arguments = $L_ID_arguments | $G_IDENT;
 const $ID_as = $L_ID_as | $G_IDENT;
@@ -1630,6 +1632,7 @@ function toktypeToString(type) {
     case $COMMENT_SINGLE: return 'COMMENT_SINGLE';
     case $COMMENT_MULTI: return 'COMMENT_MULTI';
     case $COMMENT_HTML: return 'COMMENT_HTML';
+    case $COMMENT_HASHBANG: return 'COMMENT_HASHBANG';
     case $IDENT: return 'IDENT';
     case $ID_arguments: return 'ID_arguments';
     case $ID_as: return 'ID_as';
@@ -1803,6 +1806,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $COMMENT_SINGLE,
   $COMMENT_MULTI,
   $COMMENT_HTML,
+  $COMMENT_HASHBANG,
   $IDENT,
   $ID_arguments,
   $ID_as,
@@ -3223,6 +3227,7 @@ export {
   $COMMENT_SINGLE,
   $COMMENT_MULTI,
   $COMMENT_HTML,
+  $COMMENT_HASHBANG,
   $IDENT,
   $ID_arguments,
   $ID_as,

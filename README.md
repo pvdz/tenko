@@ -1,11 +1,11 @@
 # Tenko
 
-A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2022.
+A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2023.
 
 REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
-  - Anything stage 4 up to ES2022 (including class static blocks, top-level await in Module, etc.)
+  - Anything stage 4 up to ES2023 (including class static blocks, top-level await in Module, hashbang, etc.)
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
@@ -72,8 +72,8 @@ const {
     getLexer = null, // getLexer(lexer)
     // You use this to parse `eval` code
     allowGlobalReturn = false,
-    // Target a very specific ecmascript version (like, reject async). Number; 6 - 13, or 2015 - 2022, or Infinity.
-    targetEsVersion = lastVersion, // (Last supported version is currently ES2022)
+    // Target a very specific ecmascript version (like, reject async). Number; 6 - 14, or 2015 - 2023, or Infinity.
+    targetEsVersion = lastVersion, // (Last supported version is currently ES2023)
     // Top-level await in Module: undefined = allow when target ES2022+; true = force on; false = force off
     toplevelAwait = undefined,
     // Leave built up scope information in the ASTs (good luck)

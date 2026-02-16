@@ -173,6 +173,7 @@ import {
   $COMMENT_SINGLE,
   $COMMENT_MULTI,
   $COMMENT_HTML,
+  $COMMENT_HASHBANG,
   $IDENT,
   $ID_arguments,
   $ID_as,
@@ -541,13 +542,14 @@ function Lexer(
   ASSERT(typeof input === 'string', 'input string should be string; ' + typeof input);
   ASSERT(targetEsVersion !== undefined, 'undefined should become default', targetEsVersion);
   ASSERT(typeof targetEsVersion === 'number', 'targetEsVersion should be a number', typeof targetEsVersion);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 13) || targetEsVersion === Infinity, 'only support v6~13 (ES2015-ES2022) right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 14) || targetEsVersion === Infinity, 'only support v6~14 (ES2015-ES2023) right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
 
   const supportRegexPropertyEscapes = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
+  const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
   const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportOptionalChaining = targetEsVersion === 11 || targetEsVersion === Infinity;
@@ -747,7 +749,7 @@ function Lexer(
       // At this point it has to be some form of whitespace and we're clearly not returning it so we can
       // safely skip any number of whitespaces, which are very likely to appear in sequence
 
-      if (consumedTokenType === $COMMENT_SINGLE) {
+      if (consumedTokenType === $COMMENT_SINGLE || consumedTokenType === $COMMENT_HASHBANG) {
         // Either this is EOF or the next token must be a newline
         if (collectTokens !== COLLECT_TOKENS_ALL && collectTokens !== COLLECT_TOKENS_TYPES) skipNewlinesWithoutTokens();
       } // do not `else`
@@ -812,6 +814,14 @@ function Lexer(
     ASSERT(jumpTableLexer.length === arguments.length, 'arg count');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags bit flags', lexerFlags);
     ASSERT(pointer < len, 'pointer should not be oob here');
+
+    // ES2023 HashbangComment: only at position 0, or at position 1 immediately after BOM (U+FEFF); #! followed by rest of line
+    if (supportHashbang && (
+      (pointer === 0 && len >= 2 && input.charCodeAt(0) === $$HASH_23 && input.charCodeAt(1) === $$EXCL_21) ||
+      (pointer === 1 && len >= 3 && input.charCodeAt(0) === $$BOM_FEFF && input.charCodeAt(1) === $$HASH_23 && input.charCodeAt(2) === $$EXCL_21)
+    )) {
+      return parseHashbang();
+    }
 
     // This creates one token of any kind that is valid in JS.
     // Take the first char, look it up in an array of 126 entries (aka jump table) and it tells you either the type
@@ -2337,6 +2347,19 @@ function Lexer(
     }
 
     return $PUNC_DIV;
+  }
+  function parseHashbang() {
+    // Only called when pointer === 0 and #!, or pointer === 1 (after BOM) and #!
+    ASSERT((pointer === 0 && input.charCodeAt(0) === $$HASH_23 && input.charCodeAt(1) === $$EXCL_21) || (pointer === 1 && input.charCodeAt(0) === $$BOM_FEFF && input.charCodeAt(1) === $$HASH_23 && input.charCodeAt(2) === $$EXCL_21), 'hashbang only at start or after BOM');
+    skip(); // #
+    skip(); // !
+    while (neof()) {
+      let c = peek();
+      // SingleLineCommentChars excludes LineTerminator: LF, CR, LS (U+2028), PS (U+2029)
+      if (c === $$LF_0A || c === $$CR_0D || isLfPsLs(c)) break;
+      skip();
+    }
+    return $COMMENT_HASHBANG;
   }
   function parseCommentSingle() {
     ASSERT(parseCommentSingle.length === arguments.length, 'arg count');

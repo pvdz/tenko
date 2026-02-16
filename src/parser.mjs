@@ -184,6 +184,7 @@ import {
   $COMMENT_SINGLE,
   $COMMENT_MULTI,
   $COMMENT_HTML,
+  $COMMENT_HASHBANG,
   $IDENT,
   $ID_arguments,
   $ID_as,
@@ -543,7 +544,7 @@ function Parser(code, options = {}) {
     tokenStorage: options_tokenStorage,
     getLexer = null,
     allowGlobalReturn = false, // you may need this to parse arbitrary code or eval code for example
-    targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, 12, 13, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, Infinity
+    targetEsVersion = VERSION_WHATEVER, // 6, 7, 8, 9, 10, 11, 12, 13, 14, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, Infinity
     exposeScopes: options_exposeScopes = false, // put scopes in the AST under `$scope` property?
     astUids = false, // add an incremental uid to all ast nodes for debugging
     ranges: options_ranges = false, // Add `range` to each `loc` object for absolute start/stop index on input?
@@ -578,8 +579,8 @@ function Parser(code, options = {}) {
     /* (This comment prevents the buildscript from detecting the ast prefix) */AST_directiveNodes = false,
   } = options;
 
-  if (targetEsVersion >= 2015 && targetEsVersion <= 2022) {
-    targetEsVersion -= 2009; // es6 = 2015, etc. 2015-2009=6, 2022-2009=13
+  if (targetEsVersion >= 2015 && targetEsVersion <= 2023) {
+    targetEsVersion -= 2009; // es6 = 2015, etc. 2015-2009=6, 2023-2009=14
   }
 
   let goalMode = GOAL_SCRIPT;
@@ -683,7 +684,7 @@ function Parser(code, options = {}) {
   let allowPrivateClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 private fields/methods (#x, this.#x, #x in obj)
 
   ASSERT(goalMode === GOAL_SCRIPT || goalMode === GOAL_MODULE);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 13) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 2015 2016 2017 2018 2019 2020 2021 2022 or Infinity');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 14) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 14 2015 2016 2017 2018 2019 2020 2021 2022 2023 or Infinity');
 
   if (getLexer) getLexer(tok);
 
@@ -1411,6 +1412,9 @@ function Parser(code, options = {}) {
     if ($tp_comment_type === $COMMENT_SINGLE) {
       // typeName = 'CommentBlock'
       value = tok_sliceInput($tp_comment_start + 2, $tp_comment_stop);
+    } else if ($tp_comment_type === $COMMENT_HASHBANG) {
+      value = tok_sliceInput($tp_comment_start + 2, $tp_comment_stop);
+      if (babelCompat && _tree.type === 'Program' && $tp_comment_start === 0) _tree.interpreter = value;
     } else if ($tp_comment_type === $COMMENT_MULTI) {
       typeName = 'CommentBlock'
       value = tok_sliceInput($tp_comment_start + 2, $tp_comment_stop - 2);

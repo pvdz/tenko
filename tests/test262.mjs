@@ -152,8 +152,6 @@ function onRead(file, content) {
     return console.log(BOLD, 'SKIP', RESET, '(Stage 3: class-methods-private)');
   } else if (features.includes('class-static-methods-private')) {
     return console.log(BOLD, 'SKIP', RESET, '(Stage 3?: class-static-methods-private)');
-  } else if (features.includes('hashbang')) {
-    return console.log(BOLD, 'SKIP', RESET, '(Stage 3: hashbang)');
   } else if (features.includes('import.meta')) {
     return console.log(BOLD, 'SKIP', RESET, '(Stage 3: import.meta)');
   } else if (features.includes('numeric-separator-literal')) {
