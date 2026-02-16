@@ -265,7 +265,7 @@ function parseTestFile(tob) {
       ASSERT(is === '=', 'separate the key and value of input options with a `=` and surrounding spaces', ' ' + file + ' ', s);
 
       let value = v.join(' ');
-      if (String(parseFloat(value)) === value) value = parseFloat(v);
+      if (String(parseFloat(value)) === value) value = parseFloat(value);
       else if (value === 'true') value = true;
       else if (value === 'false') value = false;
       else if (value === 'undefined') value = undefined;

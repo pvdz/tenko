@@ -218,6 +218,7 @@ There are many flags. Some are specific to an action, others are generic. Some e
 11                   Run as close to the rules as of ES11 / ES2020 as possible
 12                   Run as close to the rules as of ES12 / ES2021 as possible
 13                   Run as close to the rules as of ES13 / ES2022 as possible (includes top-level await in Module)
+14                   Run as close to the rules as of ES14 / ES2023 as possible
 2015
 2016
 2017
@@ -226,6 +227,7 @@ There are many flags. Some are specific to an action, others are generic. Some e
 2020
 2021
 2022
+2023
 
 --min                Given a broken input, brute force minify the input while maintaining the same error message
 --acorn              Output a Acorn compatible AST

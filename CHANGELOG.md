@@ -8,7 +8,12 @@
 - Support ES2022 class static blocks: `static { ... }` in class bodies.
   - Parser emits ESTree node type `StaticBlock` with `body` (array of statements). Gated by `targetEsVersion` 13 (or 2022); use `--es13` or `es = 13` in tests for static block.
   - Printer and walker support `StaticBlock`. Scope of a static block correctly chains to the enclosing scope (for class declarations), so `var` in a static block is attributed to the enclosing function/script and duplicate var/lex checks apply as for a normal block.
-- Parser and lexer now accept `targetEsVersion` 6–13 (or 2015–2022). CLI and test runner support `--es13` and `2022`.
+- Parser and lexer accept `targetEsVersion` 6–14 (or 2015–2023). CLI and test runner support `--es14` and year `2023`.
+- Test runner version support:
+  - Added `--es14`; `./t --help` documents version range 6..14 and 2015..2023.
+  - Test files can set a per-test ES version with `- \`es = N\`` (N 6..14) under `## Input`; `--esX` overrides when given.
+  - Fixed parsing of numeric input options (use `parseFloat(value)` instead of `parseFloat(v)`).
+- Printer: `new super()` now round-trips correctly (call parentheses are always printed when the `new` callee is `Super`).
 - Fixed a bug in the printer for `new` with MemberExpression argument
   - It would not wrap the argument in parenthesis if it was a member expression, leading to ambiguous case bugs like `new f().g()` vs `new (f().g)()`.
   - Not publishing a new version as I think people fetch the printer straight from repo, not from npm. Prove me wrong.
