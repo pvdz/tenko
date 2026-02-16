@@ -91,7 +91,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-new await();
+new await;
 ````
 
 Produces same AST

@@ -94,7 +94,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-new (function f() {})();
+new (function f() {});
 ````
 
 Produces same AST

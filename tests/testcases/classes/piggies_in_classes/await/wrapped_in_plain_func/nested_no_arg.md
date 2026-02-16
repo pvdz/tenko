@@ -159,7 +159,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function f() {class x{foo(x = new await()){};}}
+function f() {class x{foo(x = new await){};}}
 ````
 
 Produces same AST

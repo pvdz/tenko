@@ -552,6 +552,7 @@ function MemberExpression(node) {
     // node.object.type === 'MemberExpression' ||           // a.b.c -> (a.b).c
     // node.object.type === 'Identifier' ||                 // a.b -> (a).b
     // node.object.type === 'CallExpression' ||             // -> a().b -> (a()).b
+    node.object.type === 'NewExpression' ||                 // (new x())[y] not new x()[y]
     node.object.type === 'UnaryExpression' ||               // `(!t).y`
     node.object.type === 'ArrowFunctionExpression' ||       // ()=>x.y -> (()=>x).y
     node.object.type === 'UpdateExpression' ||              // `(++x)[x]`
@@ -590,9 +591,12 @@ function NewExpression(node) {
       ? 'new ' + $w(node.callee)
       : 'new ' + $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
   }
+  // new super() must print with () so it round-trips
+  if (node.callee.type === 'Super') {
+    return 'new ' + $(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  }
   if (
-    node.callee.type === 'Super'
-    || node.callee.type === 'Import'
+    node.callee.type === 'Import'
     || node.callee.type === 'Identifier'
     || node.callee.type === 'Literal'
     || node.callee.type === 'MemberExpression'

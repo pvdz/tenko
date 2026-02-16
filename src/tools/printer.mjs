@@ -486,6 +486,7 @@ function MemberExpression(node) {
     // node.object.type === 'MemberExpression' ||           // a.b.c -> (a.b).c
     // node.object.type === 'Identifier' ||                 // a.b -> (a).b
     // node.object.type === 'CallExpression' ||             // -> a().b -> (a()).b
+    node.object.type === 'NewExpression' ||                 // (new x())[y] not new x()[y]
     node.object.type === 'UnaryExpression' ||               // `(!t).y`
     node.object.type === 'ArrowFunctionExpression' ||       // ()=>x.y -> (()=>x).y
     node.object.type === 'UpdateExpression' ||              // `(++x)[x]`
@@ -531,16 +532,19 @@ function NewExpression(node) {
       ? 'new ' + $w(node.callee)
       : 'new ' + $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
   }
+  // new super() must print with () so it round-trips (new super would parse differently)
+  if (node.callee.type === 'Super') {
+    return 'new ' + $(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  }
   if (
-    node.callee.type === 'Super'
-    || node.callee.type === 'Import'
+    node.callee.type === 'Import'
     || node.callee.type === 'Identifier'
     || node.callee.type === 'Literal'
     // || node.callee.type === 'MemberExpression'         // new x().y -> new (x().y)
     // || node.callee.type === 'CallExpression'           // new x()() -> new (x())()
     || node.callee.type === 'ArrayExpression'             // new []     Runtime error...?
     || node.callee.type === 'ObjectExpression'            // new {}     Runtime error...?
-    // MetaProperty handled above (import.meta needs parens; new.target uses same path)
+    // MetaProperty handled above; Super handled above (new super() needs ())
     // || node.callee.type === 'TaggedTemplateExpression' // new foo``() -> new (foo``)
     || node.callee.type === 'TemplateLiteral'             // new `foo`  Runtime error?
     || node.callee.type === 'ThisExpression'              // new this   (Could be made to work)

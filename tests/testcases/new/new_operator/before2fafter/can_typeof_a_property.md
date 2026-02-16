@@ -97,7 +97,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-typeof new x().y;
+typeof (new x).y;
 ````
 
 Produces same AST

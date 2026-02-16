@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Import keyword only allowed on toplevel or in a dynamic import
+  `import.meta` is only valid in module goal
 
 start@1:0, error@1:10
 ╔══╦═════════════════
@@ -48,7 +48,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  `import.meta` expects the identifier `meta` after the dot
+
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ delete (((import.prop)))
+   ║                  ^^^^------- error
+╚══╩═════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -60,4 +70,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

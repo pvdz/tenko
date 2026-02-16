@@ -12,6 +12,8 @@
 
 ## Input
 
+- `es = 10`
+
 `````js
 import.meta
 `````
@@ -51,33 +53,15 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-      expression: {
-        type: 'MetaProperty',
-        loc:{start:{line:1,column:0},end:{line:1,column:11},source:''},
-        meta: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-          name: 'import'
-        },
-        property: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:7},end:{line:1,column:11},source:''},
-          name: 'meta'
-        }
-      }
-    }
-  ]
-}
+throws: Parser error!
+  `import.meta` requires ES2020+ / ES11+.
 
-tokens (5x):
-       ID_import PUNC_DOT IDENT ASI
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ import.meta
+   ║ ^^^^^^------- error
+╚══╩════════════════
+
 `````
 
 ### Sloppy mode with AnnexB
@@ -91,13 +75,3 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
-
-## AST Printer
-
-Printer output different from input [module][annexb:no]:
-
-````js
-import.meta;
-````
-
-Produces same AST
