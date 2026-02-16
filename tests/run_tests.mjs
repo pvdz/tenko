@@ -54,9 +54,6 @@ let ASSERT = (...args) => {
   else _ASSERT(...args);
 };
 
-
-console.log('Start of Tenko test suite');
-
 const INPUT_OVERRIDE = decodeUnicode(process.argv.includes('-F') ? fs.readFileSync(process.argv[process.argv.indexOf('-F') + 1], 'utf8') : process.argv.includes('-i') ? process.argv[process.argv.indexOf('-i') + 1] : '');
 const TARGET_FILE = process.argv.includes('-f') ? process.argv[process.argv.indexOf('-f') + 1] : '';
 const SEARCH = process.argv.includes('-s');
@@ -99,12 +96,15 @@ const TEST_ACORN = COMPARE_ACORN && (!AUTO_UPDATE || CONFIRMED_UPDATE); // ignor
 const TEST_BABEL = COMPARE_BABEL && (!AUTO_UPDATE || CONFIRMED_UPDATE); // ignore this flag with -u, we dont want to record babel deltas into test files
 const NO_FATALS = process.argv.includes('--no-fatals'); // asserts should not stop a full auto run (dev tool, rely on git etc for recovery...)
 const CONCISE = process.argv.includes('--concise');
+const QUIET_FILE = process.argv.includes('--quiet'); // With -f: only print PASS/FAIL line
 const USE_BUILD = process.argv.includes('-b') || process.argv.includes('--build');
 const SKIP_PRINTER = process.argv.includes('--no-printer'); // || USE_BUILD;
 const EXPOSE_SCOPE = process.argv.includes('--expose-scope');
 
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
+
+if (!QUIET_FILE) console.log('Start of Tenko test suite');
 
 if (TEST_BABEL && TEST_ACORN) throw new Error('Cannot test Babel and Acorn at the same time. Pick one.');
 if (TEST_ACORN) console.log('Running in Acorn compat mode and comparing to actual Acorn Parser output');
@@ -151,11 +151,12 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
                   (Note: -q, -i, and -f implicitly enable --serial)
     --no-printer  Skip running Printer on input
     --min         Brute-force simplify a test case that throws an error while maintaining the same error message, only with -f, implies --sloppy
-      -- write    For reducer only; write result to new file
+      --write     For reducer (--min) only; write result to new file
     --min-printer Minimize a Printer-failing input case
     --force-write Always write the test cases to disk, even when no change was detected
     --no-fatals   Do not treat (test) assertion errors as fatals (dev tools only, rely on git etc for recovery)
     --concise     Do not dump AST and printer output to stdout. Parse and stop. Only works with -i or -f or -F
+    --quiet       With -f: only print the PASS/FAIL line (auto implied for ./t ff)
     --expose-scope Add generated scope objects as \`.$scope\` property for nodes that generate a scope. Good luck that that that...
 `);
   process.exit();
@@ -243,9 +244,9 @@ async function extractFiles(list) {
     bytes += tob.inputCode.length;
   });
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test file extraction time');
-  console.log('Total input size:', bytes, 'bytes');
+  if (!QUIET_FILE) console.log('Total input size:', bytes, 'bytes');
 }
-function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code = tob.inputCode, verbose = !!(INPUT_OVERRIDE || TARGET_FILE)) {
+function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code = tob.inputCode, verbose = !QUIET_FILE && !!(INPUT_OVERRIDE || TARGET_FILE)) {
   wasHits = [];
   hitsToReport = wasHits;
   let r, e = '';
@@ -420,7 +421,6 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     errorMessage = e.message;
     if (errorMessage.includes('Assertion fail')) {
       stdout.forEach(a => console.log.apply(console, a));
-
       console.error('####\nAn ' + BLINK + 'assertion' + RESET + ' error was thrown in ' + BOLD + testVariant + RESET + ' mode with annexB=' + annexB + '\n');
       console.error(BOLD + 'Input:' + RESET + '\n\n`````\n' + tob.inputCode + '\n`````\n\n' + BOLD + 'Error message:' + RESET + '\n');
       console.error(errorMessage);
@@ -439,8 +439,6 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     }
     else {
       stdout.forEach(a => console.log.apply(console, a));
-
-      // errorMessage = 'TEMP SKIPPED UNKNOWN ERROR';
       console.error('####\nThe following ' + BLINK + 'unexpected' + RESET + ' error was thrown in ' + BOLD + testVariant + RESET + ' mode with annexB=' + annexB + ':\n');
       console.error(errorMessage);
       console.error(e.stack);
@@ -490,7 +488,7 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     // Acorn does not support sloppy/strict switch and always enables annexb rules, so do not check other combos
     tob.compareWhiteListed = ignoreTenkoTestForAcorn(tob.fileShort);
     acornMatchError = processAcornResult(acornOk, acornFail, !!e, zasa, tob, TEST_ACORN, INPUT_OVERRIDE);
-    if (acornMatchError && TARGET_FILE) {
+    if (acornMatchError && TARGET_FILE && !QUIET_FILE) {
       console.log('acornMatchError:', BOLD, acornMatchError, RESET)
       // throw new Error(babelMatchError)
     }
@@ -909,7 +907,7 @@ async function cli(tenko) {
 
 async function main(tenko) {
   if (TARGET_FILE) {
-    console.log('Using explicit file:', TARGET_FILE);
+    if (!QUIET_FILE) console.log('Using explicit file:', TARGET_FILE);
     files = [TARGET_FILE];
   } else {
     files = files.filter(f => !f.endsWith('autogen.md'));
@@ -921,12 +919,12 @@ async function main(tenko) {
   let list = await readFiles(files);
   if (!TARGET_FILE) list = list.filter(tob => !tob.fileShort.startsWith('tests/testcases/todo/')); // Skip todo dir unless explicitly asking for it
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test file read time');
-  console.log('Read', list.length, 'files');
+  if (!QUIET_FILE) console.log('Read', list.length, 'files');
 
   await extractFiles(list);
   let beforeLen = list.length;
   if (!TARGET_FILE) list = list.filter(tob => !tob.aboveTheFold.toLowerCase().includes('\n## skip\n'));
-  console.log('Filtered', beforeLen - list.length,'skipped tests (containing `## skip`)');
+  if (!QUIET_FILE) console.log('Filtered', beforeLen - list.length,'skipped tests (containing `## skip`)');
 
   if (RUN_VERBOSE_IN_SERIAL) {
     for (let i=0; i<list.length && !stopAsap; ++i) {
@@ -953,25 +951,27 @@ async function main(tenko) {
         console.log(BOLD + GREEN + 'PASS' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
       }
     }
-    if (skippedOtherParserList.length) {
-      console.log(BOLD + 'Properly ignored these files:' + RESET);
-      // console.log(skippedOtherParserList.sort().join('\n'))
+    if (!QUIET_FILE) {
+      if (skippedOtherParserList.length) {
+        console.log(BOLD + 'Properly ignored these files:' + RESET);
+        // console.log(skippedOtherParserList.sort().join('\n'))
+      }
+      if (unexpectedPass.length) {
+        console.log(BOLD + 'These files were whitelisted but they already match:' + RESET);
+        console.log(unexpectedPass.sort().join('\n'))
+      }
+      if (unxepctedFails.length) {
+        console.log(BOLD + 'These files did not match and were not whitelisted:' + RESET);
+        console.log(unxepctedFails.sort().join('\n'))
+      }
+      console.log('Match status: whitelisted: ' + skippedOtherParserList.length + 'x, unexpected misses: ' + unxepctedFails.length + 'x, unexpected passes: ' + unexpectedPass.length + 'x');
+      if (unxepctedFails.length || unexpectedPass.length) console.log('Use -q to stop immediately on an unexpected miss/match');
     }
-    if (unexpectedPass.length) {
-      console.log(BOLD + 'These files were whitelisted but they already match:' + RESET);
-      console.log(unexpectedPass.sort().join('\n'))
-    }
-    if (unxepctedFails.length) {
-      console.log(BOLD + 'These files did not match and were not whitelisted:' + RESET);
-      console.log(unxepctedFails.sort().join('\n'))
-    }
-    console.log('Match status: whitelisted: ' + skippedOtherParserList.length + 'x, unexpected misses: ' + unxepctedFails.length + 'x, unexpected passes: ' + unexpectedPass.length + 'x');
-    if (unxepctedFails.length || unexpectedPass.length) console.log('Use -q to stop immediately on an unexpected miss/match');
   } else {
     await runAndRegenerateList(list, tenko);
   }
 
-  console.timeEnd('$$ Whole test run');
+  if (!QUIET_FILE) console.timeEnd('$$ Whole test run');
 }
 
 function sanitize(dir) {
@@ -1251,7 +1251,7 @@ async function loadParsers() {
   return tenko;
 }
 
-console.time('$$ Whole test run');
+if (!QUIET_FILE) console.time('$$ Whole test run');
 
 let files = [];
 if (INPUT_OVERRIDE) {
@@ -1265,7 +1265,7 @@ if (INPUT_OVERRIDE) {
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ Test search discovery time');
   getTestFiles(path.join(dirname, 'testcases'), '', files, true);
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test search discovery time');
-  console.log('Read all test files, gathered', files.length, 'files');
+  if (!QUIET_FILE) console.log('Read all test files, gathered', files.length, 'files');
 }
 
 if (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE) {

@@ -172,6 +172,7 @@ Tenko CLI Toolkit help:
     ff)
       # Run one test file (or folder recursively) and force-write its output (like ./t U for one file)
       ACTION='-u --force-write -f'
+      EXTRA="${EXTRA} --quiet"
       shift
       ARG=$1
       if [[ ! -f "${ARG}" && ( "${ARG}" == a/* || "${ARG}" == b/* ) && -f "${ARG:2}" ]]; then
@@ -179,7 +180,7 @@ Tenko CLI Toolkit help:
       fi
       if [[ -d "${ARG}" ]]; then
         find "${ARG}" -type f -name '*.md' | sort | while IFS= read -r f; do
-          echo "Force-updating ${f}..."
+          # echo "Force-updating ${f}..."
           ${NODE_BIN} ${INSPECT_NODE} ${NODE_PROF} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs -u --force-write -f "${f}" ${MODE} ${ACORN} ${BABEL} ${EXTRA} ${EXPOSE_SCOPE} ${ES} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
         done
         exit 0
