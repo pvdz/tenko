@@ -382,6 +382,7 @@ import {
   VERSION_OPTIONAL_CATCH,
   VERSION_DYNAMIC_IMPORT,
   VERSION_EXPORT_STAR_AS,
+  VERSION_IMPORT_META,
   VERSION_TOPLEVEL_AWAIT,
   VERSION_WHATEVER,
   IS_ASYNC,
@@ -675,6 +676,7 @@ function Parser(code, options = {}) {
   let allowOptionalCatchBinding = targetEsVersion >= VERSION_OPTIONAL_CATCH || targetEsVersion === VERSION_WHATEVER;
   let allowDynamicImport = (targetEsVersion >= VERSION_DYNAMIC_IMPORT || targetEsVersion === VERSION_WHATEVER);
   let allowExportStarAs = (targetEsVersion >= VERSION_EXPORT_STAR_AS || targetEsVersion === VERSION_WHATEVER);
+  let allowImportMeta = (targetEsVersion >= VERSION_IMPORT_META || targetEsVersion === VERSION_WHATEVER);
   let allowToplevelAwaitByVersion = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER);
   // Explicit override: true = allow, false = disallow, undefined = use version (allow when ES2022+)
   let allowToplevelAwait = options_toplevelAwait === true || (options_toplevelAwait !== false && options_toplevelAwait !== true && allowToplevelAwaitByVersion);
@@ -5736,11 +5738,16 @@ function Parser(code, options = {}) {
     let $tp_import_start = tok_getStart();
     let $tp_import_stop = tok_getStop();
 
-    ASSERT_skipToIdentStarCurlyOpenParenOpenString($ID_import, lexerFlags);
+    skipAny(lexerFlags); // consume `import`, now at the next token
     if (tok_getType() === $PUNC_PAREN_OPEN) {
       // This must be dynamic `import()` or an error
       return parseDynamicImportStatement(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, astProp);
     }
+    if (tok_getType() === $PUNC_DOT) {
+      // `import.meta` — only at top level in module we reach this path
+      return parseImportMetaStatement(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, astProp);
+    }
+    ASSERT_VALID(isIdentToken(tok_getType()) || tok_getType() === $PUNC_STAR || tok_getType() === $PUNC_CURLY_OPEN || isStringToken(tok_getType()), 'import declaration: wanted ident * { or string');
 
     // Note: since `import()` is valid in non-global, and in non-module-goal, we have to check the token after `import` first
 
@@ -7993,6 +8000,9 @@ function Parser(code, options = {}) {
         if (tok_getType() === $PUNC_PAREN_OPEN) {
           return parseDynamicImport(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, astProp);
         }
+        if (tok_getType() === $PUNC_DOT) {
+          return parseImportMeta(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, astProp);
+        }
         return THROW_RANGE('Import keyword only allowed on toplevel or in a dynamic import', $tp_ident_start, $tp_ident_stop);
       case $ID_let:
         ASSERT(bindingType !== BINDING_TYPE_CLASS, 'class ident does not pass through here');
@@ -8233,6 +8243,32 @@ function Parser(code, options = {}) {
     if (tok_getType() === $PUNC_DOT) return parseNewDotTarget(lexerFlags, $tp_new_start, $tp_new_stop, $tp_new_line, $tp_new_column, $tp_new_canon, astProp);
     return parseNewExpression(lexerFlags, $tp_new_start, $tp_new_line, $tp_new_column, astProp);
   }
+  function parseImportMeta(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, $tp_import_canon, astProp) {
+    // `import.meta` — only valid in Module goal, ES2020+
+    if (goalMode !== GOAL_MODULE) {
+      return THROW_RANGE('`import.meta` is only valid in module goal', $tp_import_start, $tp_import_stop);
+    }
+    if (!allowImportMeta) {
+      return THROW_RANGE('`import.meta` requires ES2020+ / ES11+.', $tp_import_start, $tp_import_stop);
+    }
+    skipDiv(lexerFlags); // consume the dot
+    if (!isIdentToken(tok_getType()) || tok_getCanoN() !== 'meta') {
+      return THROW_RANGE('`import.meta` expects the identifier `meta` after the dot', tok_getStart(), tok_getStop());
+    }
+    let $tp_property_line = tok_getLine();
+    let $tp_property_column = tok_getColumn();
+    let $tp_property_start = tok_getStart();
+    let $tp_property_stop = tok_getStop();
+    let $tp_property_canon = tok_getCanoN();
+    skipDiv(lexerFlags); // consume "meta"
+    AST_setClosedNode($tp_import_start, astProp, {
+      type: 'MetaProperty',
+      loc: AST_getClosedLoc($tp_import_start, $tp_import_line, $tp_import_column),
+      meta: AST_getIdentNode($tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, $tp_import_canon),
+      property: AST_getIdentNode($tp_property_start, $tp_property_stop, $tp_property_line, $tp_property_column, $tp_property_canon),
+    });
+    return NOT_ASSIGNABLE;
+  }
   function parseNewDotTarget(lexerFlags, $tp_new_start, $tp_new_stop, $tp_new_line, $tp_new_column, $tp_new_canon, astProp) {
     // - `new.target`
     // - `new.foo`
@@ -8301,12 +8337,13 @@ function Parser(code, options = {}) {
     // - `new await x()()`
     // - `new b↵++c;`
 
-    if (isIdentToken(tok_getType()) && tok_getType() === $ID_import) {
-      return THROW_RANGE('Cannot use dynamic import as an argument to `new`, the spec simply does not allow it', $tp_new_start, tok_getStop());
-    }
-
+    // Note: `new import.meta` is valid; only `new import(...)` (dynamic import) is invalid
     // Note: the `isNewArg` state will make sure the `parseValueTail` function properly deals with the first call arg
     let assignableForPiggies = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, IS_NEW_ARG, NOT_LHSE, 'callee');
+    let calleeNode = _path[_path.length - 1].callee;
+    if (calleeNode && (calleeNode.type === 'ImportExpression' || (calleeNode.type === 'CallExpression' && calleeNode.callee && calleeNode.callee.type === 'Import'))) {
+      return THROW_RANGE('Cannot use dynamic import as an argument to `new`, the spec simply does not allow it', $tp_new_start, tok_getStop());
+    }
     AST_close($tp_new_start, $tp_new_line, $tp_new_column, 'NewExpression');
     // [x]: `async function f(){ (x = new x(await x)) => {} }`
     return setNotAssignable(assignableForPiggies);
@@ -9182,6 +9219,20 @@ function Parser(code, options = {}) {
       expression: undefined,
     });
     parseDynamicImport(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, 'expression');
+    let assignable = parseValueTail(lexerFlags, $tp_import_start, $tp_import_line, $tp_import_column, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, 'expression');
+    parseExpressionFromOp(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, assignable, 'expression');
+    parseSemiOrAsi(lexerFlags);
+    AST_close($tp_import_start, $tp_import_line, $tp_import_column, 'ExpressionStatement');
+  }
+  function parseImportMetaStatement(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, astProp) {
+    ASSERT(parseImportMetaStatement.length === arguments.length, 'arg count');
+
+    AST_open(astProp, {
+      type: 'ExpressionStatement',
+      loc: undefined,
+      expression: undefined,
+    });
+    parseImportMeta(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, 'import', 'expression');
     let assignable = parseValueTail(lexerFlags, $tp_import_start, $tp_import_line, $tp_import_column, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, 'expression');
     parseExpressionFromOp(lexerFlags, $tp_import_start, $tp_import_stop, $tp_import_line, $tp_import_column, assignable, 'expression');
     parseSemiOrAsi(lexerFlags);

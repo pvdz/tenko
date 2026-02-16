@@ -584,6 +584,12 @@ function MethodDefinition(node) {
 }
 function NewExpression(node) {
   assert(node.type, 'NewExpression');
+  // import.meta as callee needs parens so it prints as new (import.meta) not new import.meta()
+  if (node.callee.type === 'MetaProperty') {
+    return node.arguments.length === 0
+      ? 'new ' + $w(node.callee)
+      : 'new ' + $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  }
   if (
     node.callee.type === 'Super'
     || node.callee.type === 'Import'
@@ -593,14 +599,16 @@ function NewExpression(node) {
     // || node.callee.type === 'CallExpression'           // new x()() -> new (x())()
     || node.callee.type === 'ArrayExpression'             // new []     Runtime error...?
     || node.callee.type === 'ObjectExpression'            // new {}     Runtime error...?
-    || node.callee.type === 'MetaProperty'                // new new.target
+    // || node.callee.type === 'MetaProperty'              // handled above for import.meta; new.target below
     // || node.callee.type === 'TaggedTemplateExpression' // new foo``() -> new (foo``)
     || node.callee.type === 'TemplateLiteral'             // new `foo`  Runtime error?
     || node.callee.type === 'ThisExpression'              // new this   (Could be made to work)
   ) {
-    return 'new ' + $(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+    const args = node.arguments.length ? '(' + node.arguments.map($).join(', ') + ')' : '';
+    return 'new ' + $(node.callee) + args;
   }
-  return 'new ' + $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+  const args = node.arguments.length ? '(' + node.arguments.map($).join(', ') + ')' : '';
+  return 'new ' + $w(node.callee) + args;
 }
 function NullLiteral(node) {
   assert(node.type, 'NullLiteral');
