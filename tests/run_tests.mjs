@@ -620,6 +620,7 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
 }
 
 function showDiff(tob) {
+  if (QUIET_FILE) return;
   console.log(
     '\n' +
     BOLD + '######' + RESET + '\n' +
@@ -945,6 +946,8 @@ async function main(tenko) {
       } else if (tob.compareSkippedExplicitVersion) {
         skippedOtherParserList.push(tob.fileShort);
         console.log(BOLD + GREEN + 'SKIP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file skipped because it targets a specific ES version and we dont care about those cases here)');
+      } else if (tob.continuePrint) {
+        console.log(BOLD + RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (' + tob.continuePrint + ')');
       } else if (tob.oldData !== tob.newData) {
         console.log(BOLD + RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
       } else {
