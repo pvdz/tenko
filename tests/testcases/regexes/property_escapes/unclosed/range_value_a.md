@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Property escape `\p` contained illegal character `-`; Encountered incorrect range (left>right, 98 > 97, 0x62 > 0x61) when parsing as if without u-flag
+    Regex: Property escape `\p` contained illegal character `-`; Encountered incorrect range (left>right, 98 > 97, 0x62 > 0x61) when parsing as if without u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

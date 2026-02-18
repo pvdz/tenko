@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Unexpected EOF while parsing unicode quad escape; The name of a `\k` escape contained a broken unicode ruby escape and this can not lead to a valid regex with u-flag; Missing closing angle bracket of name of capturing group
+    Regex: Unexpected EOF while parsing unicode quad escape; The name of a `\k` escape contained a broken unicode ruby escape and this can not lead to a valid regex with u-flag or v-flag; Missing closing angle bracket of name of capturing group
 
 start@1:0, error@1:0
 ╔══╦════════════════

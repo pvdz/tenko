@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Unexpected EOF while parsing unicode quad escape; Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag
+    Regex: Unexpected EOF while parsing unicode quad escape; Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; Regex contained a group name with invalid unicode escape
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Regex contained a group name with invalid unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -58,7 +58,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; Regex contained a group name with invalid unicode escape
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Regex contained a group name with invalid unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════

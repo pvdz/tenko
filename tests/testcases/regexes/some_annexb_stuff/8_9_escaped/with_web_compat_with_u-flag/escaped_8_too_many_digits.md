@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Parsed too many digits; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Parsed too many digits
 
 start@1:0, error@1:0
 ╔══╦════════════════

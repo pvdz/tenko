@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges with u
+    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in "ranges" when u-flag or v-flag is set; Character class escapes `\d \D \s \S \w \W \p \P` not allowed in ranges
 
 start@1:0, error@1:0
 ╔══╦════════════════

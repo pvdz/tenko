@@ -58,7 +58,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Can only have `\k` in a char class without u-flag and in webcompat mode; Found `\k` in a char class but the regex also had a group name so this is illegal
+    Regex: Can only have `\k` in a char class without u-flag or v-flag and in webcompat mode; Found `\k` in a char class but the regex also had a group name so this is illegal
 
 start@1:0, error@1:0
 ╔══╦════════════════

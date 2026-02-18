@@ -301,6 +301,7 @@ import {
   $PUNC_TILDE,
   $REGEXN,
   $REGEXU,
+  $REGEXV,
   $STRING_SINGLE,
   $STRING_DOUBLE,
   $TICK_HEAD,
@@ -454,7 +455,8 @@ import {
   MAX_VALID_UNICODE_VALUE,
   REGEX_ALWAYS_GOOD,
   REGEX_GOOD_WITH_U_FLAG,
-  REGEX_GOOD_SANS_U_FLAG,
+  REGEX_GOOD_SANS_UV_FLAG,
+  REGEX_GOOD_WITH_V_FLAG,
   REGEX_ALWAYS_BAD,
   REGEX_GOOD_RUBY_EDGE_CASE,
   FIRST_CHAR,
@@ -465,6 +467,7 @@ import {
   REGEX_CHARCLASS_ESCAPED_C,
   REGEX_CHARCLASS_BAD_SANS_U_FLAG,
   REGEX_CHARCLASS_BAD_WITH_U_FLAG,
+  REGEX_CHARCLASS_BAD_WITH_V_FLAG,
   REGEX_CHARCLASS_CLASS_ESCAPE,
   REGEX_CHARCLASS_WAS_RUBY,
   COLLECT_TOKENS_NONE,
@@ -542,13 +545,14 @@ function Lexer(
   ASSERT(typeof input === 'string', 'input string should be string; ' + typeof input);
   ASSERT(targetEsVersion !== undefined, 'undefined should become default', targetEsVersion);
   ASSERT(typeof targetEsVersion === 'number', 'targetEsVersion should be a number', typeof targetEsVersion);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 14) || targetEsVersion === Infinity, 'only support v6~14 (ES2015-ES2023) right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 15) || targetEsVersion === Infinity, 'only support v6~15 (ES2015-ES2024) right now [' + targetEsVersion + ','+(typeof targetEsVersion)+']');
 
   const supportRegexPropertyEscapes = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
+  const supportRegexVFlag = targetEsVersion >= 15 || targetEsVersion === Infinity; // ES2024: unicodeSets mode (v flag), mutually exclusive with u
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
   const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
   const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
@@ -570,8 +574,9 @@ function Lexer(
   let lastColumn = 0;
   let lastCanonizedInput = ''; // updated when parsing ident or string. Contains _unescaped_ input. Used for keyword checks and .value in ast for strings
   let lastCanonizedInputLen = 0; // work around an inline cache bug (lastCanonizedInput.length would cause megamorphic deopt for some reason)
-  let lastPotentialRegexError = ''; // If regex scanner is an error then this is the message. Many errors require flag validation at the end.
-  let lastReportableLexerError = ''; // Set whenever an $error is or will be returned
+  // Regex deferred-error state (validated after flags are parsed). lastReportableLexerError is the final thrown message for any lex error.
+  let lastPotentialRegexError = ''; // Message for "body requires u or v" (REGEX_GOOD_WITH_U_FLAG) or "body invalid with u or v" (REGEX_GOOD_SANS_UV_FLAG)
+  let lastReportableLexerError = ''; // Set whenever an $error is or will be returned (regex or other)
 
   let currentLine = 1; // the number of newlines, crlf sensitive (the pair is considered 1 line)
   let currentColOffset = 0; // position in the input code of the first character after the last newline
@@ -2604,7 +2609,7 @@ function Lexer(
     ASSERT(updateRegexUflagIsIllegal.length === arguments.length, 'arg count');
 
     // Found something that is potentially only valid in a regular expression without u-flag (like `\k<4>` in webcompat)
-    return updateRegexUflagState(state, REGEX_GOOD_SANS_U_FLAG, reason);
+    return updateRegexUflagState(state, REGEX_GOOD_SANS_UV_FLAG, reason);
   }
   function updateRegexUflagIsMandatory(state, reason) {
     ASSERT(updateRegexUflagIsMandatory.length === arguments.length, 'arg count');
@@ -2614,11 +2619,11 @@ function Lexer(
   }
 
   function updateRegexUflagState(currentState, newState, error) {
-    ASSERT(newState === REGEX_GOOD_WITH_U_FLAG || newState === REGEX_GOOD_SANS_U_FLAG, 'should not be used for all good or bad');
+    ASSERT(newState === REGEX_GOOD_WITH_U_FLAG || newState === REGEX_GOOD_SANS_UV_FLAG, 'should not be used for all good or bad');
 
     if (lastReportableLexerError) return REGEX_ALWAYS_BAD;
 
-    if (currentState === (newState === REGEX_GOOD_WITH_U_FLAG ? REGEX_GOOD_SANS_U_FLAG : REGEX_GOOD_WITH_U_FLAG)) {
+    if (currentState === (newState === REGEX_GOOD_WITH_U_FLAG ? REGEX_GOOD_SANS_UV_FLAG : REGEX_GOOD_WITH_U_FLAG)) {
       return regexSyntaxError(error);
     }
     if (currentState === REGEX_ALWAYS_GOOD) {
@@ -2638,14 +2643,24 @@ function Lexer(
   let reffedGroupNames = ','; // List of comma concatenated referenced group names (plain idents). If it occurs then consider +N in the grammar, meaning they must all have it
   let kCharClassEscaped = false; // If one was missing but there was at least one group name then it's always an error
   let foundInvalidGroupName = false; // used for +N post-regex check
+  // v-flag-specific: body has syntax invalid when v flag is present (identity escape, empty class, etc.); error only after flags parsed.
+  let regexBodyHasSyntaxInvalidWithVFlag = false;
+  let lastPotentialRegexErrorForVFlag = ''; // message shown when v flag present and regexBodyHasSyntaxInvalidWithVFlag (fallback from lastPotentialRegexError in charclass consumer if unset)
+  let regexBodyUsedVOnlySyntax = false; // --, &&, nested [], \q{}; error after flags if no v flag
+  let regexBodyHasRgiEmoji = false; // \p{RGI_Emoji} is only valid with v flag; error after flags if u flag
   function parseRegex(c) {
     nCapturingParens = 0;
     largestBackReference = 0;
     lastPotentialRegexError = '';
+    lastPotentialRegexErrorForVFlag = '';
+    lastReportableLexerError = ''; // reset at start of regex parsing
     declaredGroupNames = ',';
     reffedGroupNames = ',';
     kCharClassEscaped = false;
     foundInvalidGroupName = false;
+    regexBodyHasSyntaxInvalidWithVFlag = false;
+    regexBodyUsedVOnlySyntax = false;
+    regexBodyHasRgiEmoji = false;
 
     let ustatusBody = parseRegexBody(c);
     if (ustatusBody === REGEX_ALWAYS_BAD) {
@@ -2659,7 +2674,7 @@ function Lexer(
     let ustatusFlags = parseRegexFlags();
 
     if (nCapturingParens < largestBackReference) {
-      let errmsg = 'Largest back reference index exceeded the number of capturing groups (only valid without u-flag in webcompat mode)';
+      let errmsg = 'Largest back reference index exceeded the number of capturing groups (only valid without u-flag or v-flag in webcompat mode)';
       if (webCompat === WEB_COMPAT_OFF) {
         regexSyntaxError(errmsg);
         return $ERROR;
@@ -2674,6 +2689,22 @@ function Lexer(
       return $ERROR;
     }
 
+    if (regexBodyHasSyntaxInvalidWithVFlag && ustatusFlags === REGEX_GOOD_WITH_V_FLAG) {
+      const vMsg = lastPotentialRegexErrorForVFlag || 'Regex contained syntax that is invalid with the v-flag but the v flag was present';
+      regexSyntaxError(vMsg);
+      return $ERROR;
+    }
+
+    if (regexBodyUsedVOnlySyntax && ustatusFlags !== REGEX_GOOD_WITH_V_FLAG) {
+      regexSyntaxError('Regex used v-mode character class syntax (e.g. set difference `--` or nested sets) but did not have the v flag');
+      return $ERROR;
+    }
+
+    if (regexBodyHasRgiEmoji && ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
+      regexSyntaxError('The property `RGI_Emoji` is only valid with the v flag');
+      return $ERROR;
+    }
+
     if (kCharClassEscaped) {
       if (declaredGroupNames !== ',') { // "non-empty"
         // - `/(?<foo>.)[\k]\k<foo>/`
@@ -2681,8 +2712,8 @@ function Lexer(
         return $ERROR;
       }
 
-      if (webCompat === WEB_COMPAT_OFF || ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
-        regexSyntaxError('Found `\\k` in a char class but this is only allowed in webcompat mode and without u-flag');
+      if (webCompat === WEB_COMPAT_OFF || ustatusFlags === REGEX_GOOD_WITH_U_FLAG || ustatusFlags === REGEX_GOOD_WITH_V_FLAG) {
+        regexSyntaxError('Found `\\k` in a char class but this is only allowed in webcompat mode and without u-flag or v-flag');
         return $ERROR;
       }
     }
@@ -2705,21 +2736,23 @@ function Lexer(
     }
 
     if (ustatusBody === REGEX_GOOD_WITH_U_FLAG) {
-      // body had an escape that is only valid with an u flag
+      // body had an escape that is only valid with an u or v flag
       if (ustatusFlags === REGEX_GOOD_WITH_U_FLAG) return $REGEXU;
-      regexSyntaxError('Regex contained syntax that is only valid with the u-flag but the u-flag was not present');
+      if (ustatusFlags === REGEX_GOOD_WITH_V_FLAG) return $REGEXV;
+      regexSyntaxError('Regex contained syntax that is only valid with the u-flag or v-flag but neither was present');
       return $ERROR;
     }
 
-    if (ustatusBody === REGEX_GOOD_SANS_U_FLAG) {
-      // body had an escape or char class range that is invalid with a u flag
-      if (ustatusFlags !== REGEX_GOOD_WITH_U_FLAG) return $REGEXN;
-      regexSyntaxError('Regex contained syntax that is invalid with the u-flag but the u-flag was present');
+    if (ustatusBody === REGEX_GOOD_SANS_UV_FLAG) {
+      // body had an escape or char class range that is invalid with a u or v flag
+      if (ustatusFlags !== REGEX_GOOD_WITH_U_FLAG && ustatusFlags !== REGEX_GOOD_WITH_V_FLAG) return $REGEXN;
+      regexSyntaxError(lastPotentialRegexError || 'Regex contained syntax that is invalid with the u-flag or v-flag but the u-flag or v-flag was present');
       return $ERROR;
     }
 
     ASSERT(ustatusBody === REGEX_ALWAYS_GOOD, 'u-flag-status is enum and we checked all options here', ustatusBody);
     if (ustatusFlags === REGEX_GOOD_WITH_U_FLAG) return $REGEXU;
+    if (ustatusFlags === REGEX_GOOD_WITH_V_FLAG) return $REGEXV;
     return $REGEXN;
   }
   function parseRegexBody(c) {
@@ -2876,7 +2909,7 @@ function Lexer(
           afterAtom = true;
           if (subbad === REGEX_ALWAYS_BAD) {
             uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
-          } else if (subbad === REGEX_GOOD_SANS_U_FLAG) {
+          } else if (subbad === REGEX_GOOD_SANS_UV_FLAG) {
             uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
           } else if (subbad === REGEX_GOOD_WITH_U_FLAG) {
             uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
@@ -2895,7 +2928,7 @@ function Lexer(
           let charClassEscapeStatus = parseRegexCharClass();
           if (charClassEscapeStatus === REGEX_ALWAYS_BAD) {
             uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
-          } else if (charClassEscapeStatus === REGEX_GOOD_SANS_U_FLAG) {
+          } else if (charClassEscapeStatus === REGEX_GOOD_SANS_UV_FLAG) {
             uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
           } else if (charClassEscapeStatus === REGEX_GOOD_WITH_U_FLAG) {
             uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
@@ -2905,7 +2938,7 @@ function Lexer(
 
         case REGEX_ATOM_SQUARER: {
           ASSERT_skip($$SQUARE_R_5D);
-          let reason = 'Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag';
+          let reason = 'Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag or v-flag';
           if (webCompat === WEB_COMPAT_OFF) {
             return regexSyntaxError(reason);
           }
@@ -2934,7 +2967,7 @@ function Lexer(
             if (escapeStatus === REGEX_ALWAYS_BAD) {
               uflagStatus = REGEX_ALWAYS_BAD;
             }
-            else if (escapeStatus === REGEX_GOOD_SANS_U_FLAG) {
+            else if (escapeStatus === REGEX_GOOD_SANS_UV_FLAG) {
               uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
             }
             else if (escapeStatus === REGEX_GOOD_WITH_U_FLAG) {
@@ -2950,7 +2983,9 @@ function Lexer(
         break;
 
         case REGEX_ATOM_FSLASH:
-          // end of regex body
+          // End of regex body. Termination must honor escapes: \/ is handled by REGEX_ATOM_BSLASH
+          // (never seen as / here), and in char classes \] and \\ are consumed in the backslash branch.
+          // Unescaped line terminators are rejected via REGEX_ATOM_NL below.
 
           if (groupLevel !== 0) {
             // all groups must be closed before the floor is closed
@@ -3205,11 +3240,11 @@ function Lexer(
 
     if (lastPointer === pointer) {
       // This is an implicit case where a unicode escape was illegal but the regex could still be valid without u-flag
-      ASSERT(uflagStatus === REGEX_GOOD_SANS_U_FLAG, 'this case should only happen for this state');
+      ASSERT(uflagStatus === REGEX_GOOD_SANS_UV_FLAG, 'this case should only happen for this state');
       foundInvalidGroupName = true;
       lastCanonizedInput = '';
       lastCanonizedInputLen = 0;
-      return REGEX_GOOD_SANS_U_FLAG;
+      return REGEX_GOOD_SANS_UV_FLAG;
     }
 
     lastCanonizedInputLen = lastCanonizedInput.length;
@@ -3320,12 +3355,12 @@ function Lexer(
 
     if (forCapturing === FOR_NAMED_GROUP) {
       // Error without u-flag because even in webcompat it leads to `(?` which is an illegal quantifier
-      return updateRegexUflagIsMandatory(uflagStatus, 'The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag');
+      return updateRegexUflagIsMandatory(uflagStatus, 'The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag or v-flag');
     }
 
     if (webCompat === WEB_COMPAT_OFF) {
       // This case can only made to work in web compat mode because that allows `\k` to be an atom
-      return updateRegexUflagIsMandatory(uflagStatus, 'The start of a `\\k` group name had a surrogate pair and is therefor only valid with u-flag'); // Let's not promote web compat
+      return updateRegexUflagIsMandatory(uflagStatus, 'The start of a `\\k` group name had a surrogate pair and is therefor only valid with u-flag or v-flag'); // Let's not promote web compat
     }
 
     return uflagStatus;
@@ -3414,13 +3449,13 @@ function Lexer(
       c = parseUnicodeRubyEscape();
 
       // If this is part of a `\k` escape then this might be ok without u-flag in web compat, otherwise it must be error
-      uflagStatus = updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag'); // don't mention the webcompat exception
+      uflagStatus = updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag or v-flag'); // don't mention the webcompat exception
     } else {
       c = parseUnicodeQuadEscape(c, false);
 
       if (c > 0xffff && forCapturing === FOR_NAMED_GROUP) {
         // The double quad can be made to work without u-flag but not inside a capturing group because `(?` is invalid
-        uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag');
+        uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag or v-flag and which cannot be made valid without u-flag or v-flag');
       }
     }
 
@@ -3438,7 +3473,7 @@ function Lexer(
       }
 
       // [w]: `/\k<xyz\ua`
-      return updateRegexUflagIsIllegal(uflagStatus, 'The name of a `\\k` escape contained a broken unicode ruby escape and this can not lead to a valid regex with u-flag');
+      return updateRegexUflagIsIllegal(uflagStatus, 'The name of a `\\k` escape contained a broken unicode ruby escape and this can not lead to a valid regex with u-flag or v-flag');
     }
 
     ASSERT(c >= 0 && c <= MAX_VALID_UNICODE_VALUE, 'c should be valid unicode now', c);
@@ -3479,14 +3514,14 @@ function Lexer(
         // Only for named groups is this a problem because either way (double quad or ruby) the escape cannot
         // contribute a valid ident char to the group name, meaning the group name fails to parse, meaning the
         // interpretation of this part falls back to legacy atoms in web compat mode, and just fails otherwise
-        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a capturing group name that requires the u-flag to be considered valid');
+        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a capturing group name that requires the u-flag or v-flag to be considered valid');
       }
 
       if (webCompat === WEB_COMPAT_OFF) {
         // This is a `\k` escape, which can recover from a high codepoint, but only in webcompat mode. In that case
         // the `\k` and `\u` become individual atoms. A quad becomes a trivial atom while a ruby becomes a quantifier
         // like `\u{50000}` in webcompat mode is the letter `u` repeated 50000 times. Otherwise it's still an error.
-        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a `\\k` escape group name that requires the u-flag to be considered valid');
+        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a `\\k` escape group name that requires the u-flag or v-flag to be considered valid');
       }
 
       return uflagStatus;
@@ -3508,7 +3543,7 @@ function Lexer(
       return regexSyntaxError('Encountered invalid unicode escape inside the group name of a `\\k` escape, this can not become valid without web compat mode');
     }
 
-    return updateRegexUflagIsIllegal(uflagStatus, 'Encountered invalid unicode escape inside the group name of a `\\k` escape, this is invalid with u-flag');
+    return updateRegexUflagIsIllegal(uflagStatus, 'Encountered invalid unicode escape inside the group name of a `\\k` escape, this is invalid with u-flag or v-flag');
   }
   function parseEscapeForRegexAtom(c) {
     // backslash already parsed, c is peeked
@@ -3529,6 +3564,11 @@ function Lexer(
         // forward slash (/)
         // syntax chars (^, $, \, ., *, +, ?, (, ), [, ], {, }, |)
         // and any ascii char that doesn't fit other cases
+        // With v flag, \v is invalid (identity escape of the flag character is not allowed).
+        if (c === $$V_76) {
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          lastPotentialRegexErrorForVFlag = 'Identity escape of `v` is not allowed with the v flag';
+        }
         ASSERT_skip(c);
         return REGEX_ALWAYS_GOOD;
 
@@ -3573,7 +3613,7 @@ function Lexer(
         // Non-special non-id chars can only be escaped if there is no u-flag
         ASSERT_skip(c);
         // Atom escape was acceptable but only without u-flag
-        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atoms can only escape certain non-special chars without u-flag');
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atoms can only escape certain non-special chars without u-flag or v-flag');
 
       case REGATOM_ESC_UNICODE:
         // this is, probably;
@@ -3605,7 +3645,7 @@ function Lexer(
             return regexSyntaxError('Cannot use a surrogate pair as atom escape (' + c + ', `' + String.fromCodePoint(c) + '`)');
           }
 
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag or v-flag');
         }
 
         if (wide === VALID_SINGLE_CHAR) {
@@ -3620,7 +3660,7 @@ function Lexer(
             return regexSyntaxError('Cannot escape this regular identifier character [ord=' + c + '][' + String.fromCharCode(c) + ']');
           }
 
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag or v-flag');
         }
 
         ASSERT(wide === INVALID_IDENT_CHAR, 'wide enum (4)');
@@ -3642,7 +3682,7 @@ function Lexer(
         }
 
         // Ok, atom escape was acceptable but only without u-flag
-        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag');
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain syntax chars with u-flag or v-flag');
 
       case REGATOM_ESC_c:
         // char escapes
@@ -3679,7 +3719,7 @@ function Lexer(
         // cannot be followed by another digit unless webcompat
         if (eof()) return REGEX_ALWAYS_GOOD; // let error happen elsewhere
         if (isAsciiNumber(peek())) {
-          let reason = 'Back references can not have more two or more consecutive numbers';
+          let reason = 'Back references can not have two or more consecutive numbers';
           if (webCompat === WEB_COMPAT_ON) {
             return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
           } else {
@@ -3733,7 +3773,7 @@ function Lexer(
         ASSERT_skip(c);
         if (webCompat === WEB_COMPAT_ON) {
           // Atom escape was acceptable but only without u-flag
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag');
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag or v-flag');
         }
         return regexSyntaxError('Cannot escape this letter [' + String.fromCharCode(c) + ']');
 
@@ -3802,6 +3842,11 @@ function Lexer(
 
     ASSERT_skip($$SQUARE_L_5B);
 
+    // In v mode (unicodeSets), character class set expressions can nest: [[a]--[b]], so we need bracket depth.
+    let bracketDepth = 1; // we're inside the opening [
+    // Only treat --/&& as set operators when we've seen a nested [; otherwise [^--] and [a&&b] are valid (range / two &).
+    let hasNestedBracket = false;
+
     let prev = 0;
     let surrogate = 0; // current surrogate if prev is a head and c is a tail
     let isSurrogate = false;
@@ -3812,15 +3857,21 @@ function Lexer(
     let urangeLeft = -1; // track codepoint of left of range
     let nrangeOpen = false; // we have not yet seen a range dash in no-umode
     let nrangeLeft = -1; // track codeunit of left of range
+    let hasSeenVModeSyntax = false; // track if we've seen \q{} or nested brackets, which unambiguously indicate v-mode
 
     let flagState = REGEX_ALWAYS_GOOD;
 
     if (eof()) return regexSyntaxError('Encountered early EOF while parsing char class (1)');
     let c = peek();
+    let hasClassContent = false; // for v flag: empty class [] is invalid
+    let literalRbracketJustAdded = false; // ] just consumed as literal (v mode)
+    let closeBothOnNextRbracket = false; // next ] at depth 2 closes inner and outer (e.g. [][] )
+    let seenContentAtCurrentDepth = false; // any non-[ atom since last bracketDepth++; used for "one ] closes all"
     if (c === $$XOR_5E) { // the separate inverting caret check is important for surrogate range checks in super edge cases (there's a test)
       ASSERT_skip($$XOR_5E);
       if (eof()) return regexSyntaxError('Encountered early EOF while parsing char class (2)');
       c = peek();
+      hasClassContent = true; // [^] is not empty (negated class)
     }
 
     // With u-flag, a surrogate pair encoded as double unicode quad escapes must be consumed as one char. Without
@@ -3829,7 +3880,159 @@ function Lexer(
     // worries about that stuff) so that we can process it separately
     // Keep in mind; no mixing of surrogate pair encoding. Either both literal, one unicode ruby, or double quads.
 
-    while (c !== $$SQUARE_R_5D) {
+    while (true) {
+      // In v mode, nested character class sets: ] only exits when bracketDepth goes to 0.
+      if (c === $$SQUARE_R_5D) {
+        if (!supportRegexVFlag || bracketDepth === 1) {
+          // First ] with no content: can be literal ] (e.g. []] or [][]) or empty class [].
+          if (supportRegexVFlag) {
+            if (bracketDepth === 1 && !hasClassContent && (peekd(1) === $$SQUARE_R_5D || peekd(1) === $$SQUARE_L_5B)) {
+              ASSERT_skip($$SQUARE_R_5D);
+              hasClassContent = true;
+              literalRbracketJustAdded = true;
+              if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
+              c = peek();
+              continue;
+            }
+            if (bracketDepth === 1 && !hasClassContent) {
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              lastPotentialRegexErrorForVFlag = 'Empty character class is not allowed with the v flag';
+            }
+          }
+          break;
+        }
+        // bracketDepth >= 2: ] closes innermost. If next char is not ] or [, and no content at this depth, one ] closes all (e.g. /[[[]]/v). With content (e.g. [a]) we only close one level.
+        const next = peekd(1);
+        if (bracketDepth >= 2 && next !== $$SQUARE_R_5D && next !== $$SQUARE_L_5B && !seenContentAtCurrentDepth) {
+          break; // leave ] for the post-loop ASSERT_skip to consume; closes entire class
+        }
+        if (bracketDepth === 2 && closeBothOnNextRbracket) {
+          closeBothOnNextRbracket = false;
+          break; // leave ] for the post-loop ASSERT_skip to consume
+        }
+        bracketDepth--;
+        hasClassContent = true;
+        ASSERT_skip($$SQUARE_R_5D);
+        if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
+        c = peek();
+        continue;
+      }
+      // Check for syntax only valid if regex v flag is allowed (ES2024+), otherwise don't even bother.
+      if (supportRegexVFlag) {
+        // In v mode, [ starts a nested set; track depth and consume as literal/set start.
+        if (c === $$SQUARE_L_5B) {
+          bracketDepth++;
+          seenContentAtCurrentDepth = false;
+          if (literalRbracketJustAdded) closeBothOnNextRbracket = true;
+          literalRbracketJustAdded = false;
+          hasNestedBracket = true;
+          hasSeenVModeSyntax = true;
+          regexBodyUsedVOnlySyntax = true;
+          hasClassContent = true;
+          ASSERT_skip($$SQUARE_L_5B);
+          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
+          c = peek();
+          continue;
+        }
+
+        // In v mode (unicodeSets), -- is set difference when we have a non-dash lhs and a rhs (so [a--b--c] and [\q{ab}--\q{ab}] work; [+--]/[--0]/[---+]/[---0] stay legacy). Do not treat -- when followed by - (e.g. [^---]/g) or when preceded by - (e.g. [---+]/[---0]).
+        // Only detect -- as set difference when: (1) we have nested brackets (unambiguous), (2) we've seen v-mode syntax like \q{}, or (3) we're in a range context (urangeLeft !== -1).
+        // Don't use hasClassContent alone as it's too broad and would reject valid legacy patterns like [a-b--/].
+        // Also check that prev is not a dash (to avoid matching after escaped dash) and that we're not currently processing an escape.
+        if (
+          (hasNestedBracket || hasSeenVModeSyntax || (urangeLeft !== -1 && prev !== $$DASH_2D)) &&
+          prev !== $$DASH_2D &&
+          c === $$DASH_2D &&
+          !eof() &&
+          peekd(1) === $$DASH_2D &&
+          peekd(2) !== $$SQUARE_R_5D &&
+          peekd(2) !== $$DASH_2D &&
+          peekd(-1) !== $$BACKSLASH_5C
+        ) {
+          seenContentAtCurrentDepth = true;
+          literalRbracketJustAdded = false;
+          regexBodyUsedVOnlySyntax = true;
+          hasClassContent = true;
+          ASSERT_skip($$DASH_2D);
+          ASSERT_skip($$DASH_2D);
+          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
+          c = peek();
+          continue;
+        }
+        // && in a char class is v-only syntax (e.g. [a&&b]). Reject when missing left ([&&a]) or right ([a&&]) operand.
+        if (supportRegexVFlag && c === $$AND_26 && !eof() && peekd(1) === $$AND_26) {
+          if (!hasClassContent) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'Set intersection `&&` requires a left operand in character class with the v flag';
+          }
+          seenContentAtCurrentDepth = true;
+          literalRbracketJustAdded = false;
+          regexBodyUsedVOnlySyntax = true;
+          hasClassContent = true;
+          ASSERT_skip($$AND_26);
+          ASSERT_skip($$AND_26);
+          if (peek() === $$SQUARE_R_5D) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'Set intersection `&&` requires a right operand in character class with the v flag';
+          }
+          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
+          c = peek();
+          continue;
+        }
+        // Single & in v mode is invalid (only && is set intersection).
+        if (supportRegexVFlag && c === $$AND_26) {
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          lastPotentialRegexErrorForVFlag = 'Single `&` in character class is not allowed with the v flag (use `&&` for set intersection)';
+        }
+        // In v mode, unescaped } outside \q{...} is invalid (stray brace).
+        if (supportRegexVFlag && c === $$CURLY_R_7D) {
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          lastPotentialRegexErrorForVFlag = 'Stray `}` in character class is not allowed with the v flag';
+        }
+        // In v mode (unicodeSets), \q{...} is a ClassString (multi-code-point string); has its own delimiter/escape rules.
+        if (supportRegexVFlag && c === $$BACKSLASH_5C && neofd(3) && peekd(1) === $$Q_71 && peekd(2) === $$CURLY_L_7B) {
+          hasSeenVModeSyntax = true;
+          regexBodyUsedVOnlySyntax = true;
+          ASSERT_skip($$BACKSLASH_5C);
+          ASSERT_skip($$Q_71);
+          ASSERT_skip($$CURLY_L_7B);
+          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing \\q{...} in character class');
+          c = peek();
+          if (c === $$CURLY_R_7D) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'Empty \\q{} is not allowed with the v flag';
+          }
+          while (c !== $$CURLY_R_7D) {
+            if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
+              return regexSyntaxError('Encountered newline inside \\q{...} in character class');
+            }
+            if (c === $$BACKSLASH_5C) {
+              ASSERT_skip($$BACKSLASH_5C);
+              if (eof()) return regexSyntaxError('Unexpected early EOF after backslash in \\q{...}');
+              ASSERT_skip(peek());
+            } else {
+              ASSERT_skip(c);
+            }
+            if (eof()) return regexSyntaxError('Unexpected early EOF while parsing \\q{...} in character class');
+            c = peek();
+          }
+          ASSERT_skip($$CURLY_R_7D);
+          seenContentAtCurrentDepth = true;
+          hasClassContent = true;
+          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
+          c = peek();
+          continue;
+        }
+      }
+
+      // RegularExpressionNonTerminator: pattern (and thus char class) must not contain U+2028 or U+2029.
+      // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+      if (c === $$PS_2028 || c === $$LS_2029) {
+        ASSERT_skip(c);
+        regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
+        return REGEX_CHARCLASS_BAD;
+      }
+
       // There is no single escape that can be combined with an existing character here as a surrogate pair.
       // Ruby escapes can yield codepoints > 0xffff, and double unicode quad escapes can. Only other way is literal.
       let wasEscape = false;
@@ -3856,6 +4059,23 @@ function Lexer(
 
         // `c` may be >0xffff by unicode ruby escape or double unicode quad escapes (only...)
         c = parseRegexCharClassEscape(c);
+
+        // RegularExpressionNonTerminator: pattern must not contain U+2028 or U+2029 (line terminators).
+        // This check applies to all escape sequences (including \u, \x, etc.) regardless of flags (u/v).
+        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+        if (c !== REGEX_CHARCLASS_BAD && c !== REGEX_CHARCLASS_CLASS_ESCAPE && c !== REGEX_CHARCLASS_ESCAPED_UC_B && c !== REGEX_CHARCLASS_ESCAPED_C) {
+          let codePoint = c;
+          // Remove any flags to get the actual code point
+          if (codePoint & REGEX_CHARCLASS_WAS_RUBY) codePoint ^= REGEX_CHARCLASS_WAS_RUBY;
+          if (codePoint & REGEX_CHARCLASS_BAD_WITH_U_FLAG) codePoint ^= REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+          if (codePoint & REGEX_CHARCLASS_BAD_WITH_V_FLAG) codePoint ^= REGEX_CHARCLASS_BAD_WITH_V_FLAG;
+          if (codePoint & REGEX_CHARCLASS_BAD_SANS_U_FLAG) codePoint ^= REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+
+          if (codePoint === $$PS_2028 || codePoint === $$LS_2029) {
+            regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
+            return REGEX_CHARCLASS_BAD;
+          }
+        }
 
         // TODO: /[\u{01}-a]/ if there is a u-flag, this is ok. no u-flag, `}-a` should fail unless webcompat mode
         // in both cases, at this point, it should not yet fail. strict mode is not relevant.
@@ -3892,7 +4112,7 @@ function Lexer(
             // For the sake of ranges, we consider `u` the end of any range that might be open right now and
             // the last parsed character as the start of a next range, if any.
             wasBadUniEscape = true;
-            flagState = updateRegexUflagIsIllegal(flagState, 'A broken `\\u` escape can never be valid with u-flag');
+            flagState = updateRegexUflagIsIllegal(flagState, 'A broken `\\u` escape can never be valid with u-flag or v-flag');
             // This one makes `/[a-\u-a]/` work
             wasPropOnly = (pointer - escapePointer) === 1;
           }
@@ -3980,7 +4200,13 @@ function Lexer(
             c = c ^ REGEX_CHARCLASS_BAD_WITH_U_FLAG; // remove the CHARCLASS_BAD_WITH_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
             ASSERT(lastPotentialRegexError, 'error should be set');
             flagState = updateRegexUflagIsIllegal(flagState, lastPotentialRegexError);
-            ASSERT(flagState === REGEX_GOOD_SANS_U_FLAG || flagState === REGEX_ALWAYS_BAD, 'either way, the flag state should now reflect "bad with u-flag", or worse');
+            ASSERT(flagState === REGEX_GOOD_SANS_UV_FLAG || flagState === REGEX_ALWAYS_BAD, 'either way, the flag state should now reflect "bad with u-flag", or worse');
+          }
+          if (c & REGEX_CHARCLASS_BAD_WITH_V_FLAG) {
+            c = c ^ REGEX_CHARCLASS_BAD_WITH_V_FLAG;
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            // Use same message as u-flag path when source didn't set a v-specific one (e.g. identity escape sets both at source)
+            if (!lastPotentialRegexErrorForVFlag && lastPotentialRegexError) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
           }
           if (c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
             c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG; // remove the REGEX_CHARCLASS_BAD_SANS_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
@@ -4021,6 +4247,13 @@ function Lexer(
         isSurrogateHead = isSurrogateLead(c);
       }
 
+      // In v mode, bare (unescaped) - is not allowed; must be \- or part of -- or a range (lhs already seen).
+      // Defer error until flags are parsed so /[^--]/g (no v flag) still parses.
+      if (supportRegexVFlag && c === $$DASH_2D && !wasEscape && urangeLeft === -1) {
+        regexBodyHasSyntaxInvalidWithVFlag = true;
+        lastPotentialRegexErrorForVFlag = 'Cannot use unescaped `-` in a regex char class with the v flag';
+      }
+
       // For the case where there IS a u-flag:
       if (urangeOpen) {
         // if c is a head we must check the next char for being a tail before we can determine the code _point_
@@ -4029,13 +4262,17 @@ function Lexer(
         // instead (prev is used for literal surrogate pair chars, unescaped)
         let urangeRight = isSurrogate ? surrogate : wasSurrogateHead ? prev : c;
         if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || urangeRight === REGEX_CHARCLASS_CLASS_ESCAPE) {
-          // Class escapes with u-flag are always illegal for ranges
-          flagState = updateRegexUflagIsIllegal(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` not allowed in ranges with u');
+          // Class escapes are illegal for ranges when parsing in u-flag mode (for surrogate handling)
+          // Note: urangeOpen is set when parsing in u-flag mode, but the regex might not actually have a u-flag
+          // If there's already an error about \p needing u-flag, updateRegexPotentialError will append the range message
+          // We don't say "with u" because we don't know if the regex has a u-flag yet (flags are parsed after body)
+          let rangeError = 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` not allowed in "ranges" when u-flag or v-flag is set';
+          flagState = updateRegexUflagIsIllegal(flagState, rangeError);
         }
         else if (!isSurrogateHead || wasSurrogateHead) {
           urangeOpen = false;
           if (urangeLeft > urangeRight) {
-            flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right, ' + urangeLeft + ' > ' + urangeRight + ', 0x' + urangeLeft.toString(16) + ' > 0x' + urangeRight.toString(16) + ') which is illegal with u-flag');
+            flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right, ' + urangeLeft + ' > ' + urangeRight + ', 0x' + urangeLeft.toString(16) + ' > 0x' + urangeRight.toString(16) + ') which is illegal with u-flag or v-flag');
           }
           urangeLeft = -1;
         }
@@ -4140,7 +4377,7 @@ function Lexer(
           }
           else {
             if (nrangeLeft > nrangeRight) {
-              flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right, ' + nrangeLeft + ' > ' + nrangeRight + ', 0x' + nrangeLeft.toString(16) + ' > 0x' + nrangeRight.toString(16) + ') when parsing as if without u-flag');
+              flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right, ' + nrangeLeft + ' > ' + nrangeRight + ', 0x' + nrangeLeft.toString(16) + ' > 0x' + nrangeRight.toString(16) + ') when parsing as if without u-flag or v-flag');
             }
           }
           nrangeLeft = -1;
@@ -4164,6 +4401,8 @@ function Lexer(
       if (eof()) {
         return regexSyntaxError('Unexpected early EOF while parsing character class'); // no end
       }
+      seenContentAtCurrentDepth = true;
+      hasClassContent = true;
       c = peek();
     }
 
@@ -4177,13 +4416,13 @@ function Lexer(
     if (urangeOpen && wasSurrogateHead) {
       if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || prev === REGEX_CHARCLASS_CLASS_ESCAPE) {
         // This might be dead
-        return updateRegexUflagIsIllegal(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without uflag');
+        return updateRegexUflagIsIllegal(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` are only ok as a range with webcompat, without u-flag or v-flag');
       }
 
       if (urangeLeft > prev) {
         // [x]: `/[\xffff-@{xD800}@]/`
         // [x]: `/[\xffff-@{xD800}@]/u`
-        return updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range end (left>right, ' + urangeLeft + ' > ' + prev + ', 0x' + urangeLeft.toString(16) + ' > 0x' + prev.toString(16) + ') which is illegal with u-flag');
+        return updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range end (left>right, ' + urangeLeft + ' > ' + prev + ', 0x' + urangeLeft.toString(16) + ' > 0x' + prev.toString(16) + ') which is illegal with u-flag or v-flag');
       }
 
       // [v]: `/[\B-@{xD800}@]/`
@@ -4268,33 +4507,57 @@ function Lexer(
         // with u-flag: forward slash or syntax character (`^$\.*+?()[]{}|`) and these cases are already caught above
         // without-u-flag: SourceCharacter but not UnicodeIDContinue
         // without-u-flag in webcompat: SourceCharacter but not `c`, and not `k` iif there is a regex groupname
-
+        // with v-flag: only ClassSetSyntaxCharacter may be identity-escaped; in this branch only `&` qualifies
+        // Defer error until flags are parsed (no peeking): propagate REGEX_CHARCLASS_BAD_WITH_V_FLAG.
+        // With u-flag only / and syntax chars may be identity-escaped; so every other char (e.g. \j, \') is invalid with u too.
         ASSERT_skip(c);
+        if (supportRegexVFlag && c === $$AND_26) return c;
 
         ASSERT(![$$BACKSLASH_5C, $$K_6B, $$C_63, $$XOR_5E, $$$_24, $$DOT_2E, $$STAR_2A, $$PLUS_2B, $$QMARK_3F, $$PAREN_L_28, $$PAREN_R_29, $$SQUARE_L_5B, $$SQUARE_R_5D, $$CURLY_L_7B, $$CURLY_R_7D, $$OR_7C].includes(c), 'all these u-flag chars should be checked above');
         if (webCompat === WEB_COMPAT_ON) {
           // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag or v-flag');
           return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
         }
 
-        // so we can already not be valid for u flag, we just need to check here whether we can be valid without u-flag
-        // (any unicode continue char would be a problem)
-        if (isIdentRestChr(c, pointer) === INVALID_IDENT_CHAR) {
-          // c is not unicode continue char
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag');
-          return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        // Without u-flag, IdentityEscape in class is only for SourceCharacter but not UnicodeIDContinue.
+        // So UnicodeIDContinue (e.g. \J, \a) must be an immediate syntax error regardless of v-flag.
+        if (isIdentRestChr(c, pointer) === VALID_SINGLE_CHAR) {
+          regexSyntaxError('Cannot escape `' + String.fromCharCode(c) + '` in a regex char class');
+          return REGEX_CHARCLASS_BAD;
         }
 
-        ASSERT(isIdentRestChr(c, pointer) === VALID_SINGLE_CHAR, 'c is not unicode since that is caught elsewhere');
-
-        // Return bad char class because the escape is bad
-        regexSyntaxError('Cannot escape `' + String.fromCharCode(c) + '` in a regex char class');
-        return REGEX_CHARCLASS_BAD;
+        // c is not UnicodeIDContinue; invalid with u and with v, but valid without both (e.g. \!, \#).
+        if (supportRegexVFlag) {
+          lastPotentialRegexErrorForVFlag = 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the v flag';
+          lastPotentialRegexError = 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag or v-flag';
+          return c | REGEX_CHARCLASS_BAD_WITH_V_FLAG | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
+        updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a regex char class with the u-flag or v-flag');
+        return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
 
       case REGCLS_ESC_UNICODE: {
         // This is an escape in a regex charclass (!)
         // c is >0xfe and <0xffff (because it was peek()ed)
+        // with v-flag: identity escape of non-ASCII is not allowed (only ClassSetSyntaxCharacter may be escaped)
+        // Defer error until flags are parsed (no peeking): propagate REGEX_CHARCLASS_BAD_WITH_V_FLAG.
+        // Also invalid with u-flag, so propagate REGEX_CHARCLASS_BAD_WITH_U_FLAG.
+
+        // RegularExpressionNonTerminator: pattern must not contain U+2028 or U+2029 (line terminators).
+        // This check must come BEFORE the supportRegexVFlag check because U+2028/U+2029 are ALWAYS invalid.
+        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+        if (c === $$PS_2028 || c === $$LS_2029) {
+          ASSERT_skip(c);
+          regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
+          return REGEX_CHARCLASS_BAD;
+        }
+
+        if (supportRegexVFlag) {
+          ASSERT_skip(c);
+          lastPotentialRegexErrorForVFlag = 'Cannot escape non-ASCII character in a regex char class with the v flag';
+          lastPotentialRegexError = 'Cannot escape non-ASCII character in a regex char class with the u-flag or v-flag';
+          return c | REGEX_CHARCLASS_BAD_WITH_V_FLAG | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        }
 
         // https://tc39.es/ecma262/#prod-ClassEscape (not IdentityEscape !!)
         // https://tc39.es/ecma262/#prod-IdentityEscape
@@ -4323,7 +4586,7 @@ function Lexer(
         // [x]: `/[\@{x11049}@]/u`       u-flag always only allows strict set
 
         // This is illegal with u-flag regardless because then you can only escape a handful of characters.
-        updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a char class with the u-flag');
+        updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Cannot escape `' + String.fromCharCode(c) + '` in a char class with the u-flag or v-flag');
 
         if (webCompat === WEB_COMPAT_ON) {
           ASSERT_skip(c);
@@ -4348,24 +4611,23 @@ function Lexer(
 
         ASSERT(wide === INVALID_IDENT_CHAR, 'c cannot be a wide ident so it must be invalid here');
 
+        // RegularExpressionNonTerminator: pattern must not contain U+2028 or U+2029 (line terminators).
+        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+        // https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#table-line-terminator-code-points
+        // Line continuation is not supported in regex char class and the escape is explicitly disallowed
         if (c === $$PS_2028 || c === $$LS_2029) {
-          // Line continuation is not supported in regex char class and the escape is explicitly disallowed
-          // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
-
-          // [v]: `/[\@{x2028}@]/`
-          // [x]: `/[\@{x2029}@]/u`
-          // [x]: `/[\@{x2029}@]/`
-
           ASSERT_skip(c);
           regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
           return REGEX_CHARCLASS_BAD;
         }
 
-        // c is not unicode continue char and this is not web compat mode so it is ok (without u-flag)
-
+        // c is not unicode continue char and this is not web compat mode so it is ok (without u-flag or v-flag)
         ASSERT_skip(c);
-
-        return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+        if (supportRegexVFlag) {
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+        }
+        return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
       }
 
       case REGCLS_ESC_u:
@@ -4389,7 +4651,11 @@ function Lexer(
           if (webCompat === WEB_COMPAT_ON) {
             // I think the \x should be accepted as SourceCharacterIdentityEscape now
             updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'First character of hex escape was invalid');
-            return $$X_78 | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+            if (supportRegexVFlag) {
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+            }
+            return $$X_78 | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
           }
 
           regexSyntaxError('First character of hex escape was invalid');
@@ -4403,7 +4669,11 @@ function Lexer(
           if (webCompat === WEB_COMPAT_ON) {
             // I think the \x should be accepted as SourceCharacterIdentityEscape now
             updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Second character of hex escape was invalid');
-            return $$X_78 | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+            if (supportRegexVFlag) {
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+            }
+            return $$X_78 | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
           }
 
           regexSyntaxError('Second character of hex escape was invalid');
@@ -4411,7 +4681,17 @@ function Lexer(
         }
         ASSERT_skip(b);
 
-        return (va << 4) | vb;
+        let result = (va << 4) | vb;
+
+        // RegularExpressionNonTerminator: pattern must not contain U+2028 or U+2029 (line terminators).
+        // This check applies regardless of flags (u/v).
+        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
+        if (result === $$PS_2028 || result === $$LS_2029) {
+          regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
+          return REGEX_CHARCLASS_BAD;
+        }
+
+        return result;
 
       case REGCLS_ESC_c: {
         // char escapes \c<?>
@@ -4434,7 +4714,7 @@ function Lexer(
           // Basically \c is a way to encode the first 26 ascii characters safely, A=1, Z=26, a=1, z=26
           return d % 32;
         }
-        let reason = 'The `\\c` escape is only legal in a char class without u-flag and in webcompat mode';
+        let reason = 'The `\\c` escape is only legal in a char class without u-flag or v-flag and in webcompat mode';
         if (webCompat === WEB_COMPAT_ON) {
           updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
           // This is now an `IdentityEscape` and just parses the `c` itself
@@ -4454,9 +4734,13 @@ function Lexer(
           // as long as there is not an actual usage of named capturing groups in the same regex.
           // We use globals to track that state because it applies retroactively for the whole regex.
           kCharClassEscaped = true;
-          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Can only have `\\k` in a char class without u-flag and in webcompat mode');
+          updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Can only have `\\k` in a char class without u-flag or v-flag and in webcompat mode');
+          if (supportRegexVFlag) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+          }
           // Note: identity escapes have the escaped char as their "character value", so return `k`
-          return $$K_6B | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+          return $$K_6B | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
         }
         regexSyntaxError('A character class is not allowed to have `\\k` back-reference');
         return REGEX_CHARCLASS_BAD;
@@ -4536,10 +4820,14 @@ function Lexer(
           return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD;
         }
 
-        if (regexPropState === REGEX_GOOD_SANS_U_FLAG) {
+        if (regexPropState === REGEX_GOOD_SANS_UV_FLAG) {
           ASSERT(lastPotentialRegexError, 'should be set');
-          // semantically ignored without u-flag, syntactically only okay in web-compat / Annex B mode
-          return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+          // semantically ignored without u-flag or v-flag, syntactically only okay in web-compat / Annex B mode
+          if (supportRegexVFlag) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+          }
+          return REGEX_CHARCLASS_CLASS_ESCAPE | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
         }
 
         if (regexPropState === REGEX_GOOD_WITH_U_FLAG) {
@@ -4550,7 +4838,7 @@ function Lexer(
         }
 
         ASSERT(regexPropState === REGEX_ALWAYS_GOOD, 'parseRegexPropertyEscape should return enum');
-        ASSERT(webCompat === WEB_COMPAT_ON, 'can only be always good in webcompat?');
+        ASSERT(webCompat === WEB_COMPAT_ON || supportRegexVFlag, 'can only be always good in webcompat or with v flag');
         // https://tc39.es/ecma262/#sec-patterns-static-semantics-character-value
         return REGEX_CHARCLASS_CLASS_ESCAPE;
 
@@ -4578,7 +4866,11 @@ function Lexer(
           let reason = 'An escaped zero cannot be followed by another number because that would be an octal escape';
           if (webCompat === WEB_COMPAT_ON) {
             updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-            return parseOctalFromSecondDigit(c) | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+            if (supportRegexVFlag) {
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+            }
+            return parseOctalFromSecondDigit(c) | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
           }
           regexSyntaxError(reason);
           return REGEX_CHARCLASS_BAD;
@@ -4593,7 +4885,11 @@ function Lexer(
         // Without web compat this is a back reference which is illegal in character classes
         if (webCompat === WEB_COMPAT_ON) {
           updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-          return parseOctalFromSecondDigit(c) | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+          if (supportRegexVFlag) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+          }
+          return parseOctalFromSecondDigit(c) | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
         }
 
         regexSyntaxError(reason);
@@ -4615,7 +4911,8 @@ function Lexer(
         if (webCompat === WEB_COMPAT_ON) {
           return $$DASH_2D;
         }
-        // only valid with u-flag!
+        // only valid with u-flag or v-flag!
+        // Note: In v-mode, \- is valid (ClassSetSyntaxCharacter), but we defer the check until we know the flags
         updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Escaping a dash in a char class is not allowed');
         return $$DASH_2D | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
       }
@@ -4644,7 +4941,7 @@ function Lexer(
     if (!supportRegexPropertyEscapes) {
       let uflagState = updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escapes are not supported by the currently targeted language version');
       if (webCompat === WEB_COMPAT_ON) return uflagState;
-      return updateRegexUflagIsMandatory(uflagState, 'Cannot escape `\\p` without u-flag');
+      return updateRegexUflagIsMandatory(uflagState, 'Cannot escape `\\p` without u-flag or v-flag');
     }
 
     // https://tc39.github.io/ecma262/#prod-CharacterClassEscape
@@ -4818,11 +5115,14 @@ function Lexer(
 
       ASSERT_skip($$CURLY_R_7D);
 
+      // \p is only valid with u-flag, v-flag, or in webCompat mode
+      // We can't check for v-flag here (flags are parsed after body), so we mark it as requiring u-flag
+      // The v-flag check happens later after flags are parsed (see parseRegex for REGEX_GOOD_WITH_U_FLAG handling)
       if (webCompat === WEB_COMPAT_ON) {
         return REGEX_ALWAYS_GOOD;
       }
 
-      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag, or as a webcompat edge case');
+      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case');
     }
 
     // This is LoneUnicodePropertyNameOrValue
@@ -4833,13 +5133,20 @@ function Lexer(
     // "Table 58": https://tc39.es/ecma262/#table-binary-unicode-properties
     // "Table 59": https://tc39.es/ecma262/#table-unicode-general-category-values
 
+    // RGI_Emoji is valid only with v-flag (unicode sets), not with u-flag. Defer error until flags are known.
+    if (name === 'RGI_Emoji') {
+      regexBodyHasRgiEmoji = true;
+      ASSERT_skip($$CURLY_R_7D);
+      return REGEX_ALWAYS_GOOD;
+    }
+
     // Validate value against non-binary unicode properties or general category values
     if (!TABLE_BIN_UNI_PROPS.includes(nc) && !TABLE_GEN_CAT_VALUES.includes(nc)) {
       if (webCompat === WEB_COMPAT_ON) {
         return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped lone property name `' + name + '` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values")');
       }
 
-      return regexSyntaxError('The escaped lone property name `' + name + '` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values") with u-flag, and `\\p` is not valid without u-flag and without webcompat');
+      return regexSyntaxError('The escaped lone property name `' + name + '` is not valid (does not appear in "table-binary-unicode-properties" nor "table-unicode-general-category-values") with u-flag or v-flag, and `\\p` is not valid without u-flag or v-flag and without webcompat');
     }
 
     // The actual `\p` is only valid with u-flag. However, with web-compat, a correct `\p` escape is also valid
@@ -4847,16 +5154,20 @@ function Lexer(
 
     ASSERT_skip($$CURLY_R_7D);
 
-    if (webCompat === WEB_COMPAT_ON) {
-      return REGEX_ALWAYS_GOOD;
-    }
+      // \p is only valid with u-flag, v-flag, or in webCompat mode
+      // We can't check for v-flag here (flags are parsed after body), so we mark it as requiring u-flag
+      // The v-flag check happens later after flags are parsed (see parseRegex for REGEX_GOOD_WITH_U_FLAG handling)
+      if (webCompat === WEB_COMPAT_ON) {
+        return REGEX_ALWAYS_GOOD;
+      }
 
-    return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag, or as a webcompat edge case');
+      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case');
   }
   function parseRegexFlags() {
-    // Valid flags: g, i, m, u, y, s (es9), d (es2022). In unicode mode each flag may only occur once.
+    // Valid flags: g, i, m, u, y, s (es9), d (es2022), v (es2024). In unicode mode each flag may only occur once.
+    // u and v are mutually exclusive (ES2024).
     // 12.2.8.1: "It is a Syntax Error if FlagText of RegularExpressionLiteral contains any code points other than "g", "i", "m", "u", or"y", or if it contains the same code point more than once."
-    // (s and d were added in ES2018 and ES2022.)
+    // (s and d were added in ES2018 and ES2022; v in ES2024.)
 
     let g = 0;
     let i = 0;
@@ -4865,6 +5176,7 @@ function Lexer(
     let y = 0;
     let s = 0;
     let d = 0;
+    let v = 0;
     while (neof()) {
       let c = peek();
       switch (c) {
@@ -4895,6 +5207,12 @@ function Lexer(
           }
           ++d; // indices (hasIndices) flag was added in es2022
           break;
+        case $$V_76:
+          if (!supportRegexVFlag) {
+            return THROW('The unicodeSets flag `v` is not supported in the currently targeted language version (ES2024+)', pointer, pointer);
+          }
+          ++v; // v flag (unicodeSets mode) was added in es2024, mutually exclusive with u
+          break;
         default:
           if (isAsciiLetter(c) || c === $$BACKSLASH_5C) {
             // Unknown flags are considered syntax errors by the semantics and flags cannot be escaped
@@ -4902,22 +5220,30 @@ function Lexer(
           }
 
           // If any flags occurred more than once, the or below will result in >1
-          if ((g|i|m|u|y|s|d) > 1) {
+          if ((g|i|m|u|y|s|d|v) > 1) {
             return regexSyntaxError('Encountered at least one regex flag twice');
           }
 
-          return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
+          if (u > 0 && v > 0) {
+            return regexSyntaxError('Cannot use both u and v flag');
+          }
+          if (v > 0) return REGEX_GOOD_WITH_V_FLAG;
+          return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_UV_FLAG;
       }
 
       ASSERT_skip(c);
     }
 
     // If any flags occurred more than once, the or below will result in >1
-    if ((g|i|m|u|y|s|d) > 1) {
+    if ((g|i|m|u|y|s|d|v) > 1) {
       return regexSyntaxError('Encountered at least one regex flag twice');
     }
 
-    return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_U_FLAG;
+    if (u > 0 && v > 0) {
+      return regexSyntaxError('Cannot use both u and v flag');
+    }
+    if (v > 0) return REGEX_GOOD_WITH_V_FLAG;
+    return u > 0 ? REGEX_GOOD_WITH_U_FLAG : REGEX_GOOD_SANS_UV_FLAG;
   }
   function parseRegexCurlyQuantifier(c) {
     ASSERT(parseRegexCurlyQuantifier.length === arguments.length, 'arg count');
@@ -4986,11 +5312,15 @@ function Lexer(
     return (c1 - 0xD800) * 0x400 + (c2 - 0xDC00) + 0x10000;
   }
   function parseDecimalEscape(c) {
-    let reason = 'Cannot escape \\8 or \\9 in a regex char class with u-flag';
+    let reason = 'Cannot escape \\8 or \\9 in a regex char class with u-flag or v-flag';
     if (webCompat === WEB_COMPAT_ON) {
       // https://tc39.es/ecma262/#prod-annexB-IdentityEscape
       updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-      return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+      if (supportRegexVFlag) {
+        regexBodyHasSyntaxInvalidWithVFlag = true;
+        if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
+      }
+      return c | REGEX_CHARCLASS_BAD_WITH_U_FLAG | (supportRegexVFlag ? REGEX_CHARCLASS_BAD_WITH_V_FLAG : 0);
     }
 
     // https://tc39.es/ecma262/#prod-IdentityEscape
@@ -5136,7 +5466,7 @@ function Lexer(
     }
 
     if (wasRuby && webCompat === WEB_COMPAT_OFF) {
-      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'A regex atom that is an unicode ruby escape is only legal with u-flag');
+      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'A regex atom that is an unicode ruby escape is only legal with u-flag or v-flag');
     }
 
     // This was a proper ruby escape. This means that for the case without u-flag in webcompat it must be
@@ -5231,7 +5561,7 @@ function Lexer(
     let rubyWebException = false;
     if (!wasQuad) {
       if (webCompat === WEB_COMPAT_OFF) {
-        updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag'); // don't mention the webcompat exception
+        updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag or v-flag'); // don't mention the webcompat exception
         rubyWebException = true; // Can't parse `\u` as an atom, only allowed in webcompat, so this must be u-flag to be valid
       }
 
@@ -5347,7 +5677,7 @@ function Lexer(
 
     let codepoint = surrogateToCodepoint(firstPart, secondPart);
 
-    updateRegexPotentialError('A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag');
+    updateRegexPotentialError('A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag or v-flag');
 
     // We have a matching low+hi, combine them
     // Without u-flag the surrogate tail is just a separate character

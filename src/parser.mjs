@@ -312,6 +312,7 @@ import {
   $PUNC_TILDE,
   $REGEXN,
   $REGEXU,
+  $REGEXV,
   $STRING_SINGLE,
   $STRING_DOUBLE,
   $TICK_HEAD,
@@ -686,7 +687,7 @@ function Parser(code, options = {}) {
   let allowPrivateClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 private fields/methods (#x, this.#x, #x in obj)
 
   ASSERT(goalMode === GOAL_SCRIPT || goalMode === GOAL_MODULE);
-  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 14) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 14 2015 2016 2017 2018 2019 2020 2021 2022 2023 or Infinity');
+  ASSERT((targetEsVersion >= 6 && targetEsVersion <= 15) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 14 15 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 or Infinity');
 
   if (getLexer) getLexer(tok);
 

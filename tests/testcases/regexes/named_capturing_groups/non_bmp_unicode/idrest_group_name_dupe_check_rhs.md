@@ -36,7 +36,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag; Tried to parse the name for a capturing group but it contained at least one invalid ident char (`@{xfffd}@`)
+    Regex: The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag or v-flag; Tried to parse the name for a capturing group but it contained at least one invalid ident char (`@{xfffd}@`)
 
 start@1:0, error@1:0
 ╔══╦════════════════

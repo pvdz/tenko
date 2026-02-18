@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Unexpected EOF while parsing unicode quad escape; The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag and which cannot be made valid without u-flag; Regex contained a group name with invalid unicode escape
+    Regex: Unexpected EOF while parsing unicode quad escape; The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag or v-flag and which cannot be made valid without u-flag or v-flag; Regex contained a group name with invalid unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════

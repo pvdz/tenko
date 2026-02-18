@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Unexpected EOF while parsing unicode quad escape; Error while trying to parse regex atom unicode escape; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Unexpected EOF while parsing unicode quad escape; Error while trying to parse regex atom unicode escape
 
 start@1:0, error@1:0
 ╔══╦════════════════

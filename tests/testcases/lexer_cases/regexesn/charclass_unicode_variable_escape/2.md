@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Regex contained syntax that is only valid with the u-flag or v-flag but neither was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

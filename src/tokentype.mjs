@@ -58,6 +58,7 @@ const $L_NUMBER_OCT = ++__$flag_leaf;
 const $L_NUMBER_OLD = ++__$flag_leaf;
 const $L_REGEXN = ++__$flag_leaf;
 const $L_REGEXU = ++__$flag_leaf;
+const $L_REGEXV = ++__$flag_leaf;
 const $L_STRING_SINGLE = ++__$flag_leaf;
 const $L_STRING_DOUBLE = ++__$flag_leaf;
 const $L_TICK_HEAD = ++__$flag_leaf;
@@ -333,6 +334,7 @@ const $PUNC_CURLY_CLOSE = $L_CURLY_CLOSE | $G_PUNCTUATOR;
 const $PUNC_TILDE = $L_TILDE | $G_PUNCTUATOR;
 const $REGEXN = $L_REGEXN | $G_REGEX; // No u-flag
 const $REGEXU = $L_REGEXU | $G_REGEX; // With u-flag ("strict mode" for regular expressions)
+const $REGEXV = $L_REGEXV | $G_REGEX; // ES2024: With v-flag (unicodeSets mode), mutually exclusive with u
 const $STRING_SINGLE = $L_STRING_SINGLE | $G_STRING;
 const $STRING_DOUBLE = $L_STRING_DOUBLE | $G_STRING;
 const $TICK_HEAD = $L_TICK_HEAD | $G_TICK;
@@ -1760,6 +1762,7 @@ function toktypeToString(type) {
     case $PUNC_TILDE: return 'PUNC_TILDE';
     case $REGEXN: return 'REGEXN';
     case $REGEXU: return 'REGEXU';
+    case $REGEXV: return 'REGEXV';
     case $STRING_SINGLE: return 'STRING_SINGLE';
     case $STRING_DOUBLE: return 'STRING_DOUBLE';
     case $TICK_HEAD: return 'TICK_HEAD';
@@ -1934,6 +1937,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $PUNC_TILDE,
   $REGEXN,
   $REGEXU,
+  $REGEXV,
   $STRING_SINGLE,
   $STRING_DOUBLE,
   $TICK_HEAD,
@@ -3355,6 +3359,7 @@ export {
   $PUNC_TILDE,
   $REGEXN,
   $REGEXU,
+  $REGEXV,
   $STRING_SINGLE,
   $STRING_DOUBLE,
   $TICK_HEAD,

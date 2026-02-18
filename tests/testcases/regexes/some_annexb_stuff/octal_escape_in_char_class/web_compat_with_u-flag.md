@@ -81,7 +81,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: A character class is not allowed to have numeric back-reference; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: A character class is not allowed to have numeric back-reference
 
 start@1:0, error@1:0
 ╔══╦════════════════

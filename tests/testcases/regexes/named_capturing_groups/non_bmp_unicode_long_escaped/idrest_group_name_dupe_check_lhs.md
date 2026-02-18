@@ -34,7 +34,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this can not become valid without web compat mode
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this can not become valid without web compat mode
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -62,7 +62,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this is invalid with u-flag
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this is invalid with u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

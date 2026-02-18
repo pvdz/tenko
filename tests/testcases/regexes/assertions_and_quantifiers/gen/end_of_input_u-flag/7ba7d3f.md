@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Regex `A-ssertion` "atoms" can not be quantified but this `$` was quantified anyways (by a `{`); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Regex `A-ssertion` "atoms" can not be quantified but this `$` was quantified anyways (by a `{`)
 
 start@1:0, error@1:0
 ╔══╦════════════════

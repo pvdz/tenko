@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag or v-flag; Regex contained syntax that is only valid with the u-flag or v-flag but neither was present
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag; Encountered incorrect range (left>right, 56489 > 57, 0xdca9 > 0x39) when parsing as if without u-flag; Regex contained syntax that is only valid with the u-flag but the u-flag was not present
+    Regex: A double unicode quad escape that represents a surrogate pair in char class or group name is only valid with u-flag or v-flag; Encountered incorrect range (left>right, 56489 > 57, 0xdca9 > 0x39) when parsing as if without u-flag or v-flag; Regex contained syntax that is only valid with the u-flag or v-flag but neither was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

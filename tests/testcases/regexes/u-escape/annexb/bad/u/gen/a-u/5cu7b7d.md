@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: A broken `\u` escape can never be valid with u-flag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: A broken `\u` escape can never be valid with u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

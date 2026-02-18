@@ -10,7 +10,8 @@ const GOAL_SCRIPT = false;
 
 const REGEX_ALWAYS_GOOD = 0;
 const REGEX_GOOD_WITH_U_FLAG = 1;
-const REGEX_GOOD_SANS_U_FLAG = 2;
+const REGEX_GOOD_SANS_UV_FLAG = 2;
+const REGEX_GOOD_WITH_V_FLAG = 3; // ES2024: unicodeSets mode, mutually exclusive with u
 const REGEX_ALWAYS_BAD = 4;
 const REGEX_GOOD_RUBY_EDGE_CASE = 8;
 
@@ -27,6 +28,7 @@ const REGEX_CHARCLASS_BAD_SANS_U_FLAG = 1<<23; // Note: first value is 8388608 (
 const REGEX_CHARCLASS_BAD_WITH_U_FLAG = 1<<24;
 const REGEX_CHARCLASS_CLASS_ESCAPE = 1<<25; // \d \w \s etc, for webcompat checks in ranges
 const REGEX_CHARCLASS_WAS_RUBY = 1<<26; // For invalid u-escapes in ranges in char classes with u-flag in webcompat
+const REGEX_CHARCLASS_BAD_WITH_V_FLAG = 1<<27; // Identity escape invalid with v-flag; error only if flags have v
 
 const COLLECT_TOKENS_NONE = 0;
 const COLLECT_TOKENS_SOLID = 1; // non-whitespace
@@ -81,7 +83,8 @@ export {
   MAX_VALID_UNICODE_VALUE,
   REGEX_ALWAYS_GOOD,
   REGEX_GOOD_WITH_U_FLAG,
-  REGEX_GOOD_SANS_U_FLAG,
+  REGEX_GOOD_SANS_UV_FLAG,
+  REGEX_GOOD_WITH_V_FLAG,
   REGEX_ALWAYS_BAD,
   REGEX_GOOD_RUBY_EDGE_CASE,
   FIRST_CHAR,
@@ -92,6 +95,7 @@ export {
   REGEX_CHARCLASS_ESCAPED_C,
   REGEX_CHARCLASS_BAD_SANS_U_FLAG,
   REGEX_CHARCLASS_BAD_WITH_U_FLAG,
+  REGEX_CHARCLASS_BAD_WITH_V_FLAG,
   REGEX_CHARCLASS_CLASS_ESCAPE,
   REGEX_CHARCLASS_WAS_RUBY,
   COLLECT_TOKENS_NONE,

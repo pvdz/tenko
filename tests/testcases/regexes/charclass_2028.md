@@ -27,12 +27,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Encountered newline
+    Regex: Regular expressions do not support line continuations (escaped x2028 x2029)
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /[@{x2028}@]/
-   ║ ^^------- error
+   ║ ^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -53,10 +53,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: Regular expressions do not support line continuations (escaped x2028 x2029)
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[@{x2028}@]/
+   ║ ^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

@@ -26,7 +26,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode
+    Regex: The `\c` escape is only legal in a char class without u-flag or v-flag and in webcompat mode
 
 start@1:0, error@1:0
 ╔══╦════════════════

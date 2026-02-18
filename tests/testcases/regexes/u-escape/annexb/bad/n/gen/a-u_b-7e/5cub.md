@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag
+    Regex: Attempted to parse a unicode quad escape but at least one digit was not a hex; Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

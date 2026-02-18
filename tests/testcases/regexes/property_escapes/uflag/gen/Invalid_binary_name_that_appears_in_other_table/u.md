@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The `\p` escaped binary property name `ASCII` is not valid (does not appear in "table-nonbinary-unicode-properties"); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: The `\p` escaped binary property name `ASCII` is not valid (does not appear in "table-nonbinary-unicode-properties")
 
 start@1:0, error@1:0
 ╔══╦════════════════

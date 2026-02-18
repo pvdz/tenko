@@ -56,7 +56,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Property escape `\p` contained double equal sign, which is not valid; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Property escape `\p` contained double equal sign, which is not valid
 
 start@1:0, error@1:0
 ╔══╦════════════════

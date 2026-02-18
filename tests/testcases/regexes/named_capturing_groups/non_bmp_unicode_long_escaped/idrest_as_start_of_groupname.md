@@ -34,7 +34,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag; Encountered invalid unicode escape inside the group name of a capturing group, this cannot be valid
+    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Encountered invalid unicode escape inside the group name of a capturing group, this cannot be valid
 
 start@1:0, error@1:0
 ╔══╦════════════════

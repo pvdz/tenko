@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode
+    Regex: The `\c` escape is only legal in a char class without u-flag or v-flag and in webcompat mode
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -58,7 +58,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: The `\c` escape is only legal in a char class without u-flag and in webcompat mode; Encountered incorrect range (left>right, 97 > 92, 0x61 > 0x5c) when parsing as if without u-flag
+    Regex: The `\c` escape is only legal in a char class without u-flag or v-flag and in webcompat mode; Encountered incorrect range (left>right, 97 > 92, 0x61 > 0x5c) when parsing as if without u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

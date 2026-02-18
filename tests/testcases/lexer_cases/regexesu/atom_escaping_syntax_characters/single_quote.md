@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Atoms can only escape certain non-special chars without u-flag; Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Atoms can only escape certain non-special chars without u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

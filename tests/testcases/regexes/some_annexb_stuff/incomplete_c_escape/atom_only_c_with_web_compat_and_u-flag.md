@@ -55,7 +55,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Illegal char escape char (ord=47); Regex contained syntax that is invalid with the u-flag but the u-flag was present
+    Regex: Illegal char escape char (ord=47)
 
 start@1:0, error@1:0
 ╔══╦════════════════
