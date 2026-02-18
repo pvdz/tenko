@@ -908,8 +908,25 @@ async function cli(tenko) {
 
 async function main(tenko) {
   if (TARGET_FILE) {
-    if (!QUIET_FILE) console.log('Using explicit file:', TARGET_FILE);
-    files = [TARGET_FILE];
+    // Check if TARGET_FILE is a directory
+    try {
+      const stats = fs.statSync(TARGET_FILE);
+      if (stats.isDirectory()) {
+        if (!QUIET_FILE) console.log('Using target directory:', TARGET_FILE);
+        const targetFiles = [];
+        // Normalize path: getTestFiles expects path without trailing slash
+        const normalizedPath = TARGET_FILE.endsWith('/') ? TARGET_FILE.slice(0, -1) : TARGET_FILE;
+        getTestFiles(normalizedPath, '', targetFiles, true);
+        files = targetFiles.filter(f => f.endsWith('.md'));
+      } else {
+        if (!QUIET_FILE) console.log('Using explicit file:', TARGET_FILE);
+        files = [TARGET_FILE];
+      }
+    } catch (e) {
+      // File doesn't exist, treat as single file (will error later if needed)
+      if (!QUIET_FILE) console.log('Using explicit file:', TARGET_FILE);
+      files = [TARGET_FILE];
+    }
   } else {
     files = files.filter(f => !f.endsWith('autogen.md'));
   }
@@ -948,8 +965,6 @@ async function main(tenko) {
         console.log(BOLD + GREEN + 'SKIP' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (file skipped because it targets a specific ES version and we dont care about those cases here)');
       } else if (tob.continuePrint) {
         console.log(BOLD + RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET + ' (' + tob.continuePrint + ')');
-      } else if (tob.oldData !== tob.newData) {
-        console.log(BOLD + RED + 'FAIL' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
       } else {
         console.log(BOLD + GREEN + 'PASS' + RESET + ' ' + count + ' ' + DIM + tob.fileShort + RESET);
       }

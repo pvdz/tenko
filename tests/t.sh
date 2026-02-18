@@ -178,13 +178,6 @@ Tenko CLI Toolkit help:
       if [[ ! -f "${ARG}" && ( "${ARG}" == a/* || "${ARG}" == b/* ) && -f "${ARG:2}" ]]; then
         ARG="${ARG:2}"
       fi
-      if [[ -d "${ARG}" ]]; then
-        find "${ARG}" -type f -name '*.md' | sort | while IFS= read -r f; do
-          # echo "Force-updating ${f}..."
-          ${NODE_BIN} ${INSPECT_NODE} ${NODE_PROF} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs -u --force-write -f "${f}" ${MODE} ${ACORN} ${BABEL} ${EXTRA} ${EXPOSE_SCOPE} ${ES} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
-        done
-        exit 0
-      fi
       ;;
     F)
       # Use (entire) contents of given file as input
