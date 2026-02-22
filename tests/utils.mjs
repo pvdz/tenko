@@ -170,7 +170,9 @@ function parseTestFile(tob) {
 
   ASSERT(oldData.includes(INPUT_HEADER), 'missing input header (new files should start with `@`) in ' + tob.file + ' (did you mean to use `./t F` instead of `./t f`?)');
   tob.aboveTheFold = oldData.slice(0, oldData.indexOf(INPUT_HEADER));
-  tob.shouldPass = tob.aboveTheFold.toLowerCase().includes('\n## pass\n');
+  tob.shouldPassModule = tob.aboveTheFold.toLowerCase().includes('\n## pass module\n');
+  tob.shouldPassSloppy = tob.aboveTheFold.toLowerCase().includes('\n## pass sloppy\n');
+  tob.shouldPassAny = tob.aboveTheFold.toLowerCase().includes('\n## pass\n') && !tob.shouldPassModule && !tob.shouldPassSloppy;
   tob.shouldFail = tob.aboveTheFold.toLowerCase().includes('\n## fail\n');
 
   let inputHeaderOffset = oldData.indexOf(INPUT_HEADER) + INPUT_HEADER.length;

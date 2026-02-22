@@ -84,6 +84,8 @@ const TARGET_ES11 = process.argv.includes('--es11');
 const TARGET_ES12 = process.argv.includes('--es12');
 const TARGET_ES13 = process.argv.includes('--es13');
 const TARGET_ES14 = process.argv.includes('--es14');
+const TARGET_ES15 = process.argv.includes('--es15');
+const TARGET_ES16 = process.argv.includes('--es16');
 const TESTS_ONLY = process.argv.includes('-n'); // skip constructing updated test files, dont write anything. Used for code coverage
 const RUN_VERBOSE_IN_SERIAL = process.argv.includes('--serial') || (!SEARCH && !TESTS_ONLY && (INPUT_OVERRIDE || TARGET_FILE || STOP_AFTER_TEST_FAIL || STOP_AFTER_FILE_FAIL));
 const FORCE_WRITE = process.argv.includes('--force-write');
@@ -145,8 +147,8 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
     --test-acorn  Also show diff with Acorn AST / pass/fail with test cases (not the same as --acorn !)
     --test-babel  Also show diff with Babel AST / pass/fail with test cases (not the same as --babel !)
     --all         Force to run all four modes (on input)
-    --esX         Where X is 6..14 (e.g. --es10). With -i, forces that ES version for the parse.
-                  Test files can set \`- \`es = N\`\` (N 6..14) under ## Input for a per-test version; --esX overrides that when given.
+    --esX         Where X is 6..16 (e.g. --es10). With -i, forces that ES version for the parse.
+                  Test files can set \`- \`es = N\`\` (N 6..16) under ## Input for a per-test version; --esX overrides that when given.
     --serial      Test all targeted files in serial, verbosely, instead of using parallel phases (which is faster)
                   (Note: -q, -i, and -f implicitly enable --serial)
     --no-printer  Skip running Printer on input
@@ -162,7 +164,7 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
   process.exit();
 }
 
-const FORCED_ES_TARGET = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10 : TARGET_ES11 ? 11 : TARGET_ES12 ? 12 : TARGET_ES13 ? 13 : TARGET_ES14 ? 14 : undefined;
+const FORCED_ES_TARGET = TARGET_ES6 ? 6 : TARGET_ES7 ? 7 : TARGET_ES8 ? 8 : TARGET_ES9 ? 9 : TARGET_ES10 ? 10 : TARGET_ES11 ? 11 : TARGET_ES12 ? 12 : TARGET_ES13 ? 13 : TARGET_ES14 ? 14 : TARGET_ES15 ? 15 : TARGET_ES16 ? 16 : undefined;
 if (FORCED_ES_TARGET) console.log('Forcing target version: ES' + FORCED_ES_TARGET);
 
 if (AUTO_UPDATE && (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE)) throw new Error('Cannot use auto update and auto generate together');
@@ -367,8 +369,12 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       console.timeEnd('Pure Tenko parse time');
     }
     e = _e;
-    if (tob.shouldPass) {
+    if (tob.shouldPassAny) {
       tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS' + RESET + ', but it failed';
+    } else if (tob.shouldPassModule && testVariant === TEST_MODULE) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in module)' + RESET + ', but module failed';
+    } else if (tob.shouldPassSloppy && testVariant === TEST_SLOPPY) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in sloppy)' + RESET + ', but sloppy failed';
     }
   }
 
