@@ -1,11 +1,11 @@
 # Tenko
 
-A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2023.
+A "pixel perfect" 100% spec compliant JavaScript parser written in JavaScript, parsing ES6/ES2015 - ES2025.
 
 REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
-  - Anything stage 4 up to ES2023 (including class static blocks, top-level await in Module, hashbang, etc.)
+  - Anything stage 4 up to and including ES2025
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
@@ -15,9 +15,8 @@ REPL: https://pvdz.github.io/tenko/repl
 - AST
   - Is optional, enabled by default
   - Estree (default)
-  - (Optional chaining AST works but AST spec seems still in flux)
   - Acorn
-  - Babel (anything stage 4, except comments)
+  - Babel (anything stage 4, except comments, didn't check after ES2021 tbh)
   - Supports location data (matching Acorn/Babel for reference)
 - Tests
   - 33k input syntax tests
@@ -72,8 +71,8 @@ const {
     getLexer = null, // getLexer(lexer)
     // You use this to parse `eval` code
     allowGlobalReturn = false,
-    // Target a very specific ecmascript version (like, reject async). Number; 6 - 14, or 2015 - 2023, or Infinity.
-    targetEsVersion = lastVersion, // (Last supported version is currently ES2023)
+    // Target a very specific ecmascript version (like, reject async). Number; 6 - 16, or 2015 - 2025, or Infinity.
+    targetEsVersion = lastVersion, // (Last supported version is currently ES2025)
     // Top-level await in Module: undefined = allow when target ES2022+; true = force on; false = force off
     toplevelAwait = undefined,
     // Leave built up scope information in the ASTs (good luck)
@@ -145,6 +144,8 @@ Some interesting usages of `./t`:
 ./t i "some.input()"
 # Test a particular test file
 ./t f "tests/testcases/regexes/foo.md"
+# Test a particular test file or folder and force-write the result(s)
+./t ff "tests/testcases/regexes"
 # Use entire contents of given file as input
 ./t F "test262/test/annexB/built-ins/foo.js"
 
@@ -218,7 +219,9 @@ There are many flags. Some are specific to an action, others are generic. Some e
 11                   Run as close to the rules as of ES11 / ES2020 as possible
 12                   Run as close to the rules as of ES12 / ES2021 as possible
 13                   Run as close to the rules as of ES13 / ES2022 as possible (includes top-level await in Module)
-14                   Run as close to the rules as of ES14 / ES2023 as possible
+14                   Run as close to the rules as of ES14 / ES2023 as possible (includes hashbang)
+15                   Run as close to the rules as of ES15 / ES2024 as possible (includes RegExp v flag / unicode sets)
+16                   Run as close to the rules as of ES16 / ES2025 as possible (includes using / await using)
 2015
 2016
 2017
@@ -228,6 +231,8 @@ There are many flags. Some are specific to an action, others are generic. Some e
 2021
 2022
 2023
+2024
+2025
 
 --min                Given a broken input, brute force minify the input while maintaining the same error message
 --acorn              Output a Acorn compatible AST

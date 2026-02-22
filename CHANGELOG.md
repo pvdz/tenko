@@ -2,21 +2,23 @@
 
 ## v2.0.2 (wip)
 
+- **ES version support through ES2025:** Parser and lexer accept `targetEsVersion` 6–16 (or 2015–2025). CLI and test runner support `--es15`, `--es16` and years `2024`, `2025`.
 - Support ES2022 (version 13): top-level await in Module is now allowed when `targetEsVersion` is 13 (or 2022) or higher.
   - When `toplevelAwait` is left undefined (default), top-level await is allowed in Module goal for ES2022+.
   - Explicit override: `toplevelAwait: true` forces it on (e.g. for older targets); `toplevelAwait: false` forces it off.
 - Support ES2022 class static blocks: `static { ... }` in class bodies.
   - Parser emits ESTree node type `StaticBlock` with `body` (array of statements). Gated by `targetEsVersion` 13 (or 2022); use `--es13` or `es = 13` in tests for static block.
   - Printer and walker support `StaticBlock`. Scope of a static block correctly chains to the enclosing scope (for class declarations), so `var` in a static block is attributed to the enclosing function/script and duplicate var/lex checks apply as for a normal block.
-- Parser and lexer accept `targetEsVersion` 6–14 (or 2015–2023). CLI and test runner support `--es14` and year `2023`.
+- Support ES2023 (version 14): Hashbang (`#!` at start of script/module) is allowed when `targetEsVersion` is 14 or higher.
+- Support ES2024 (version 15): RegExp `v` flag (unicode sets mode) is allowed when `targetEsVersion` is 15 or higher.
+- Support ES2025 (version 16): Explicit Resource Management — `using` and `await using` declarations in blocks, `for`-in/`for`-of, catch, class static blocks; export; gated by `targetEsVersion` 16 (or 2025). ESTree: `VariableDeclaration` with `kind: 'using'` or `'await using'`.
 - Test runner version support:
-  - Added `--es14`; `./t --help` documents version range 6..14 and 2015..2023.
-  - Test files can set a per-test ES version with `- \`es = N\`` (N 6..14) under `## Input`; `--esX` overrides when given.
+  - `./t --help` documents version range 6..16 and 2015..2025.
+  - Test files can set a per-test ES version with `- \`es = N\`` (N 6..16) under `## Input`; `--esX` overrides when given.
   - Fixed parsing of numeric input options (use `parseFloat(value)` instead of `parseFloat(v)`).
 - Printer: `new super()` now round-trips correctly (call parentheses are always printed when the `new` callee is `Super`).
 - Fixed a bug in the printer for `new` with MemberExpression argument
   - It would not wrap the argument in parenthesis if it was a member expression, leading to ambiguous case bugs like `new f().g()` vs `new (f().g)()`.
-  - Not publishing a new version as I think people fetch the printer straight from repo, not from npm. Prove me wrong.
 - Added the option `alwaysAllowOctalEscapes` to always allow to parse octal escapes, even in strict mode etc.
 
 ## v2.0.1

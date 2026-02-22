@@ -130,7 +130,7 @@ The format of each option is as follows:
 
 The options are specific to the testing framework, although I could see myself adding a more free form way of passing options down to the parser, later. The current style is still a little legacy from the old infra.
 
-The `es` option sets the target ECMAScript version for that test (e.g. `es = 10` for ES2019). Allowed values are 6–14 or 2015–2023. When running with `./t f <file>`, the CLI flag `--es14` (or a number like `14`) overrides the file’s `es` value.
+The `es` option sets the target ECMAScript version for that test (e.g. `es = 10` for ES2019). Allowed values are 6–16 or 2015–2025. When running with `./t f <file>`, the CLI flag `--es16` (or a number like `16`) overrides the file’s `es` value.
 
 ### Example
 

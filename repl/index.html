@@ -61,7 +61,7 @@
 <body>
 <div class="top">
   Tenko REPL &mdash;
-  2019 &mdash;
+  2026 &mdash;
   &copy;&nbsp;<a href="https://pvdz.ee">Peter van der Zee</a>&nbsp;&mdash;&nbsp;
   <a href="https://github.com/pvdz/tenko">Github</a>
 </div>
@@ -118,22 +118,37 @@
 
           <span class="mode_selector" title="Click here to show the output parsed in es10">
             <input type="radio" name="version" id="$ver_es10" value="10"/>
-            <label for="$ver_es10">ES10</label>
+            <label for="$ver_es10">ES2019</label>
           </span>
 
           <span class="mode_selector" title="Click here to show the output parsed in es11">
             <input type="radio" name="version" id="$ver_es11" value="11"/>
-            <label for="$ver_es11">ES11</label>
+            <label for="$ver_es11">ES2020</label>
           </span>
 
           <span class="mode_selector" title="Click here to show the output parsed in es12">
             <input type="radio" name="version" id="$ver_es12" value="12"/>
-            <label for="$ver_es12">ES12</label>
+            <label for="$ver_es12">ES2021</label>
           </span>
 
           <span class="mode_selector" title="Click here to show the output parsed in es13">
-            <input type="radio" name="version" id="$ver_es13" value="13" checked/>
-            <label for="$ver_es13">ES13</label>
+            <input type="radio" name="version" id="$ver_es13" value="13"/>
+            <label for="$ver_es13">ES2022</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es14">
+            <input type="radio" name="version" id="$ver_es14" value="14"/>
+            <label for="$ver_es14">ES2023</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es15">
+            <input type="radio" name="version" id="$ver_es15" value="15"/>
+            <label for="$ver_es15">ES2024</label>
+          </span>
+
+          <span class="mode_selector" title="Click here to show the output parsed in es16">
+            <input type="radio" name="version" id="$ver_es16" value="16" checked/>
+            <label for="$ver_es16">ES2025</label>
           </span>
 
           &nbsp;&mdash; AST &mdash;&nbsp;
@@ -161,10 +176,7 @@
           </span>
 
         </div>
-        <textarea id="ta_input" placeholder="enter code here" class="box tl" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">
-// Note: Firefox (&lt;=63) crashes because of import(), >=66 seems to work fine
-// Same for any browser not supporting es modules (`import`/`export`).
-hello.world;
+        <textarea id="ta_input" placeholder="enter code here" class="box tl" style="align-self: stretch; order: initial; flex-grow: 1; flex-shrink: 1; flex-basis: auto;">hello.world;
 how('are').you().doing ? oh: right;
         </textarea>
       </div>
