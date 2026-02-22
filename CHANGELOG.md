@@ -2,7 +2,14 @@
 
 ## v2.0.2 (wip)
 
-- **ES version support through ES2025:** Parser and lexer accept `targetEsVersion` 6–16 (or 2015–2025). CLI and test runner support `--es15`, `--es16` and years `2024`, `2025`.
+- ES version support through ES2025:
+  - ** Parser and lexer accept `targetEsVersion` 6–16 (or 2015–2025). CLI and test runner support `--es15`, `--es16` and years `2024`, `2025`.
+- Fixed version gates for `?.`, `??`, `&&=`, `||=`, `??=`, and bigint:
+  - These operators and bigint were already gated in the lexer but explicitly to exactly the spec version that introduced them. That was unintentional and was fixed.
+  - `?.` and `??` allowed when `targetEsVersion` ≥ 11 (ES2020).
+  - bigint allowed when `targetEsVersion` ≥ 11 (ES2020).
+  - `&&=`, `||=`, `??=` allowed when `targetEsVersion` ≥ 12 (ES2021).
+- Bugfix: Lexer now emits the correct token for `||=` (it previously returned the `&&=` token by mistake).
 - Support ES2022 (version 13): top-level await in Module is now allowed when `targetEsVersion` is 13 (or 2022) or higher.
   - When `toplevelAwait` is left undefined (default), top-level await is allowed in Module goal for ES2022+.
   - Explicit override: `toplevelAwait: true` forces it on (e.g. for older targets); `toplevelAwait: false` forces it off.

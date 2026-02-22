@@ -495,6 +495,13 @@ import {
   REGEX_INVALID_CURLY_QUANTIFIER,
   REGEX_PARTIAL_CURLY_QUANTIFIER,
 } from './enum_lexer.mjs';
+import {
+  VERSION_BIGINT,
+  VERSION_OPTIONAL_CHAINING,
+  VERSION_NULLISH_COALESCING,
+  VERSION_LOGICAL_ASSIGNMENT,
+  VERSION_WHATEVER,
+} from './enum_parser.mjs';
 
 let ID_START_REGEX = undefined;
 function getIdStartRegexSuperSlow() {
@@ -554,10 +561,10 @@ function Lexer(
   const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
   const supportRegexVFlag = targetEsVersion >= 15 || targetEsVersion === Infinity; // ES2024: unicodeSets mode (v flag), mutually exclusive with u
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
-  const supportBigInt = targetEsVersion === 11 || targetEsVersion === Infinity;
-  const supportNullishCoalescing = targetEsVersion === 11 || targetEsVersion === Infinity;
-  const supportOptionalChaining = targetEsVersion === 11 || targetEsVersion === Infinity;
-  const supportLogicCompound = targetEsVersion === 12 || targetEsVersion === Infinity;
+  const supportBigInt = targetEsVersion >= VERSION_BIGINT || targetEsVersion === VERSION_WHATEVER;
+  const supportNullishCoalescing = targetEsVersion >= VERSION_NULLISH_COALESCING || targetEsVersion === VERSION_WHATEVER;
+  const supportOptionalChaining = targetEsVersion >= VERSION_OPTIONAL_CHAINING || targetEsVersion === VERSION_WHATEVER;
+  const supportLogicCompound = targetEsVersion >= VERSION_LOGICAL_ASSIGNMENT || targetEsVersion === VERSION_WHATEVER;
 
   let pointer = 0;
   let len = input.length;
@@ -1418,7 +1425,7 @@ function Lexer(
           case $$OR_7C:
             if (neof() && peeky($$IS_3D)) {
               ASSERT_skip($$IS_3D);
-              if (supportLogicCompound) return $PUNC_AND_AND_EQ;
+              if (supportLogicCompound) return $PUNC_OR_OR_EQ;
               return THROW('The logical compound operator (`||=`) is only supported since ES2021, currently targeting a lower version', pointer - 3, pointer);
             }
             return $PUNC_OR_OR;
