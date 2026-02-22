@@ -6,11 +6,9 @@
 > :: classes : extending : lefthandside : gen : for-in lhs
 >
 > ::> await x assignable
-## TOFIX
+with TLA, `await x` at module top level is a valid AwaitExpression, so `(await x).x` is an assignable MemberExpression and the for-in is legal. Parser incorrectly rejects `await` here with "outside an async function" instead of recognizing TLA context.
 
-Should be `## PASS MODULE`: with TLA, `await x` at module top level is a valid AwaitExpression, so `(await x).x` is an assignable MemberExpression and the for-in is legal. Parser incorrectly rejects `await` here with "outside an async function" instead of recognizing TLA context.
-
-## FAIL
+## PASS MODULE
 
 ## Input
 
@@ -54,15 +52,50 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+  body: [
+    {
+      type: 'ForInStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+      left: {
+        type: 'MemberExpression',
+        loc:{start:{line:1,column:5},end:{line:1,column:16},source:''},
+        computed: false,
+        optional: false,
+        object: {
+          type: 'AwaitExpression',
+          loc:{start:{line:1,column:6},end:{line:1,column:13},source:''},
+          argument: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
+            name: 'x'
+          }
+        },
+        property: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
+          name: 'x'
+        }
+      },
+      right: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:20},end:{line:1,column:21},source:''},
+        name: 'x'
+      },
+      body: {
+        type: 'EmptyStatement',
+        loc:{start:{line:1,column:23},end:{line:1,column:24},source:''}
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:12
-╔══╦═════════════════
- 1 ║ for ((await x).x in x) ;
-   ║             ^------- error
-╚══╩═════════════════
-
+tokens (13x):
+       ID_for PUNC_PAREN_OPEN PUNC_PAREN_OPEN ID_await IDENT
+       PUNC_PAREN_CLOSE PUNC_DOT IDENT ID_in IDENT PUNC_PAREN_CLOSE
+       PUNC_SEMI
 `````
 
 ### Sloppy mode with AnnexB
@@ -76,3 +109,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+for (((await x).x) in x) ;
+````
+
+Produces same AST

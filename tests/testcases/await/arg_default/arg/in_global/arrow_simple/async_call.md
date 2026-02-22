@@ -5,6 +5,7 @@
 > :: await : arg default : arg : in global : arrow simple
 >
 > ::> async call
+## PASS MODULE
 
 ## Input
 
@@ -47,15 +48,51 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+      expression: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+          name: 'async'
+        },
+        arguments: [
+          {
+            type: 'AssignmentExpression',
+            loc:{start:{line:1,column:7},end:{line:1,column:22},source:''},
+            left: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
+              name: 'foo'
+            },
+            operator: '=',
+            right: {
+              type: 'AwaitExpression',
+              loc:{start:{line:1,column:13},end:{line:1,column:22},source:''},
+              argument: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:19},end:{line:1,column:22},source:''},
+                name: 'bar'
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:19
-╔══╦═════════════════
- 1 ║ async (foo = await bar);
-   ║                    ^------- error
-╚══╩═════════════════
-
+tokens (9x):
+       ID_async PUNC_PAREN_OPEN IDENT PUNC_EQ ID_await IDENT
+       PUNC_PAREN_CLOSE PUNC_SEMI
 `````
 
 ### Sloppy mode with AnnexB
@@ -69,3 +106,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+async(foo = await bar);
+````
+
+Produces same AST

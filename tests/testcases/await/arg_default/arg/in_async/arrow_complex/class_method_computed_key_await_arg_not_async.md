@@ -52,12 +52,12 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  The parameter header of an arrow in module mode cannot contain `await` as varname nor as a keyword
 
-start@1:0, error@1:24
+start@1:0, error@1:42
 ╔══╦═════════════════
  1 ║ (fail = class A {[await x](){}; "x"(){}}) => {}
-   ║                         ^------- error
+   ║                                           ^^------- error
 ╚══╩═════════════════
 
 `````

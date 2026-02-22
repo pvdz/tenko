@@ -6,6 +6,7 @@
 > :: await : arrow piggy : gen : test
 >
 > ::> async 287ba3a b 3d await c7d29
+## PASS MODULE
 
 ## Input
 
@@ -49,15 +50,70 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+      expression: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+          name: 'async'
+        },
+        arguments: [
+          {
+            type: 'ObjectExpression',
+            loc:{start:{line:1,column:7},end:{line:1,column:23},source:''},
+            properties: [
+              {
+                type: 'Property',
+                loc:{start:{line:1,column:8},end:{line:1,column:22},source:''},
+                key: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                  name: 'a'
+                },
+                kind: 'init',
+                method: false,
+                computed: false,
+                value: {
+                  type: 'AssignmentExpression',
+                  loc:{start:{line:1,column:11},end:{line:1,column:22},source:''},
+                  left: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
+                    name: 'b'
+                  },
+                  operator: '=',
+                  right: {
+                    type: 'AwaitExpression',
+                    loc:{start:{line:1,column:15},end:{line:1,column:22},source:''},
+                    argument: {
+                      type: 'Identifier',
+                      loc:{start:{line:1,column:21},end:{line:1,column:22},source:''},
+                      name: 'c'
+                    }
+                  }
+                },
+                shorthand: false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:21
-╔══╦═════════════════
- 1 ║ async ({a: b = await c})
-   ║                      ^------- error
-╚══╩═════════════════
-
+tokens (13x):
+       ID_async PUNC_PAREN_OPEN PUNC_CURLY_OPEN IDENT PUNC_COLON IDENT
+       PUNC_EQ ID_await IDENT PUNC_CURLY_CLOSE PUNC_PAREN_CLOSE ASI
 `````
 
 ### Sloppy mode with AnnexB
@@ -71,3 +127,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+async({a:b = await c});
+````
+
+Produces same AST

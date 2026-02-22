@@ -50,13 +50,13 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  The left hand side of the arrow is not destructible so arrow is illegal
 
-start@1:0, error@1:8
-╔══╦════════════════
+start@1:0, error@1:14
+╔══╦═════════════════
  1 ║ ( await foo ) => {}
-   ║         ^------- error
-╚══╩════════════════
+   ║               ^^------- error
+╚══╩═════════════════
 
 `````
 

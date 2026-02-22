@@ -6,6 +6,7 @@
 > :: await : arrow piggy : gen : test
 >
 > ::> async 285ba 3d await b5d29
+## PASS MODULE
 
 ## Input
 
@@ -49,15 +50,57 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+      expression: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+          name: 'async'
+        },
+        arguments: [
+          {
+            type: 'ArrayExpression',
+            loc:{start:{line:1,column:7},end:{line:1,column:20},source:''},
+            elements: [
+              {
+                type: 'AssignmentExpression',
+                loc:{start:{line:1,column:8},end:{line:1,column:19},source:''},
+                left: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                  name: 'a'
+                },
+                operator: '=',
+                right: {
+                  type: 'AwaitExpression',
+                  loc:{start:{line:1,column:12},end:{line:1,column:19},source:''},
+                  argument: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
+                    name: 'b'
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:18
-╔══╦═════════════════
- 1 ║ async ([a = await b])
-   ║                   ^------- error
-╚══╩═════════════════
-
+tokens (11x):
+       ID_async PUNC_PAREN_OPEN PUNC_BRACKET_OPEN IDENT PUNC_EQ
+       ID_await IDENT PUNC_BRACKET_CLOSE PUNC_PAREN_CLOSE ASI
 `````
 
 ### Sloppy mode with AnnexB
@@ -71,3 +114,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+async([a = await b]);
+````
+
+Produces same AST

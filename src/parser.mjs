@@ -133,6 +133,7 @@ import {
   LF_SUPER_PROP,
   LF_NOT_KEYWORD,
   LF_CHAINING,
+  LF_NOT_IN_FUNC,
 
   L,
 } from './lexerflags.mjs';
@@ -3965,7 +3966,7 @@ function Parser(code, options = {}) {
     // in script: must be considered an await-expression when inside async, must be considered a var name otherwise
     // (`await` when not a keyword _is_ assignable). Top-level await is only valid in Module, not Script.
 
-    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
+    if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC))) {
       return parseAwaitKeyword(lexerFlags, $tp_await_start, $tp_await_stop, $tp_await_line, $tp_await_column, isNewArg, astProp);
     }
 
@@ -5491,7 +5492,7 @@ function Parser(code, options = {}) {
         break; // fall through to expression
 
       case $ID_await:
-        if (allowUsingDeclaration && (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_IN_GLOBAL)))) {
+        if (allowUsingDeclaration && (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC)))) {
           return parseForHeaderAwaitUsing(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, scoop, astProp);
         }
         break; // fall through to expression
@@ -6734,7 +6735,7 @@ function Parser(code, options = {}) {
     // `await using x = expr;` — only when `await` is a keyword (async context or module toplevel)
     // Not allowed as a substatement (like `if (x) await using y = z;`)
     if ($tp_ident_type === $ID_await && allowUsingDeclaration && tok_getType() === $ID_using && tok_getNlwas() === false && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE) {
-      if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_IN_GLOBAL))) {
+      if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC))) {
         parseAwaitUsingDeclaration(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, scoop, astProp);
         return;
       }
@@ -10281,6 +10282,10 @@ function Parser(code, options = {}) {
 
         if (hasAnyFlag(lexerFlags, LF_IN_ASYNC)) {
           return THROW_RANGE('The parameter header of an arrow inside an async function cannot contain `await` as varname nor as a keyword', tok_getStart(), tok_getStop());
+        }
+
+        if (goalMode === GOAL_MODULE) {
+          return THROW_RANGE('The parameter header of an arrow in module mode cannot contain `await` as varname nor as a keyword', tok_getStart(), tok_getStop());
         }
       }
 

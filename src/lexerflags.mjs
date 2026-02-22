@@ -23,12 +23,13 @@ const LF_SUPER_CALL = 1 << ++__$flag_lf; // can call `super()`
 const LF_SUPER_PROP = 1 << ++__$flag_lf; // can read `super.foo` (there are cases where you can doo this but not `super()`)
 const LF_NOT_KEYWORD = 1 << ++__$flag_lf; // skip keyword check for next ident parse (like member expression property)
 const LF_CHAINING = 1 << ++__$flag_lf; // Currently in an optional chain. If we encounter `?.` do not add another `ChainExpression` node.
+const LF_NOT_IN_FUNC = 1 << ++__$flag_lf; // not inside any function/arrow body; used for TLA (top-level await) — unlike LF_IN_GLOBAL, this flag is NOT stripped by groups/switches/templates
 ASSERT(__$flag_lf < 32, 'cannot use more than 32 flags');
 // start of the first statement without knowing strict mode status:
 // - div means regular expression
 // - closing curly means closing curly (not template body/tail)
 // - sloppy mode until proven otherwise
-const INITIAL_LEXER_FLAGS = LF_FOR_REGEX | LF_IN_GLOBAL; // not sure about global, that may change depending on options{$?
+const INITIAL_LEXER_FLAGS = LF_FOR_REGEX | LF_IN_GLOBAL | LF_NOT_IN_FUNC; // not sure about global, that may change depending on options{$?
 
 function L(flags) {
   let bak = flags;
@@ -106,7 +107,11 @@ function L(flags) {
   }
   if (flags & LF_CHAINING) {
     flags ^= LF_CHAINING;
-    s.push('LF_CHAIING');
+    s.push('LF_CHAINING');
+  }
+  if (flags & LF_NOT_IN_FUNC) {
+    flags ^= LF_NOT_IN_FUNC;
+    s.push('LF_NOT_IN_FUNC');
   }
   if (flags) {
     throw new Error('UNKNOWN_FLAGS: ' + flags.toString(2) + ' (was: ' + bak.toString(2) + '), so far: [' + s.join('|') + ']');
@@ -136,6 +141,7 @@ export {
   LF_SUPER_PROP,
   LF_NOT_KEYWORD,
   LF_CHAINING,
+  LF_NOT_IN_FUNC,
 
   L,
 };

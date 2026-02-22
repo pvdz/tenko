@@ -49,15 +49,46 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+      expression: {
+        type: 'BinaryExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+        left: {
+          type: 'Literal',
+          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+          value: 5,
+          raw: '5'
+        },
+        operator: '+',
+        right: {
+          type: 'AwaitExpression',
+          loc:{start:{line:1,column:5},end:{line:1,column:16},source:''},
+          argument: {
+            type: 'CallExpression',
+            loc:{start:{line:1,column:11},end:{line:1,column:16},source:''},
+            optional: false,
+            callee: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:11},end:{line:1,column:14},source:''},
+              name: 'bar'
+            },
+            arguments: []
+          }
+        }
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:11
-╔══╦═════════════════
- 1 ║ 5 + (await bar())
-   ║            ^------- error
-╚══╩═════════════════
-
+tokens (10x):
+       NUMBER_DEC PUNC_PLUS PUNC_PAREN_OPEN ID_await IDENT
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_PAREN_CLOSE ASI
 `````
 
 ### Sloppy mode with AnnexB
@@ -71,3 +102,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+5 + (await bar());
+````
+
+Produces same AST

@@ -5,6 +5,7 @@
 > :: await : arg default : arg : in global : arrow complex
 >
 > ::> async destruct arr call
+## PASS MODULE
 
 ## Input
 
@@ -47,15 +48,108 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:38},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:38},source:''},
+      expression: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:37},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+          name: 'async'
+        },
+        arguments: [
+          {
+            type: 'AssignmentExpression',
+            loc:{start:{line:1,column:7},end:{line:1,column:36},source:''},
+            left: {
+              type: 'ArrayPattern',
+              loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
+              elements: [
+                {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                  name: 'p'
+                }
+              ]
+            },
+            operator: '=',
+            right: {
+              type: 'ArrayExpression',
+              loc:{start:{line:1,column:13},end:{line:1,column:36},source:''},
+              elements: [
+                {
+                  type: 'ObjectExpression',
+                  loc:{start:{line:1,column:14},end:{line:1,column:35},source:''},
+                  properties: [
+                    {
+                      type: 'Property',
+                      loc:{start:{line:1,column:15},end:{line:1,column:34},source:''},
+                      key: {
+                        type: 'Identifier',
+                        loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
+                        name: 'm'
+                      },
+                      kind: 'init',
+                      method: false,
+                      computed: false,
+                      value: {
+                        type: 'BinaryExpression',
+                        loc:{start:{line:1,column:18},end:{line:1,column:34},source:''},
+                        left: {
+                          type: 'Literal',
+                          loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
+                          value: 5,
+                          raw: '5'
+                        },
+                        operator: '+',
+                        right: {
+                          type: 'CallExpression',
+                          loc:{start:{line:1,column:22},end:{line:1,column:34},source:''},
+                          optional: false,
+                          callee: {
+                            type: 'Identifier',
+                            loc:{start:{line:1,column:22},end:{line:1,column:23},source:''},
+                            name: 't'
+                          },
+                          arguments: [
+                            {
+                              type: 'AwaitExpression',
+                              loc:{start:{line:1,column:24},end:{line:1,column:33},source:''},
+                              argument: {
+                                type: 'Identifier',
+                                loc:{start:{line:1,column:30},end:{line:1,column:33},source:''},
+                                name: 'bar'
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      shorthand: false
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
 
-start@1:0, error@1:30
-╔══╦═════════════════
- 1 ║ async ([p] = [{m: 5 + t(await bar)}]);
-   ║                               ^------- error
-╚══╩═════════════════
-
+tokens (22x):
+       ID_async PUNC_PAREN_OPEN PUNC_BRACKET_OPEN IDENT
+       PUNC_BRACKET_CLOSE PUNC_EQ PUNC_BRACKET_OPEN PUNC_CURLY_OPEN
+       IDENT PUNC_COLON NUMBER_DEC PUNC_PLUS IDENT PUNC_PAREN_OPEN
+       ID_await IDENT PUNC_PAREN_CLOSE PUNC_CURLY_CLOSE
+       PUNC_BRACKET_CLOSE PUNC_PAREN_CLOSE PUNC_SEMI
 `````
 
 ### Sloppy mode with AnnexB
@@ -69,3 +163,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+async([p] = [{m:5 + t(await bar)}]);
+````
+
+Produces same AST

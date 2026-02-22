@@ -5,6 +5,7 @@
 > :: await : arg name
 >
 > ::> var2barg inside array lit
+## PASS MODULE
 
 ## Input
 
@@ -47,15 +48,52 @@ _Output same as sloppy mode._
 Parsed with the module goal.
 
 `````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  body: [
+    {
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+      body: [
+        {
+          type: 'ExpressionStatement',
+          loc:{start:{line:1,column:2},end:{line:1,column:17},source:''},
+          expression: {
+            type: 'AssignmentExpression',
+            loc:{start:{line:1,column:3},end:{line:1,column:16},source:''},
+            left: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:3},end:{line:1,column:4},source:''},
+              name: 'x'
+            },
+            operator: '=',
+            right: {
+              type: 'ArrayExpression',
+              loc:{start:{line:1,column:7},end:{line:1,column:16},source:''},
+              elements: [
+                {
+                  type: 'AwaitExpression',
+                  loc:{start:{line:1,column:8},end:{line:1,column:15},source:''},
+                  argument: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},
+                    name: 'x'
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
 
-start@1:0, error@1:14
-╔══╦═════════════════
- 1 ║ { (x = [await x]) }
-   ║               ^------- error
-╚══╩═════════════════
-
+tokens (12x):
+       PUNC_CURLY_OPEN PUNC_PAREN_OPEN IDENT PUNC_EQ PUNC_BRACKET_OPEN
+       ID_await IDENT PUNC_BRACKET_CLOSE PUNC_PAREN_CLOSE ASI
+       PUNC_CURLY_CLOSE
 `````
 
 ### Sloppy mode with AnnexB
@@ -69,3 +107,13 @@ _Output same as sloppy mode._
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+{x = [await x];}
+````
+
+Produces same AST
