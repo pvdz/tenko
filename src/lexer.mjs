@@ -500,6 +500,7 @@ import {
   VERSION_OPTIONAL_CHAINING,
   VERSION_NULLISH_COALESCING,
   VERSION_LOGICAL_ASSIGNMENT,
+  VERSION_REGEX_DUPLICATE_NAMED_GROUPS,
   VERSION_WHATEVER,
 } from './enum_parser.mjs';
 
@@ -558,6 +559,7 @@ function Lexer(
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
+  const supportRegexDuplicateNamedCaptureGroups = targetEsVersion >= VERSION_REGEX_DUPLICATE_NAMED_GROUPS || targetEsVersion === VERSION_WHATEVER; // ES2025: duplicate names allowed when they can't both participate (MightBothParticipate)
   const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
   const supportRegexVFlag = targetEsVersion >= 15 || targetEsVersion === Infinity; // ES2024: unicodeSets mode (v flag), mutually exclusive with u
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
@@ -2655,6 +2657,10 @@ function Lexer(
   let lastPotentialRegexErrorForVFlag = ''; // message shown when v flag present and regexBodyHasSyntaxInvalidWithVFlag (fallback from lastPotentialRegexError in charclass consumer if unset)
   let regexBodyUsedVOnlySyntax = false; // --, &&, nested [], \q{}; error after flags if no v flag
   let regexBodyHasRgiEmoji = false; // \p{RGI_Emoji} is only valid with v flag; error after flags if u flag
+  let regexBranchPath = [0]; // ES2025: disjunction branch index at each nesting level (for MightBothParticipate duplicate named group check)
+  let regexGroupQuantified = []; // ES2025: regexGroupQuantified[depth] = true if the group at that depth has a repeating quantifier (* + {}), not ?
+  let regexNegativeAssertionDepth = 0; // ES2025 only (gated): > 0 when parsing inside (?! or (?<! (captures there can't participate; (?= and (?<= can)
+  let declaredGroupNamesWithPath = new Map(); // ES2025: name -> array of { path, inNegativeAssertion } (only when supportRegexDuplicateNamedCaptureGroups)
   function parseRegex(c) {
     nCapturingParens = 0;
     largestBackReference = 0;
@@ -2668,6 +2674,10 @@ function Lexer(
     regexBodyHasSyntaxInvalidWithVFlag = false;
     regexBodyUsedVOnlySyntax = false;
     regexBodyHasRgiEmoji = false;
+    regexBranchPath = [0];
+    regexGroupQuantified = [];
+    regexNegativeAssertionDepth = 0;
+    declaredGroupNamesWithPath = new Map();
 
     let ustatusBody = parseRegexBody(c);
     if (ustatusBody === REGEX_ALWAYS_BAD) {
@@ -2676,6 +2686,38 @@ function Lexer(
     }
 
     ASSERT(ustatusBody === REGEX_ALWAYS_GOOD || lastPotentialRegexError, 'last potential error should be set if there was a potential problem', lastReportableLexerError, lastPotentialRegexError);
+
+    // ES2025 MightBothParticipate: check every pair of same-named groups with final regexGroupQuantified (https://tc39.es/ecma262/#sec-mightbothparticipate)
+    if (supportRegexDuplicateNamedCaptureGroups) {
+      for (let [name, entries] of declaredGroupNamesWithPath) {
+        if (entries.length < 2) continue;
+        for (let j = 1; j < entries.length; j++) {
+          for (let i = 0; i < j; i++) {
+            let a = entries[i];
+            let b = entries[j];
+            // ES2025: one in negative assertion (?! or (?<!), one not: they can't both participate. Positive assertions (?=, (?<=) do participate; only negative exempt.
+            if (a.inNegativeAssertion !== b.inNegativeAssertion) continue;
+            let qa = a.path.map((_, idx) => !!regexGroupQuantified[idx]);
+            let qb = b.path.map((_, idx) => !!regexGroupQuantified[idx]);
+            let mightBoth = (pa, pb, qA, qB) => {
+              if ((pa.length <= pb.length && pa.every((v, i) => v === pb[i])) ||
+                  (pb.length <= pa.length && pb.every((v, i) => v === pa[i]))) return true;
+              let k = 0;
+              while (k < pa.length && k < pb.length && pa[k] === pb[k]) k++;
+              if (k >= pa.length || k >= pb.length) return true;
+              // Repeating quantifier at any level from k up to root allows both to participate (nested case).
+              for (let jj = k; jj >= 0; jj--) {
+                if (qA[jj] || qB[jj]) return true;
+              }
+              return false;
+            };
+            if (mightBoth(a.path, b.path, qa, qb)) {
+              THROW('This group name (`' + name + '`) was already used before', b.pointerStart, b.pointerEnd);
+            }
+          }
+        }
+      }
+    }
 
     // Don't parse the flag if a hard error was found because it's probably before the second `/`
     let ustatusFlags = parseRegexFlags();
@@ -2788,6 +2830,7 @@ function Lexer(
     //   - reflects on surrogate pairs, unicode ruby escapes, and valid char class ranges
 
     let afterAtom = false;
+    let lastCompletedGroupDepth = 0; // ES2025: depth of group that was the last completed atom (so next quantifier applies to it); 0 = none
 
     // dont start with a quantifier
     uflagStatus = cannotBeQuantifier(c, uflagStatus, c === $$CURLY_L_7B, 'Started with a quantifier but that is not allowed');
@@ -2801,18 +2844,26 @@ function Lexer(
         case REGEX_ATOM_OTHER:
           ASSERT_skip(c); // this ought to be a valid regex source character
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           break;
 
         case REGEX_ATOM_DOT:
           // atom; match one character
           ASSERT_skip($$DOT_2E);
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           break;
 
         case REGEX_ATOM_QUANT:
           // doesnt matter to us which quantifier we find here
           ASSERT_skip(c);
           if (afterAtom) {
+            // ES2025: only * and + are "repeating" (both can participate); ? is optional (at most one).
+            if (supportRegexDuplicateNamedCaptureGroups && lastCompletedGroupDepth > 0 && c !== $$QMARK_3F) {
+              while (regexGroupQuantified.length <= lastCompletedGroupDepth) regexGroupQuantified.push(false);
+              regexGroupQuantified[lastCompletedGroupDepth] = true;
+            }
+            lastCompletedGroupDepth = 0;
             afterAtom = false;
             if (neof()) {
               if (peeky($$QMARK_3F)) {
@@ -2830,6 +2881,7 @@ function Lexer(
           let wasFixableAssertion = false;
           // lookbehind `(?<=` and `(?<!` can not get quantified even under webcompat flag (too new)
           let wasUnfixableAssertion = false;
+          let wasNegativeAssertion = false; // (?! or (?<! — capture can't participate with main; (?= and (?<= can
 
           // parse group (?: (!: (
           ASSERT_skip($$PAREN_L_28);
@@ -2864,6 +2916,7 @@ function Lexer(
                   // (?<= (?<!
                   ASSERT_skip(c);
                   wasUnfixableAssertion = true;
+                  wasNegativeAssertion = (c === $$EXCL_21);
                 }
                 else if (!supportRegexNamedGroups) {
                   ASSERT_skip(c);
@@ -2886,6 +2939,7 @@ function Lexer(
                 // (?= (?!
                 ASSERT_skip(c);
                 wasFixableAssertion = true; // lookahead assertion might only be quantified without u-flag and in webcompat mode
+                wasNegativeAssertion = (c === $$EXCL_21);
               }
 
               if (eof()) {
@@ -2900,7 +2954,11 @@ function Lexer(
             ++nCapturingParens;
           }
 
+          if (supportRegexDuplicateNamedCaptureGroups) regexBranchPath.push(0);
+          if (supportRegexDuplicateNamedCaptureGroups && wasNegativeAssertion) regexNegativeAssertionDepth++;
           let subbad = _parseRegexBody(c, groupLevel + 1, REGEX_ALWAYS_GOOD);
+          if (supportRegexDuplicateNamedCaptureGroups && wasNegativeAssertion) regexNegativeAssertionDepth--;
+          if (supportRegexDuplicateNamedCaptureGroups) regexBranchPath.pop();
 
           if (eof()) {
             return regexSyntaxError('Encountered early EOF');
@@ -2914,6 +2972,7 @@ function Lexer(
           }
 
           afterAtom = true;
+          if (supportRegexDuplicateNamedCaptureGroups) lastCompletedGroupDepth = groupLevel + 1;
           if (subbad === REGEX_ALWAYS_BAD) {
             uflagStatus = REGEX_ALWAYS_BAD; // should already have THROWn for this
           } else if (subbad === REGEX_GOOD_SANS_UV_FLAG) {
@@ -2941,6 +3000,7 @@ function Lexer(
             uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
           }
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           break;
 
         case REGEX_ATOM_SQUARER: {
@@ -2951,6 +3011,7 @@ function Lexer(
           }
           uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           break;
         }
 
@@ -2958,6 +3019,7 @@ function Lexer(
           // atom escape is different from charclass escape
           ASSERT_skip($$BACKSLASH_5C);
           afterAtom = true; // except in certain cases...
+          lastCompletedGroupDepth = 0;
 
           if (eof()) {
             return regexSyntaxError('Early EOF');
@@ -3026,6 +3088,7 @@ function Lexer(
           // atom; match one character. Beyond 2028 2029, atoms with non-ascii chars are not special
           ASSERT_skip(c); // this ought to be a valid regex source character, even if just half a surrogate pair
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           break;
 
         case REGEX_ATOM_CURLYL: {
@@ -3054,6 +3117,11 @@ function Lexer(
               //    ^^^^^
               // `/a{12,13}/`
               //    ^^^^^^^
+              if (supportRegexDuplicateNamedCaptureGroups && lastCompletedGroupDepth > 0) {
+                while (regexGroupQuantified.length <= lastCompletedGroupDepth) regexGroupQuantified.push(false);
+                regexGroupQuantified[lastCompletedGroupDepth] = true;
+              }
+              lastCompletedGroupDepth = 0;
               afterAtom = false;
 
               if (neof() && peeky($$QMARK_3F)) {
@@ -3117,6 +3185,7 @@ function Lexer(
           // [v]: `/{?/u`
 
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           uflagStatus = updateRegexUflagIsIllegal(uflagStatus, 'Found an unescaped `{` that was not the start of a valid quantifier');
           break;
         }
@@ -3131,12 +3200,14 @@ function Lexer(
           uflagStatus = updateRegexUflagIsIllegal(uflagStatus, reason);
           // in web compat mode this case is treated as an extended atom
           afterAtom = true;
+          lastCompletedGroupDepth = 0;
           break;
         }
 
         case REGEX_ATOM_OR:
           // left and/or right side of the pipe can be empty. weird but syntactically valid
           ASSERT_skip($$OR_7C);
+          if (supportRegexDuplicateNamedCaptureGroups && regexBranchPath.length > 0) regexBranchPath[regexBranchPath.length - 1]++;
           afterAtom = false;
           break;
 
@@ -3262,7 +3333,17 @@ function Lexer(
       // This enables +N mode, meaning `\k` is now disallowed in char classes in webcompat mode too
       let next = lastCanonizedInput + ',';
       if (forCapturing === FOR_NAMED_GROUP) {
-        if (declaredGroupNames.includes(',' + next)) {
+        if (supportRegexDuplicateNamedCaptureGroups) {
+          // ES2025: collect (path, position, inAssertion); MightBothParticipate check is deferred until after body parse (so we see quantifiers).
+          let path = regexBranchPath.slice();
+          let entry = { path, pointerStart, pointerEnd: pointer - 1, inNegativeAssertion: regexNegativeAssertionDepth > 0 };
+          let entries = declaredGroupNamesWithPath.get(lastCanonizedInput);
+          if (!entries) {
+            entries = [];
+            declaredGroupNamesWithPath.set(lastCanonizedInput, entries);
+          }
+          entries.push(entry);
+        } else if (declaredGroupNames.includes(',' + next)) {
           // [x]: `/(?<a>a)(?<b>b)(?<a>a)/`
           THROW('This group name (`' + lastCanonizedInput + '`) was already used before', pointerStart, pointer - 1);
         }

@@ -19,7 +19,7 @@ REPL: https://pvdz.github.io/tenko/repl
   - Babel (anything stage 4, except comments, didn't check after ES2021 tbh)
   - Supports location data (matching Acorn/Babel for reference)
 - Tests
-  - 33k input syntax tests
+  - 34k input syntax tests
   - Passes test262 suite (at least as per March 2020), without exception
 
 # Name

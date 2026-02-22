@@ -19,6 +19,8 @@
 - Support ES2023 (version 14): Hashbang (`#!` at start of script/module) is allowed when `targetEsVersion` is 14 or higher.
 - Support ES2024 (version 15): RegExp `v` flag (unicode sets mode) is allowed when `targetEsVersion` is 15 or higher.
 - Support ES2025 (version 16): Explicit Resource Management — `using` and `await using` declarations in blocks, `for`-in/`for`-of, catch, class static blocks; export; gated by `targetEsVersion` 16 (or 2025). ESTree: `VariableDeclaration` with `kind: 'using'` or `'await using'`.
+- Support ES2025 (version 16): Duplicate named capture groups in regexes when they cannot both participate (MightBothParticipate).
+  - Gated by dedicated `VERSION_REGEX_DUPLICATE_NAMED_GROUPS` (16); duplicate names allowed when one capture is inside a lookahead/lookbehind (assertion) or when the disjunction is under `?`; rejected when a repeating quantifier (`*`, `+`, `{}`) allows both to participate (e.g. nested `(?:...|...)*`).
 - Test runner version support:
   - `./t --help` documents version range 6..16 and 2015..2025.
   - Test files can set a per-test ES version with `- \`es = N\`` (N 6..16) under `## Input`; `--esX` overrides when given.
