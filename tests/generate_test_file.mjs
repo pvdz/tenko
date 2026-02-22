@@ -25,7 +25,14 @@ export function generateTestFile(tob) {
   console.log('Generating test case from', file);
 
   let [comment, ...code] = data.slice(1).split('###\n');
-  comment = comment.trim().split(/\n/g).map(s => s.toLowerCase() === '## fail' ? '\n## FAIL' : s.toLowerCase() === '## pass' ? '\n## PASS' : ('>\n> ' + s)).join('\n');
+  comment = comment.trim().split(/\n/g).map(s => {
+    const low = s.toLowerCase();
+    if (low === '## fail') return '\n## FAIL';
+    if (low === '## pass') return '\n## PASS';
+    if (low === '## pass module') return '\n## PASS MODULE';
+    if (low === '## pass sloppy') return '\n## PASS SLOPPY';
+    return ('>\n> ' + s);
+  }).join('\n');
   code = code.join('###'); // unlikely
   code = code.trim().split(/\n+/g).map(s => s.trimRight()).join('\n');
 
