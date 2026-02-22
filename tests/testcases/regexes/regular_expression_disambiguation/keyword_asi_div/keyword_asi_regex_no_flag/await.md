@@ -95,7 +95,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-await (/x/);
+await /x/;
 ````
 
 Produces same AST

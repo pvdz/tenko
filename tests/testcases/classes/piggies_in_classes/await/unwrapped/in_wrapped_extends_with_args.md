@@ -111,7 +111,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-class x extends feh(await (y)) {}
+class x extends feh(await y) {}
 ````
 
 Produces same AST

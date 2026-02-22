@@ -121,7 +121,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async function f() {class x extends feh(await (y)) {}}
+async function f() {class x extends feh(await y) {}}
 ````
 
 Produces same AST

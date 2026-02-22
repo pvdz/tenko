@@ -230,7 +230,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-for (var a = (++effects, -1) in (stored = a, {a:0, b:1, c:2})) ;
+for (var a = ((++effects, -1)) in (stored = a, {a:0, b:1, c:2})) ;
 ````
 
 Produces same AST

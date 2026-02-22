@@ -150,7 +150,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-for (var a = (++effects, -1) in x) ;
+for (var a = ((++effects, -1)) in x) ;
 ````
 
 Produces same AST

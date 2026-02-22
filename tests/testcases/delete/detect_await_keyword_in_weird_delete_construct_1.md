@@ -113,7 +113,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async x => (delete "x"[await (x)]);
+async x => (delete "x"[await x]);
 ````
 
 Produces same AST

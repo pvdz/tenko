@@ -139,7 +139,7 @@ _Output same as sloppy mode with annexB._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-try {} catch (e) {for (var e = 1;;) {}}
+try {} catch (e) {for (var e = (1);;) {}}
 ````
 
 Produces same AST

@@ -78,7 +78,23 @@ function AssignmentPattern(node) {
 }
 function AwaitExpression(node) {
   assert(node.type, 'AwaitExpression');
-  return 'await (' + $(node.argument) + ')';
+
+  if (
+    node.argument.type === 'Identifier'
+    || node.argument.type === 'MemberExpression'
+    || node.argument.type === 'CallExpression'
+    || node.argument.type === 'Literal'
+    || node.argument.type === 'ArrayExpression'
+    || node.argument.type === 'ObjectExpression'
+    || node.argument.type === 'MetaProperty'
+    || node.argument.type === 'TaggedTemplateExpression'
+    || node.argument.type === 'TemplateLiteral'
+    || node.argument.type === 'ThisExpression'
+  ) {
+    return 'await ' + $(node.argument);
+  }
+
+  return 'await ' + $w(node.argument);
 }
 function BigIntLiteral(node) {
   assert(node.type, 'BigIntLiteral');
@@ -488,6 +504,7 @@ function MemberExpression(node) {
     // node.object.type === 'CallExpression' ||             // -> a().b -> (a()).b
     node.object.type === 'NewExpression' ||                 // (new x())[y] not new x()[y]
     node.object.type === 'UnaryExpression' ||               // `(!t).y`
+    node.object.type === 'AwaitExpression' ||               // `(await x).y`
     node.object.type === 'ArrowFunctionExpression' ||       // ()=>x.y -> (()=>x).y
     node.object.type === 'UpdateExpression' ||              // `(++x)[x]`
     (node.object.type === 'Literal' && typeof node.object.value === 'number') || // `4 .p`
@@ -712,11 +729,11 @@ function UpdateExpression(node) {
 }
 function VariableDeclaration(node, fromFor) {
   assert(node.type, 'VariableDeclaration');
-  return node.kind + ' ' + node.declarations.map($).join(', ') + (fromFor ? '' : ';'); // no semi inside `for`
+  return node.kind + ' ' + node.declarations.map(d => $(d, undefined, undefined, fromFor)).join(', ') + (fromFor ? '' : ';'); // no semi inside `for`
 }
-function VariableDeclarator(node) {
+function VariableDeclarator(node, fromFor) {
   assert(node.type, 'VariableDeclarator');
-  return $(node.id) + (node.init ? ' = ' + $(node.init) : '');
+  return $(node.id) + (node.init ? ' = ' + (fromFor ? '(' + $(node.init) + ')' : $(node.init)) : '');
 }
 function WhileStatement(node) {
   assert(node.type, 'WhileStatement');
@@ -839,7 +856,7 @@ let jumpTable = [
     return VariableDeclaration(node, fromFor);
   },
   (node, fromFor, type, c) => {
-    return VariableDeclarator(node);
+    return VariableDeclarator(node, fromFor);
   },
   (node, fromFor, type, c) => {
     return DebuggerStatement(node);

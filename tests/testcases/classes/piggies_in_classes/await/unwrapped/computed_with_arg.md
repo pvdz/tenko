@@ -122,7 +122,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-class x{[await (y)](){};}
+class x{[await y](){};}
 ````
 
 Produces same AST

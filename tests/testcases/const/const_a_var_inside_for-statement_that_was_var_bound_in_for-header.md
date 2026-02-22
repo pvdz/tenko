@@ -129,7 +129,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-for (var x = 3;;) {const x = 1;}
+for (var x = (3);;) {const x = 1;}
 ````
 
 Produces same AST

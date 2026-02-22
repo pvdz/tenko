@@ -119,7 +119,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-async function f() {return await (import.meta);}
+async function f() {return await import.meta;}
 ````
 
 Produces same AST

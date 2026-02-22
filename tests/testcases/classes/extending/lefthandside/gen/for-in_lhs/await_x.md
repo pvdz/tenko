@@ -50,13 +50,13 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  Left part of for-in must be assignable
 
-start@1:0, error@1:11
-╔══╦═════════════════
+start@1:0, error@1:0
+╔══╦════════════════
  1 ║ for (await x in x) ;
-   ║            ^------- error
-╚══╩═════════════════
+   ║ ^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
 
 `````
 

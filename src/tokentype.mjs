@@ -121,6 +121,7 @@ const $L_ID_throw = ++__$flag_leaf;
 const $L_ID_true = ++__$flag_leaf;
 const $L_ID_try = ++__$flag_leaf;
 const $L_ID_typeof = ++__$flag_leaf;
+const $L_ID_using = ++__$flag_leaf;
 const $L_ID_var = ++__$flag_leaf;
 const $L_ID_void = ++__$flag_leaf;
 const $L_ID_while = ++__$flag_leaf;
@@ -258,6 +259,7 @@ const $ID_throw = $L_ID_throw | $G_IDENT;
 const $ID_true = $L_ID_true | $G_IDENT;
 const $ID_try = $L_ID_try | $G_IDENT;
 const $ID_typeof = $L_ID_typeof | $G_IDENT;
+const $ID_using = $L_ID_using | $G_IDENT;
 const $ID_var = $L_ID_var | $G_IDENT;
 const $ID_void = $L_ID_void | $G_IDENT;
 const $ID_while = $L_ID_while | $G_IDENT;
@@ -440,6 +442,7 @@ let KEYWORD_TRIE_OBJLIT = {
     },
     24: { 15: { 4: { 14: { 5: { hit: $ID_typeof, canon: 'typeof' } } } } }
   },
+  20: { 18: { 8: { 13: { 6: { hit: $ID_using, canon: 'using' } } } } },
   21: {
     0: { 17: { hit: $ID_var, canon: 'var' } },
     14: { 8: { 3: { hit: $ID_void, canon: 'void' } } }
@@ -1686,6 +1689,7 @@ function toktypeToString(type) {
     case $ID_true: return 'ID_true';
     case $ID_try: return 'ID_try';
     case $ID_typeof: return 'ID_typeof';
+    case $ID_using: return 'ID_using';
     case $ID_var: return 'ID_var';
     case $ID_void: return 'ID_void';
     case $ID_while: return 'ID_while';
@@ -1861,6 +1865,7 @@ ASSERT(ALL_TOKEN_TYPES = [
   $ID_true,
   $ID_try,
   $ID_typeof,
+  $ID_using,
   $ID_var,
   $ID_void,
   $ID_while,
@@ -2191,7 +2196,7 @@ let tokenStartJumpTable = [
   START_KEY,               // 0x72   no*   r
   START_KEY,               // 0x73   no*   s
   START_KEY,               // 0x74   no*   t
-  START_ID,               // 0x75   no*   u
+  START_KEY,               // 0x75   no*   u
   START_KEY,               // 0x76   no*   v
   START_KEY,               // 0x77   no*   w
   START_ID,               // 0x78   no*   x
@@ -3283,6 +3288,7 @@ export {
   $ID_true,
   $ID_try,
   $ID_typeof,
+  $ID_using,
   $ID_var,
   $ID_void,
   $ID_while,

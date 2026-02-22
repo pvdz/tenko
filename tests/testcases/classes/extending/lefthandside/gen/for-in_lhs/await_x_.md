@@ -53,13 +53,13 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
+  Cannot use this name (`in`) as a variable name because: Cannot never use this reserved word as a variable name
 
-start@1:0, error@2:0
+start@1:0, error@2:3
 ╔══╦════════════════
  1 ║ for (await
  2 ║ x; in x) ;
-   ║ ^------- error
+   ║    ^^------- error
 ╚══╩════════════════
 
 `````

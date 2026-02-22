@@ -107,7 +107,7 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-for (var interface = x;;) ;
+for (var interface = (x);;) ;
 ````
 
 Produces same AST

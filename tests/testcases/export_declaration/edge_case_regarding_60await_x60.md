@@ -90,7 +90,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-export default await (x);
+export default await x;
 ````
 
 Produces same AST

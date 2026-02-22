@@ -257,9 +257,9 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-for (const {x} = {x:23};a < 1;) {}
+for (const {x} = ({x:23});a < 1;) {}
 ;
-for (const {x} = {x:23};a < 1;) {}
+for (const {x} = ({x:23});a < 1;) {}
 ;
 ````
 
