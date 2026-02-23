@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> empty export
+## PASS MODULE
 
 ## Input
 
@@ -56,7 +57,8 @@ ast: {
       loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
       specifiers: [],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

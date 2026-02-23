@@ -8,6 +8,8 @@
 >
 > The exported symbol should use the canonization, which should match the var with the same canonical name
 
+## PASS MODULE
+
 ## Input
 
 `````js
@@ -97,7 +99,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

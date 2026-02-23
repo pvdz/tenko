@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> re-export one key
+## PASS MODULE
 
 ## Input
 
@@ -76,7 +77,8 @@ ast: {
         loc:{start:{line:1,column:16},end:{line:1,column:21},source:''},
         value: 'foo',
         raw: '"foo"'
-      }
+      },
+      attributes: []
     }
   ]
 }

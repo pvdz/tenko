@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : object
 >
 > ::> double destruct with rename and init
+## PASS MODULE
 
 ## Input
 
@@ -140,7 +141,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

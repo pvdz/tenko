@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export one key
+## PASS MODULE
 
 ## Input
 
@@ -71,7 +72,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     },
     {
       type: 'VariableDeclaration',

@@ -5,6 +5,7 @@
 > :: import declaration
 >
 > ::> simple import of a default with double string 12
+## PASS MODULE
 
 ## Input
 
@@ -89,7 +90,8 @@ ast: {
         loc:{start:{line:1,column:29},end:{line:1,column:32},source:''},
         value: 'y',
         raw: '"y"'
-      }
+      },
+      attributes: []
     }
   ]
 }

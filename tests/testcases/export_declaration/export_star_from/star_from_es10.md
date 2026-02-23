@@ -10,6 +10,8 @@
 >
 > (This test checks whether the version restriction does not apply to the syntax without `as`)
 
+## PASS MODULE
+
 ## Input
 
 - `es = 10`
@@ -65,7 +67,8 @@ ast: {
         loc:{start:{line:1,column:14},end:{line:1,column:19},source:''},
         value: 'bar',
         raw: "'bar'"
-      }
+      },
+      attributes: []
     }
   ]
 }

@@ -8,6 +8,8 @@
 >
 > note: value gets the assignment pattern! not the objectpattern:properties
 
+## PASS MODULE
+
 ## Input
 
 `````js
@@ -106,7 +108,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

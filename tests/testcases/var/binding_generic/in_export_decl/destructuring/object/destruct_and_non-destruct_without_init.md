@@ -5,6 +5,7 @@
 > :: var : binding generic : in export decl : destructuring : object
 >
 > ::> destruct and non-destruct without init
+## PASS MODULE
 
 ## Input
 
@@ -105,7 +106,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

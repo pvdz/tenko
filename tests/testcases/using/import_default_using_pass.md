@@ -76,7 +76,8 @@ ast: {
         loc:{start:{line:1,column:18},end:{line:1,column:21},source:''},
         value: 'm',
         raw: '"m"'
-      }
+      },
+      attributes: []
     }
   ]
 }

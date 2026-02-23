@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : object
 >
 > ::> correct dynamic property destructuring
+## PASS MODULE
 
 ## Input
 
@@ -95,7 +96,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

@@ -94,7 +94,8 @@ ast: {
       loc:{start:{line:2,column:0},end:{line:2,column:9},source:''},
       specifiers: [],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

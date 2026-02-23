@@ -5,6 +5,7 @@
 > :: var : binding generic : in export decl : regular vars
 >
 > ::> var on next line does not trigger asi 2
+## PASS MODULE
 
 ## Input
 
@@ -74,7 +75,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

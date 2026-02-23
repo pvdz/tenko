@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export var statement two vars with init
+## PASS MODULE
 
 ## Input
 
@@ -92,7 +93,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

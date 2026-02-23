@@ -101,7 +101,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

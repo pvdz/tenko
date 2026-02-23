@@ -5,6 +5,7 @@
 > :: var : binding generic : in export decl : destructuring : array : rest operator
 >
 > ::> rest on a nested destruct
+## PASS MODULE
 
 ## Input
 
@@ -97,7 +98,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

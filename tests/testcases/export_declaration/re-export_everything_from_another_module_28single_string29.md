@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> re-export everything from another module 28single string29
+## PASS MODULE
 
 ## Input
 
@@ -59,7 +60,8 @@ ast: {
         loc:{start:{line:1,column:14},end:{line:1,column:19},source:''},
         value: 'foo',
         raw: "'foo'"
-      }
+      },
+      attributes: []
     }
   ]
 }

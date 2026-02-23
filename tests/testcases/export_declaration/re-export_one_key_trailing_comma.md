@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> re-export one key trailing comma
+## PASS MODULE
 
 ## Input
 
@@ -76,7 +77,8 @@ ast: {
         loc:{start:{line:1,column:17},end:{line:1,column:22},source:''},
         value: 'foo',
         raw: '"foo"'
-      }
+      },
+      attributes: []
     }
   ]
 }

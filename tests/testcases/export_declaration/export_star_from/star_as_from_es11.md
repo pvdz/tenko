@@ -10,6 +10,8 @@
 >
 > Introduced in ES2020 / ES11
 
+## PASS MODULE
+
 ## Input
 
 - `es = 11`
@@ -77,7 +79,8 @@ ast: {
         loc:{start:{line:1,column:21},end:{line:1,column:26},source:''},
         value: 'bar',
         raw: "'bar'"
-      }
+      },
+      attributes: []
     }
   ]
 }

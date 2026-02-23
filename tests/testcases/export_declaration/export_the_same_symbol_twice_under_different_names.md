@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export the same symbol twice under different names
+## PASS MODULE
 
 ## Input
 
@@ -88,7 +89,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     },
     {
       type: 'ExportNamedDeclaration',
@@ -110,7 +112,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

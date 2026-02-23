@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export let declaration two vars
+## PASS MODULE
 
 ## Input
 
@@ -82,7 +83,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

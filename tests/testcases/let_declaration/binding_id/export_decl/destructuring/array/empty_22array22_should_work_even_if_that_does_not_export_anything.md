@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : array
 >
 > ::> empty 22array22 should work even if that does not export anything
+## PASS MODULE
 
 ## Input
 
@@ -76,7 +77,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

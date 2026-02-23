@@ -5,6 +5,7 @@
 > :: bindings : import : in a multiple imports
 >
 > ::> a b
+## PASS MODULE
 
 ## Input
 
@@ -75,7 +76,8 @@ ast: {
         loc:{start:{line:1,column:16},end:{line:1,column:19},source:''},
         value: 'c',
         raw: '"c"'
-      }
+      },
+      attributes: []
     },
     {
       type: 'ImportDeclaration',
@@ -101,7 +103,8 @@ ast: {
         loc:{start:{line:1,column:37},end:{line:1,column:40},source:''},
         value: 'c',
         raw: '"c"'
-      }
+      },
+      attributes: []
     }
   ]
 }

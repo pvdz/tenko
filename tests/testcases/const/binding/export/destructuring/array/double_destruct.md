@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : array
 >
 > ::> double destruct
+## PASS MODULE
 
 ## Input
 
@@ -102,7 +103,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

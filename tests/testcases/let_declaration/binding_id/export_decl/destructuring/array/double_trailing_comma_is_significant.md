@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : array
 >
 > ::> double trailing comma is significant
+## PASS MODULE
 
 ## Input
 
@@ -83,7 +84,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

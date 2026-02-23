@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : array : rest operator
 >
 > ::> second param rest on a nested destruct
+## PASS MODULE
 
 ## Input
 
@@ -102,7 +103,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

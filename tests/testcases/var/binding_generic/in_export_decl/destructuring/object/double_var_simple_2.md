@@ -5,6 +5,7 @@
 > :: var : binding generic : in export decl : destructuring : object
 >
 > ::> double var simple 2
+## PASS MODULE
 
 ## Input
 
@@ -128,7 +129,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

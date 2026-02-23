@@ -10,6 +10,8 @@
 >
 > This should pass in module goal
 
+## PASS MODULE
+
 ## Input
 
 `````js
@@ -62,7 +64,8 @@ ast: {
       loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
       specifiers: [],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     },
     {
       type: 'ExpressionStatement',

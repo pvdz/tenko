@@ -5,6 +5,7 @@
 > :: var : binding generic : in export decl : regular vars
 >
 > ::> var var with init semi
+## PASS MODULE
 
 ## Input
 
@@ -76,7 +77,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

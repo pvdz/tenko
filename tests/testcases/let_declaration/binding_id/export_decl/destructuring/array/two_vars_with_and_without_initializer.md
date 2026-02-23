@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : array
 >
 > ::> two vars with and without initializer
+## PASS MODULE
 
 ## Input
 
@@ -96,7 +97,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

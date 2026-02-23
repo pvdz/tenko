@@ -5,6 +5,7 @@
 > :: const : binding : export : regular vars
 >
 > ::> const var with init semi
+## PASS MODULE
 
 ## Input
 
@@ -76,7 +77,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

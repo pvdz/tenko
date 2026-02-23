@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : object
 >
 > ::> double destruct with and without rename
+## PASS MODULE
 
 ## Input
 
@@ -113,7 +114,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

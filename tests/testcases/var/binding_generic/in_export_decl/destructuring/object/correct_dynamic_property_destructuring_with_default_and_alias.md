@@ -5,6 +5,7 @@
 > :: var : binding generic : in export decl : destructuring : object
 >
 > ::> correct dynamic property destructuring with default and alias
+## PASS MODULE
 
 ## Input
 
@@ -104,7 +105,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

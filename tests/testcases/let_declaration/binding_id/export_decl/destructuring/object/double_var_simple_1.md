@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : object
 >
 > ::> double var simple 1
+## PASS MODULE
 
 ## Input
 
@@ -113,7 +114,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

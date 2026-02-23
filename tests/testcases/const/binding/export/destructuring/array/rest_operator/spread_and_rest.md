@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : array : rest operator
 >
 > ::> spread and rest
+## PASS MODULE
 
 ## Input
 
@@ -110,7 +111,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

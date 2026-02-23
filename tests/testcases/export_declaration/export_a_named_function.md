@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export a named function
+## PASS MODULE
 
 ## Input
 
@@ -72,7 +73,8 @@ ast: {
           body: []
         }
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

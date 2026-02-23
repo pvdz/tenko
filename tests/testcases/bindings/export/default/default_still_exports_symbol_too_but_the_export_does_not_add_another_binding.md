@@ -5,6 +5,7 @@
 > :: bindings : export : default
 >
 > ::> default still exports symbol too but the export does not add another binding
+## PASS MODULE
 
 ## Input
 
@@ -96,7 +97,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

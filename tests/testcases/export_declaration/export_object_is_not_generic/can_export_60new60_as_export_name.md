@@ -5,6 +5,7 @@
 > :: export declaration : export object is not generic
 >
 > ::> can export 60new60 as export name
+## PASS MODULE
 
 ## Input
 
@@ -88,7 +89,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

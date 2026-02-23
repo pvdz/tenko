@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export a class
+## PASS MODULE
 
 ## Input
 
@@ -70,7 +71,8 @@ ast: {
           body: []
         }
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

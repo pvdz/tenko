@@ -23,6 +23,11 @@
   - Gated by dedicated `VERSION_REGEX_DUPLICATE_NAMED_GROUPS` (16); duplicate names allowed when one capture is inside a lookahead/lookbehind (assertion) or when the disjunction is under `?`; rejected when a repeating quantifier (`*`, `+`, `{}`) allows both to participate (e.g. nested `(?:...|...)*`).
 - Support ES2025 (version 16): RegExp inline flag modifiers `(?ims:pattern)` and `(?ims-ms:pattern)`. Gated by `targetEsVersion` 16 (or 2025).
   - Scoped modifiers `i`, `m`, `s` only (add and/or remove with `-`); duplicate flags or overlap between add/remove is a syntax error.
+- Support ES2025 (version 16): Import Attributes. Gated by `targetEsVersion` 16 (or 2025). 
+  - `import x from 'y' with { type: 'json' }`
+  - `export {} from 'y' with { type: 'json' }`
+  - `import('y', { with: { type: 'json' } })`
+  - Dynamic import: `import()` now accepts an optional second argument (the options object) and a trailing comma after either argument.
 - Test runner version support:
   - `./t --help` documents version range 6..16 and 2015..2025.
   - Test files can set a per-test ES version with `- \`es = N\`` (N 6..16) under `## Input`; `--esX` overrides when given.

@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : object
 >
 > ::> non-destruct with ini and destruct
+## PASS MODULE
 
 ## Input
 
@@ -109,7 +110,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

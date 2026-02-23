@@ -5,6 +5,7 @@
 > :: import declaration
 >
 > ::> simple import of a default with double string 3
+## PASS MODULE
 
 ## Input
 
@@ -60,7 +61,8 @@ ast: {
         loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
         value: 'y',
         raw: '"y"'
-      }
+      },
+      attributes: []
     }
   ]
 }
@@ -86,7 +88,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-import {} from "y";
+import "y";
 ````
 
 Produces same AST

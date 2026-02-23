@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : regular vars
 >
 > ::> let two vars no init semi
+## PASS MODULE
 
 ## Input
 
@@ -82,7 +83,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

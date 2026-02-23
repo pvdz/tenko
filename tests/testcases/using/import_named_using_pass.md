@@ -81,7 +81,8 @@ ast: {
         loc:{start:{line:1,column:27},end:{line:1,column:30},source:''},
         value: 'm',
         raw: '"m"'
-      }
+      },
+      attributes: []
     }
   ]
 }

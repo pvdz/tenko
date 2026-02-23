@@ -14,6 +14,8 @@
 > 
 > The concrete Environment Record method CreateImportBinding for module Environment Records creates a new initialized immutable indirect binding for the name N. A binding must not already exist in this Environment Record for N.
 
+## PASS MODULE
+
 ## Input
 
 `````js
@@ -97,7 +99,8 @@ ast: {
         loc:{start:{line:1,column:19},end:{line:1,column:22},source:''},
         value: 'c',
         raw: '"c"'
-      }
+      },
+      attributes: []
     }
   ]
 }

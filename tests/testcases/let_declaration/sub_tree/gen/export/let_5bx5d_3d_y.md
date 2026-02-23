@@ -6,6 +6,7 @@
 > :: let declaration : sub tree : gen : export
 >
 > ::> let 5bx5d 3d y
+## PASS MODULE
 
 ## Input
 
@@ -84,7 +85,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

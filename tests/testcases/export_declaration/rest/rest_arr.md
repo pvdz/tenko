@@ -5,6 +5,7 @@
 > :: export declaration : rest
 >
 > ::> rest arr
+## PASS MODULE
 
 ## Input
 
@@ -86,7 +87,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

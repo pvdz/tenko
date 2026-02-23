@@ -6,6 +6,7 @@
 > :: let declaration : sub tree : gen : export
 >
 > ::> let x
+## PASS MODULE
 
 ## Input
 
@@ -74,7 +75,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

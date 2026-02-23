@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : object
 >
 > ::> dynamic prop as second prop
+## PASS MODULE
 
 ## Input
 
@@ -113,7 +114,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

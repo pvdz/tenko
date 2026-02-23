@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : array
 >
 > ::> two vars
+## PASS MODULE
 
 ## Input
 
@@ -87,7 +88,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

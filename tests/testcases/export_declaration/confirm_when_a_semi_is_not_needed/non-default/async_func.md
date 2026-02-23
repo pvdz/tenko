@@ -5,6 +5,7 @@
 > :: export declaration : confirm when a semi is not needed : non-default
 >
 > ::> async func
+## PASS MODULE
 
 ## Input
 
@@ -72,7 +73,8 @@ ast: {
           body: []
         }
       },
-      source: null
+      source: null,
+      attributes: []
     },
     {
       type: 'ExpressionStatement',

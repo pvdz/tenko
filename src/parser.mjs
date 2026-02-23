@@ -388,6 +388,7 @@ import {
   VERSION_IMPORT_META,
   VERSION_TOPLEVEL_AWAIT,
   VERSION_USING,
+  VERSION_IMPORT_ATTRIBUTES,
   VERSION_WHATEVER,
   IS_ASYNC,
   NOT_ASYNC,
@@ -691,6 +692,7 @@ function Parser(code, options = {}) {
   let allowPublicClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 public class field initializers (a = b; a;)
   let allowPrivateClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 private fields/methods (#x, this.#x, #x in obj)
   let allowUsingDeclaration = (targetEsVersion >= VERSION_USING || targetEsVersion === VERSION_WHATEVER); // ES2025
+  let allowImportAttributes = (targetEsVersion >= VERSION_IMPORT_ATTRIBUTES || targetEsVersion === VERSION_WHATEVER); // ES2025
 
   ASSERT(goalMode === GOAL_SCRIPT || goalMode === GOAL_MODULE);
   ASSERT((targetEsVersion >= 6 && targetEsVersion <= 16) || targetEsVersion === VERSION_WHATEVER, 'version should be 6 7 8 9 10 11 12 13 14 15 16 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 or Infinity');
@@ -4589,6 +4591,11 @@ function Parser(code, options = {}) {
       // Source node is between `from` and semi (same between babel and estree)
       let source = AST_getStringNode($tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false);
 
+      let attributes = [];
+      if (tok_getType() === $ID_with && tok_getStart() > $tp_source_stop) {
+        attributes = parseImportAttributes(lexerFlags);
+      }
+
       parseSemiOrAsi(lexerFlags);
 
       if (babelCompat) {
@@ -4598,6 +4605,7 @@ function Parser(code, options = {}) {
           loc: AST_getClosedLoc($tp_export_start, $tp_export_line, $tp_export_column),
           specifiers,
           source,
+          attributes,
         });
       } else {
         AST_setClosedNode($tp_export_start, astProp, {
@@ -4606,6 +4614,7 @@ function Parser(code, options = {}) {
           specifiers,
           declaration: null,
           source,
+          attributes,
         });
       }
 
@@ -4629,12 +4638,18 @@ function Parser(code, options = {}) {
     // Source location is between `from` and semi
     let source = AST_getStringNode($tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false);
 
+    let attributes = [];
+    if (tok_getType() === $ID_with && tok_getStart() > $tp_source_stop) {
+      attributes = parseImportAttributes(lexerFlags);
+    }
+
     parseSemiOrAsi(lexerFlags);
 
     AST_setClosedNode($tp_export_start, astProp, {
       type: 'ExportAllDeclaration',
       loc: AST_getClosedLoc($tp_export_start, $tp_export_line,  $tp_export_column),
       source,
+      attributes,
     });
   }
   function parseExportNamed(lexerFlags, scoop, $tp_export_start, $tp_export_stop, $tp_export_line, $tp_export_column, exportedNames, exportedBindings, astProp) {
@@ -4646,6 +4661,7 @@ function Parser(code, options = {}) {
       specifiers: [],
       declaration: undefined,
       source: undefined,
+      attributes: undefined,
     });
 
     let needsSemi = true;
@@ -4684,8 +4700,14 @@ function Parser(code, options = {}) {
 
         ASSERT_skipToStatementStart($G_STRING, lexerFlags);
         AST_setStringLiteral('source', $tp_from_start, $tp_from_stop, $tp_from_line, $tp_from_column, $tp_from_canon, false);
+        if (tok_getType() === $ID_with && tok_getStart() > $tp_from_stop) {
+          AST_set('attributes', parseImportAttributes(lexerFlags));
+        } else {
+          AST_set('attributes', []);
+        }
       } else {
         AST_set('source', null);
+        AST_set('attributes', []);
         // pump the names into the real sets now
         tmpExportedNames.forEach(name => addNameToExports(exportedNames, $tp_export_start, $tp_export_stop, name));
         tmpExportedBindings.forEach(name => addBindingToExports(exportedBindings, name));
@@ -4701,6 +4723,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToBindingStart($ID_var , lexerFlags);
       parseAnyVarDeclaration(lexerFlags, $tp_var_start, $tp_var_line, $tp_var_column, scoop, BINDING_TYPE_VAR, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
       AST_set('source', null);
+      AST_set('attributes', []);
       needsSemi = false; // Note: If we parse the semi below then the loc will be incorrect
     }
     else if (tok_getType() === $ID_let) {
@@ -4713,6 +4736,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToBindingStart($ID_let, lexerFlags);
       parseAnyVarDeclaration(lexerFlags, $tp_let_start, $tp_let_line, $tp_let_column, scoop, BINDING_TYPE_LET, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
       AST_set('source', null);
+      AST_set('attributes', []);
       needsSemi = false; // Note: If we parse the semi below then the loc will be incorrect
     }
     else if (tok_getType() === $ID_const) {
@@ -4725,6 +4749,7 @@ function Parser(code, options = {}) {
       ASSERT_skipToBindingStart($ID_const, lexerFlags);
       parseAnyVarDeclaration(lexerFlags, $tp_const_start, $tp_const_line, $tp_const_column, scoop, BINDING_TYPE_CONST, FROM_EXPORT_DECL, exportedNames, exportedBindings, 'declaration');
       AST_set('source', null);
+      AST_set('attributes', []);
       needsSemi = false; // Note: If we parse the semi below then the loc will be incorrect
     }
     else if (tok_getType() === $ID_class) {
@@ -4734,6 +4759,7 @@ function Parser(code, options = {}) {
       addBindingToExports(exportedBindings, $tp_exportedName_canon);
       needsSemi = false;
       AST_set('source', null);
+      AST_set('attributes', []);
     }
     else if (tok_getType() === $ID_function) {
       // - `export function f(){}`
@@ -4749,6 +4775,7 @@ function Parser(code, options = {}) {
       addNameToExports(exportedNames, $tp_exportValueStart_start, $tp_exportValueStart_stop, $tp_exportedName_canon);
       addBindingToExports(exportedBindings, $tp_exportedName_canon);
       AST_set('source', null);
+      AST_set('attributes', []);
       needsSemi = false;
     }
     else if (tok_getType() === $ID_async) {
@@ -4783,6 +4810,7 @@ function Parser(code, options = {}) {
       addNameToExports(exportedNames, $tp_function_start, $tp_function_stop, $tp_exportedName_canon);
       addBindingToExports(exportedBindings, $tp_exportedName_canon);
       AST_set('source', null);
+      AST_set('attributes', []);
       needsSemi = false;
     }
     else {
@@ -5874,6 +5902,7 @@ function Parser(code, options = {}) {
       loc: undefined,
       specifiers: [],
       source: undefined,
+      attributes: undefined,
     });
 
     if (isIdentToken(tok_getType())) {
@@ -5934,8 +5963,13 @@ function Parser(code, options = {}) {
     let $tp_source_stop = tok_getStop();
     let $tp_source_canon = tok_getCanoN();
 
-    ASSERT_skipToStatementStart($G_STRING, lexerFlags); // semi or asi
+    ASSERT_skipToStatementStart($G_STRING, lexerFlags); // semi, asi, or `with`
     AST_setStringLiteral('source', $tp_source_start, $tp_source_stop, $tp_source_line, $tp_source_column, $tp_source_canon, false);
+    if (tok_getType() === $ID_with && tok_getStart() > $tp_source_stop) {
+      AST_set('attributes', parseImportAttributes(lexerFlags));
+    } else {
+      AST_set('attributes', []);
+    }
     parseSemiOrAsi(lexerFlags);
     AST_close($tp_import_start, $tp_import_line, $tp_import_column, 'ImportDeclaration');
   }
@@ -6104,6 +6138,106 @@ function Parser(code, options = {}) {
 
     ASSERT(tok_getType() === $ID_from, 'already validated by skipToFromOrDie, above');
     ASSERT_skipToStringOrDie($ID_from, lexerFlags);
+  }
+  function parseImportAttributes(lexerFlags) {
+    ASSERT(parseImportAttributes.length === arguments.length, 'arg count');
+    ASSERT(tok_getType() === $ID_with, 'should be called when current token is `with`');
+
+    // import x from 'y' with { type: 'json' }
+    //                   ^^^^
+    // The `with` keyword starts the attribute clause: `with { key: value, ... }`
+
+    if (!allowImportAttributes) {
+      return THROW_RANGE('Import attributes syntax (`with { ... }`) not supported. Requires version ES2025+ / ES16+.', tok_getStart(), tok_getStop());
+    }
+
+    ASSERT_skipAny($ID_with, lexerFlags);
+
+    if (tok_getType() !== $PUNC_CURLY_OPEN) {
+      return THROW_RANGE('Expected `{` after `with` keyword in import attributes, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+    }
+
+    ASSERT_skipAny($PUNC_CURLY_OPEN, lexerFlags);
+
+    let attributes = [];
+    let seenKeys = new Set;
+
+    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
+      // ImportAttributeKey : IdentifierName | StringLiteral
+
+      let $tp_attr_start = tok_getStart();
+      let $tp_attr_line = tok_getLine();
+      let $tp_attr_column = tok_getColumn();
+
+      let key;
+      if (isIdentToken(tok_getType())) {
+        let $tp_key_start = tok_getStart();
+        let $tp_key_stop = tok_getStop();
+        let $tp_key_line = tok_getLine();
+        let $tp_key_column = tok_getColumn();
+        let $tp_key_canon = tok_getCanoN();
+        ASSERT_skipAny($G_IDENT, lexerFlags);
+        key = AST_getIdentNode($tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon);
+      } else if (isStringToken(tok_getType())) {
+        let $tp_key_start = tok_getStart();
+        let $tp_key_stop = tok_getStop();
+        let $tp_key_line = tok_getLine();
+        let $tp_key_column = tok_getColumn();
+        let $tp_key_canon = tok_getCanoN();
+        ASSERT_skipAny($G_STRING, lexerFlags);
+        key = AST_getStringNode($tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon, false);
+      } else {
+        return THROW_RANGE('Expected an identifier or string as import attribute key, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+      }
+
+      // Duplicate attribute keys are an early error per spec
+      let keyName = key.type === 'Identifier' ? key.name : key.value;
+      if (seenKeys.has(keyName)) {
+        return THROW_RANGE('Duplicate import attribute key `' + keyName + '`', $tp_attr_start, tok_getStart());
+      }
+      seenKeys.add(keyName);
+
+      if (tok_getType() !== $PUNC_COLON) {
+        return THROW_RANGE('Expected `:` after import attribute key, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+      }
+
+      ASSERT_skipAny($PUNC_COLON, lexerFlags);
+
+      // Value must be a StringLiteral
+      if (!isStringToken(tok_getType())) {
+        return THROW_RANGE('Import attribute value must be a string literal, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+      }
+
+      let $tp_val_start = tok_getStart();
+      let $tp_val_stop = tok_getStop();
+      let $tp_val_line = tok_getLine();
+      let $tp_val_column = tok_getColumn();
+      let $tp_val_canon = tok_getCanoN();
+
+      ASSERT_skipAny($G_STRING, lexerFlags);
+
+      let value = AST_getStringNode($tp_val_start, $tp_val_stop, $tp_val_line, $tp_val_column, $tp_val_canon, false);
+
+      let attr = {
+        type: 'ImportAttribute',
+        loc: AST_getClosedLoc($tp_attr_start, $tp_attr_line, $tp_attr_column),
+        key,
+        value,
+      };
+      if (options_nodeRange) attr.range = [$tp_attr_start, $tp_val_stop];
+      attributes.push(attr);
+
+      if (tok_getType() === $PUNC_COMMA) {
+        ASSERT_skipAny($PUNC_COMMA, lexerFlags);
+        // trailing comma is valid; the while loop will check for `}`
+      } else if (tok_getType() !== $PUNC_CURLY_CLOSE) {
+        return THROW_RANGE('Expected `,` or `}` after import attribute value, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
+      }
+    }
+
+    ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, lexerFlags);
+
+    return attributes;
   }
 
   function parseLetDeclaration(lexerFlags, $tp_let_start, $tp_let_line, $tp_let_column, scoop, labelSet, fdState, nestedLabels, astProp) {
@@ -9505,6 +9639,7 @@ function Parser(code, options = {}) {
         type: 'ImportExpression',
         loc: undefined,
         source: undefined,
+        options: null,
       });
     } else {
       AST_open(astProp, {
@@ -9524,13 +9659,33 @@ function Parser(code, options = {}) {
 
     let assignable = parseExpression(lexerFlags, acornCompat ? 'source' : 'arguments');
 
-    if (tok_getType() !== $PUNC_PAREN_CLOSE) {
-      // Error path
-
-      if (tok_getType() === $PUNC_COMMA) {
-        // [x]: `import(a, b)`
+    if (tok_getType() === $PUNC_COMMA) {
+      // Optional second argument for import attributes: import('x', { with: { type: 'json' } })
+      if (!allowImportAttributes) {
         return THROW_RANGE('Dynamic `import` only expected exactly one argument and does not allow for a trailing comma', $tp_import_start, tok_getStop());
       }
+
+      ASSERT_skipAny($PUNC_COMMA, lexerFlags);
+
+      if (tok_getType() === $PUNC_PAREN_CLOSE) {
+        // import('x',) -- trailing comma after first arg, no second arg
+        // That's fine, do nothing
+      } else {
+        assignable = parseExpression(lexerFlags, acornCompat ? 'options' : 'arguments');
+
+        // Allow trailing comma after second arg
+        if (tok_getType() === $PUNC_COMMA) {
+          ASSERT_skipAny($PUNC_COMMA, lexerFlags);
+        }
+
+        if (tok_getType() !== $PUNC_PAREN_CLOSE) {
+          return THROW_RANGE('Dynamic `import` expected at most two arguments', tok_getStart(), tok_getStop());
+        }
+      }
+    }
+
+    if (tok_getType() !== $PUNC_PAREN_CLOSE) {
+      // Error path
 
       if (tok_getType() === $ID_in) {
         return THROW_RANGE('The dynamic import syntax explicitly forbids the `in` operator', tok_getStart(), tok_getStop());

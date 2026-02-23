@@ -66,7 +66,8 @@ ast: {
         loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
         value: 'm',
         raw: '"m"'
-      }
+      },
+      attributes: []
     },
     {
       type: 'VariableDeclaration',
@@ -120,7 +121,7 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-import {} from "m";
+import "m";
 await using x = foo();
 ````
 

@@ -171,6 +171,7 @@ function EmptyStatement(node, parent, prop, index) {
 function ExportAllDeclaration(node, parent, prop, index) {
   assert(node.type, 'ExportAllDeclaration');
   $(node.source, node, 'source');
+  if (node.attributes) node.attributes.forEach((e, i) => $(e, node, 'attributes', i));
 }
 function ExportDefaultDeclaration(node, parent, prop, index) {
   assert(node.type, 'ExportDefaultDeclaration');
@@ -185,6 +186,7 @@ function ExportNamedDeclaration(node, parent, prop, index) {
   if (node.specifiers) node.specifiers.forEach((e, i) => $(e, node, 'specifiers', i));
   if (node.declaration) $(node.declaration, node, 'declaration');
   if (node.source) $(node.source, node, 'source');
+  if (node.attributes) node.attributes.forEach((e, i) => $(e, node, 'attributes', i));
 }
 function ExportSpecifier(node, parent, prop, index) {
   assert(node.type, 'ExportSpecifier');
@@ -238,10 +240,16 @@ function IfStatement(node, parent, prop, index) {
 function Import(node, parent, prop, index) {
   assert(node.type, 'Import');
 }
+function ImportAttribute(node, parent, prop, index) {
+  assert(node.type, 'ImportAttribute');
+  $(node.key, node, 'key');
+  $(node.value, node, 'value');
+}
 function ImportDeclaration(node, parent, prop, index) {
   assert(node.type, 'ImportDeclaration');
   node.specifiers.forEach((e, i) => $(e, node, 'specifiers', i));
   if (node.source) $(node.source, node, 'source');
+  if (node.attributes) node.attributes.forEach((e, i) => $(e, node, 'attributes', i));
 }
 function ImportDefaultSpecifier(node, parent, prop, index) {
   assert(node.type, 'ImportDefaultSpecifier');
@@ -477,6 +485,7 @@ let jumpTable = [
     c = type.charCodeAt(0);
     if (c === $$A_UC_41) return AssignmentPattern(node, parent, prop, index);
     if (c === $$B_UC_42) return BlockStatement(node, parent, prop, index);
+    if (type.charCodeAt(6) === $$A_UC_41) return ImportAttribute(node, parent, prop, index);
     return ImportSpecifier(node, parent, prop, index);
   },
   (node, parent, prop, index, type, c) => {

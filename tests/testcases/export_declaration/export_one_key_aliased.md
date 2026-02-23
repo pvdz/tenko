@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export one key aliased
+## PASS MODULE
 
 ## Input
 
@@ -88,7 +89,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

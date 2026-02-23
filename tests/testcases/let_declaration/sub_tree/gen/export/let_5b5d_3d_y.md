@@ -8,6 +8,8 @@
 > ::> let 5b5d 3d y
 >          [] = y
 
+## PASS MODULE
+
 ## Input
 
 
@@ -81,7 +83,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

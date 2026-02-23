@@ -8,6 +8,8 @@
 >
 > This (without the `as`) was available since ES6 so it should be fine
 
+## PASS MODULE
+
 ## Input
 
 - `es = 11`
@@ -63,7 +65,8 @@ ast: {
         loc:{start:{line:1,column:14},end:{line:1,column:19},source:''},
         value: 'bar',
         raw: "'bar'"
-      }
+      },
+      attributes: []
     }
   ]
 }

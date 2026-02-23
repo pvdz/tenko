@@ -5,6 +5,7 @@
 > :: export declaration : export object is not generic
 >
 > ::> exported name can be weird keywords
+## PASS MODULE
 
 ## Input
 
@@ -88,7 +89,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     },
     {
       type: 'ImportDeclaration',
@@ -114,7 +116,8 @@ ast: {
         loc:{start:{line:1,column:51},end:{line:1,column:56},source:''},
         value: 'bar',
         raw: '"bar"'
-      }
+      },
+      attributes: []
     }
   ]
 }

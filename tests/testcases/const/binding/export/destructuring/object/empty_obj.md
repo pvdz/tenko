@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : object
 >
 > ::> empty obj
+## PASS MODULE
 
 ## Input
 
@@ -76,7 +77,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

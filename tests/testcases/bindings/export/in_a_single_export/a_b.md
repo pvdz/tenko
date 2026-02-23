@@ -22,6 +22,8 @@
 > 
 > > It is a Syntax Error if any element of the ExportedBindings of ModuleItemList does not also occur in either the VarDeclaredNames of ModuleItemList, or the LexicallyDeclaredNames of ModuleItemList.
 
+## PASS MODULE
+
 ## Input
 
 `````js
@@ -128,7 +130,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

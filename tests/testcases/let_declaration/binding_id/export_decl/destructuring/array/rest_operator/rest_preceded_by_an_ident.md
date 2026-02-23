@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : destructuring : array : rest operator
 >
 > ::> rest preceded by an ident
+## PASS MODULE
 
 ## Input
 
@@ -91,7 +92,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

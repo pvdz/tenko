@@ -5,6 +5,7 @@
 > :: const : binding : export : destructuring : object
 >
 > ::> single var base case
+## PASS MODULE
 
 ## Input
 
@@ -95,7 +96,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

@@ -8,6 +8,8 @@
 >
 > As per https://github.com/tc39/ecma262/pull/1174
 
+## PASS MODULE
+
 ## Input
 
 `````js
@@ -73,7 +75,8 @@ ast: {
         loc:{start:{line:1,column:21},end:{line:1,column:26},source:''},
         value: 'bar',
         raw: "'bar'"
-      }
+      },
+      attributes: []
     }
   ]
 }

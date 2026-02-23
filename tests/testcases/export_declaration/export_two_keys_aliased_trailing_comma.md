@@ -5,6 +5,7 @@
 > :: export declaration
 >
 > ::> export two keys aliased trailing comma
+## PASS MODULE
 
 ## Input
 
@@ -112,7 +113,8 @@ ast: {
         }
       ],
       declaration: null,
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }

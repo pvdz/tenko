@@ -324,9 +324,15 @@ function EmptyStatement(node) {
   assert(node.type, 'EmptyStatement');
   return ';';
 }
+function printAttributes(node) {
+  if (node.attributes && node.attributes.length) {
+    return ' with {' + node.attributes.map($).join(', ') + '}';
+  }
+  return '';
+}
 function ExportAllDeclaration(node) {
   assert(node.type, 'ExportAllDeclaration');
-  return 'export * from ' + $(node.source) + ';';
+  return 'export * from ' + $(node.source) + printAttributes(node) + ';';
 }
 function ExportDefaultDeclaration(node) {
   assert(node.type, 'ExportDefaultDeclaration');
@@ -341,10 +347,10 @@ function ExportNamedDeclaration(node) {
   if (node.specifiers.length === 1 && node.specifiers[0].type === 'ExportNamespaceSpecifier') {
     // This is specifically `export * as foo from 'bar'` syntax
     assert(!!node.source, true, 'spec dictates this syntax requires the source');
-    return 'export ' + $(node.specifiers[0]) + ' from ' + $(node.source) + ';';
+    return 'export ' + $(node.specifiers[0]) + ' from ' + $(node.source) + printAttributes(node) + ';';
   }
   assert(node.specifiers.length !== 1 || (node.specifiers.length > 0 && node.specifiers[0].type !== 'ExportNamespaceSpecifier'), true, 'the ExportNamespaceSpecifier node has restrictions');
-  return 'export ' + (node.declaration ? $(node.declaration) : ('{' + node.specifiers.map($).join(', ') + '}')) + (node.source ? ' from ' + $(node.source) : '');
+  return 'export ' + (node.declaration ? $(node.declaration) : ('{' + node.specifiers.map($).join(', ') + '}')) + (node.source ? ' from ' + $(node.source) : '') + printAttributes(node);
 }
 function ExportSpecifier(node) {
   assert(node.type, 'ExportSpecifier');
@@ -407,14 +413,19 @@ function Import(node) {
   assert(node.type, 'Import');
   return 'import';
 }
+function ImportAttribute(node) {
+  assert(node.type, 'ImportAttribute');
+  return $(node.key) + ': ' + $(node.value);
+}
 function ImportDeclaration(node) {
   assert(node.type, 'ImportDeclaration');
   let importSpecifiers = node.specifiers.filter(s => s.type === 'ImportSpecifier');
   let otherSpecifiers = node.specifiers.filter(s => s.type !== 'ImportSpecifier');
+  let attrs = printAttributes(node);
   if (!importSpecifiers.length && !otherSpecifiers.length) {
-    return 'import {}' + (node.source ? ' from ' + $(node.source) : '') + ';';
+    return 'import ' + $(node.source) + attrs + ';';
   }
-  return 'import ' + (otherSpecifiers.length ? otherSpecifiers.map($).join(', ') : '') + (importSpecifiers.length && otherSpecifiers.length ? ', ' : '') + (importSpecifiers.length ? '{' + importSpecifiers.map($).join(', ') + '}' : '') + (node.source ? ' from ' + $(node.source) : '') + ';';
+  return 'import ' + (otherSpecifiers.length ? otherSpecifiers.map($).join(', ') : '') + (importSpecifiers.length && otherSpecifiers.length ? ', ' : '') + (importSpecifiers.length ? '{' + importSpecifiers.map($).join(', ') + '}' : '') + (node.source ? ' from ' + $(node.source) : '') + attrs + ';';
 }
 function ImportDefaultSpecifier(node) {
   assert(node.type, 'ImportDefaultSpecifier');
@@ -422,6 +433,10 @@ function ImportDefaultSpecifier(node) {
 }
 function ImportExpression(node) {
   assert(node.type, 'ImportExpression');
+  if (node.source !== undefined) {
+    // acorn compat mode
+    return 'import(' + $(node.source) + (node.options ? ', ' + $(node.options) : '') + ')';
+  }
   return 'import(' + node.arguments.map($).join(', ') + ')';
 }
 function ImportNamespaceSpecifier(node) {
@@ -774,6 +789,7 @@ let jumpTable = [
     c = type.charCodeAt(0);
     if (c === $$A_UC_41) return AssignmentPattern(node);
     if (c === $$B_UC_42) return BlockStatement(node);
+    if (type.charCodeAt(6) === $$A_UC_41) return ImportAttribute(node);
     return ImportSpecifier(node);
   },
   (node, fromFor, type, c) => {

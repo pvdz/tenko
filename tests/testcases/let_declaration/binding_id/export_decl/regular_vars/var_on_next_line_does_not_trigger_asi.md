@@ -5,6 +5,7 @@
 > :: let declaration : binding id : export decl : regular vars
 >
 > ::> var on next line does not trigger asi
+## PASS MODULE
 
 ## Input
 
@@ -74,7 +75,8 @@ ast: {
           }
         ]
       },
-      source: null
+      source: null,
+      attributes: []
     }
   ]
 }
