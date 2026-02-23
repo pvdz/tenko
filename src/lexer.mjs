@@ -560,6 +560,7 @@ function Lexer(
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexDuplicateNamedCaptureGroups = targetEsVersion >= VERSION_REGEX_DUPLICATE_NAMED_GROUPS || targetEsVersion === VERSION_WHATEVER; // ES2025: duplicate names allowed when they can't both participate (MightBothParticipate)
+  const supportRegexModifiers = targetEsVersion >= 16 || targetEsVersion === Infinity; // ES2025: (?ims:pattern) and (?ims-ms:pattern) inline flag modifiers
   const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
   const supportRegexVFlag = targetEsVersion >= 15 || targetEsVersion === Infinity; // ES2024: unicodeSets mode (v flag), mutually exclusive with u
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
@@ -2946,6 +2947,22 @@ function Lexer(
                 return regexSyntaxError('Encountered early EOF');
               }
               c = peek();
+            } else if (supportRegexModifiers && (c === $$I_69 || c === $$M_6D || c === $$S_73 || c === $$DASH_2D)) {
+              // ES2025: (?ims:...) or (?ims-ms:...)
+              if (parseRegexModifierFlags() === REGEX_ALWAYS_BAD) return REGEX_ALWAYS_BAD;
+              if (eof()) return regexSyntaxError('Encountered early EOF');
+              c = peek();
+              let subbad = _parseRegexBody(c, groupLevel + 1, REGEX_ALWAYS_GOOD);
+              if (supportRegexDuplicateNamedCaptureGroups) lastCompletedGroupDepth = groupLevel + 1;
+              afterAtom = true;
+              if (subbad === REGEX_ALWAYS_BAD) {
+                uflagStatus = REGEX_ALWAYS_BAD;
+              } else if (subbad === REGEX_GOOD_SANS_UV_FLAG) {
+                uflagStatus = updateRegexUflagIsIllegal(uflagStatus, lastPotentialRegexError);
+              } else if (subbad === REGEX_GOOD_WITH_U_FLAG) {
+                uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
+              }
+              break;
             } else {
               return regexSyntaxError('Illegal character after pseudo group marker `(?` [ord=' + c + ']');
             }
@@ -5250,6 +5267,49 @@ function Lexer(
       }
 
       return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case');
+  }
+  function parseRegexModifierFlags() {
+    // ES2025: (?ims:...) or (?ims-ms:...). Only i, m, s allowed. No duplicate in a set; add and remove must be disjoint.
+    const I = 1, M = 2, S = 4;
+    let addMask = 0;
+    let removeMask = 0;
+    let hadMinus = false;
+    while (neof()) {
+      let c = peek();
+      if (c === $$I_69 || c === $$M_6D || c === $$S_73) {
+        let bit = c === $$I_69 ? I : c === $$M_6D ? M : S;
+        if (addMask & bit) return regexSyntaxError('Duplicate modifier flag `' + String.fromCharCode(c) + '`');
+        addMask |= bit;
+        ASSERT_skip(c);
+      } else if (c === $$DASH_2D) {
+        hadMinus = true;
+        ASSERT_skip($$DASH_2D);
+        break;
+      } else if (c === $$COLON_3A) {
+        break;
+      } else {
+        return regexSyntaxError('Invalid modifier flag (only i, m, s allowed) [ord=' + c + ', `' + String.fromCharCode(c) + '`]');
+      }
+    }
+    if (hadMinus) {
+      while (neof()) {
+        let c = peek();
+        if (c === $$I_69 || c === $$M_6D || c === $$S_73) {
+          let bit = c === $$I_69 ? I : c === $$M_6D ? M : S;
+          if (removeMask & bit) return regexSyntaxError('Duplicate modifier flag in remove set `' + String.fromCharCode(c) + '`');
+          if (addMask & bit) return regexSyntaxError('Modifier group: flag cannot appear in both add and remove set');
+          removeMask |= bit;
+          ASSERT_skip(c);
+        } else if (c === $$COLON_3A) {
+          break;
+        } else {
+          return regexSyntaxError('Invalid modifier flag in remove set (only i, m, s allowed) [ord=' + c + ']');
+        }
+      }
+      if (removeMask === 0) return regexSyntaxError('Modifier group: second flag set cannot be empty after `-`');
+    }
+    if (eof() || peek() !== $$COLON_3A) return regexSyntaxError('Modifier group: expected `:` after modifier flags');
+    ASSERT_skip($$COLON_3A);
   }
   function parseRegexFlags() {
     // Valid flags: g, i, m, u, y, s (es9), d (es2022), v (es2024). In unicode mode each flag may only occur once.
