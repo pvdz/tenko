@@ -33,7 +33,7 @@ throws: Parser error!
 start@1:0, error@1:17
 ╔══╦═════════════════
  1 ║ (class B extends new.target {})
-   ║                  ^^^^------- error
+   ║                  ^^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````

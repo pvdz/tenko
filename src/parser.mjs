@@ -1796,9 +1796,9 @@ function Parser(code, options = {}) {
     skipToTargetOrDie(lexerFlags);
   }
   function skipToTargetOrDie(lexerFlags) {
-    // Next token must be `target`, with unlikely some whitespace
+    // Next token must be `target` (by type or by canonical name, so that e.g. t\u0061rget is accepted and we can report the "no escape" error)
     skipAny(lexerFlags);
-    if (tok_getType() !== $ID_target) {
+    if (tok_getType() !== $ID_target && !(isIdentToken(tok_getType()) && tok_getCanoN() === 'target')) {
       return THROW_RANGE('Next token should be `target` but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
     }
   }
@@ -8658,13 +8658,7 @@ function Parser(code, options = {}) {
     // - `new.target`
     // - `new.foo`
 
-    if (hasNoFlag(lexerFlags, LF_CAN_NEW_DOT_TARGET)) {
-      // only valid if there is at least one scope in the scope tree that is not an arrow scope
-      // - `() => new.target`
-      // - TODO: `function f(x=() => new.target) {}`
-      return THROW_RANGE('Must be inside/nested a regular function to use `new.target`', $tp_new_start, tok_getStop());
-    }
-    ASSERT_skipToTargetOrDie('.', lexerFlags); // already asserted the dot. For now, the valid followup is `target`
+    ASSERT_skipToTargetOrDie('.', lexerFlags); // consume dot, ensure next token is `target`
 
     let $tp_property_line = tok_getLine();
     let $tp_property_column = tok_getColumn();
@@ -8672,7 +8666,19 @@ function Parser(code, options = {}) {
     let $tp_property_stop = tok_getStop();
     let $tp_property_canon = tok_getCanoN();
 
-    ASSERT_skipDiv($ID_target, lexerFlags); // new.target / foo
+    // The IdentifierName target in new.target must not contain any Unicode escape sequences (e.g. new.t\u0061rget).
+    if (tok_sliceInput($tp_property_start, $tp_property_stop).indexOf('\\') !== -1) {
+      return THROW_RANGE('`new.target` must not contain escaped characters', $tp_property_start, $tp_property_stop);
+    }
+
+    if (hasNoFlag(lexerFlags, LF_CAN_NEW_DOT_TARGET)) {
+      // only valid if there is at least one scope in the scope tree that is not an arrow scope
+      // - `() => new.target`
+      // - TODO: `function f(x=() => new.target) {}`
+      return THROW_RANGE('Must be inside/nested a regular function to use `new.target`', $tp_new_start, tok_getStop());
+    }
+
+    skipDiv(lexerFlags); // consume target (may be $ID_target or ident with canon "target")
 
     AST_setClosedNode($tp_new_start, astProp, {
       type: 'MetaProperty',
