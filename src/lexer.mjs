@@ -4310,19 +4310,19 @@ function Lexer(
           ASSERT(c !== INVALID_IDENT_CHAR, 'I dont think this status flag can reach this point');
 
           if (c & REGEX_CHARCLASS_BAD_WITH_U_FLAG) {
-            c = c ^ REGEX_CHARCLASS_BAD_WITH_U_FLAG; // remove the CHARCLASS_BAD_WITH_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
+            c = c & ~REGEX_CHARCLASS_BAD_WITH_U_FLAG; // remove the CHARCLASS_BAD_WITH_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
             ASSERT(lastPotentialRegexError, 'error should be set');
             flagState = updateRegexUflagIsIllegal(flagState, lastPotentialRegexError);
             ASSERT(flagState === REGEX_GOOD_SANS_UV_FLAG || flagState === REGEX_ALWAYS_BAD, 'either way, the flag state should now reflect "bad with u-flag", or worse');
           }
           if (c & REGEX_CHARCLASS_BAD_WITH_V_FLAG) {
-            c = c ^ REGEX_CHARCLASS_BAD_WITH_V_FLAG;
+            c = c & ~REGEX_CHARCLASS_BAD_WITH_V_FLAG;
             regexBodyHasSyntaxInvalidWithVFlag = true;
             // Use same message as u-flag path when source didn't set a v-specific one (e.g. identity escape sets both at source)
             if (!lastPotentialRegexErrorForVFlag && lastPotentialRegexError) lastPotentialRegexErrorForVFlag = lastPotentialRegexError;
           }
           if (c & REGEX_CHARCLASS_BAD_SANS_U_FLAG) {
-            c = c ^ REGEX_CHARCLASS_BAD_SANS_U_FLAG; // remove the REGEX_CHARCLASS_BAD_SANS_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
+            c = c & ~REGEX_CHARCLASS_BAD_SANS_U_FLAG; // remove the REGEX_CHARCLASS_BAD_SANS_U_FLAG flag (dont use ^= because that deopts... atm; https://stackoverflow.com/questions/34595356/what-does-compound-let-const-assignment-mean )
             ASSERT(lastPotentialRegexError, 'error should be set');
             flagState = updateRegexUflagIsMandatory(flagState, lastPotentialRegexError);
             ASSERT(flagState === REGEX_GOOD_WITH_U_FLAG || flagState === REGEX_ALWAYS_BAD, 'either way, the flag state should now reflect "bad with u-flag", or worse');

@@ -523,7 +523,7 @@ function sansFlag(flags, flag) {
   ASSERT(sansFlag.length === arguments.length, 'arg count');
   ASSERT(typeof flag === 'number', 'sansFlag flag 1 should be number;', flag, flags);
   ASSERT(typeof flags === 'number', 'sansFlag flag 2 should be number;', flag, flags);
-  return (flags | flag) ^ flag;
+  return flags & ~flag;
 }
 function hasAllFlags(flags1, flags2) {
   // This function is inlined by the build script...
@@ -3975,15 +3975,13 @@ function Parser(code, options = {}) {
     return (state & NOT_ASSIGNABLE) === NOT_ASSIGNABLE;
   }
   function setAssignable(state) {
-    // set both flags then unset the one we dont want
-    return (state | IS_ASSIGNABLE | NOT_ASSIGNABLE) ^ NOT_ASSIGNABLE;
+    return (state & ~NOT_ASSIGNABLE) | IS_ASSIGNABLE;
   }
   function setNotAssignable(state) {
-    // set both flags then unset the one we dont want
-    return (state | IS_ASSIGNABLE | NOT_ASSIGNABLE) ^ IS_ASSIGNABLE;
+    return (state & ~IS_ASSIGNABLE) | NOT_ASSIGNABLE;
   }
   function mergeAssignable(override, state) {
-    return override | ((state | NOT_ASSIGNABLE | IS_ASSIGNABLE) ^ (NOT_ASSIGNABLE | IS_ASSIGNABLE));
+    return override | (state & ~(NOT_ASSIGNABLE | IS_ASSIGNABLE));
   }
 
   function parseAwait(lexerFlags, $tp_await_type, $tp_await_start, $tp_await_stop, $tp_await_line, $tp_await_column, $tp_await_canon, isNewArg, allowAssignment, astProp) {
@@ -11424,7 +11422,7 @@ function Parser(code, options = {}) {
       let currentDestruct = parseObjectPart(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
       if (hasAnyFlag(currentDestruct, PIGGY_BACK_WAS_PROTO)) {
         ASSERT(options_webCompat === WEB_COMPAT_ON, 'this piggy should not appear if the web compat flag wasnt set');
-        currentDestruct ^= PIGGY_BACK_WAS_PROTO; // Since the bit was set, this should unset it without further checks
+        currentDestruct &= ~PIGGY_BACK_WAS_PROTO; // Since the bit was set, this should unset it without further checks
 
         // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
         // When ObjectLiteral appears in a context where ObjectAssignmentPattern is required the Early Error rule is not applied.

@@ -25,16 +25,21 @@ export function generateTestFile(tob) {
   console.log('Generating test case from', file);
 
   let [comment, ...code] = data.slice(1).split('###\n');
-  comment = comment.trim().split(/\n/g).map(s => {
-    const low = s.toLowerCase();
+  const rawLines = comment.trim().split(/\n/g);
+  const inputOptionLines = rawLines.filter(s => /^-\s*`[^`]+`\s*$/.test(s.trim()));
+  comment = rawLines.map(s => {
+    const t = s.trim();
+    if (/^-\s*`[^`]+`\s*$/.test(t)) return null; // pass through to input section
+    const low = t.toLowerCase();
     if (low === '## fail') return '\n## FAIL';
     if (low === '## pass') return '\n## PASS';
     if (low === '## pass module') return '\n## PASS MODULE';
     if (low === '## pass sloppy') return '\n## PASS SLOPPY';
     return ('>\n> ' + s);
-  }).join('\n');
+  }).filter(x => x !== null).join('\n');
   code = code.join('###'); // unlikely
   code = code.trim().split(/\n+/g).map(s => s.trimRight()).join('\n');
+  const inputOptionsBlock = inputOptionLines.length ? '\n\n' + inputOptionLines.join('\n') + '\n' : '';
 
   let relfile = file.slice(file.indexOf('tenko'));
 
@@ -59,7 +64,7 @@ export function generateTestFile(tob) {
 > :: ${descPath}
 >
 > ::> ${descFile}${comment ? '\n' + comment : ''}
-${INPUT_HEADER}${OUTPUT_QUINTICKJS}${code}${OUTPUT_QUINTICK}
+${INPUT_HEADER}${inputOptionsBlock}${OUTPUT_QUINTICKJS}${code}${OUTPUT_QUINTICK}
 `;
   fs.writeFileSync(file, newData);
 

@@ -176,8 +176,8 @@ function CallExpression(node) {
     }
 
     if (node.callee.name === 'sansFlag') {
-      // Basically an alias for `(a | b) ^ b`, to unset all bits in a that are set in b
-      return '((' + $w(node.arguments[0]) + ' | ' + $w(node.arguments[1]) + ') ^ ' + $w(node.arguments[1]) + ')';
+      // Clear bits in a that are set in b: a & ~b (Note: that is same as `(a | b) ^ b)`)
+      return '(' + $w(node.arguments[0]) + ' & ~' + $w(node.arguments[1]) + ')';
     }
     if (node.callee.name === 'hasAllFlags') {
       // Basically an alias for `(flags1 & flags2) === flags2`, to check whether at least all bits in b are set in a

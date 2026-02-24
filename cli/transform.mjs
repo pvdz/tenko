@@ -357,19 +357,17 @@ export function transform(ast, localConstMap, recordConstants) {
               });
               break;
             case 'sansFlag':
-              // Basically an alias for `(a | b) ^ b`, to unset all bits in a that are set in b
-              // return '((' + $w(node.arguments[0]) + ' | ' + $w(node.arguments[1]) + ') ^ ' + $w(node.arguments[1]) + ')';
-              // console.log(revisits, 'Inline sansFlag', node.arguments[0].type, node.arguments[1].type);
+              // Clear bits in a that are set in b: a & ~b (Note: that is same as `(a | b) ^ b)`)
               replace(parent, prop, index, {
                 type: 'BinaryExpression',
-                left: {
-                  type: 'BinaryExpression',
-                  left: node.arguments[0],
-                  operator: '|',
-                  right: node.arguments[1],
+                left: node.arguments[0],
+                operator: '&',
+                right: {
+                  type: 'UnaryExpression',
+                  operator: '~',
+                  prefix: true,
+                  argument: node.arguments[1],
                 },
-                operator: '^',
-                right: node.arguments[1],
               });
               // Revisit this node because if both arguments are literals then we can fold them up now
               return true;
