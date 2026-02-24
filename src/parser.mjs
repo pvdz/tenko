@@ -14087,6 +14087,7 @@ function Parser(code, options = {}) {
 
   // <SCRUB AST>
   _tree.loc = AST_getCloseLoc(0, 1, 0, tok_prevEndPointer(), tok_getLine(), tok_getColumn());
+  if (options_nodeRange) _tree.range = [0, tok_prevEndPointer()];
   // </SCRUB AST>
 
   return {
