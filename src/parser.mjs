@@ -3886,11 +3886,10 @@ function Parser(code, options = {}) {
         return parseAsyncFunctionDecl(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp);
       }
 
-      // if (tok_getType() === $ID_of) TODO // should this be special cased?
-
-      if ($tp_afterAsync_type === $ID_in || $tp_afterAsync_type === $ID_instanceof) {
+      if ($tp_afterAsync_type === $ID_in || $tp_afterAsync_type === $ID_instanceof || $tp_afterAsync_type === $ID_of) {
         // - `async in x`
         // - `async instanceof x`
+        // - `for (async of x);` / `for await (async of x);` — async is contextual keyword, fine as binding ident
 
         return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp);
       }
