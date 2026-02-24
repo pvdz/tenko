@@ -511,6 +511,11 @@ import {
   P,
 } from './enum_parser.mjs';
 
+// Anchor to start or a non-slash, then skip zero or more backslash pairs until you get a backslash followed by 8 or 9
+const REGEX_HAS_89 = /(?:^|[^\\])(?:\\\\)*\\[89]/;
+// Anchor to start or a non-slash, then skip zero or more backslash pairs until you get a backslash followed by 1-7 or a zero followed by any digit (we don't care about the actual value here)
+const REGEX_HAS_17 = /(?:^|[^\\])(?:\\\\)*\\(?:[1-7]|0[0-7])/;
+
 let ASSERT_ASI_REGEX_NEXT = false; // When set, do not throw assertion error in the semi/asi parser for seeing a regex
 
 function sansFlag(flags, flag) {
@@ -2568,6 +2573,9 @@ function Parser(code, options = {}) {
     let hadUseStrict = false;
     let isStrict = hasAllFlags(lexerFlags, LF_STRICT_MODE);
     let hadOctal = false; // Edge case to guard against: `"x\077";"use strict";` is an error
+    let hadEightOrNine = false;
+    let hadEightOrNineStart = 0;
+    let hadEightOrNineStop = 0;
     // note: there may be multiple (bogus or valid) directives...
     while (isStringToken(tok_getType())) {
       // we must first parse as usual to confirm this is an isolated string and not
@@ -2612,11 +2620,24 @@ function Parser(code, options = {}) {
         // There was no tail, no op, no comma, so this was ASI, I hope. Or an error.
         // This is a directive. It may be nonsense, but it's a string in the head so it's a directive.
 
-        let dir = tok_sliceInput($tp_string_start + 1, $tp_string_stop - 1)
+        let directive = tok_sliceInput($tp_string_start + 1, $tp_string_stop - 1)
+
+        // If we already saw "use strict", \8 and \9 in this directive are illegal (they were lexed before strict was set)
+        const eightNineDirective = REGEX_HAS_89.test(directive);
+        if (hadUseStrict && eightNineDirective) {
+          return THROW_RANGE('The grammar does not allow to escape the 8 or the 9 character', $tp_string_start, $tp_string_stop);
+        }
+        // Track \8 or \9 in a directive before "use strict"; once we see "use strict" the whole block is strict so we must reject
+        if (!hadUseStrict && eightNineDirective) {
+          hadEightOrNine = true;
+          hadEightOrNineStart = $tp_string_start;
+          hadEightOrNineStop = $tp_string_stop;
+        }
 
         // Check all directives for octals because strict mode may be enabled by a directive later in the same block
         // and that would still cause a previous sibling directive with octal escape to be an error.
-        if (!isStrict && /(^|[^\\])(\\\\)*\\(?:0\d|[1-9])/.test(dir)) {
+        // \8 and \9 are valid identity escapes (not octal), so only \0[1-7] and \[1-7] count as octal here.
+        if (!isStrict && REGEX_HAS_17.test(directive)) {
           // We can't really validate this with a regex. And yet, here we are :'(
           // [v]: `"x\\0"`
           // [x]: `"x\\0"; "use strict";`
@@ -2624,7 +2645,10 @@ function Parser(code, options = {}) {
           hadOctal = true;
         }
 
-        if (dir === 'use strict') {
+        if (directive === 'use strict') {
+          if (hadEightOrNine) {
+            return THROW_RANGE('The grammar does not allow to escape the 8 or the 9 character', hadEightOrNineStart, hadEightOrNineStop);
+          }
           hadUseStrict = true;
           lexerFlags = lexerFlags | LF_STRICT_MODE;
 
@@ -2650,7 +2674,7 @@ function Parser(code, options = {}) {
               // - `"use strict" \n 0123`
               return THROW_RANGE('Illegal legacy octal literal in strict mode', tok_getStart(), tok_getStop());
             }
-            if (!hadOctal && /(^|[^\\])(\\\\)*\\(?:0\d|[1-9])/.test(tok_sliceInput(tok_getStart(), tok_getStop()))) {
+            if (!hadOctal && REGEX_HAS_17.test(tok_sliceInput(tok_getStart(), tok_getStop()))) {
               // We can't really validate this with a regex. And yet, here we are :'(
               // [x]: `function f(){ "use strict" \n "x\\01" }`
               // [v]: `function f(){ "use strict" \n "x\\\01" }`
@@ -2658,6 +2682,10 @@ function Parser(code, options = {}) {
               // [x]: `function f(){ "x\\0"; "use strict"; }`
               // [v]: `function f(){ "x\\\\0"; "use strict"; }`
               return THROW_RANGE('Octal in directive with strict mode directive or in strict mode is always illegal', tok_getStart(), tok_getStop());
+            }
+            // \8 and \9 are illegal in strict mode; next token may have been lexed before we set strict
+            if (REGEX_HAS_89.test(tok_sliceInput(tok_getStart(), tok_getStop()))) {
+              return THROW_RANGE('The grammar does not allow to escape the 8 or the 9 character', tok_getStart(), tok_getStop());
             }
           }
 
@@ -2668,7 +2696,7 @@ function Parser(code, options = {}) {
           AST_setNodeDangerously(astProp, $tp_string_start, { // we know we will overwrite the existing string node
             type: 'Directive',
             loc: AST_getClosedLoc($tp_string_start, $tp_string_line, $tp_string_column),
-            directive: dir,
+            directive,
           });
           parseSemiOrAsi(lexerFlags);
         }
@@ -2678,7 +2706,7 @@ function Parser(code, options = {}) {
             type: 'ExpressionStatement',
             loc: AST_getClosedLoc($tp_string_start, $tp_string_line, $tp_string_column),
             expression: AST_popNode(astProp),
-            directive: dir,
+            directive,
           });
         }
       } else {

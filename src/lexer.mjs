@@ -1280,13 +1280,21 @@ function Lexer(
     ASSERT(typeof a === 'number', 'first digit ord');
     ASSERT(typeof lexerFlags === 'number', 'lexerFlags number');
 
-    // \8 and \9 are never allowed in strings. Tagged templates the exception of course.
+    // \8 and \9 are never allowed in strings in strict mode. In _untagged_ templates they are never allowed (regardless of mode).
+    // Tagged templates are the exception: the parser may still accept the template but with bad escape.
+    // \8 and \9 are allowed as identity escape only in sloppy mode, and only in non-template strings.
     // > SingleStringCharacter -> `\` EscapeSequence -> CharacterEscapeSequence -> NonEscapeCharacter ->
     // >   SourceCharacter but not one of EscapeCharacter or LineTerminator -> (EscapeCharacter:) DecimalDigit -> 0123456789
-
     if (a === $$8_38 || a === $$9_39) {
-      if (!lastReportableLexerError) lastReportableLexerError = 'The grammar does not allow to escape the 8 or the 9 character';
-      return BAD_ESCAPE;
+      if (forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
+        if (!lastReportableLexerError) lastReportableLexerError = forTemplate
+          ? 'Illegal legacy octal escape in template, where octal escapes are never allowed'
+          : 'The grammar does not allow to escape the 8 or the 9 character';
+        return BAD_ESCAPE;
+      }
+      lastCanonizedInput += String.fromCharCode(a);
+      ++lastCanonizedInputLen;
+      return GOOD_ESCAPE;
     }
 
     if (eof()) return GOOD_ESCAPE; // Will error somewhere else

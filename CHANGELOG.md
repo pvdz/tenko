@@ -36,6 +36,8 @@
 - Fixed a bug in the printer for `new` with MemberExpression argument
   - It would not wrap the argument in parenthesis if it was a member expression, leading to ambiguous case bugs like `new f().g()` vs `new (f().g)()`.
 - Added the option `alwaysAllowOctalEscapes` to always allow to parse octal escapes, even in strict mode etc.
+- Fixed `new.target`: is now rejected when it has an escape, e.g. `new.t\u0061rget`.
+- String/template literals: `\8` and `\9` are no longer treated as octal escapes, regardless. They are now properly only rejected in strings in strict mode and in (untagged) templates.
 
 ## v2.0.1
 
