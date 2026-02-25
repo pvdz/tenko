@@ -6413,7 +6413,7 @@ function Parser(code, options = {}) {
 
     let $tp_next_type = tok_getType();
 
-    if ($tp_next_type === $ID_in || $tp_next_type === $ID_in) {
+    if ($tp_next_type === $ID_in || $tp_next_type === $ID_instanceof) {
       return THROW_RANGE('Cannot use `let` as a regular var name as the lhs of `in` or `instanceof` in a toplevel expression statement', tok_getStart(), tok_getStop()); // And why would you.
     }
 
