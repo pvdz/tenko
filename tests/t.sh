@@ -268,11 +268,15 @@ Tenko CLI Toolkit help:
     p6)
       ACTION='perf6'
       ;;
-    c8);&
-    coverage):
+    c8)
       ACTION='coverage'
       ;;
-    d);&
+    coverage)
+      ACTION='coverage'
+      ;;
+    d)
+      ACTION='doptigate'
+      ;;
     deoptigate)
       ACTION='doptigate'
       ;;
@@ -308,7 +312,7 @@ Tenko CLI Toolkit help:
     --no-fatals)    EXTRA='--no-fatals'   ;;
     --concise)      EXTRA='--concise'     ;;
     -q)             EXTRA='-q'            ;;
-    -b);&
+    -b)             BUILD='-b'            ;;
     --build)        BUILD='-b'            ;;
     --nb)           NO_BUILDING='--nb'    ;;
     --no-compat)    NOCOMP='--no-compat'  ;;
