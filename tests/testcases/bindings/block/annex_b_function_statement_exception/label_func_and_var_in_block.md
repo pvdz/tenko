@@ -26,6 +26,8 @@
 > 
 > In a block the name should propagate to the parent statement and clash with the var, in all modes.
 
+## FAIL
+
 ## Input
 
 `````js

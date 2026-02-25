@@ -2208,7 +2208,7 @@ function Parser(code, options = {}) {
     if (astUids) scoop.$uid = uid_counter++;
     return scoopNew;
   }
-  function SCOPE_addFuncDeclName(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState) {
+  function SCOPE_addFuncDeclName(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState, isLabelled) {
     ASSERT(SCOPE_addFuncDeclName.length === arguments.length, 'arg count');
     ASSERT([BINDING_TYPE_FUNC_VAR, BINDING_TYPE_FUNC_LEX, BINDING_TYPE_FUNC_STMT].includes(bindingType), 'either a func lex or var', bindingType);
     ASSERT(scoop === DO_NOT_BIND || scoop.isScope, 'expecting scoop', scoop);
@@ -2235,12 +2235,13 @@ function Parser(code, options = {}) {
     // > At the top level of a `Script`, function declarations are treated like var declarations rather than like lexical declarations
 
     // The above comes down to the following; a func decl is a `var` if it's directly in a scope and if that is
-    // either a function scope or the goal is script. Otherwise it is to be considered a lexical (let) binding.
+    // either a function scope or the goal is script; or if it's in a block/switch and not strict and not labelled
+    // (var-like, hoisted within the block). Labelled function decls in blocks are always lexical.
     // This includes function statements, they are always lexical. Additionally, the name of a func decl in a label
     // does not propagate up in any context where it is allowed and when nested in `if` or `else` it's considered to
     // be wrapped in a block. So neither legit function propagates to the parent of the statement that encloses it.
 
-    ASSERT((bindingType === BINDING_TYPE_FUNC_VAR) === (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)), 'redundancy?');
+    ASSERT((bindingType === BINDING_TYPE_FUNC_VAR) === ( (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)) || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED) ), 'redundancy?');
 
     if (bindingType === BINDING_TYPE_FUNC_VAR) {
       SCOPE_addVarBinding(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType);
@@ -2286,7 +2287,7 @@ function Parser(code, options = {}) {
     //   - module goal global is lexical
     //   - script goal global is var
     //   - inside function scope is var
-    //   - inside block is lexical
+    //   - inside block/switch: strict → lexical (let-like), non-strict → var-like (hoisted within block)
     //   - inside if is lexical, as if wrapped inside a block
     //   - inside label is lexical
     //     - in script global or function scope it does not propagate outside the label
@@ -3036,7 +3037,7 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Cannot parse a function declaration here, only expecting statements here', $tp_funcHead_start, $tp_funcHead_stop);
     }
 
-    return parseFunctionAfterKeyword(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, optionalIdent, NOT_CONSTRUCTOR, NOT_METHOD, $tp_async_type, $tp_star_type, $UNTYPED, $UNTYPED, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, fdState, astProp);
+    return parseFunctionAfterKeyword(lexerFlags, scoop, isFuncDecl, isRealFuncExpr, optionalIdent, NOT_CONSTRUCTOR, NOT_METHOD, $tp_async_type, $tp_star_type, $UNTYPED, $UNTYPED, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, isLabelled, fdState, astProp);
   }
   function parseFunctionExpression(lexerFlags, $tp_function_start, $tp_function_line, $tp_function_column, astProp) {
     ASSERT(parseFunctionExpression.length === arguments.length, 'arg count');
@@ -3060,6 +3061,7 @@ function Parser(code, options = {}) {
       $tp_function_start,
       $tp_function_line,
       $tp_function_column,
+      NOT_LABELLED,
       FDS_ILLEGAL, // this flag is not relevant for func exprs
       astProp
     );
@@ -3085,6 +3087,7 @@ function Parser(code, options = {}) {
       $tp_function_start,
       $tp_function_line ,
       $tp_function_column,
+      NOT_LABELLED,
       FDS_ILLEGAL, // this flag is not relevant for func exprs
       astProp
     );
@@ -3120,7 +3123,7 @@ function Parser(code, options = {}) {
 
     return NOT_ASSIGNABLE;
   }
-  function parseFunctionAfterKeyword(lexerFlags, outerScoop, isFuncDecl, isRealFuncExpr, optionalIdent, isClassConstructor, isMethod, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, fdState, astProp) {
+  function parseFunctionAfterKeyword(lexerFlags, outerScoop, isFuncDecl, isRealFuncExpr, optionalIdent, isClassConstructor, isMethod, $tp_async_type, $tp_star_type, $tp_get_type, $tp_set_type, $tp_astRange_start, $tp_astRange_line, $tp_astRange_column, isLabelled, fdState, astProp) {
     // $tt_firstToken, // for range in AST, `function` or `async` or method name/modifiers
     // fdState, // for errors and scoping
 
@@ -3230,11 +3233,16 @@ function Parser(code, options = {}) {
         getFuncIdentAsyncGenState(isRealFuncExpr, lexerFlags, $tp_star_type, $tp_async_type)
       );
 
-      // A function name is bound lexically, except when directly in script-goal global scope or any-goal function scope
+      // A function name is bound lexically, except:
+      // - when directly in script-goal global scope or any-goal function scope (var-like, hoisted to that scope), or
+      // - when inside a block/switch in non-strict mode (var-like, hoisted within the block; strict uses let-like/TDZ).
+      // Labelled function declarations in blocks are always lexical (per LabelledStatements LexicallyDeclaredNames).
       let nameBindingType = (
         isFuncDecl === IS_FUNC_DECL &&
-        fdState === FDS_VAR &&
-        (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)
+        (
+          (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT))
+          || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED)
+        )
       ) ? BINDING_TYPE_FUNC_VAR : BINDING_TYPE_FUNC_LEX;
 
       canonName = $tp_functionNameToVerify_canon;
@@ -3248,7 +3256,7 @@ function Parser(code, options = {}) {
       // declarations bind in outer scope, expressions bind in inner scope, methods bind ...  ehh?
       if (isFuncDecl === IS_FUNC_DECL) {
         // TODO: add test case for catch shadow
-        SCOPE_addFuncDeclName(lexerFlags, outerScoop, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, canonName, nameBindingType, fdState);
+        SCOPE_addFuncDeclName(lexerFlags, outerScoop, $tp_functionNameToVerify_start, $tp_functionNameToVerify_stop, canonName, nameBindingType, fdState, isLabelled);
       } else {
         // Record the func expr name in the current layer, allow it to be shadowed.
         // TODO: I believe this is read-only. I'm just adding this to unblock something else. But I guess there are tests to be created for shadowing / writing to a func expr name.
@@ -12530,9 +12538,9 @@ function Parser(code, options = {}) {
       let $tp_paren_column = tok_getColumn();
       let $tp_paren_start = tok_getStart();
 
-      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, $tp_paren_start, $tp_paren_line, $tp_paren_column, FDS_ILLEGAL, 'value');
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, $tp_paren_start, $tp_paren_line, $tp_paren_column, NOT_LABELLED, FDS_ILLEGAL, 'value');
     } else {
-      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, FDS_ILLEGAL, 'value');
+      parseFunctionAfterKeyword(lexerFlags, DO_NOT_BIND, NOT_FUNC_DECL, NOT_FUNC_EXPR, IDENT_OPTIONAL, NOT_CONSTRUCTOR, IS_METHOD, $tp_async_type, $tp_star_type, $tf_getToken_type, $tf_setToken_type, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NOT_LABELLED, FDS_ILLEGAL, 'value');
     }
 
     AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, NODE_NAME_METHOD_OBJECT);
@@ -13511,6 +13519,7 @@ function Parser(code, options = {}) {
       acornCompat ? $tp_paren_start : $tp_methodStart_start,
       acornCompat ? $tp_paren_line : $tp_methodStart_line,
       acornCompat ? $tp_paren_column : $tp_methodStart_column,
+      NOT_LABELLED,
       FDS_ILLEGAL,
       'value'
     );

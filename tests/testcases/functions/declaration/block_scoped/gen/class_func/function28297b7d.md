@@ -6,6 +6,7 @@
 > :: functions : declaration : block scoped : gen : class func
 >
 > ::> function28297b7d
+## FAIL
 
 ## Input
 

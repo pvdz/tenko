@@ -6,6 +6,7 @@
 > :: functions : declaration : block scoped : gen : func const
 >
 > ::> function f28297b7d
+## FAIL
 
 ## Input
 
@@ -28,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Attempted to create a lexical binding for `f` but another binding already existed on the same level
+  Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
 start@1:0, error@1:24
 ╔══╦═════════════════
@@ -42,13 +43,23 @@ start@1:0, error@1:24
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Attempted to create a lexical binding for `f` but another binding already existed on the same level
+
+start@1:0, error@1:24
+╔══╦═════════════════
+ 1 ║ { const f = x; function f(){} }
+   ║                         ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+_Output same as strict mode._
 
 ### Sloppy mode with AnnexB
 
@@ -60,4 +71,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as strict mode._
