@@ -204,9 +204,11 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class C{#x;
+class C{
+#x;
 hasX(bar){return #x in bar;};
-getX(){return this.#x;};}
+getX(){return this.#x;};
+}
 ````
 
 Produces same AST

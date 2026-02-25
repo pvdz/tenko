@@ -178,8 +178,10 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(fail = class A{async [await](){};
-"x"(){};}) => {};
+(fail = class A{
+async [await](){};
+"x"(){};
+}) => {};
 ````
 
 Produces same AST

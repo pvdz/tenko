@@ -144,9 +144,11 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class C{m(){};
+class C{
+m(){};
 static {}
-static n(){};}
+static n(){};
+}
 ````
 
 Produces same AST

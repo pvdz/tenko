@@ -120,8 +120,10 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-{async function* f() {}
-var f;}
+{
+async function* f() {}
+var f;
+}
 ````
 
 Produces same AST

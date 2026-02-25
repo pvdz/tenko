@@ -142,7 +142,10 @@ Printer output different from input [module][annexb:no]:
 
 ````js
 var x, y;
-export {x, y}
+export {
+x,
+y
+}
 ````
 
 Produces same AST

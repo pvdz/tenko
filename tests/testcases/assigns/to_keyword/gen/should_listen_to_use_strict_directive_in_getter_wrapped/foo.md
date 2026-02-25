@@ -152,8 +152,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-foo = {get x(){"use strict";
-foo = x;}};
+foo = {get x(){
+"use strict";
+foo = x;
+}};
 ````
 
 Produces same AST

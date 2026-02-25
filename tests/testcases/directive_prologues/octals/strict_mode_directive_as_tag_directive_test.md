@@ -165,8 +165,10 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-function f() {"\5";
-("use strict")` \8 `;}
+function f() {
+"\5";
+("use strict")` \8 `;
+}
 ````
 
 Produces same AST

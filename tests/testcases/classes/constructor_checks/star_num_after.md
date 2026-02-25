@@ -139,8 +139,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x{constructor(){};
-* 9(){};}
+class x{
+constructor(){};
+* 9(){};
+}
 ````
 
 Produces same AST

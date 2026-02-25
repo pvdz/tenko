@@ -310,8 +310,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-{let AAAAAAAAAAAAAAAAAAAA;
-try {AAAAAAAAAAAAAAAAAAAA = false;} catch {AAAAAAAAAAAAAAAAAAAA = false;}}
+{
+let AAAAAAAAAAAAAAAAAAAA;
+try {AAAAAAAAAAAAAAAAAAAA = false;} catch {AAAAAAAAAAAAAAAAAAAA = false;}
+}
 ````
 
 Produces same AST

@@ -141,8 +141,10 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-try {} catch {} finally {package: ;
-package: for (;;) ;}
+try {} catch {} finally {
+package: ;
+package: for (;;) ;
+}
 ````
 
 Produces same AST

@@ -129,8 +129,10 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 "use strict";
-{function f() {}
-f();}
+{
+function f() {}
+f();
+}
 ````
 
 Produces same AST

@@ -140,8 +140,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x{static constructor(){};
-static constructor(){};}
+class x{
+static constructor(){};
+static constructor(){};
+}
 ````
 
 Produces same AST

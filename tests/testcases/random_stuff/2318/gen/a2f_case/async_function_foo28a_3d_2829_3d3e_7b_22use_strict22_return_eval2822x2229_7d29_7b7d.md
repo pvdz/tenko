@@ -146,8 +146,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async function foo(a = () => {"use strict";
-return eval("x");}) {}
+async function foo(a = () => {
+"use strict";
+return eval("x");
+}) {}
 ````
 
 Produces same AST

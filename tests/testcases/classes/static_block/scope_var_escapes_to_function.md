@@ -144,8 +144,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function f() {class C{static {var x = 1;}}
-return x;}
+function f() {
+class C{static {var x = 1;}}
+return x;
+}
 ````
 
 Produces same AST

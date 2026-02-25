@@ -103,8 +103,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-for (;;) {break;
-/x/;}
+for (;;) {
+break;
+/x/;
+}
 ````
 
 Produces same AST

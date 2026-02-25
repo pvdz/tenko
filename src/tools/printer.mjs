@@ -18,6 +18,7 @@ import {
   $$U_75, $$W_77, $$X_78
 } from "../charcodes.mjs";
 
+
 function assert(a, b) {
   // This is an assert that can be dropped for a build... It confirms hashing assumptions
   // (Will also be an invaluable tool when adding a new node type ;)
@@ -26,11 +27,38 @@ function assert(a, b) {
 
 function ArrayExpression(node) {
   assert(node.type, 'ArrayExpression');
-  return '[' + node.elements.map((n, i) => n === null ? ',' : ($(n) + ((n.type === 'RestElement' || i === node.elements.length - 1) ? '' : ','))).join(' ') + ']';
+
+  // Note: The array expression _node_ should not contain elided elements.
+  //       They are represented by a null, and definitely not elided.
+  //       So if we do see an elided element then it's an error.
+  assert(node.elements.length, Object.keys(node.elements).length);
+
+  let output = [];
+  for (let i=0; i<node.elements.length; ++i) {
+    const n = node.elements[i];
+    if (!n) output.push(',');
+    else output.push($(n) + (i!==node.elements.length-1?',':''));
+  }
+
+  return '[' + output.join(' ') + ']';
 }
 function ArrayPattern(node) {
   assert(node.type, 'ArrayPattern');
-  return '[' + node.elements.map((n, i) => n === null ? ',' : ($(n) + ((n.type === 'RestElement' || i === node.elements.length - 1) ? '' : ','))).join(' ') + ']';
+
+  // Note: The array pattern _node_ should not contain elided elements.
+  //       They are represented by a null, and definitely not elided.
+  //       So if we do see an elided element then it's an error.
+  assert(node.elements.length, Object.keys(node.elements).length);
+
+  // Note: elided comma was not allowed after RestElement before ES2017 (!) which is why we don't add elided comma.
+  let output = [];
+  for (let i=0; i<node.elements.length; ++i) {
+    const n = node.elements[i];
+    if (!n) output.push(',');
+    else output.push($(n) + (i!==node.elements.length-1?',':''));
+  }
+
+  return '[' + output.join(' ') + ']';
 }
 function ArrowFunctionExpression(node) {
   assert(node.type, 'ArrowFunctionExpression');
@@ -147,11 +175,11 @@ function BinaryExpression(node) {
 }
 function BlockStatement(node) {
   assert(node.type, 'BlockStatement');
-  return '{' + node.body.map($).join('\n') + '}';
+  return '{' + (node.body.length > 1 ? '\n' : '') + node.body.map($).join('\n') + (node.body.length > 1 ? '\n' : '') + '}';
 }
 function StaticBlock(node) {
-  assert(node.type, 'StaticBlock');
-  return 'static {' + node.body.map($).join('\n') + '}';
+    assert(node.type, 'StaticBlock');
+    return 'static {' + node.body.map($).join('\n') + '}';
 }
 function BooleanLiteral(node) {
   assert(node.type, 'BooleanLiteral');
@@ -188,7 +216,7 @@ function CatchClause(node) {
 }
 function ClassBody(node) {
   assert(node.type, 'ClassBody');
-  return '{' + node.body.map($).join('\n') + '}';
+  return '{' + (node.body.length > 1 ? '\n' : '') + node.body.map($).join('\n') + (node.body.length > 1 ? '\n' : '') + '}';
 }
 function needsExtendsParens(superClass) {
   // Wrap only when needed; unwrapped CallExpression/MemberExpression/Identifier preserve LF_IN_GLOBAL for top-level await.
@@ -210,13 +238,20 @@ function ClassMethod(node) {
   assert('value' in node, false);
   // The `ClassMethod` type is only used for babelCompat
   // Babel does not have .value and merges the method node with the function node, different from the estree spec
+  const key = (
+    node.computed
+    ? '[' + $(node.key) + ']'
+    : node.key.type === 'TemplateLiteral'
+    ? '"' + node.key.quasis[0].value.cooked.replace(/"/g, '\\"') + '"'
+    : $(node.key)
+  );
   return (
     (node.static ? 'static ' : '') +
     (node.kind === 'get' ? 'get ' : '') +
     (node.kind === 'set' ? 'set ' : '') +
     (node.async ? 'async ' : '') +
     (node.generator ? '* ' : '') +
-    (node.computed ? '[' + $(node.key) + ']' : $(node.key)) +
+    key +
     '(' + node.params.map($).join(', ') + ')' +
     $(node.body) +
     ';'
@@ -347,10 +382,10 @@ function ExportNamedDeclaration(node) {
   if (node.specifiers.length === 1 && node.specifiers[0].type === 'ExportNamespaceSpecifier') {
     // This is specifically `export * as foo from 'bar'` syntax
     assert(!!node.source, true, 'spec dictates this syntax requires the source');
-    return 'export ' + $(node.specifiers[0]) + ' from ' + $(node.source) + printAttributes(node) + ';';
+    return 'export ' + $(node.specifiers[0]) + ' from ' + $(node.source) + printAttributes(node)  + ';';
   }
   assert(node.specifiers.length !== 1 || (node.specifiers.length > 0 && node.specifiers[0].type !== 'ExportNamespaceSpecifier'), true, 'the ExportNamespaceSpecifier node has restrictions');
-  return 'export ' + (node.declaration ? $(node.declaration) : ('{' + node.specifiers.map($).join(', ') + '}')) + (node.source ? ' from ' + $(node.source) : '') + printAttributes(node);
+  return 'export ' + (node.declaration ? $(node.declaration) : ('{' + (node.specifiers.length > 1 ? '\n' : '') + node.specifiers.map($).join(',\n') + (node.specifiers.length > 1 ? '\n' : '') + '}')) + (node.source ? ' from ' + $(node.source) : '') + printAttributes(node);
 }
 function ExportSpecifier(node) {
   assert(node.type, 'ExportSpecifier');
@@ -395,11 +430,11 @@ function ForStatement(node) {
 }
 function FunctionDeclaration(node) {
   assert(node.type, 'FunctionDeclaration');
-  return (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + node.body.body.map($).join('\n') + '}';
+  return (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + (node.body.body.length > 1 ? '\n' : '') + node.body.body.map($).join('\n') + (node.body.body.length > 1 ? '\n' : '') + '}';
 }
 function FunctionExpression(node) {
   assert(node.type, 'FunctionExpression');
-  return (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + node.body.body.map($).join('\n') + '}';
+  return (node.async ? 'async ' : '') + 'function' + (node.generator ? '*' : '') + (node.id ? ' ' + $(node.id) : '') + '(' + node.params.map($).join(', ') + ') {' + (node.body.body.length > 1 ? '\n' : '') + node.body.body.map($).join('\n') + (node.body.body.length > 1 ? '\n' : '') + '}';
 }
 function Identifier(node) {
   assert(node.type, 'Identifier');
@@ -419,13 +454,15 @@ function ImportAttribute(node) {
 }
 function ImportDeclaration(node) {
   assert(node.type, 'ImportDeclaration');
+  assert(Boolean(node.source), true, 'ImportSpecifier node source is required');
   let importSpecifiers = node.specifiers.filter(s => s.type === 'ImportSpecifier');
   let otherSpecifiers = node.specifiers.filter(s => s.type !== 'ImportSpecifier');
   let attrs = printAttributes(node);
+
   if (!importSpecifiers.length && !otherSpecifiers.length) {
     return 'import ' + $(node.source) + attrs + ';';
   }
-  return 'import ' + (otherSpecifiers.length ? otherSpecifiers.map($).join(', ') : '') + (importSpecifiers.length && otherSpecifiers.length ? ', ' : '') + (importSpecifiers.length ? '{' + importSpecifiers.map($).join(', ') + '}' : '') + (node.source ? ' from ' + $(node.source) : '') + attrs + ';';
+  return 'import ' + (otherSpecifiers.length ? otherSpecifiers.map($).join(', ') : '') + (importSpecifiers.length && otherSpecifiers.length ? ', ' : '') + (importSpecifiers.length ? '{' + (importSpecifiers.length > 1 ? '\n' : '') + importSpecifiers.map($).join(',\n') + (importSpecifiers.length > 1 ? '\n' : '') + '}' : '') + ' from ' + $(node.source) + attrs + ';';
 }
 function ImportDefaultSpecifier(node) {
   assert(node.type, 'ImportDefaultSpecifier');
@@ -461,6 +498,7 @@ function Literal(node) {
     case 'string':
       return node.raw;
     case 'object': // regex
+      assert(typeof node.raw, 'string');
       return node.raw;
   }
   throw new Error('fixme; literal type');
@@ -558,11 +596,10 @@ function MethodDefinition(node) {
 }
 function NewExpression(node) {
   assert(node.type, 'NewExpression');
+  const args = node.arguments.length ? '(' + node.arguments.map($).join(', ') + ')' : '';
   // import.meta as callee needs parens so it prints as new (import.meta) not new import.meta()
   if (node.callee.type === 'MetaProperty') {
-    return node.arguments.length === 0
-      ? 'new ' + $w(node.callee)
-      : 'new ' + $w(node.callee) + '(' + node.arguments.map($).join(', ') + ')';
+    return 'new ' + $w(node.callee) + args;
   }
   // new super() must print with () so it round-trips (new super would parse differently)
   if (node.callee.type === 'Super') {
@@ -576,15 +613,13 @@ function NewExpression(node) {
     // || node.callee.type === 'CallExpression'           // new x()() -> new (x())()
     || node.callee.type === 'ArrayExpression'             // new []     Runtime error...?
     || node.callee.type === 'ObjectExpression'            // new {}     Runtime error...?
-    // MetaProperty handled above; Super handled above (new super() needs ())
+    // MetaProperty handled above
     // || node.callee.type === 'TaggedTemplateExpression' // new foo``() -> new (foo``)
     || node.callee.type === 'TemplateLiteral'             // new `foo`  Runtime error?
     || node.callee.type === 'ThisExpression'              // new this   (Could be made to work)
   ) {
-    const args = node.arguments.length ? '(' + node.arguments.map($).join(', ') + ')' : '';
     return 'new ' + $(node.callee) + args;
   }
-  const args = node.arguments.length ? '(' + node.arguments.map($).join(', ') + ')' : '';
   return 'new ' + $w(node.callee) + args;
 }
 function NullLiteral(node) {
@@ -617,6 +652,7 @@ function ObjectMethod(node) {
 }
 function ObjectPattern(node) {
   assert(node.type, 'ObjectPattern');
+  // Note: elided comma was not allowed after RestElement before ES2017 (!) So don't add one at all.
   return '{' + node.properties.map($).join(', ') + '}';
 }
 function ObjectProperty(node) {
@@ -682,7 +718,7 @@ function SwitchCase(node) {
 }
 function SwitchStatement(node) {
   assert(node.type, 'SwitchStatement');
-  return 'switch ' + $w(node.discriminant) + ' {' + node.cases.map($).join('\n') + '}';
+  return 'switch ' + $w(node.discriminant) + ' {' + (node.cases.length > 1 ? '\n' : '') + node.cases.map($).join('\n') + (node.cases.length > 1 ? '\n' : '') + '}';
 }
 function TaggedTemplateExpression(node) {
   assert(node.type, 'TaggedTemplateExpression');
@@ -694,7 +730,8 @@ function TemplateElement(node) {
 }
 function TemplateLiteral(node) {
   assert(node.type, 'TemplateLiteral');
-  return '`' + $(node.quasis[0]) + (node.expressions.length ? '${' : '') + node.expressions.map((e, i) => $(e) + '}' + $(node.quasis[i+1])).join('${') + '`';
+  assert(node.expressions.length+1, node.quasis.length);
+  return '`' + ($(node.quasis[0]) + node.expressions.map((enode, ei) => '${' + $(enode) + '}' + $(node.quasis[ei + 1])).join('')) + '`';
 }
 function ThisExpression(node) {
   assert(node.type, 'ThisExpression');
@@ -711,6 +748,16 @@ function TryStatement(node) {
 function UnaryExpression(node) {
   assert(node.type, 'UnaryExpression');
 
+  if (node.argument.type === 'UnaryExpression' && node.operator === node.argument.operator && (node.operator === '+' || node.operator === '-')) {
+    // Prevent `-(-x)` from becoming `--x`
+    return node.operator + $w(node.argument);
+  }
+
+  if (node.operator === '-' && node.argument.type === 'Literal' && node.argument.value < 0) {
+    // Prevent `-(-1)` from becoming `--1`
+    return node.operator + $w(node.argument);
+  }
+
   if (
     node.argument.type === 'Identifier'           // !foo
     || node.argument.type === 'Import'            // !import()
@@ -725,9 +772,11 @@ function UnaryExpression(node) {
     || node.argument.type === 'TemplateLiteral'   // !`foo`
     || node.argument.type === 'ThisExpression'    // !this
   ) {
+    // Note: typeof etc require the space
     return node.operator + ('!+-~'.includes(node.operator)?'':' ') + $(node.argument);
   }
 
+  // Note: typeof etc require the space
   return node.operator + ('!+-~'.includes(node.operator)?'':' ') + $w(node.argument);
 }
 function PrivateIdentifier(node) {
@@ -744,7 +793,10 @@ function UpdateExpression(node) {
 }
 function VariableDeclaration(node, fromFor) {
   assert(node.type, 'VariableDeclaration');
-  return node.kind + ' ' + node.declarations.map(d => $(d, undefined, undefined, fromFor)).join(', ') + (fromFor ? '' : ';'); // no semi inside `for`
+  // Propagate edge case for-header state
+  const init = node.declarations.map(d => $(d, undefined, undefined, fromFor)).join(', ');
+  // no semi inside `for`
+  return node.kind + ' ' + init + (fromFor ? '' : ';');
 }
 function VariableDeclarator(node, fromFor) {
   assert(node.type, 'VariableDeclarator');
@@ -768,14 +820,12 @@ function $w(node) {
 }
 let jumpTable = [
   (node, fromFor, type, c) => {
+    c = type.charCodeAt(6);
     if (c === $$I_69) return Directive(node);
-    if (c === $$X_78) {
-      c = type.charCodeAt(6);
-      if (c === $$D_UC_44) return ExportDefaultDeclaration(node);
-      return ExportNamespaceSpecifier(node);
-    }
-    if (type === 'PrivateIdentifier') return PrivateIdentifier(node);
-    if (type === 'PropertyDefinition') return PropertyDefinition(node);
+    if (c === $$D_UC_44) return ExportDefaultDeclaration(node);
+    if (c === $$N_UC_4E) return ExportNamespaceSpecifier(node);
+    if (c === $$E_65) return PrivateIdentifier(node);
+    if (c === $$T_74) return PropertyDefinition(node);
     return UpdateExpression(node);
   },
   (node, fromFor, type, c) => {
@@ -786,10 +836,10 @@ let jumpTable = [
     return UnaryExpression(node);
   },
   (node, fromFor, type, c) => {
-    c = type.charCodeAt(0);
-    if (c === $$A_UC_41) return AssignmentPattern(node);
-    if (c === $$B_UC_42) return BlockStatement(node);
-    if (type.charCodeAt(6) === $$A_UC_41) return ImportAttribute(node);
+    c = type.charCodeAt(6);
+    if (c === $$M_6D) return AssignmentPattern(node);
+    if (c === $$T_74) return BlockStatement(node);
+    if (c === $$A_UC_41) return ImportAttribute(node);
     return ImportSpecifier(node);
   },
   (node, fromFor, type, c) => {
@@ -797,7 +847,7 @@ let jumpTable = [
     if (c === $$A_61) return ClassExpression(node);
     if (c === $$M_6D) return CommentBlock(node);
     if (c === $$P_70) return EmptyStatement(node);
-    if (type === 'PrivateIdentifier') return PrivateIdentifier(node);
+    if (c === $$I_69) return PrivateIdentifier(node);
     return ForStatement(node);
   },
   (node, fromFor, type, c) => {
@@ -931,7 +981,7 @@ let jumpTable = [
     return TryStatement(node);
   },
   (node, fromFor, type, c) => {
-    if (type === 'StaticBlock') return StaticBlock(node);
+    if (c === $$T_74) return StaticBlock(node);
     return DoWhileStatement(node);
   },
 ];

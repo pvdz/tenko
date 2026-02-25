@@ -123,9 +123,11 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-{function f() {}
+{
+function f() {}
 ;
-function f() {}}
+function f() {}
+}
 ````
 
 Produces same AST

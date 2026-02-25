@@ -147,12 +147,14 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-switch (x) {case a:
+switch (x) {
+case a:
 var foo;
 break;
 default:
 var foo;
-break;}
+break;
+}
 ````
 
 Produces same AST

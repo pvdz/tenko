@@ -114,8 +114,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function* f() {(yield);
-/foo/g;}
+function* f() {
+(yield);
+/foo/g;
+}
 ````
 
 Produces same AST

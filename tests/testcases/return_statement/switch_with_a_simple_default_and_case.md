@@ -114,10 +114,12 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-switch (A) {default:
+switch (A) {
+default:
 D;
 case B:
-C;}
+C;
+}
 ````
 
 Produces same AST

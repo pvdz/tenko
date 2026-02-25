@@ -141,8 +141,10 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-try {async function f() {}
-var f;} catch (e) {}
+try {
+async function f() {}
+var f;
+} catch (e) {}
 ````
 
 Produces same AST

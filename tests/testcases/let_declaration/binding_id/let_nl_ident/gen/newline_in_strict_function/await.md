@@ -133,8 +133,10 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function f() {"use strict";
-let await;}
+function f() {
+"use strict";
+let await;
+}
 ````
 
 Produces same AST

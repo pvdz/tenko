@@ -3897,15 +3897,18 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function getErrorContext(tokenStart, tokenStop, msg = '', fullErrorContext = false) {ASSERT(((getErrorContext.length >= 2) && (getErrorContext.length <= 4)), 'arg count');
+function getErrorContext(tokenStart, tokenStop, msg = '', fullErrorContext = false) {
+ASSERT(((getErrorContext.length >= 2) && (getErrorContext.length <= 4)), 'arg count');
 ASSERT(tokenStart <= tokenStop, 'should have a positive length range', tokenStart, tokenStop);
 let inputOffset = 0;
 if (((!fullErrorContext) && (tokenStart > 100))) inputOffset = tokenStart - 100;
 let inputLen = input.length - inputOffset;
 if (((!fullErrorContext) && ((tokenStop + 100) < input.length))) inputLen = (tokenStop + 100) - inputOffset;
 let isPointerIncluded = true;
-if ((inputOffset + inputLen) < pointer) {let len = pointer - inputOffset;
-if (len < 1024) {inputLen = len;} else {isPointerIncluded = false;}}
+if ((inputOffset + inputLen) < pointer) {
+let len = pointer - inputOffset;
+if (len < 1024) {inputLen = len;} else {isPointerIncluded = false;}
+}
 let usedInput = input.slice(inputOffset, inputOffset + inputLen);
 let tokenOffset = tokenStart - inputOffset;
 let nl1 = usedInput.lastIndexOf('\n', tokenOffset);
@@ -3916,34 +3919,43 @@ let indentCount = tokenOffset - (nl1 + 1);
 let pointerLine = currentLine;
 let errorLine = currentLine;
 let errorColumn = ((((inputOffset > 0) && (nl1 < 0)))? (-1) : ((tokenStart - inputOffset) - (((nl1 >= 0)? nl1 + 1 : 0))));
-if (isPointerIncluded) {let relativePointer = pointer - inputOffset;
+if (isPointerIncluded) {
+let relativePointer = pointer - inputOffset;
 let searchPointer = relativePointer;
-while (searchPointer > 0) {searchPointer = usedInput.lastIndexOf('\n', searchPointer - 1);
+while (searchPointer > 0) {
+searchPointer = usedInput.lastIndexOf('\n', searchPointer - 1);
 --pointerLine;
-if (searchPointer > nl1) --errorLine;}
-if (searchPointer !== 0) pointerLine += 1;}
+if (searchPointer > nl1) --errorLine;
+}
+if (searchPointer !== 0) pointerLine += 1;
+}
 let maxPointerlineLen = ('' + currentLine).length;
 let gutterWidth = maxPointerlineLen + 4;
 let pre = usedInput.slice(0, nl2).split('\n');
 let post = usedInput.slice(nl2 + 1, inputLen).split('\n');
-while (((pre.length > 1) && (pre[0].length === 0))) {pre.shift();
-++pointerLine;}
+while (((pre.length > 1) && (pre[0].length === 0))) {
+pre.shift();
+++pointerLine;
+}
 while (((post.length > 0) && (post[post.length - 1].length === 0))) {post.pop();}
 let lc = pointerLine;
 let pre2 = pre.map(s => (((' ' + ('' + (lc++)).padStart(maxPointerlineLen, ' ')) + ' ║ ') + s.trimRight())).join('\n');
 let post2 = post.map(s => (((' ' + ('' + (lc++)).padStart(maxPointerlineLen, ' ')) + ' ║ ') + s.trimRight())).join('\n');
-if (('' + lc).length > maxPointerlineLen) {maxPointerlineLen = ('' + lc).length;
+if (('' + lc).length > maxPointerlineLen) {
+maxPointerlineLen = ('' + lc).length;
 gutterWidth = maxPointerlineLen + 4;
 lc = pointerLine;
 pre2 = pre.map(s => (((' ' + ('' + (lc++)).padStart(maxPointerlineLen, ' ')) + ' ║ ') + s.trimRight())).join('\n');
-post2 = post.map(s => (((' ' + ('' + (lc++)).padStart(maxPointerlineLen, ' ')) + ' ║ ') + s.trimRight())).join('\n');}
+post2 = post.map(s => (((' ' + ('' + (lc++)).padStart(maxPointerlineLen, ' ')) + ' ║ ') + s.trimRight())).join('\n');
+}
 let col = ((pointerLine === 1)? inputOffset : usedInput.lastIndexOf(inputOffset));
 let top = ((((((('start@' + pointerLine) + ':') + (((col < 0)? '?' : col))) + ', error@') + errorLine) + ':') + (((errorColumn < 0)? '?' : errorColumn))) + '\n';
 let bar = '═'.repeat(top.length - gutterWidth) + '\n';
 let header = ('╔' + '═'.repeat(maxPointerlineLen)) + '═╦';
 let footer = ('╚' + '═'.repeat(maxPointerlineLen)) + '═╩';
 let returnValue = (((((((((((((((((top + header) + bar) + pre2) + '\n') + ' '.repeat(Math.max(0, maxPointerlineLen + 1))) + ' ║ ') + ' '.repeat(Math.max(0, indentCount))) + '^'.repeat(Math.max(0, arrowCount))) + '------- error') + ((msg? ': ' : ''))) + msg) + (((tokenOffset >= usedInput.length)? ' at EOF' : ''))) + ((post2? '\n' : ''))) + post2) + '\n') + footer) + bar) + '';
-return returnValue.split('\n').map(s => (s.trimRight())).join('\n');}
+return returnValue.split('\n').map(s => (s.trimRight())).join('\n');
+}
 ````
 
 Produces same AST

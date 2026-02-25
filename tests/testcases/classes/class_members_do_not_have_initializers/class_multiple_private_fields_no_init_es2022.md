@@ -112,8 +112,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x{#a;
-#b;}
+class x{
+#a;
+#b;
+}
 ````
 
 Produces same AST

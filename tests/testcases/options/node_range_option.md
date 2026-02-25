@@ -466,8 +466,10 @@ Printer output different from input [sloppy][annexb:no]:
 foo.bar.baz;
 let parentNode = _path[_path.length - 1];
 let p = parentNode[astProp];
-if (Array.isArray(p)) {p[p.length] = node;} else {ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`, astProp, (p && p.type));
-parentNode[astProp] = node;}
+if (Array.isArray(p)) {p[p.length] = node;} else {
+ASSERT(p === undefined, `(this invariant does not hold without ASSERTs!) parentNode[astProp] should be empty or an array`, astProp, (p && p.type));
+parentNode[astProp] = node;
+}
 ````
 
 Produces same AST

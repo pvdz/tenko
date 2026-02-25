@@ -150,8 +150,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class C{#x = 1;
-m(){return this.#x;};}
+class C{
+#x = 1;
+m(){return this.#x;};
+}
 ````
 
 Produces same AST

@@ -106,8 +106,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-while (true) {continue;
-/x/;}
+while (true) {
+continue;
+/x/;
+}
 ````
 
 Produces same AST

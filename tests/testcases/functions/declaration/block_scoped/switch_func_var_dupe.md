@@ -149,10 +149,12 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-switch (0) {case 1:
+switch (0) {
+case 1:
 function f() {}
 default:
-var f;}
+var f;
+}
 ````
 
 Produces same AST

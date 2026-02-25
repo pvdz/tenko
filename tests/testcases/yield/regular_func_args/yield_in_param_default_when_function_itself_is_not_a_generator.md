@@ -132,8 +132,10 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function* g() {function f(x = yield) {}
-;}
+function* g() {
+function f(x = yield) {}
+;
+}
 ````
 
 Produces same AST

@@ -149,9 +149,11 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class C{x = 1;
+class C{
+x = 1;
 #p = 2;
-#m(){};}
+#m(){};
+}
 ````
 
 Produces same AST

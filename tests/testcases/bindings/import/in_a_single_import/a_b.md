@@ -127,7 +127,10 @@ _Output same as module mode._
 Printer output different from input [module][annexb:no]:
 
 ````js
-import {a as a, b as b} from "c";
+import {
+a as a,
+b as b
+} from "c";
 ````
 
 Produces same AST

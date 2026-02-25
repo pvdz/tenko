@@ -131,8 +131,10 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-() => {`use strict`;
-with (x) y;};
+() => {
+`use strict`;
+with (x) y;
+};
 ````
 
 Produces same AST

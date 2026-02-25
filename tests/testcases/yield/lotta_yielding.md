@@ -282,9 +282,13 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-var gen = async function* g() {callCount += 1;
-(yield ({...(yield ((yield))), ...(function(arg) {var yield = arg;
-return {...yield};})((yield)), ...(yield)}));};
+var gen = async function* g() {
+callCount += 1;
+(yield ({...(yield ((yield))), ...(function(arg) {
+var yield = arg;
+return {...yield};
+})((yield)), ...(yield)}));
+};
 ````
 
 Produces same AST

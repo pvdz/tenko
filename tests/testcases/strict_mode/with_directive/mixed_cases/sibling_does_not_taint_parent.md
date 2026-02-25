@@ -153,9 +153,13 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-function g() {function f() {"use strict";
-foo;}
-with (x) y;}
+function g() {
+function f() {
+"use strict";
+foo;
+}
+with (x) y;
+}
 ````
 
 Produces same AST
