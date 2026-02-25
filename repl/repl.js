@@ -23,7 +23,8 @@ import {
   GOAL_MODULE,
   COLLECT_TOKENS_ALL,
   COLLECT_TOKENS_TYPES,
-  COLLECT_TOKENS_NONE
+  COLLECT_TOKENS_NONE,
+  toktypeToString,
 } from '../src/index.mjs';
 
 console.log('loaded...');
@@ -138,7 +139,15 @@ const update = e => {
 
   // Note: shipping a very old version of Prettier. Not very important for the purpose of printing an AST.
   window.ta_ast.value = pret(JSON.stringify(out.ast), true);
-  window.ta_output.value = out.tokens.map(t => ''+t).join('\n');
+  window.ta_output.value = out.tokens.map(t => {
+    const name = toktypeToString(t);
+    if (typeof t === 'object' && typeof t.start === 'number' && typeof t.stop === 'number') {
+      const slice = input.slice(t.start, t.stop);
+      const loc = (t.line != null && t.column != null) ? ` (${t.line + 1}:${t.column})` : '';
+      return name + loc + ' ' + JSON.stringify(slice);
+    }
+    return name;
+  }).join('\n');
   console.log(['out:', out, 'ast:', out.ast]);
 };
 
@@ -160,6 +169,9 @@ function scheduleOverall(input, currentMode, currentVersion) {
     $ver_es11.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 11);
     $ver_es12.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 12);
     $ver_es13.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 13);
+    $ver_es14.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 14);
+    $ver_es15.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 15);
+    $ver_es16.parentNode.className = 'mode_selector ' + silentPassFail(input, currentMode, 16);
   }, 100);
 }
 
