@@ -161,8 +161,8 @@ const PIGGIES = (0
   | PIGGY_BACK_WAS_PROTO
   | PIGGY_BACK_WAS_ARROW
 );
-function copyPiggies(output, input) {
-  return output | (input & PIGGIES);
+function getPiggies(flags) {
+  return flags & PIGGIES;
 }
 
 function P(f, arr) {
@@ -326,6 +326,6 @@ export {
   PARENT_NOT_LABEL,
   EMPTY_LABEL_SET,
 
-  copyPiggies,
+  getPiggies,
   P,
 };

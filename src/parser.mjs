@@ -507,7 +507,7 @@ import {
   PARENT_NOT_LABEL,
   EMPTY_LABEL_SET,
 
-  copyPiggies,
+  getPiggies,
   P,
 } from './enum_parser.mjs';
 
@@ -8332,7 +8332,7 @@ function Parser(code, options = {}) {
     // Note: however, this may still be the lhs inside a `for` header so we still need to propagate it...
     // To make sure we don't accidentally over accept we can check the next token to clamp down abuse
 
-    let assignable = copyPiggies(0, wasDestruct);
+    let assignable = getPiggies(wasDestruct);
     if (hasNoFlag(wasDestruct, CANT_DESTRUCT)) {
       // Prevent cases like `for (([x])=y in z);`, though they could be handled differently as well...
       // - `var {[a]: [b]} = c`  // fail
@@ -9017,7 +9017,7 @@ function Parser(code, options = {}) {
 
     // `yield` is a var name in sloppy mode:
     let assignableFlags = parseIdentOrParenlessArrow(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, IS_ASSIGNABLE, allowAssignment, astProp);
-    return copyPiggies(IS_ASSIGNABLE, assignableFlags);
+    return IS_ASSIGNABLE | getPiggies(assignableFlags);
   }
   function parseYieldArgument(lexerFlags, astProp) {
     ASSERT(parseYieldArgument.length === arguments.length, 'arg count');
@@ -10372,7 +10372,7 @@ function Parser(code, options = {}) {
     // - `async function f(){ async(await x); }`
     // - `{ (x = yield) = {}; }`
 
-    destructible = copyPiggies(destructible, assignable);
+    destructible = destructible | getPiggies(assignable);
 
     if (tok_getType() !== $PUNC_PAREN_CLOSE) {
       // (I think this check is redundant ...)
@@ -10600,7 +10600,7 @@ function Parser(code, options = {}) {
       // `async(a) => x`
       // `async(a = await x) => x`
       // `async({x}) => x`
-      destructible = copyPiggies(destructible, assignable);
+      destructible = destructible | getPiggies(assignable);
       return parseAfterAsyncGroup(lexerFlags, paramScoop, asyncStmtOrExpr, allowAssignmentForGroupToBeArrow, wasSimple, toplevelComma, newlineAfterAsync, false, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, assignable, rootAstProp);
     }
 
@@ -10616,7 +10616,7 @@ function Parser(code, options = {}) {
       // [v]: `(x = (await) => {}) => {}`
       // [x]: `async (await) => {}`
       // [x]: `async (x = (await) => {}) => {}`     // <-- this case requires propagation of await piggies to parent
-      assignable = copyPiggies(assignable, destructible);
+      assignable = assignable | getPiggies(destructible);
       // TODO: why not copy all piggies here?
       return NOT_ASSIGNABLE | PIGGY_BACK_WAS_ARROW | (assignable & PIGGY_BACK_SAW_AWAIT);
     }
@@ -11373,7 +11373,7 @@ function Parser(code, options = {}) {
     // - `async function a(){     ([v] = await bar) => {}     }`
     // - `function *g(){ (x = [yield]) }`
     // - `{ (x = [yield]) }`
-    return sansFlag(copyPiggies(destructible, assignableYieldAwaitState), PIGGY_BACK_WAS_ARROW);
+    return sansFlag(destructible | getPiggies(assignableYieldAwaitState), PIGGY_BACK_WAS_ARROW);
   }
 
   function parseObjectOuter(lexerFlags, scoop, bindingType, skipInit, exportedNames, exportedBindings, astProp) {
@@ -11937,10 +11937,10 @@ function Parser(code, options = {}) {
       exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, exprAssignable, 'value');
 
       if (wasAssignment || isAssignable(exprAssignable)) {
-        return copyPiggies(DESTRUCT_ASSIGN_ONLY, exprAssignable);
+        return DESTRUCT_ASSIGN_ONLY | getPiggies(exprAssignable);
       }
 
-      return copyPiggies(CANT_DESTRUCT, exprAssignable);
+      return CANT_DESTRUCT | getPiggies(exprAssignable);
     }
 
     if (tok_getType() === $PUNC_BRACKET_OPEN) {
@@ -11974,10 +11974,10 @@ function Parser(code, options = {}) {
       exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, exprAssignable, 'value');
 
       if (wasAssignment || isAssignable(exprAssignable)) {
-        return copyPiggies(DESTRUCT_ASSIGN_ONLY, exprAssignable);
+        return DESTRUCT_ASSIGN_ONLY | getPiggies(exprAssignable);
       }
 
-      return copyPiggies(CANT_DESTRUCT, exprAssignable);
+      return CANT_DESTRUCT | getPiggies(exprAssignable);
     }
 
     // A value that starts with anything except an ident cannot be a binding pattern but could still be an assignment
@@ -12006,10 +12006,10 @@ function Parser(code, options = {}) {
     // an arrow for example). If it wasn't an assignment and it wasn't assignable, then it's also not destructible.
 
     if (wasAssignment || isAssignable(valueAssignable)) {
-      return copyPiggies(DESTRUCT_ASSIGN_ONLY, valueAssignable);
+      return DESTRUCT_ASSIGN_ONLY | getPiggies(valueAssignable);
     }
 
-    return copyPiggies(CANT_DESTRUCT, valueAssignable);
+    return CANT_DESTRUCT | getPiggies(valueAssignable);
   }
   function parseObjectPropertyValueFromIdent(lexerFlags, scoop, exportedNames, exportedBindings, bindingType) {
     ASSERT(parseObjectPropertyValueFromIdent.length === arguments.length, 'arg count');
@@ -12104,7 +12104,7 @@ function Parser(code, options = {}) {
 
         let valueAssignable = parseValueAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
 
-        return copyPiggies(CANT_DESTRUCT, valueAssignable);
+        return CANT_DESTRUCT | getPiggies(valueAssignable);
       }
 
       AST_setIdent('value', $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
@@ -12159,7 +12159,7 @@ function Parser(code, options = {}) {
       // - `o = {key: bar = a}`
       //                  ^
       // Always destructible
-      return copyPiggies(MIGHT_DESTRUCT, rhsAssignable);
+      return MIGHT_DESTRUCT | getPiggies(rhsAssignable);
     }
 
     // This ident is not the end of the property value so it's not a simple binding pattern.
@@ -12173,7 +12173,7 @@ function Parser(code, options = {}) {
 
       let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, valueAssignable, 'value');
 
-      return copyPiggies(CANT_DESTRUCT, rhsAssignable);
+      return CANT_DESTRUCT | getPiggies(rhsAssignable);
     }
 
     let wasAssign = tok_getType() === $PUNC_EQ;
@@ -12181,10 +12181,10 @@ function Parser(code, options = {}) {
     let rhsAssignable = parseExpressionFromOp(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, valueAssignable, 'value');
 
     if (wasAssign || isAssignable(rhsAssignable)) {
-      return copyPiggies(DESTRUCT_ASSIGN_ONLY, rhsAssignable);
+      return DESTRUCT_ASSIGN_ONLY | getPiggies(rhsAssignable);
     }
 
-    return copyPiggies(CANT_DESTRUCT, rhsAssignable);
+    return CANT_DESTRUCT | getPiggies(rhsAssignable);
   }
   function parseObjectShorthand(lexerFlags, $tp_propLeadingIdent_type, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon, bindingType, scoop, exportedNames, exportedBindings, astProp) {
     ASSERT(parseObjectShorthand.length === arguments.length, 'arg count');
@@ -12356,10 +12356,10 @@ function Parser(code, options = {}) {
       // - `({await}) => x`
       // - `async ({await}) => x`
       // - `async ({await})`
-      return copyPiggies(MUST_DESTRUCT | PIGGY_BACK_SAW_AWAIT, nowAssignable);
+      return (MUST_DESTRUCT | PIGGY_BACK_SAW_AWAIT) | getPiggies(nowAssignable);
     }
 
-    return copyPiggies(MUST_DESTRUCT, nowAssignable);
+    return MUST_DESTRUCT | getPiggies(nowAssignable);
   }
   function parseObjectPartFromLiteral(lexerFlags, scoop, exportedNames, exportedBindings, bindingType, astProp) {
     ASSERT(parseObjectPartFromLiteral.length === arguments.length, 'arg count');
@@ -12442,13 +12442,13 @@ function Parser(code, options = {}) {
     if ($tp_afterKey_type === $PUNC_COLON) {
       let assignable = parseObjectPropertyFromColon(lexerFlags, $tp_keyStart_start, $tp_keyStart_line, $tp_keyStart_column, scoop, exportedNames, exportedBindings, bindingType, true, astProp);
       // [x]: `async function f(){    async function f(){   (a= {[await foo]: x} ) => a    }    }`
-      return copyPiggies(assignable, assignable_forPiggies);
+      return assignable | getPiggies(assignable_forPiggies);
     }
 
     if ($tp_afterKey_type === $PUNC_PAREN_OPEN) {
       let assignable = parseObjectMethod(lexerFlags, $tp_keyStart_start, $tp_keyStart_line, $tp_keyStart_column, 'init', true, true, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, astProp)
       // [x]: `async function f(){    async function f(){   (a= {[await foo](){}} ) => a    }    }`
-      return copyPiggies(assignable, assignable_forPiggies);
+      return assignable | getPiggies(assignable_forPiggies);
     }
 
     THROW_RANGE('Object literal; computed property must be followed by a colon (property) paren (method), found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + `' instead'`, tok_getStart(), tok_getStop());
@@ -13614,7 +13614,7 @@ function Parser(code, options = {}) {
     // - `async g => (x = [await y])`
     // - `function *g(){ (x = [yield y]) }`
     // - `{ (x = [yield y]) }`
-    return copyPiggies(destructible, assignable);
+    return destructible | getPiggies(assignable);
   }
   function parseArrowableSpreadOrRest(lexerFlags, scoop, closingPuncType, bindingType, $tp_async_type, exportedNames, exportedBindings, astProp) {
     // parseArrowableRest
@@ -14067,7 +14067,7 @@ function Parser(code, options = {}) {
       // [v]: `[.../x/]`
       // [v]: `[.../x//yield]`
       // [v]: `function *f(){ return { ...(yield) }`
-      return copyPiggies(destructible, assignable);
+      return destructible | getPiggies(assignable);
     }
 
     if (tok_getType() !== closingPuncType) {
@@ -14128,7 +14128,7 @@ function Parser(code, options = {}) {
     // - `[...await]`
     // - `[...yield]`
     // destructible because the `...` is at the end of the structure and its arg is an ident/array/object and has no tail
-    return copyPiggies(destructible, assignable);
+    return destructible | getPiggies(assignable);
   }
 
   let initialLexerFlags = sansFlag(INITIAL_LEXER_FLAGS | ((options_strictMode || goalMode === GOAL_MODULE) ? LF_STRICT_MODE : 0), LF_FOR_REGEX);
