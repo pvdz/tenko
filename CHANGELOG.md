@@ -30,7 +30,7 @@
   - Dynamic import: `import()` now accepts an optional second argument (the options object) and a trailing comma after either argument.
 - Test runner version support:
   - `./t --help` documents version range 6..16 and 2015..2025.
-  - Test files can set a per-test ES version with `- \`es = N\`` (N 6..16) under `## Input`; `--esX` overrides when given.
+  - Test files can set a per-test ES version with ``- `es = N` `` (N 6..16) under `## Input`; `--esX` overrides when given.
   - Fixed parsing of numeric input options (use `parseFloat(value)` instead of `parseFloat(v)`).
 - Printer: `new super()` now round-trips correctly (call parentheses are always printed when the `new` callee is `Super`).
 - Fixed a bug in the printer for `new` with MemberExpression argument
@@ -38,6 +38,14 @@
 - Added the option `alwaysAllowOctalEscapes` to always allow to parse octal escapes, even in strict mode etc.
 - Fixed `new.target`: is now rejected when it has an escape, e.g. `new.t\u0061rget`.
 - String/template literals: `\8` and `\9` are no longer treated as octal escapes, regardless. They are now properly only rejected in strings in strict mode and in (untagged) templates.
+- Fixed the root node not getting a range property when the nodeRange option was set.
+- Fixed a bug where `async` was not accepted as an ident in a for-of statement header.
+- Fixed a bug in `async(0,...a)` which was rejected due to the spread.
+- Fixed a bug in `export default async=null` which was rejected because location management would trip an assertion.
+- Fixed a bug in `class extends async function ...` which was rejected because of an incorrect state in that particular logic branch.
+- Fixed a bug in `let[{}=class{}]=null` which was rejected because incorrect state flag handling.
+- Fixed a bug in `a[{...()=>{}}.m()]` which was rejected because it would not parse a tail after the bracket in this particular case.
+- Fixed a bug in `--{_:()=>null}._` which was rejected because tail parsing was receiving the wrong set of parameters for the update.
 
 ## v2.0.1
 

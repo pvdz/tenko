@@ -30,15 +30,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An async function expression is not allowed here
+  Missing function body closing curly, found `` instead (at EOF)
 
-start@1:0, error@2:18
-╔══╦═════════════════
+start@1:0, error@3:1
+╔══╦════════════════
  1 ║ function *P(){
  2 ║   class D extends async function(){} {}
-   ║                   ^^^^^^^^^^^^^^------- error
  3 ║ }
-╚══╩═════════════════
+   ║  ^------- error at EOF
+╚══╩════════════════
 
 `````
 

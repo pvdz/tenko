@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The left hand side of the arrow is not destructible so arrow is illegal
+  Expected the closing curly `}` for an object, found `)` instead
 
-start@1:0, error@1:15
+start@1:0, error@1:13
 ╔══╦═════════════════
  1 ║ ({x: class{}}) => x;
-   ║                ^^------- error
+   ║              ^------- error
 ╚══╩═════════════════
 
 `````

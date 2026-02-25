@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Tried to destructure something that is not destructible
+  Cannot assign to lhs (starting with `class`) because it is not a valid assignment target
 
 start@1:0, error@1:14
 ╔══╦═════════════════

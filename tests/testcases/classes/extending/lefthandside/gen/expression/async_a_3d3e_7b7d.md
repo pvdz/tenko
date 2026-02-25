@@ -28,12 +28,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  An async function expression is not allowed here
+  Was parsing a value that could not be AssignmentExpression but found an arrow
 
-start@1:0, error@1:17
+start@1:0, error@1:28
 ╔══╦═════════════════
  1 ║ (class B extends async a => {} {})
-   ║                  ^^^^^^^------- error
+   ║                             ^------- error
 ╚══╩═════════════════
 
 `````
