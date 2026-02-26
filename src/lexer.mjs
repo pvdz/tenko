@@ -5278,7 +5278,9 @@ function Lexer(
   }
   function parseRegexModifierFlags() {
     // ES2025: (?ims:...) or (?ims-ms:...). Only i, m, s allowed. No duplicate in a set; add and remove must be disjoint.
-    const I = 1, M = 2, S = 4;
+    const I = 1;
+    const M = 2;
+    const S = 4;
     let addMask = 0;
     let removeMask = 0;
     let hadMinus = false;

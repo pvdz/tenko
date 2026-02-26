@@ -622,7 +622,7 @@ export function transform(ast, localConstMap, recordConstants) {
         break;
 
       case 'VariableDeclaration':
-        assert(node.declarations.length, 1, 'coding style uses only one binding per declaration (counting a whole destructuring as one) `' + (node.declarations.length !== 1 && (node.kind + ' ' + node.declarations.map($).join(', '))) + '`');
+        assert(node.declarations.length, 1, 'coding style uses only one binding per declaration (counting a whole destructuring as one) `' + (node.declarations.length !== 1 && (node.kind + ' ' + node.declarations.map(d => d.id.type === 'Identifier' ? d.id.name : d.id.type).join(', '))) + '`');
         let decl = node.declarations[0];
         if (decl.id.type === 'Identifier') assert(constMap.has(decl.id.name), false, 'constants should not be redefined for: ' + decl.id.name);
         if (recordingConstants && node.kind === 'const' && decl.id.type === 'Identifier') {
