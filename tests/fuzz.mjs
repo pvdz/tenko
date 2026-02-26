@@ -220,7 +220,7 @@ function cycle(input) {
   if (z && !NO_PRINTER) {
     // Note: this is a very slow test. Easily cuts down efficiency to a third.
     try {
-      testPrinter(input, 'sloppy', true, z.ast, false, false, false, false);
+      testPrinter(input, 'sloppy', true, z.ast, false, false, false, false, undefined);
     } catch (e) {
       dumpFuzzOutput(input, input, zefailed, 'printer failed;\n' + e.stack);
       warnOsd('tenko assertion');

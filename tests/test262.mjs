@@ -169,7 +169,7 @@ function onRead(file, content) {
       throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + 'sloppy' + RESET);
     }
     if (!failed && !printedOnce) {
-      testPrinter(content, 'sloppy', true, z.ast, false, false, false, false);
+      testPrinter(content, 'sloppy', true, z.ast, false, false, false, false, undefined);
       printedOnce = true;
     }
     if (!!failed !== negative) {
@@ -282,7 +282,7 @@ function onRead(file, content) {
       throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + modstr + RESET);
     }
     if (!failed && !printedOnce) {
-      testPrinter(content, 'module', false, z.ast, false, false, false, false);
+      testPrinter(content, 'module', false, z.ast, false, false, false, false, undefined);
       printedOnce = true;
     }
     if (!!failed !== negative) {
