@@ -2,6 +2,13 @@
 
 # Syntax highlighting vs devx
 
+# Require it to be invoked *exactly* as ./t
+# (Prevents AI from running silly alt commands)
+if [[ "$0" != "./t" ]]; then
+  echo "Error: run this script as ./t (not $0)" >&2
+  exit 2
+fi
+
 # https://stackoverflow.com/questions/59895/how-to-get-the-source-directory-of-a-bash-script-from-within-the-script-itself
 # https://stackoverflow.com/questions/7665/how-to-resolve-symbolic-links-in-a-shell-script
 # Put this script in the folder where it lives (relevant for when this is not called from project root)
