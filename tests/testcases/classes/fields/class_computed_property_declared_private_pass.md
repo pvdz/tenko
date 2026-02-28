@@ -1,12 +1,12 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_private_generator_distinct_pass.md
+- Path: tests/testcases/classes/fields/class_computed_property_declared_private_pass.md
 
 > :: classes : fields
 >
-> ::> class private generator distinct pass
+> ::> class computed property declared private pass
 >
-> Private field and private generator with different names are valid.
+> Use of declared private name in computed property is valid.
 
 ## PASS
 
@@ -14,8 +14,8 @@
 
 `````js
 var C = class {
-  #m;
-  * #n() {}
+  #f;
+  [this.#f] = 'Test262';
 };
 `````
 
@@ -63,7 +63,7 @@ ast: {
                   loc:{start:{line:2,column:2},end:{line:2,column:4},source:''},
                   key: {
                     type: 'PrivateIdentifier',
-                    name: 'm',
+                    name: 'f',
                     loc:{start:{line:2,column:2},end:{line:2,column:4},source:''}
                   },
                   value: null,
@@ -71,29 +71,31 @@ ast: {
                   static: false
                 },
                 {
-                  type: 'MethodDefinition',
-                  loc:{start:{line:3,column:2},end:{line:3,column:11},source:''},
+                  type: 'PropertyDefinition',
+                  loc:{start:{line:3,column:2},end:{line:3,column:23},source:''},
                   key: {
-                    type: 'PrivateIdentifier',
-                    name: 'n',
-                    loc:{start:{line:3,column:4},end:{line:3,column:6},source:''}
-                  },
-                  static: false,
-                  computed: false,
-                  kind: 'method',
-                  value: {
-                    type: 'FunctionExpression',
-                    loc:{start:{line:3,column:2},end:{line:3,column:11},source:''},
-                    generator: true,
-                    async: false,
-                    id: null,
-                    params: [],
-                    body: {
-                      type: 'BlockStatement',
-                      loc:{start:{line:3,column:9},end:{line:3,column:11},source:''},
-                      body: []
+                    type: 'MemberExpression',
+                    loc:{start:{line:3,column:3},end:{line:3,column:10},source:''},
+                    computed: false,
+                    optional: false,
+                    object: {
+                      type: 'ThisExpression',
+                      loc:{start:{line:3,column:3},end:{line:3,column:7},source:''}
+                    },
+                    property: {
+                      type: 'PrivateIdentifier',
+                      name: 'f',
+                      loc:{start:{line:3,column:8},end:{line:3,column:10},source:''}
                     }
-                  }
+                  },
+                  value: {
+                    type: 'Literal',
+                    loc:{start:{line:3,column:14},end:{line:3,column:23},source:''},
+                    value: 'Test262',
+                    raw: "'Test262'"
+                  },
+                  computed: true,
+                  static: false
                 }
               ]
             }
@@ -104,10 +106,10 @@ ast: {
   ]
 }
 
-tokens (16x):
+tokens (18x):
        ID_var IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN ID_PRIVATE_IDENT
-       PUNC_SEMI PUNC_STAR ID_PRIVATE_IDENT PUNC_PAREN_OPEN
-       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
+       PUNC_SEMI PUNC_BRACKET_OPEN ID_this PUNC_DOT ID_PRIVATE_IDENT
+       PUNC_BRACKET_CLOSE PUNC_EQ STRING_SINGLE PUNC_SEMI
        PUNC_CURLY_CLOSE PUNC_SEMI
 `````
 
@@ -141,8 +143,8 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 var C = class{
-#m;
-* #n(){};
+#f;
+[this.#f] = 'Test262';
 };
 ````
 

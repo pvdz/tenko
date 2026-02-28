@@ -1,17 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_method_name.md
+- Path: tests/testcases/classes/fields/private_name_call_expression_bad_reference_fail.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : fields
 >
-> ::> newline-regex after method name
+> ::> private name call expression bad reference fail
+>
+> AllPrivateNamesValid: CallExpression . PrivateName with private name not in scope (e.g. inside plain function)
+
 ## FAIL
 
 ## Input
 
 `````js
-class x { x 
- /foo/ }
+var fn = function() { (() => {})().#x };
 `````
 
 ## Output
@@ -28,14 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Private name `#x` is not defined
 
-start@1:0, error@1:2
-╔══╦════════════════
- 1 ║ class x { x
-   ║   ^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
-╚══╩════════════════
+start@1:0, error@1:35
+╔══╦═════════════════
+ 1 ║ var fn = function() { (() => {})().#x };
+   ║                                    ^^------- error
+╚══╩═════════════════
 
 `````
 

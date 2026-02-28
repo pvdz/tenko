@@ -5,6 +5,7 @@
 > :: classes : asi and regex cases : class expr
 >
 > ::> newline-regex after method name
+## FAIL
 
 ## Input
 
@@ -27,13 +28,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Either the current modifier is unknown or the input that followed was unexpected
+  Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
-start@1:0, error@2:1
+start@1:0, error@1:2
 ╔══╦════════════════
  1 ║ let c = class x { x
+   ║   ^^^^^^^^^^^^^^^^^^^^^------- error
  2 ║  /foo/ }
-   ║  ^------- error
 ╚══╩════════════════
 
 `````

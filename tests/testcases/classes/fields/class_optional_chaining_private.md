@@ -1,12 +1,12 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_optional_chaining_public_pass.md
+- Path: tests/testcases/classes/fields/class_optional_chaining_private.md
 
 > :: classes : fields
 >
-> ::> class optional chaining public pass
+> ::> class optional chaining private
 >
-> Optional chaining with public property is valid.
+> PrivateName after ?. IS valid ES2022+ syntax (OptionalChain: ?. PrivateIdentifier). This test verifies the parser accepts it.
 
 ## PASS
 
@@ -14,8 +14,9 @@
 
 `````js
 var C = class {
+  #m = 1;
   access(obj) {
-    return obj?.x;
+    return obj?.#m;
   }
 };
 `````
@@ -35,16 +36,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:5,column:2},source:''},
+  loc:{start:{line:1,column:0},end:{line:6,column:2},source:''},
   body: [
     {
       type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:5,column:2},source:''},
+      loc:{start:{line:1,column:0},end:{line:6,column:2},source:''},
       kind: 'var',
       declarations: [
         {
           type: 'VariableDeclarator',
-          loc:{start:{line:1,column:4},end:{line:5,column:1},source:''},
+          loc:{start:{line:1,column:4},end:{line:6,column:1},source:''},
           id: {
             type: 'Identifier',
             loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
@@ -52,19 +53,36 @@ ast: {
           },
           init: {
             type: 'ClassExpression',
-            loc:{start:{line:1,column:8},end:{line:5,column:1},source:''},
+            loc:{start:{line:1,column:8},end:{line:6,column:1},source:''},
             id: null,
             superClass: null,
             body: {
               type: 'ClassBody',
-              loc:{start:{line:1,column:14},end:{line:5,column:1},source:''},
+              loc:{start:{line:1,column:14},end:{line:6,column:1},source:''},
               body: [
                 {
+                  type: 'PropertyDefinition',
+                  loc:{start:{line:2,column:2},end:{line:2,column:8},source:''},
+                  key: {
+                    type: 'PrivateIdentifier',
+                    name: 'm',
+                    loc:{start:{line:2,column:2},end:{line:2,column:4},source:''}
+                  },
+                  value: {
+                    type: 'Literal',
+                    loc:{start:{line:2,column:7},end:{line:2,column:8},source:''},
+                    value: 1,
+                    raw: '1'
+                  },
+                  computed: false,
+                  static: false
+                },
+                {
                   type: 'MethodDefinition',
-                  loc:{start:{line:2,column:2},end:{line:4,column:3},source:''},
+                  loc:{start:{line:3,column:2},end:{line:5,column:3},source:''},
                   key: {
                     type: 'Identifier',
-                    loc:{start:{line:2,column:2},end:{line:2,column:8},source:''},
+                    loc:{start:{line:3,column:2},end:{line:3,column:8},source:''},
                     name: 'access'
                   },
                   static: false,
@@ -72,41 +90,41 @@ ast: {
                   kind: 'method',
                   value: {
                     type: 'FunctionExpression',
-                    loc:{start:{line:2,column:2},end:{line:4,column:3},source:''},
+                    loc:{start:{line:3,column:2},end:{line:5,column:3},source:''},
                     generator: false,
                     async: false,
                     id: null,
                     params: [
                       {
                         type: 'Identifier',
-                        loc:{start:{line:2,column:9},end:{line:2,column:12},source:''},
+                        loc:{start:{line:3,column:9},end:{line:3,column:12},source:''},
                         name: 'obj'
                       }
                     ],
                     body: {
                       type: 'BlockStatement',
-                      loc:{start:{line:2,column:14},end:{line:4,column:3},source:''},
+                      loc:{start:{line:3,column:14},end:{line:5,column:3},source:''},
                       body: [
                         {
                           type: 'ReturnStatement',
-                          loc:{start:{line:3,column:4},end:{line:3,column:18},source:''},
+                          loc:{start:{line:4,column:4},end:{line:4,column:19},source:''},
                           argument: {
                             type: 'ChainExpression',
-                            loc:{start:{line:3,column:11},end:{line:3,column:17},source:''},
+                            loc:{start:{line:4,column:11},end:{line:4,column:18},source:''},
                             expression: {
                               type: 'MemberExpression',
-                              loc:{start:{line:3,column:11},end:{line:3,column:17},source:''},
+                              loc:{start:{line:4,column:11},end:{line:4,column:18},source:''},
                               computed: false,
                               optional: true,
                               object: {
                                 type: 'Identifier',
-                                loc:{start:{line:3,column:11},end:{line:3,column:14},source:''},
+                                loc:{start:{line:4,column:11},end:{line:4,column:14},source:''},
                                 name: 'obj'
                               },
                               property: {
-                                type: 'Identifier',
-                                loc:{start:{line:3,column:16},end:{line:3,column:17},source:''},
-                                name: 'x'
+                                type: 'PrivateIdentifier',
+                                name: 'm',
+                                loc:{start:{line:4,column:16},end:{line:4,column:18},source:''}
                               }
                             }
                           }
@@ -124,11 +142,12 @@ ast: {
   ]
 }
 
-tokens (19x):
-       ID_var IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN IDENT
-       PUNC_PAREN_OPEN IDENT PUNC_PAREN_CLOSE PUNC_CURLY_OPEN
-       ID_return IDENT QMARK_DOT IDENT PUNC_SEMI PUNC_CURLY_CLOSE
-       PUNC_CURLY_CLOSE PUNC_SEMI
+tokens (23x):
+       ID_var IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN ID_PRIVATE_IDENT
+       PUNC_EQ NUMBER_DEC PUNC_SEMI IDENT PUNC_PAREN_OPEN IDENT
+       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN ID_return IDENT QMARK_DOT
+       ID_PRIVATE_IDENT PUNC_SEMI PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE
+       PUNC_SEMI
 `````
 
 ### Strict mode
@@ -160,7 +179,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-var C = class{access(obj){return (obj?.x);};};
+var C = class{
+#m = 1;
+access(obj){return (obj?.#m);};
+};
 ````
 
 Produces same AST

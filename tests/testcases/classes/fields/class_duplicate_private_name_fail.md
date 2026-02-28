@@ -1,17 +1,22 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_method_name.md
+- Path: tests/testcases/classes/fields/class_duplicate_private_name_fail.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : fields
 >
-> ::> newline-regex after method name
+> ::> class duplicate private name fail
+>
+> Syntax error if the same private field defined twice. PrivateBoundNames of ClassBody contains duplicate.
+
 ## FAIL
 
 ## Input
 
 `````js
-class x { x 
- /foo/ }
+var C = class {
+  #x;
+  #x;
+};
 `````
 
 ## Output
@@ -28,13 +33,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Duplicate private name `#x`
 
-start@1:0, error@1:2
+start@1:0, error@3:2
 ╔══╦════════════════
- 1 ║ class x { x
-   ║   ^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
+ 1 ║ var C = class {
+ 2 ║   #x;
+ 3 ║   #x;
+   ║   ^^------- error
+ 4 ║ };
 ╚══╩════════════════
 
 `````

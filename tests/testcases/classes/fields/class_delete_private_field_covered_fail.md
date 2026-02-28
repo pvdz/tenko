@@ -1,17 +1,24 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_method_name.md
+- Path: tests/testcases/classes/fields/class_delete_private_field_covered_fail.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : fields
 >
-> ::> newline-regex after method name
+> ::> class delete private field covered fail
+>
+> SyntaxError to delete CallExpression.PrivateName when covered by parens (early error).
+
 ## FAIL
 
 ## Input
 
 `````js
-class x { x 
- /foo/ }
+class C {
+  #m;
+  g = this.f;
+  x = delete (g().#m);
+  f() { return this; }
+}
 `````
 
 ## Output
@@ -28,13 +35,17 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Deleting a private field is a syntax error
 
-start@1:0, error@1:2
+start@1:0, error@4:6
 ╔══╦════════════════
- 1 ║ class x { x
-   ║   ^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
+ 1 ║ class C {
+ 2 ║   #m;
+ 3 ║   g = this.f;
+ 4 ║   x = delete (g().#m);
+   ║       ^^^^^^------- error
+ 5 ║   f() { return this; }
+ 6 ║ }
 ╚══╩════════════════
 
 `````

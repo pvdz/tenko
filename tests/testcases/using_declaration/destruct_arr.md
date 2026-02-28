@@ -30,40 +30,37 @@ ast: {
   loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
   body: [
     {
-      type: 'ExpressionStatement',
+      type: 'VariableDeclaration',
       loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
-      expression: {
-        type: 'AssignmentExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
-        left: {
-          type: 'MemberExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
-          computed: true,
-          optional: false,
-          object: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
-            name: 'using'
+      kind: 'using',
+      declarations: [
+        {
+          type: 'VariableDeclarator',
+          loc:{start:{line:1,column:6},end:{line:1,column:17},source:''},
+          id: {
+            type: 'ArrayPattern',
+            loc:{start:{line:1,column:6},end:{line:1,column:9},source:''},
+            elements: [
+              {
+                type: 'Identifier',
+                loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
+                name: 'x'
+              }
+            ]
           },
-          property: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
-            name: 'x'
+          init: {
+            type: 'CallExpression',
+            loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
+            optional: false,
+            callee: {
+              type: 'Identifier',
+              loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+              name: 'foo'
+            },
+            arguments: []
           }
-        },
-        operator: '=',
-        right: {
-          type: 'CallExpression',
-          loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
-          optional: false,
-          callee: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
-            name: 'foo'
-          },
-          arguments: []
         }
-      }
+      ]
     }
   ]
 }
@@ -99,10 +96,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy][annexb:no]:
-
-````js
-using[x] = foo();
-````
-
-Produces same AST
+Printer output was same as input [sloppy][annexb:no]

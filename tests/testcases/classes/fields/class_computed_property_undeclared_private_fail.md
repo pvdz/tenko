@@ -32,15 +32,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse an opening paren, found `=`
+  Private name `#f` is not defined
 
-start@1:0, error@2:12
-╔══╦═════════════════
+start@1:0, error@2:8
+╔══╦════════════════
  1 ║ var C = class {
  2 ║   [this.#f] = 'Test262';
-   ║             ^------- error
+   ║         ^^------- error
  3 ║ };
-╚══╩═════════════════
+╚══╩════════════════
 
 `````
 

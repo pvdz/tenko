@@ -1,17 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_method_name.md
+- Path: tests/testcases/classes/fields/class_heritage_uses_subclass_private_fail.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : fields
 >
-> ::> newline-regex after method name
+> ::> class heritage uses subclass private fail
+>
+> SyntaxError if class heritage (extends) uses a private name declared in the subclass body.
+
 ## FAIL
 
 ## Input
 
 `````js
-class x { x 
- /foo/ }
+class Outer extends class { x = this.#foo; } {
+  #foo;
+}
 `````
 
 ## Output
@@ -28,14 +32,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Private name `#foo` is not defined
 
-start@1:0, error@1:2
-╔══╦════════════════
- 1 ║ class x { x
-   ║   ^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
-╚══╩════════════════
+start@1:0, error@1:37
+╔══╦═════════════════
+ 1 ║ class Outer extends class { x = this.#foo; } {
+   ║                                      ^^^^------- error
+ 2 ║   #foo;
+ 3 ║ }
+╚══╩═════════════════
 
 `````
 

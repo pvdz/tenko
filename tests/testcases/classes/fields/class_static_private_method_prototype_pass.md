@@ -1,12 +1,12 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_private_generator_distinct_pass.md
+- Path: tests/testcases/classes/fields/class_static_private_method_prototype_pass.md
 
 > :: classes : fields
 >
-> ::> class private generator distinct pass
+> ::> class static private method prototype pass
 >
-> Private field and private generator with different names are valid.
+> Static private method may be named #prototype (PropName restriction is for public names only).
 
 ## PASS
 
@@ -14,8 +14,7 @@
 
 `````js
 var C = class {
-  #m;
-  * #n() {}
+  static async * #prototype() {}
 };
 `````
 
@@ -34,16 +33,16 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:4,column:2},source:''},
+  loc:{start:{line:1,column:0},end:{line:3,column:2},source:''},
   body: [
     {
       type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:4,column:2},source:''},
+      loc:{start:{line:1,column:0},end:{line:3,column:2},source:''},
       kind: 'var',
       declarations: [
         {
           type: 'VariableDeclarator',
-          loc:{start:{line:1,column:4},end:{line:4,column:1},source:''},
+          loc:{start:{line:1,column:4},end:{line:3,column:1},source:''},
           id: {
             type: 'Identifier',
             loc:{start:{line:1,column:4},end:{line:1,column:5},source:''},
@@ -51,46 +50,34 @@ ast: {
           },
           init: {
             type: 'ClassExpression',
-            loc:{start:{line:1,column:8},end:{line:4,column:1},source:''},
+            loc:{start:{line:1,column:8},end:{line:3,column:1},source:''},
             id: null,
             superClass: null,
             body: {
               type: 'ClassBody',
-              loc:{start:{line:1,column:14},end:{line:4,column:1},source:''},
+              loc:{start:{line:1,column:14},end:{line:3,column:1},source:''},
               body: [
                 {
-                  type: 'PropertyDefinition',
-                  loc:{start:{line:2,column:2},end:{line:2,column:4},source:''},
-                  key: {
-                    type: 'PrivateIdentifier',
-                    name: 'm',
-                    loc:{start:{line:2,column:2},end:{line:2,column:4},source:''}
-                  },
-                  value: null,
-                  computed: false,
-                  static: false
-                },
-                {
                   type: 'MethodDefinition',
-                  loc:{start:{line:3,column:2},end:{line:3,column:11},source:''},
+                  loc:{start:{line:2,column:2},end:{line:2,column:32},source:''},
                   key: {
                     type: 'PrivateIdentifier',
-                    name: 'n',
-                    loc:{start:{line:3,column:4},end:{line:3,column:6},source:''}
+                    name: 'prototype',
+                    loc:{start:{line:2,column:17},end:{line:2,column:27},source:''}
                   },
-                  static: false,
+                  static: true,
                   computed: false,
                   kind: 'method',
                   value: {
                     type: 'FunctionExpression',
-                    loc:{start:{line:3,column:2},end:{line:3,column:11},source:''},
+                    loc:{start:{line:2,column:2},end:{line:2,column:32},source:''},
                     generator: true,
-                    async: false,
+                    async: true,
                     id: null,
                     params: [],
                     body: {
                       type: 'BlockStatement',
-                      loc:{start:{line:3,column:9},end:{line:3,column:11},source:''},
+                      loc:{start:{line:2,column:30},end:{line:2,column:32},source:''},
                       body: []
                     }
                   }
@@ -105,8 +92,8 @@ ast: {
 }
 
 tokens (16x):
-       ID_var IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN ID_PRIVATE_IDENT
-       PUNC_SEMI PUNC_STAR ID_PRIVATE_IDENT PUNC_PAREN_OPEN
+       ID_var IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN ID_static
+       ID_async PUNC_STAR ID_PRIVATE_IDENT PUNC_PAREN_OPEN
        PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
        PUNC_CURLY_CLOSE PUNC_SEMI
 `````
@@ -140,10 +127,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-var C = class{
-#m;
-* #n(){};
-};
+var C = class{static async * #prototype(){};};
 ````
 
 Produces same AST

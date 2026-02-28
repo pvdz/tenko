@@ -1,17 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_method_name.md
+- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : fields
 >
-> ::> newline-regex after method name
+> ::> class field inside func init arguments
+>
+> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+
 ## FAIL
 
 ## Input
 
 `````js
-class x { x 
- /foo/ }
+function f() {
+  class C { x = arguments; }
+}
 `````
 
 ## Output
@@ -28,14 +32,15 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Cannot reference `arguments` in class field initializer
 
-start@1:0, error@1:2
-╔══╦════════════════
- 1 ║ class x { x
-   ║   ^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
-╚══╩════════════════
+start@1:0, error@2:16
+╔══╦═════════════════
+ 1 ║ function f() {
+ 2 ║   class C { x = arguments; }
+   ║                 ^^^^^^^^^------- error
+ 3 ║ }
+╚══╩═════════════════
 
 `````
 

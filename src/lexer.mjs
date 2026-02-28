@@ -2587,11 +2587,25 @@ function Lexer(
   function parsePrivateIdentifier() {
     // Already consumed '#'; parse IdentifierName and return $ID_PRIVATE_IDENT.
     // lastCanonizedInput is set by parseIdentifierRest to the name (without '#').
+    // - `class C { #field; }`
+    //               ^
+    // - `class C { #\u{6F} = 1; }`            (unicode escape after #)
+    //               ^
     if (eof()) {
       if (!lastReportableLexerError) lastReportableLexerError = 'Private identifier expected after #';
       return $ERROR;
     }
     let c2 = peek();
+    if (c2 === $$BACKSLASH_5C) {
+      // - `class C { #\u0061; }`               #a
+      //               ^
+      // - `class C { #\u{6F}; }`               #o
+      //               ^
+      ASSERT_skip($$BACKSLASH_5C);
+      let t = parseIdentFromUnicodeEscape(FIRST_CHAR, '', 0);
+      if (t === $ERROR) return $ERROR;
+      return $ID_PRIVATE_IDENT;
+    }
     if (isIdentStart(c2, pointer) === INVALID_IDENT_CHAR) {
       return THROW('Private identifier must start with a valid IdentifierStart character', pointer, pointer + 1);
     }

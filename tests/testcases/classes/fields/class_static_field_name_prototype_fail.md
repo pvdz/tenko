@@ -1,17 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_method_name.md
+- Path: tests/testcases/classes/fields/class_static_field_name_prototype_fail.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : fields
 >
-> ::> newline-regex after method name
+> ::> class static field name prototype fail
+>
+> Static class field PropName cannot be 'prototype' (early error).
+
 ## FAIL
 
 ## Input
 
 `````js
-class x { x 
- /foo/ }
+var C = class {
+  static prototype;
+};
 `````
 
 ## Output
@@ -28,13 +32,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Static class fields may not be named `prototype`
 
-start@1:0, error@1:2
+start@1:0, error@2:9
 ╔══╦════════════════
- 1 ║ class x { x
-   ║   ^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
+ 1 ║ var C = class {
+ 2 ║   static prototype;
+   ║          ^^^^^^^^^------- error
+ 3 ║ };
 ╚══╩════════════════
 
 `````
