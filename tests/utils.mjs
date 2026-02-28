@@ -176,6 +176,7 @@ function parseTestFile(tob) {
   tob.aboveTheFold = oldData.slice(0, oldData.indexOf(INPUT_HEADER));
   tob.shouldPassModule = tob.aboveTheFold.toLowerCase().includes('\n## pass module\n');
   tob.shouldPassSloppy = tob.aboveTheFold.toLowerCase().includes('\n## pass sloppy\n');
+  tob.shouldPassAnnexb = tob.aboveTheFold.toLowerCase().includes('\n## pass annexb\n');
   tob.shouldPassAny = tob.aboveTheFold.toLowerCase().includes('\n## pass\n') && !tob.shouldPassModule && !tob.shouldPassSloppy;
   tob.shouldFail = tob.aboveTheFold.toLowerCase().includes('\n## fail\n');
 

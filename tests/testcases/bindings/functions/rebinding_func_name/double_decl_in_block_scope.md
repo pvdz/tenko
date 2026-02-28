@@ -12,7 +12,7 @@
 > 
 > > At the top level of a function, or script, function declarations are treated like var declarations rather than like lexical declarations.
 
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

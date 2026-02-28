@@ -6,7 +6,7 @@
 > :: functions : declaration : block scoped : gen : switch case block
 >
 > ::> function f28297b7d
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

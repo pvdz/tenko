@@ -8,7 +8,7 @@
 >
 > `using` can be used as a class name
 
-## PASS SLOPPY
+## PASS
 
 ## Input
 

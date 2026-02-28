@@ -18,7 +18,7 @@
 > 
 > duplicate function decl names do not cause an error in BlockStatement and SwitchStatement
 
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

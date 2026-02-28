@@ -5,7 +5,7 @@
 > :: bindings : block : annex b function statement exception
 >
 > ::> lexical declarations should not trigger syntax error if only bound to function decl names
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

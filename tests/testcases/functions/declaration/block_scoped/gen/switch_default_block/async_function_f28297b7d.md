@@ -6,7 +6,7 @@
 > :: functions : declaration : block scoped : gen : switch default block
 >
 > ::> async function f28297b7d
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

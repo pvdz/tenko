@@ -6,7 +6,7 @@
 > :: functions : declaration : block scoped : gen : func func
 >
 > ::> function 2af28297b7d
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

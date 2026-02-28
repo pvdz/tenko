@@ -253,6 +253,8 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
   hitsToReport = wasHits;
   let r, e = '';
   let stdout = [];
+  ASSERT(typeof WEB_COMPAT_ON === 'boolean' && typeof WEB_COMPAT_OFF === 'boolean', 'should be loaded and bools');
+  const webcompatMode = ENABLE_ANNEXB || annexB ? WEB_COMPAT_ON : WEB_COMPAT_OFF;
   try {
     if (verbose) {
       console.time('Pure Tenko parse time');
@@ -264,7 +266,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         goalMode: testVariant === TEST_MODULE ? GOAL_MODULE : GOAL_SCRIPT,
         collectTokens: COLLECT_TOKENS_SOLID,
         strictMode: testVariant === TEST_STRICT,
-        webCompat: ENABLE_ANNEXB || annexB ? WEB_COMPAT_ON : WEB_COMPAT_OFF,
+        webCompat: webcompatMode,
         targetEsVersion: FORCED_ES_TARGET || tob.inputOptions.es,
         babelCompat: BABEL_COMPAT,
         acornCompat: ACORN_COMPAT,
@@ -290,7 +292,13 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       if (CONCISE) return;
     }
     if (tob.shouldFail) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO FAIL' + RESET + ', but it passed';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO FAIL' + RESET + ', but it passed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+    } else if (tob.shouldPassModule && testVariant !== TEST_MODULE) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO FAIL AS SLOPPY' + RESET + ', but it passed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+    } else if (tob.shouldPassSloppy && testVariant !== TEST_SLOPPY && webcompatMode !== WEB_COMPAT_OFF) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO FAIL AS MODULE' + RESET + ', but it passed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+    } else if (tob.shouldPassAnnexb && testVariant !== TEST_SLOPPY && webcompatMode !== WEB_COMPAT_ON) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO FAIL WITH SLOPPY ANNEXB' + RESET + ', but it passed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     }
 
     // Test the ast printer
@@ -370,11 +378,13 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
     }
     e = _e;
     if (tob.shouldPassAny) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS' + RESET + ', but it failed';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS' + RESET + ', but it failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     } else if (tob.shouldPassModule && testVariant === TEST_MODULE) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in module)' + RESET + ', but module failed';
-    } else if (tob.shouldPassSloppy && testVariant === TEST_SLOPPY) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in sloppy)' + RESET + ', but sloppy failed';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in module)' + RESET + ', but module failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+    } else if (tob.shouldPassSloppy && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_OFF) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in sloppy)' + RESET + ', but sloppy failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+    } else if (tob.shouldPassAnnexb && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_ON) {
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least with annexb)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     }
   }
 

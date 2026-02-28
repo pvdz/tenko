@@ -9,7 +9,7 @@
 > This should reject because the name is bound twice and "function statements" bindings
 > are considered lexical bindings.
 
-## PASS SLOPPY
+## PASS ANNEXB
 
 ## Input
 

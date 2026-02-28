@@ -6,13 +6,11 @@
 >
 > ::> arrow async with nested async ident
 >
-> should accept the nested `async` ident in sloppy mode because it's a contextual keyword
->
-> give
+> should accept the nested `async` ident in sloppy mode because it's a contextual keyword (ES2017+)
 
 Since async is a contextual keyword, it should be accepted when it cannot be a modifier to a function or arrow.
 
-## PASS SLOPPY
+## PASS
 
 ## Input
 
