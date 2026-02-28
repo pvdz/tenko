@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI
+  Expected to parse a value
 
-start@1:0, error@1:6
-╔══╦════════════════
+start@1:0, error@1:11
+╔══╦═════════════════
  1 ║ using { a: } = obj;
-   ║       ^------- error
-╚══╩════════════════
+   ║            ^------- error
+╚══╩═════════════════
 
 `````
 

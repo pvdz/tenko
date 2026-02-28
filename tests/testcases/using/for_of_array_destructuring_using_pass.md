@@ -37,31 +37,32 @@ ast: {
       type: 'ForOfStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:32},source:''},
       left: {
-        type: 'MemberExpression',
+        type: 'VariableDeclaration',
         loc:{start:{line:1,column:5},end:{line:1,column:17},source:''},
-        computed: true,
-        optional: false,
-        object: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
-          name: 'using'
-        },
-        property: {
-          type: 'SequenceExpression',
-          loc:{start:{line:1,column:12},end:{line:1,column:16},source:''},
-          expressions: [
-            {
-              type: 'Identifier',
-              loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
-              name: 'k'
+        kind: 'using',
+        declarations: [
+          {
+            type: 'VariableDeclarator',
+            loc:{start:{line:1,column:11},end:{line:1,column:17},source:''},
+            id: {
+              type: 'ArrayPattern',
+              loc:{start:{line:1,column:11},end:{line:1,column:17},source:''},
+              elements: [
+                {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
+                  name: 'k'
+                },
+                {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
+                  name: 'v'
+                }
+              ]
             },
-            {
-              type: 'Identifier',
-              loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
-              name: 'v'
-            }
-          ]
-        }
+            init: null
+          }
+        ]
       },
       right: {
         type: 'Identifier',
@@ -110,10 +111,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy][annexb:no]:
-
-````js
-for ((using[(k, v)]) of entries) {}
-````
-
-Produces same AST
+Printer output was same as input [sloppy][annexb:no]

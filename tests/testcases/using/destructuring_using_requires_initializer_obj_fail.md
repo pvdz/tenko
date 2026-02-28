@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unable to ASI
+  Declaration destructuring must have init
 
-start@1:0, error@1:6
-╔══╦════════════════
+start@1:0, error@1:12
+╔══╦═════════════════
  1 ║ using { a } ;
-   ║       ^------- error
-╚══╩════════════════
+   ║             ^------- error
+╚══╩═════════════════
 
 `````
 

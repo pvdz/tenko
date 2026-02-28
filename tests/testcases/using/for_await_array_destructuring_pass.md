@@ -52,20 +52,27 @@ ast: {
             type: 'ForOfStatement',
             loc:{start:{line:1,column:20},end:{line:1,column:50},source:''},
             left: {
-              type: 'MemberExpression',
+              type: 'VariableDeclaration',
               loc:{start:{line:1,column:31},end:{line:1,column:40},source:''},
-              computed: true,
-              optional: false,
-              object: {
-                type: 'Identifier',
-                loc:{start:{line:1,column:31},end:{line:1,column:36},source:''},
-                name: 'using'
-              },
-              property: {
-                type: 'Identifier',
-                loc:{start:{line:1,column:38},end:{line:1,column:39},source:''},
-                name: 'x'
-              }
+              kind: 'using',
+              declarations: [
+                {
+                  type: 'VariableDeclarator',
+                  loc:{start:{line:1,column:37},end:{line:1,column:40},source:''},
+                  id: {
+                    type: 'ArrayPattern',
+                    loc:{start:{line:1,column:37},end:{line:1,column:40},source:''},
+                    elements: [
+                      {
+                        type: 'Identifier',
+                        loc:{start:{line:1,column:38},end:{line:1,column:39},source:''},
+                        name: 'x'
+                      }
+                    ]
+                  },
+                  init: null
+                }
+              ]
             },
             right: {
               type: 'Identifier',
@@ -122,7 +129,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async function f() {for await ((using[x]) of it) {}}
+async function f() {for await (using [x] of it) {}}
 ````
 
 Produces same AST

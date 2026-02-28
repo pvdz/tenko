@@ -34,25 +34,17 @@ ast: {
   loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
   body: [
     {
-      type: 'ExpressionStatement',
+      type: 'VariableDeclaration',
       loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
-      expression: {
-        type: 'AssignmentExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
-        left: {
-          type: 'MemberExpression',
-          loc:{start:{line:1,column:0},end:{line:1,column:12},source:''},
-          computed: true,
-          optional: false,
-          object: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
-            name: 'using'
-          },
-          property: {
-            type: 'SequenceExpression',
-            loc:{start:{line:1,column:7},end:{line:1,column:11},source:''},
-            expressions: [
+      kind: 'using',
+      declarations: [
+        {
+          type: 'VariableDeclarator',
+          loc:{start:{line:1,column:6},end:{line:1,column:18},source:''},
+          id: {
+            type: 'ArrayPattern',
+            loc:{start:{line:1,column:6},end:{line:1,column:12},source:''},
+            elements: [
               {
                 type: 'Identifier',
                 loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
@@ -64,15 +56,14 @@ ast: {
                 name: 'b'
               }
             ]
+          },
+          init: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:15},end:{line:1,column:18},source:''},
+            name: 'arr'
           }
-        },
-        operator: '=',
-        right: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:15},end:{line:1,column:18},source:''},
-          name: 'arr'
         }
-      }
+      ]
     }
   ]
 }
@@ -108,10 +99,4 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output different from input [sloppy][annexb:no]:
-
-````js
-using[(a, b)] = arr;
-````
-
-Produces same AST
+Printer output was same as input [sloppy][annexb:no]

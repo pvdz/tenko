@@ -5322,7 +5322,7 @@ function Parser(code, options = {}) {
     //                ^^
     // [v]: `for (using of x)` — `using` is a var name
     //                ^^
-    if (isIdentToken($tp_usingArg_type) && tok_getNlwas() === false) {
+    if ((isIdentToken($tp_usingArg_type) || $tp_usingArg_type === $PUNC_CURLY_OPEN || $tp_usingArg_type === $PUNC_BRACKET_OPEN) && tok_getNlwas() === false) {
       if ($tp_usingArg_type === $ID_in || $tp_usingArg_type === $ID_of) {
         // [v]: `for (using in x)` / `for (using of x)` — `using` is a var name
         AST_setIdent(astProp, $tp_usingIdent_start, $tp_usingIdent_stop, $tp_usingIdent_line, $tp_usingIdent_column, $tp_usingIdent_canon);
@@ -5330,6 +5330,7 @@ function Parser(code, options = {}) {
       }
 
       // [v]: `for (using x of y)` — this is a using declaration
+      // [v]: `for (using {x} of y)` / `for (using [x] of y)` — destructuring in using declaration
       parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tp_usingIdent_start, $tp_usingIdent_line, $tp_usingIdent_column, scoop, BINDING_TYPE_USING, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
 
       // [x]: `for (using x in y)` — for-in not allowed with `using`
@@ -5341,7 +5342,6 @@ function Parser(code, options = {}) {
     }
 
     // Fall through to expression: `using` as a plain variable name
-    // Note: `[` and `{` after `using` are member access / object literal, not destructuring (unlike `let`)
     let assignable = parseValueAfterIdent(lexerFlags, $tp_usingIdent_type, $tp_usingIdent_start, $tp_usingIdent_stop, $tp_usingIdent_line, $tp_usingIdent_column, $tp_usingIdent_canon, BINDING_TYPE_NONE, ASSIGN_EXPR_IS_OK, astProp);
     assignable = parseExpressionFromOp(lexerFlags | LF_IN_FOR_LHS, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, assignable, astProp);
     return assignable;
@@ -5370,8 +5370,8 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags);
 
-    if (!isIdentToken(tok_getType()) || tok_getNlwas() === true) {
-      return THROW_RANGE('`await using` in for-header must be followed by a binding identifier', tok_getStart(), tok_getStop());
+    if ((!isIdentToken(tok_getType()) && tok_getType() !== $PUNC_CURLY_OPEN && tok_getType() !== $PUNC_BRACKET_OPEN) || tok_getNlwas() === true) {
+      return THROW_RANGE('`await using` in for-header must be followed by a binding identifier or pattern', tok_getStart(), tok_getStop());
     }
 
     // [v]: `for (await using x of y)` — this is an await using declaration
@@ -6460,8 +6460,8 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags); // div; if using is varname then next token can be next line statement start and if that starts with forward slash it's a div
 
-    // `using` is only a declaration when followed by an ident on the same line (no newline)
-    if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
+    // `using` is a declaration when followed by an ident, `{`, or `[` on the same line (no newline)
+    if ((isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_BRACKET_OPEN) && tok_getNlwas() === false) {
       parseAnyVarDeclaration(lexerFlags, $tp_using_start, $tp_using_line, $tp_using_column, scoop, BINDING_TYPE_USING, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     }
     else {
@@ -6510,8 +6510,8 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags);
 
-    // `await using` is a declaration only when followed by an ident on the same line (no newline after `using`)
-    if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
+    // `await using` is a declaration when followed by an ident, `{`, or `[` on the same line (no newline after `using`)
+    if ((isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_BRACKET_OPEN) && tok_getNlwas() === false) {
       parseAnyVarDeclaration(lexerFlags, $tp_await_start, $tp_await_line, $tp_await_column, scoop, BINDING_TYPE_AWAIT_USING, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     }
     else {
@@ -7250,9 +7250,6 @@ function Parser(code, options = {}) {
         paramSimple = PARAM_WAS_SIMPLE; // could still be complex if init
       }
     }
-    else if ((bindingType === BINDING_TYPE_USING || bindingType === BINDING_TYPE_AWAIT_USING) && (tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_BRACKET_OPEN)) {
-      return THROW_RANGE('`using` declarations do not support destructuring', tok_getStart(), tok_getStop());
-    }
     else if (tok_getType() === $PUNC_CURLY_OPEN) {
       ASSERT(bindingType !== BINDING_TYPE_NONE, 'must bind as something'); // TODO: why only this branch?
       // [v]: `let {a, b} = obj;`
@@ -7265,7 +7262,7 @@ function Parser(code, options = {}) {
       if (
         (bindingOrigin !== FROM_CATCH) &&
         (bindingOrigin !== FROM_FOR_HEADER || (tok_getType() !== $ID_in && tok_getType() !== $ID_of)) &&
-        (bindingType === BINDING_TYPE_CONST || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_VAR)
+        (bindingType === BINDING_TYPE_CONST || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_VAR || bindingType === BINDING_TYPE_USING || bindingType === BINDING_TYPE_AWAIT_USING)
       ) {
         mustHaveInit = true;
       }
@@ -7279,7 +7276,7 @@ function Parser(code, options = {}) {
       if (
         (bindingOrigin !== FROM_CATCH) &&
         (bindingOrigin !== FROM_FOR_HEADER || (tok_getType() !== $ID_in && tok_getType() !== $ID_of)) &&
-        (bindingType === BINDING_TYPE_CONST || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_VAR)
+        (bindingType === BINDING_TYPE_CONST || bindingType === BINDING_TYPE_LET || bindingType === BINDING_TYPE_VAR || bindingType === BINDING_TYPE_USING || bindingType === BINDING_TYPE_AWAIT_USING)
       ) {
         mustHaveInit = true;
       }
@@ -8375,7 +8372,7 @@ function Parser(code, options = {}) {
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(isNewArg === NOT_NEW_ARG || allowAssignment === ASSIGN_EXPR_IS_ERROR, 'new arg does not allow assignments');
     ASSERT_BINDING_TYPE(bindingType);
-    ASSERT([BINDING_TYPE_NONE, BINDING_TYPE_ARG, BINDING_TYPE_VAR, BINDING_TYPE_LET, BINDING_TYPE_CONST, BINDING_TYPE_CATCH_OTHER].includes(bindingType), 'Note: not all bindingTypes are received here');
+    ASSERT([BINDING_TYPE_NONE, BINDING_TYPE_ARG, BINDING_TYPE_VAR, BINDING_TYPE_LET, BINDING_TYPE_CONST, BINDING_TYPE_CATCH_OTHER, BINDING_TYPE_USING, BINDING_TYPE_AWAIT_USING].includes(bindingType), 'Note: not all bindingTypes are received here');
     ASSERT(![BINDING_TYPE_FUNC_VAR, BINDING_TYPE_FUNC_STMT, BINDING_TYPE_FUNC_LEX, BINDING_TYPE_CLASS, BINDING_TYPE_CATCH_IDENT].includes(bindingType), 'Note: not all bindingTypes are received here');
 
     // for `new` only a subset is accepted;

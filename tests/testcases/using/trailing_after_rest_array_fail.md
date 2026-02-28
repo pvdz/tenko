@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected spread/rest dots
+  The binding pattern is not destructible
 
-start@1:0, error@1:10
+start@1:0, error@1:20
 ╔══╦═════════════════
  1 ║ using [a, ...rest,] = arr;
-   ║           ^------- error
+   ║                     ^------- error
 ╚══╩═════════════════
 
 `````
