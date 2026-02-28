@@ -85,6 +85,8 @@ Tenko CLI Toolkit help:
  g             Regenerate _all_ auto generated files
  G             Autogenerate only files that don't already exist
  u             Run all test files and just write output
+ up            Same as u but parallel across cores (default 10, override with -t <n>)
+ -t <n>        Only for \`up\`, sets number of threads
  U             Run all test files and force write output (ignores ASSERT failures)
  m             Run all tests and ask for update one-by-one
  n             Run all tests, don't generate new test files or write anything (for coverage)
@@ -196,6 +198,37 @@ Tenko CLI Toolkit help:
     u)
       # Update all test files with their current output (fast)
       ACTION='-u'
+      ;;
+    up)
+      # Update all test files in parallel across cores
+      CORES=10
+      if [[ "$2" == "-t" && -n "$3" ]]; then
+        CORES=$3
+      fi
+      echo "Running test update in parallel across ${CORES} cores..."
+      TMPDIR=$(mktemp -d)
+      trap 'rm -rf "${TMPDIR}"; exit 130' INT TERM
+      PIDS=()
+      for i in $(seq 0 $((CORES-1))); do
+        ${NODE_BIN} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs -u --quiet --chunk ${i}/${CORES} ${ANNEXB} ${BUILD} ${ES} > "${TMPDIR}/${i}.log" 2>"${TMPDIR}/${i}.err" &
+        PIDS+=($!)
+      done
+      FAIL=0
+      for j in "${!PIDS[@]}"; do
+        if ! wait ${PIDS[$j]}; then
+          FAIL=1
+          echo "Chunk ${j} failed:"
+          cat "${TMPDIR}/${j}.err"
+        fi
+      done
+      rm -rf "${TMPDIR}"
+      if [[ ${FAIL} -eq 0 ]]; then
+        echo "All ${CORES} chunks passed."
+      else
+        echo "One or more chunks failed!"
+        exit 1
+      fi
+      exit 0
       ;;
     U)
       # Force update all test files with their current output

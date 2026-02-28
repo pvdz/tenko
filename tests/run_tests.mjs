@@ -102,6 +102,9 @@ const QUIET_FILE = process.argv.includes('--quiet'); // With -f: only print PASS
 const USE_BUILD = process.argv.includes('-b') || process.argv.includes('--build');
 const SKIP_PRINTER = process.argv.includes('--no-printer'); // || USE_BUILD;
 const EXPOSE_SCOPE = process.argv.includes('--expose-scope');
+const CHUNK_ARG = process.argv.includes('--chunk') ? process.argv[process.argv.indexOf('--chunk') + 1] : '';
+const CHUNK_INDEX = CHUNK_ARG ? parseInt(CHUNK_ARG.split('/')[0], 10) : -1;
+const CHUNK_TOTAL = CHUNK_ARG ? parseInt(CHUNK_ARG.split('/')[1], 10) : -1;
 
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
@@ -159,6 +162,7 @@ if (process.argv.includes('-?') || process.argv.includes('--help')) {
     --no-fatals   Do not treat (test) assertion errors as fatals (dev tools only, rely on git etc for recovery)
     --concise     Do not dump AST and printer output to stdout. Parse and stop. Only works with -i or -f or -F
     --quiet       With -f: only print the PASS/FAIL line (auto implied for ./t ff)
+    --chunk I/N   Only process every Nth file starting at index I (0-based). Used by \`./t up\` for parallel runs.
     --expose-scope Add generated scope objects as \`.$scope\` property for nodes that generate a scope. Good luck that that that...
 `);
   process.exit();
@@ -391,7 +395,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
   if (tob.continuePrint) {
     if (!NO_FATALS && AUTO_UPDATE && tob.continuePrint && !CONFIRMED_UPDATE && !INPUT_OVERRIDE && !TARGET_FILE) {
       console.error(BOLD + 'Test Assertion fail' + RESET + ': testVariant=' + testVariant + ', annexB=' + annexB + ', test ' + BOLD + tob.fileShort + RESET + ' was explicitly marked to pass, but it failed somehow;\n' + RED + tob.continuePrint + RESET);
-      process.exit();
+      process.exit(1);
     } else if (verbose) {
       console.error(tob.continuePrint);
     }
@@ -1299,6 +1303,10 @@ if (INPUT_OVERRIDE) {
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ Test search discovery time');
   getTestFiles(path.join(dirname, 'testcases'), '', files, true);
   if (!RUN_VERBOSE_IN_SERIAL) console.timeEnd('$$ Test search discovery time');
+  if (CHUNK_INDEX >= 0) {
+    files = files.filter((_, i) => i % CHUNK_TOTAL === CHUNK_INDEX);
+    if (!QUIET_FILE) console.log('Chunk', CHUNK_INDEX + '/' + CHUNK_TOTAL + ':', files.length, 'files');
+  }
   if (!QUIET_FILE) console.log('Read all test files, gathered', files.length, 'files');
 }
 
