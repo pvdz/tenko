@@ -95,7 +95,7 @@ if (_pass('a // c\nd;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_AL
 if (_pass('a /* c */.d;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_ALL}).tokens.length === 6) throw new Error('When collecting all tokens it should collect the spaces and multi-comments too');
 if (_pass('a. // c\nd /* xyz */;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_SOLID}).tokens.length === 4) throw new Error('When collecting solid tokens it should ignore whitespace');
 if (_pass('a. // c\nd /* xyz */;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_NONE}).tokens !== undefined) throw new Error('When collecting no tokens it should not return anything');
-if (_pass('a // c\nd;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_TYPES}).tokens.every(t => typeof t === 'number') === true) throw new Error('COLLECT_TOKENS_TYPES should return int token type ids only');
+if (!_pass('a // c\nd;', {goalMode: GOAL_SCRIPT, collectTokens: COLLECT_TOKENS_TYPES}).tokens.every(t => typeof t === 'number')) throw new Error('COLLECT_TOKENS_TYPES should return int token type ids only');
 
 // Token types
 if (typeof isWhiteToken !== 'function') throw new Error('isWhiteToken should be a function');
