@@ -81,6 +81,7 @@ Tenko CLI Toolkit help:
  i <code>      Run test with custom input. Runs sloppy and sloppy webcompat by default. (stdin not supported)
  f <path>      Run a specific .md parser test file (the a/ b/ \"diff\" prefix is checked)
  ff <path>     Run a test file (or folder of .md files, recursively) and force-write output (like \`./t U\` for one file or tree)
+ ffl <path>    Like ff but only prints a pass/fail summary (and up to 5 failures)
  F <path>      Run a specific file and consider its entire contents to be test input
  g             Regenerate _all_ auto generated files
  G             Autogenerate only files that don't already exist
@@ -175,6 +176,16 @@ Tenko CLI Toolkit help:
       # Run one test file (or folder recursively) and force-write its output (like ./t U for one file)
       ACTION='-u --force-write -f'
       EXTRA="${EXTRA} --quiet"
+      shift
+      ARG=$1
+      if [[ ! -f "${ARG}" && ( "${ARG}" == a/* || "${ARG}" == b/* ) && -f "${ARG:2}" ]]; then
+        ARG="${ARG:2}"
+      fi
+      ;;
+    ffl)
+      # Like ff but only prints summary + up to 5 failures
+      ACTION='-u --force-write -f'
+      EXTRA="${EXTRA} --quiet --summary-only"
       shift
       ARG=$1
       if [[ ! -f "${ARG}" && ( "${ARG}" == a/* || "${ARG}" == b/* ) && -f "${ARG:2}" ]]; then
