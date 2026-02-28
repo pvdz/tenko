@@ -30,6 +30,10 @@ const OUTPUT_QUINTICKJS = '\n`````js\n';
 ASSERT(dirname.endsWith('/tests'), 'update root detection if this changes');
 let PROJECT_ROOT_DIR = path.resolve(path.join(dirname, '..'));
 
+function toProjectRelative(filePath) {
+  return path.relative(PROJECT_ROOT_DIR, path.resolve(filePath));
+}
+
 let prefixLogOrigin = false; // this slows things down considerably so just used for debugging
 const _LOG = console.log; // global hijack :(
 console.log = (...args) => {
@@ -97,8 +101,8 @@ export class Tob {
   constructor(file, data) {
     ASSERT(!data || data.indexOf('\n##'));
 
-    this.file = file;
-    this.fileShort = file.startsWith('tests/') ? file : file.slice(file.indexOf('tenko') + 'tenko/'.length);
+    this.file = path.resolve(file);
+    this.fileShort = toProjectRelative(this.file);
     this.oldData = data;
     this.newData = data;
 

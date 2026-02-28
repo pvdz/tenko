@@ -380,7 +380,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
 
   if (tob.continuePrint) {
     if (!NO_FATALS && AUTO_UPDATE && tob.continuePrint && !CONFIRMED_UPDATE && !INPUT_OVERRIDE && !TARGET_FILE) {
-      console.error(BOLD + 'Test Assertion fail' + RESET + ': testVariant=' + testVariant + ', annexB=' + annexB + ', test ' + BOLD + tob.file + RESET + ' was explicitly marked to pass, but it failed somehow;\n' + RED + tob.continuePrint + RESET);
+      console.error(BOLD + 'Test Assertion fail' + RESET + ': testVariant=' + testVariant + ', annexB=' + annexB + ', test ' + BOLD + tob.fileShort + RESET + ' was explicitly marked to pass, but it failed somehow;\n' + RED + tob.continuePrint + RESET);
       process.exit();
     } else if (verbose) {
       console.error(tob.continuePrint);
@@ -391,7 +391,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
   // Tests with specific versions should also have non-specific counter parts. Since Babel does not support targeting
   // specific spec versions, we should just skip those variants because they lead to false positives.
   if (TEST_BABEL && (!Number.isFinite(tob.inputOptions.es) || TARGET_FILE || INPUT_OVERRIDE)) {
-    [babelOk, babelFail, zasb] = compareBabel(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, INPUT_OVERRIDE || TARGET_FILE);
+    [babelOk, babelFail, zasb] = compareBabel(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.fileShort, INPUT_OVERRIDE || TARGET_FILE);
   }
   let acornOk, acornFail, zasa;
   // Acorn does support version, but also always annexb and no strict mode option
@@ -400,7 +400,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       acornOk = false;
       acornFail = 'infinite loop';
     } else {
-      [acornOk, acornFail, zasa] = compareAcorn(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.file, tob.inputOptions.es, INPUT_OVERRIDE || TARGET_FILE);
+      [acornOk, acornFail, zasa] = compareAcorn(code, !e, testVariant, ENABLE_ANNEXB || annexB, tob.fileShort, tob.inputOptions.es, INPUT_OVERRIDE || TARGET_FILE);
     }
   }
 
@@ -419,7 +419,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
   return {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa};
 }
 async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "strict" | "module" */, annexB) {
-  let {parserRawOutput: {[testVariant+annexB]: {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa}}, file} = tob;
+  let {parserRawOutput: {[testVariant+annexB]: {r, e, stdout, babelOk, babelFail, zasb, nodeFail, acornOk, acornFail, zasa}}} = tob;
   if (!r && !e) return; // no output for this variant
 
   let errorMessage = '';
@@ -434,7 +434,7 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
       console.error(e.stack);
       if (!NO_FATALS) {
         hardExit(tob, 'postProcessResult assertion error');
-        throw new Error('Assertion error. Mode = ' + testVariant + ', annexB=' + annexB + ', file = ' + file + '; ' + errorMessage.message);
+        throw new Error('Assertion error. Mode = ' + testVariant + ', annexB=' + annexB + ', file = ' + tob.fileShort + '; ' + errorMessage.message);
       }
     }
     else if (errorMessage.startsWith('Parser error!')) {
@@ -451,7 +451,7 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
       console.error('####');
       if (!NO_FATALS) {
         hardExit(tob, 'postProcessResult unknown error');
-        throw new Error('Non-graceful error, fixme. Mode = ' + testVariant + ', annexB=' + annexB + ', file = ' + file + '; ' + errorMessage.message);
+        throw new Error('Non-graceful error, fixme. Mode = ' + testVariant + ', annexB=' + annexB + ', file = ' + tob.fileShort + '; ' + errorMessage.message);
       }
     }
   }
@@ -473,7 +473,7 @@ async function postProcessResult(tob/*: Tob */, testVariant/*: "sloppy" | "stric
     if (Number.isFinite(tob.inputOptions.es)) {
       tob.compareSkippedExplicitVersion = true;
     } else {
-      ASSERT(!babelOk !== !babelFail, 'babel should have run, should either pass or fail, not both, not neither [file = ' + file +' ]');
+      ASSERT(!babelOk !== !babelFail, 'babel should have run, should either pass or fail, not both, not neither [file = ' + tob.fileShort +' ]');
       tob.compareWhiteListed = ignoreTenkoTestForBabel(tob.fileShort);
       babelMatchError = processBabelResult(babelOk, babelFail, !!e, zasb, tob, TEST_BABEL, INPUT_OVERRIDE);
 
@@ -570,7 +570,7 @@ async function runTest(list, tenko, testVariant/*: "sloppy" | "strict" | "module
     if (REDUCING) {
       // Note: we disable code frame generation because it leads to a very noisy error message that includes the input
       // code and line numbers. The test case minifier relies purely on the output error staying the same.
-      reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, false, code, false).e || false, `./t --${testVariant} ${annexB ? '--annexb' : ''} ${Number.isFinite(FORCED_ES_TARGET || tob.inputOptions.es) ? FORCED_ES_TARGET || tob.inputOptions.es : ''}`, tob.file);
+      reduceAndExit(tob.inputCode, code => coreTest(tob, tenko, testVariant, annexB, false, code, false).e || false, `./t --${testVariant} ${annexB ? '--annexb' : ''} ${Number.isFinite(FORCED_ES_TARGET || tob.inputOptions.es) ? FORCED_ES_TARGET || tob.inputOptions.es : ''}`, tob.fileShort);
     }
     // This is quite memory expensive but much easier to work with
     tob.parserRawOutput[testVariant+annexB] = coreTest(tob, tenko, testVariant, annexB, true);
@@ -631,7 +631,7 @@ function showDiff(tob) {
     '\n' +
     BOLD + '######' + RESET + '\n' +
     BOLD + '## ' + RESET + 'Now showing diff' + '\n' +
-    BOLD + '## ' + RESET + 'File:', tob.file, '\n' +
+    BOLD + '## ' + RESET + 'File:', tob.fileShort, '\n' +
     BOLD + '###### Input:' + RESET + '\n' +
     tob.inputCode, '\n' +
     BOLD + '######' + RESET + '\n'
@@ -728,7 +728,7 @@ async function runTests(list, tenko) {
         }
 
         console.log('\n' + DIM + tob.fileShort + RESET);
-        console.log(BOLD + '\n./t f "' + tob.file + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n');
+        console.log(BOLD + '\n./t f "' + tob.fileShort + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n');
 
         if (!TARGET_FILE && !INPUT_OVERRIDE) {
           if (tob.continuePrint) console.error(tob.continuePrint);
@@ -760,7 +760,7 @@ async function writeNewOutput(list) {
       if (newData !== oldData || FORCE_WRITE) {
         if (tob.continuePrint) console.error(tob.continuePrint);
         console.log('\n' + DIM + tob.fileShort + RESET);
-        console.log(DIM + '\n./t f "' + tob.file + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
+        console.log(DIM + '\n./t f "' + tob.fileShort + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
         let cont = await yn('Continue to overwrite test output?');
         if (USE_BUILD) {
           // Never write build output to test files ...
@@ -772,7 +772,7 @@ async function writeNewOutput(list) {
       } else {
         if (tob.continuePrint) {
           console.log('\n' + DIM + tob.fileShort + RESET);
-          console.log(DIM + '\n./t f "' + tob.file + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
+          console.log(DIM + '\n./t f "' + tob.fileShort + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
           if (!await yn('File was not changed, invariant was broken and written anyways. Continue testing?')) process.exit();
         }
       }
@@ -787,8 +787,8 @@ async function writeNewOutput(list) {
           return promiseToWriteFile(file, newData);
         } else {
           console.log('\n' + DIM + tob.fileShort + RESET);
-          console.log(DIM + '\n./t f "' + tob.file + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
-          console.error('Output mismatch for', file);
+          console.log(DIM + '\n./t f "' + tob.fileShort + '"'+(TEST_BABEL ? ' --test-babel' : '')+(TEST_ACORN ? ' --test-acorn' : '')+'\n' + RESET);
+          console.error('Output mismatch for', tob.fileShort);
           return Promise.resolve();
         }
       }
@@ -918,19 +918,19 @@ async function main(tenko) {
     try {
       const stats = fs.statSync(TARGET_FILE);
       if (stats.isDirectory()) {
-        if (!QUIET_FILE) console.log('Using target directory:', TARGET_FILE);
+        if (!QUIET_FILE) console.log('Using target directory:', path.relative(PROJECT_ROOT_DIR, path.resolve(TARGET_FILE)));
         const targetFiles = [];
         // Normalize path: getTestFiles expects path without trailing slash
         const normalizedPath = TARGET_FILE.endsWith('/') ? TARGET_FILE.slice(0, -1) : TARGET_FILE;
         getTestFiles(normalizedPath, '', targetFiles, true);
         files = targetFiles.filter(f => f.endsWith('.md'));
       } else {
-        if (!QUIET_FILE) console.log('Using explicit file:', TARGET_FILE);
+        if (!QUIET_FILE) console.log('Using explicit file:', path.relative(PROJECT_ROOT_DIR, path.resolve(TARGET_FILE)));
         files = [TARGET_FILE];
       }
     } catch (e) {
       // File doesn't exist, treat as single file (will error later if needed)
-      if (!QUIET_FILE) console.log('Using explicit file:', TARGET_FILE);
+      if (!QUIET_FILE) console.log('Using explicit file:', path.relative(PROJECT_ROOT_DIR, path.resolve(TARGET_FILE)));
       files = [TARGET_FILE];
     }
   } else {
@@ -1033,7 +1033,7 @@ async function gen(tenko) {
     let caseOffset = tob.oldData.indexOf(CASE_HEAD);
     let templateOffset = tob.oldData.indexOf(TPL_HEAD, CASE_HEAD);
     let outputOffset = tob.oldData.indexOf(OUT_HEAD, TPL_HEAD);
-    ASSERT(caseOffset >= 0 || templateOffset >= 0 || outputOffset >= 0, 'missing required parts of autogen', tob.file);
+    ASSERT(caseOffset >= 0 || templateOffset >= 0 || outputOffset >= 0, 'missing required parts of autogen', tob.fileShort);
     let cases = tob.oldData
       .slice(caseOffset + CASE_HEAD.length, templateOffset)
       .split('> `````js\n')
@@ -1045,7 +1045,7 @@ async function gen(tenko) {
           .split('\n> `````')[0] // Only get the code block, don't care about the rest
           .split('\n')
           .map(s => {
-            ASSERT(s[0] === '>' && s[1] === ' ', 'cases should be md quoted entirely, with one space', tob.file, s);
+            ASSERT(s[0] === '>' && s[1] === ' ', 'cases should be md quoted entirely, with one space', tob.fileShort, s);
             return s.slice(2);
           })
           .join('\n'); // Not likely to be multi line but why not
@@ -1058,7 +1058,7 @@ async function gen(tenko) {
       .map(s => s.trim())
       .filter(s => s[0] === '-')
       .reduce((obj, s) => {
-        ASSERT(s[1] === ' ' && s[2] === '`' && s[s.length - 1] === '`', 'param composition', obj.file, s);
+        ASSERT(s[1] === ' ' && s[2] === '`' && s[s.length - 1] === '`', 'param composition', tob.fileShort, s);
         let [k, v] = s.slice(3, -1).split(' = ');
         if (String(parseInt(v, 10)) === v) v = parseInt(k, 10);
         else if (v === 'true') v = true;
@@ -1107,7 +1107,7 @@ async function gen(tenko) {
     console.log(
       'Wrote', wrote, 'new test files' +
       (skipped ? ', skipped ' + skipped + ' existing files' : ''),
-      'dir:', genDir.slice(path.join(dirname, '..').length+1)
+      'dir:', path.relative(PROJECT_ROOT_DIR, genDir)
     );
   }
 }
@@ -1115,7 +1115,7 @@ function createAutoGeneratedTestFileContents(tob/*: Tob */, caseDir, title, c, p
   return `# Tenko parser autogenerated test case
 
 - From: ${tob.fileShort}
-- Path: ${caseDir.slice(caseDir.indexOf('tenko') + 10)}
+- Path: ${path.relative(PROJECT_ROOT_DIR, caseDir)}
 
 > :: test: ${title.split('\n').join('\n>          ')}
 >
@@ -1175,7 +1175,7 @@ The format is something like this:
   */
   let topGrep = /^\s*(# Tenko parser (?:autogenerated )?test case)\n\s*\n(- From:.*?\s*\n)*(?:- (?:Path|Added|Modified):.*?\s*\n)*(> :: .*\s*\n>\s*\n)?(> ::>? .*\s*\n)?/;
 
-  ASSERT(/\s*^# Tenko parser (autogenerated )?test case/.test(tob.aboveTheFold), 'all test cases should include this title: ' + tob.file + ' did not');
+  ASSERT(/\s*^# Tenko parser (autogenerated )?test case/.test(tob.aboveTheFold), 'all test cases should include this title: ' + tob.fileShort + ' did not');
   let fold = tob.aboveTheFold.replace(topGrep, (_, title, from) => title + `
 
 ${from||''}- Path: ${tob.fileShort}
