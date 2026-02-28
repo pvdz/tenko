@@ -371,7 +371,8 @@ function ExportAllDeclaration(node) {
 }
 function ExportDefaultDeclaration(node) {
   assert(node.type, 'ExportDefaultDeclaration');
-  return 'export default ' + $(node.declaration) + (node.declaration.type === 'ClassDeclaration' || node.declaration.type === 'FunctionDeclaration' ? '' : ';');
+  const decl = node.declaration;
+  return 'export default ' + (decl.type === 'ClassExpression' || decl.type === 'FunctionExpression' ? $w(decl) : $(decl)) + (decl.type === 'ClassDeclaration' || decl.type === 'FunctionDeclaration' ? '' : ';');
 }
 function ExportNamespaceSpecifier(node) {
   assert(node.type, 'ExportNamespaceSpecifier');
@@ -785,7 +786,7 @@ function PrivateIdentifier(node) {
 }
 function PropertyDefinition(node) {
   assert(node.type, 'PropertyDefinition');
-  return (node.static ? 'static ' : '') + $(node.key) + (node.value != null ? ' = ' + $(node.value) : '') + ';';
+  return (node.static ? 'static ' : '') + (node.computed ? '[' + $(node.key) + ']' : $(node.key)) + (node.value != null ? ' = ' + $(node.value) : '') + ';';
 }
 function UpdateExpression(node) {
   assert(node.type, 'UpdateExpression');
