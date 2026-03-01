@@ -1012,7 +1012,7 @@ async function main(tenko) {
     if (failedFiles.length) {
       let shown = failedFiles.slice(0, 5).join(' ');
       summaryLine += '; failures: ' + shown;
-      if (failedFiles.length > 5) summaryLine += ' (and ' + (failedFiles.length - 5) + ' more)';
+      if (failedFiles.length > 5) summaryLine += ' (and ' + (failedFiles.length - 5) + ' more, run ./t ff to see them all)';
     }
     console.log(summaryLine);
     if (!QUIET_FILE) {
