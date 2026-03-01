@@ -6,6 +6,7 @@
 > :: let declaration : sub tree : gen : for-await-of loop
 >
 > ::> let 5bx5d
+## FAIL
 
 ## Input
 
@@ -48,7 +49,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  `let` declaration not allowed here and `let` cannot be a regular var or label name in strict mode
+
+start@1:0, error@1:19
+╔══╦═════════════════
+ 1 ║ for await (a of b) let [x]
+   ║                    ^^^------- error
+╚══╩═════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -60,4 +71,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

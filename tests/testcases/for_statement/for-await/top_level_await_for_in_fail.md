@@ -1,16 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/for-await/for_await_empty_loop_28not_async29.md
+- Path: tests/testcases/for_statement/for-await/top_level_await_for_in_fail.md
 
 > :: for statement : for-await
 >
-> ::> for await empty loop 28not async29
+> ::> top level await for in fail
+>
+> for await ... in ... at module top level should fail (for-await only supports of)
+
 ## FAIL
 
 ## Input
 
 `````js
-for await (;;) {}
+for await (x in y) {}
+export {}
 `````
 
 ## Output
@@ -31,8 +35,9 @@ throws: Parser error!
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ for await (;;) {}
+ 1 ║ for await (x in y) {}
    ║ ^^^^^^^^^------- error
+ 2 ║ export {}
 ╚══╩════════════════
 
 `````
@@ -53,8 +58,9 @@ throws: Parser error!
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ for await (;;) {}
-   ║ ^^^^^^^^^^^^------- error
+ 1 ║ for await (x in y) {}
+   ║ ^^^^^^^^^^^^^^^------- error
+ 2 ║ export {}
 ╚══╩════════════════
 
 `````

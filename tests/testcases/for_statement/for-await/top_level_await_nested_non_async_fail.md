@@ -1,16 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/for-await/for_await_empty_loop_28not_async29.md
+- Path: tests/testcases/for_statement/for-await/top_level_await_nested_non_async_fail.md
 
 > :: for statement : for-await
 >
-> ::> for await empty loop 28not async29
+> ::> top level await nested non async fail
+>
+> for await inside a non-async function in module mode should still fail
+
 ## FAIL
 
 ## Input
 
 `````js
-for await (;;) {}
+function f() { for await (x of y) {} }
+export {}
 `````
 
 ## Output
@@ -29,11 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Can only use `for-await` inside an async function
 
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ for await (;;) {}
-   ║ ^^^^^^^^^------- error
-╚══╩════════════════
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ function f() { for await (x of y) {} }
+   ║                ^^^^^^^^^------- error
+ 2 ║ export {}
+╚══╩═════════════════
 
 `````
 
@@ -47,17 +52,7 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-`````
-throws: Parser error!
-  `for await` only accepts the `for-of` type
-
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ for await (;;) {}
-   ║ ^^^^^^^^^^^^------- error
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Sloppy mode with AnnexB
 
@@ -69,4 +64,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as module mode._
+_Output same as sloppy mode._

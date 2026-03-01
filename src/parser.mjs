@@ -5192,7 +5192,15 @@ function Parser(code, options = {}) {
         return THROW_RANGE('`for await` is not supported by the current targeted language version, they were introduced in ES9/ES2018', $tp_for_start, $tp_await_stop);
       }
 
-      if (hasNoFlag(lexerFlags, LF_IN_ASYNC)) {
+      // `for await` is only legal in:
+      // - explicitly async contexts (async func/arrow)
+      // - "Top-Level Await" contexts; which you leave once you go inside a function/arrow
+      //   - so the second check asserts that TLA is enabled (TLA only applies with goal=module) and we are not inside any kind of function
+      //   - note: if we're inside an async function then the first check already passes
+      if (
+        hasNoFlag(lexerFlags, LF_IN_ASYNC) &&
+        !(allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC))
+      ) {
         return THROW_RANGE('Can only use `for-await` inside an async function', $tp_for_start, $tp_await_stop);
       }
 
@@ -5434,8 +5442,9 @@ function Parser(code, options = {}) {
   function parseForHeaderAwaitUsing(lexerFlags, $tp_for_start, $tp_startOfForHeader_start, $tp_startOfForHeader_stop, $tp_startOfForHeader_line, $tp_startOfForHeader_column, scoop, astProp) {
     ASSERT(parseForHeaderAwaitUsing.length === arguments.length, 'arg count');
 
-    // [v]: `for (await using x of y) {}` — `await` is inside the parens, `await` must be a keyword here
-    // [v]: `for (await x;;)` — `await` as regular await expression in async context
+    // [v]: `for (await using x of y) {}`           `await` is inside the parens, `await` must be a keyword here
+    // [v]: `for (await x;;)`                       `await` as regular await expression in async context
+    //           ^
 
     let $tp_awaitIdent_type = tok_getType();
     let $tp_awaitIdent_line = tok_getLine();
@@ -5444,7 +5453,18 @@ function Parser(code, options = {}) {
     let $tp_awaitIdent_stop = tok_getStop();
     let $tp_awaitIdent_canon = tok_getCanoN();
 
-    ASSERT_skipDiv($ID_await, lexerFlags);
+    // The `await` here is always a keyword here. In some cases it may be used as an expression (in others it's just a
+    // declaration). For the expression case, we must be able to parse a regular expression next.
+    // - `for (await;;);`                     (though `await` is not allowed as var name with module goal)
+    // - `for (await /a/b;;);`                (when await is a var name, this would be a division, `await / a / b`)
+    // - `for (await x;;);`
+    // - `for (await /x/;;);`
+    // - `for (await using;;);`               (ok in "pre-using" spec)
+    // - `for (await using x = 1;;);`         (must have init)
+    // The for-of/for-in have implicit inits and "using" is allowed as the lhs:
+    // - `for (await using x of y);`
+    // - `for (await using x in y);`
+    ASSERT_skipRex($ID_await, lexerFlags);
 
     if (tok_getType() !== $ID_using || tok_getNlwas() === true) {
       // Not `await using`, fall back to expression: `await` as a regular await/identifier expression

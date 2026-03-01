@@ -1,19 +1,22 @@
 # Tenko parser test case
 
-- Path: tests/testcases/using/for_await_script_fail.md
+- Path: tests/testcases/for_statement/for-await/top_level_await_for_await_const.md
 
-> :: using
+> :: for statement : for-await
 >
-> ::> for await script fail
+> ::> top level await for await const
 >
-> Script goal: for await using is only valid in async context or at module top level (top-level await)
+> for await with const binding at module top level (top-level await)
 
 ## PASS MODULE
 
 ## Input
 
 `````js
-for await (using x of it) {}
+for await (const x of [1]) {
+  break;
+}
+export {}
 `````
 
 ## Output
@@ -34,8 +37,11 @@ throws: Parser error!
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ for await (using x of it) {}
+ 1 ║ for await (const x of [1]) {
    ║ ^^^^^^^^^------- error
+ 2 ║   break;
+ 3 ║ }
+ 4 ║ export {}
 ╚══╩════════════════
 
 `````
@@ -53,15 +59,15 @@ Parsed with the module goal.
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+  loc:{start:{line:1,column:0},end:{line:4,column:9},source:''},
   body: [
     {
       type: 'ForOfStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+      loc:{start:{line:1,column:0},end:{line:3,column:1},source:''},
       left: {
         type: 'VariableDeclaration',
         loc:{start:{line:1,column:11},end:{line:1,column:18},source:''},
-        kind: 'using',
+        kind: 'const',
         declarations: [
           {
             type: 'VariableDeclarator',
@@ -76,23 +82,46 @@ ast: {
         ]
       },
       right: {
-        type: 'Identifier',
-        loc:{start:{line:1,column:22},end:{line:1,column:24},source:''},
-        name: 'it'
+        type: 'ArrayExpression',
+        loc:{start:{line:1,column:22},end:{line:1,column:25},source:''},
+        elements: [
+          {
+            type: 'Literal',
+            loc:{start:{line:1,column:23},end:{line:1,column:24},source:''},
+            value: 1,
+            raw: '1'
+          }
+        ]
       },
       await: true,
       body: {
         type: 'BlockStatement',
-        loc:{start:{line:1,column:26},end:{line:1,column:28},source:''},
-        body: []
+        loc:{start:{line:1,column:27},end:{line:3,column:1},source:''},
+        body: [
+          {
+            type: 'BreakStatement',
+            loc:{start:{line:2,column:2},end:{line:2,column:8},source:''},
+            label: null
+          }
+        ]
       }
+    },
+    {
+      type: 'ExportNamedDeclaration',
+      loc:{start:{line:4,column:0},end:{line:4,column:9},source:''},
+      specifiers: [],
+      declaration: null,
+      source: null,
+      attributes: []
     }
   ]
 }
 
-tokens (11x):
-       ID_for ID_await PUNC_PAREN_OPEN ID_using IDENT ID_of IDENT
-       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
+tokens (19x):
+       ID_for ID_await PUNC_PAREN_OPEN ID_const IDENT ID_of
+       PUNC_BRACKET_OPEN NUMBER_DEC PUNC_BRACKET_CLOSE
+       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN ID_break PUNC_SEMI
+       PUNC_CURLY_CLOSE ID_export PUNC_CURLY_OPEN PUNC_CURLY_CLOSE ASI
 `````
 
 ### Sloppy mode with AnnexB
@@ -109,4 +138,11 @@ _Output same as module mode._
 
 ## AST Printer
 
-Printer output was same as input [module][annexb:no]
+Printer output different from input [module][annexb:no]:
+
+````js
+for await (const x of [1]) {break;}
+export {}
+````
+
+Produces same AST

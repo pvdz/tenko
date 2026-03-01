@@ -5,6 +5,7 @@
 > :: for statement : for-await
 >
 > ::> for await does not support regular loop 28no async29
+## FAIL
 
 ## Input
 
@@ -46,7 +47,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  `for await` only accepts the `for-of` type
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ for await (x;y;z) {}
+   ║ ^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -58,4 +69,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

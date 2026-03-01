@@ -5,6 +5,7 @@
 > :: for statement : for-await
 >
 > ::> for await cant appear outside of async
+## PASS MODULE
 
 ## Input
 
@@ -46,7 +47,38 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+  body: [
+    {
+      type: 'ForOfStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+      left: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
+        name: 'x'
+      },
+      right: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:16},end:{line:1,column:17},source:''},
+        name: 'y'
+      },
+      await: true,
+      body: {
+        type: 'BlockStatement',
+        loc:{start:{line:1,column:19},end:{line:1,column:21},source:''},
+        body: []
+      }
+    }
+  ]
+}
+
+tokens (10x):
+       ID_for ID_await PUNC_PAREN_OPEN IDENT ID_of IDENT
+       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -58,4 +90,14 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._
+
+## AST Printer
+
+Printer output different from input [module][annexb:no]:
+
+````js
+for await ((x) of y) {}
+````
+
+Produces same AST
