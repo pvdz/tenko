@@ -2285,6 +2285,28 @@ function Parser(code, options = {}) {
     if (astUids) scoop.$uid = uid_counter++;
     return scoopNew;
   }
+  function SCOPE_wouldAnnexBVarConflict(scoop, $tp_bindingIdent_canon) {
+    // Annex B B.3.3.1: would adding `var F` produce an early error, or is F in BoundNames of argumentsList?
+    // https://tc39.es/ecma262/#sec-web-compat-functiondeclarationinstantiation
+    let currScoop = scoop;
+    do {
+      if (currScoop.names !== HAS_NO_BINDINGS) {
+        switch (currScoop.names.get($tp_bindingIdent_canon)) {
+          case BINDING_TYPE_FUNC_LEX:
+          case BINDING_TYPE_LET:
+          case BINDING_TYPE_CONST:
+          case BINDING_TYPE_CLASS:
+          case BINDING_TYPE_USING:
+          case BINDING_TYPE_AWAIT_USING:
+          case BINDING_TYPE_CATCH_OTHER:
+          case BINDING_TYPE_ARG:
+            return true;
+        }
+      }
+      currScoop = currScoop.parent;
+    } while (currScoop && currScoop.type !== SCOPE_LAYER_FUNC_ROOT);
+    return false;
+  }
   function SCOPE_addFuncDeclName(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState, isLabelled) {
     ASSERT(SCOPE_addFuncDeclName.length === arguments.length, 'arg count');
     ASSERT([BINDING_TYPE_FUNC_VAR, BINDING_TYPE_FUNC_LEX, BINDING_TYPE_FUNC_STMT].includes(bindingType), 'either a func lex or var', bindingType);
@@ -2321,7 +2343,12 @@ function Parser(code, options = {}) {
     ASSERT((bindingType === BINDING_TYPE_FUNC_VAR) === ( (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)) || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED) ), 'redundancy?');
 
     if (bindingType === BINDING_TYPE_FUNC_VAR) {
-      SCOPE_addVarBinding(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType);
+      // Annex B B.3.3.1: block-level func decl var creation is skipped when it would produce an early error
+      if (fdState === FDS_LEX && options_webCompat === WEB_COMPAT_ON && SCOPE_wouldAnnexBVarConflict(scoop, $tp_bindingIdent_canon)) {
+        SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, BINDING_TYPE_FUNC_LEX, fdState);
+      } else {
+        SCOPE_addVarBinding(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType);
+      }
     } else {
       SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState);
     }

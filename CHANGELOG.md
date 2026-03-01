@@ -47,6 +47,7 @@
 - Fixed a bug in `a[{...()=>{}}.m()]` which was rejected because it would not parse a tail after the bracket in this particular case.
 - Fixed a bug in `--{_:()=>null}._` which was rejected because tail parsing was receiving the wrong set of parameters for the update.
 - Fixes a bug in `let instanceof x` where the code was checking `in` twice, where it should check `in` and `instanceof` instead.
+- Fixed an edge case in annexB / webcompat handling of function statement names.
 
 ## v2.0.1
 
