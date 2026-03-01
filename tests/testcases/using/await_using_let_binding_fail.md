@@ -12,6 +12,8 @@
 
 ## Input
 
+- `allowUsingDeclaration = true`
+
 `````js
 async function f() { await using let = x; }
 `````

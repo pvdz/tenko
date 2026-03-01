@@ -285,6 +285,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         errorCodeFrame: enableCodeFrame,
         truncCodeFrame: true,
         alwaysAllowOctalEscapes: tob.inputOptions.alwaysAllowOctalEscapes || false,
+        allowUsingDeclaration: tob.inputOptions.allowUsingDeclaration || false,
 
         $log: verbose ? undefined : (...a) => stdout.push(a),
         $warn: verbose ? undefined : (...a) => stdout.push(a),
@@ -311,6 +312,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
     if (!SKIP_PRINTER && !tob.printerOutput) {
       const printerParseOptions = {};
       if (tob.inputOptions.alwaysAllowOctalEscapes) printerParseOptions.alwaysAllowOctalEscapes = true;
+      if (tob.inputOptions.allowUsingDeclaration) printerParseOptions.allowUsingDeclaration = true;
       const esVersion = FORCED_ES_TARGET ?? tob.inputOptions.es;
       if (esVersion !== undefined && esVersion !== null) printerParseOptions.targetEsVersion = esVersion;
       tob.printerOutput = testPrinter(

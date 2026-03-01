@@ -12,7 +12,7 @@
 
 ## Input
 
-- `es = 16`
+- `allowUsingDeclaration = true`
 
 `````js
 await using x = foo();

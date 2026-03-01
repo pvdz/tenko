@@ -12,6 +12,8 @@
 
 ## Input
 
+- `allowUsingDeclaration = true`
+
 `````js
 for (using x of obj) {}
 `````

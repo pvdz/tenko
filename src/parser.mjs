@@ -388,7 +388,6 @@ import {
   VERSION_EXPORT_STAR_AS,
   VERSION_IMPORT_META,
   VERSION_TOPLEVEL_AWAIT,
-  VERSION_USING,
   VERSION_IMPORT_ATTRIBUTES,
   VERSION_WHATEVER,
   IS_ASYNC,
@@ -565,6 +564,7 @@ function Parser(code, options = {}) {
     nodeRange: options_nodeRange = false, // Add a `range` to each node itself, being an array. `input.slice(range[0], range[1])` should get you the text of the node.
     locationTracking: options_locationTracking = true, // Add the `loc` property to all entries? (Much faster without...)
     toplevelAwait: options_toplevelAwait = undefined, // undefined = allow in Module when target ES2022+; true = force on; false = force off
+    allowUsingDeclaration: options_allowUsingDeclaration = false, // Explicit opt-in for `using` and `await using` declarations (not tied to any ES version)
     allowDuplicateLabel: options_allowDuplicateLabel = false, // Allow labels to occur more than once in the same statement-tree? Syntactically invalid but this flag prevents the error being thrown.
 
     templateNewlineNormalization = true, // normalize \r and \rn to \n in the `.raw` of template nodes? Estree spec says yes, but makes it hard to serialize lossless
@@ -697,7 +697,7 @@ function Parser(code, options = {}) {
   let allowClassStaticBlock = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022
   let allowPublicClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 public class field initializers (a = b; a;)
   let allowPrivateClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 private fields/methods (#x, this.#x, #x in obj)
-  let allowUsingDeclaration = (targetEsVersion >= VERSION_USING || targetEsVersion === VERSION_WHATEVER); // ES2025
+  let allowUsingDeclaration = !!options_allowUsingDeclaration; // Explicit opt-in flag (not tied to ES version)
   let allowImportAttributes = (targetEsVersion >= VERSION_IMPORT_ATTRIBUTES || targetEsVersion === VERSION_WHATEVER); // ES2025
 
   // Private name scope tracking (AllPrivateIdentifiersValid, no duplicate private bound names)

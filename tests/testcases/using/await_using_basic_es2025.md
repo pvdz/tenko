@@ -6,13 +6,13 @@
 >
 > ::> await using basic es2025
 >
-> ES2025 Explicit Resource Management: `await using x = expr` in async block.
+> Explicit Resource Management: `await using x = expr` in async block.
 
 ## PASS
 
 ## Input
 
-- `es = 16`
+- `allowUsingDeclaration = true`
 
 `````js
 async function f() {

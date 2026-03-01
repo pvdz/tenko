@@ -75,6 +75,8 @@ const {
     targetEsVersion = lastVersion, // (Last supported version is currently ES2025)
     // Top-level await in Module: undefined = allow when target ES2022+; true = force on; false = force off
     toplevelAwait = undefined,
+    // Explicit opt-in for `using` and `await using` declarations (not yet stage 4 at time of writing)
+    allowUsingDeclaration = false,
     // Leave built up scope information in the ASTs (good luck)
     exposeScopes = false,
     // Assign each node a unique incremental id
@@ -218,10 +220,10 @@ There are many flags. Some are specific to an action, others are generic. Some e
 10                   Run as close to the rules as of ES10 / ES2019 as possible
 11                   Run as close to the rules as of ES11 / ES2020 as possible
 12                   Run as close to the rules as of ES12 / ES2021 as possible
-13                   Run as close to the rules as of ES13 / ES2022 as possible (includes top-level await in Module)
-14                   Run as close to the rules as of ES14 / ES2023 as possible (includes hashbang)
-15                   Run as close to the rules as of ES15 / ES2024 as possible (includes RegExp v flag / unicode sets)
-16                   Run as close to the rules as of ES16 / ES2025 as possible (includes using / await using)
+13                   Run as close to the rules as of ES13 / ES2022 as possible (ie. top-level await)
+14                   Run as close to the rules as of ES14 / ES2023 as possible (ie. hashbang)
+15                   Run as close to the rules as of ES15 / ES2024 as possible (ie. RegExp v flag / unicode sets)
+16                   Run as close to the rules as of ES16 / ES2025 as possible (ie. import with, RegExp modifiers)
 2015
 2016
 2017

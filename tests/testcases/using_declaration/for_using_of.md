@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> for using of
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 for (using x of y) {}

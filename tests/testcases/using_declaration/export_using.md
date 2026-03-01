@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> export using
+## FAIL
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 export using x = foo();

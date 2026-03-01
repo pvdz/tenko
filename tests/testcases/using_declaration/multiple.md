@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> multiple
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using x = a, y = b;

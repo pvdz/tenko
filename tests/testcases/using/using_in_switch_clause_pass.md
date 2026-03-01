@@ -12,6 +12,8 @@
 
 ## Input
 
+- `allowUsingDeclaration = true`
+
 `````js
 switch (n) { case 0: using x = foo(); break; }
 `````

@@ -12,7 +12,7 @@
 
 ## Input
 
-- `es = 16`
+- `allowUsingDeclaration = true`
 
 `````js
 for (using x, y of z) {}

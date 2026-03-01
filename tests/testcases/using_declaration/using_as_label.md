@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> using as label
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using: while(true) break using;

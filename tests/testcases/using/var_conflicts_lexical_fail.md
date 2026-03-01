@@ -12,6 +12,8 @@
 
 ## Input
 
+- `allowUsingDeclaration = true`
+
 `````js
 function f(){ using x = foo(); var x = 1; }
 `````

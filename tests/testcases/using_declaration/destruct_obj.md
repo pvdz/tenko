@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> destruct obj
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using {x} = foo();

@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> null init
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using x = null;

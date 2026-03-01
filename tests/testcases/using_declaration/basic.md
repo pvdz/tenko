@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> basic
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using x = foo();

@@ -6,13 +6,13 @@
 >
 > ::> using basic es2025
 >
-> ES2025 Explicit Resource Management: `using x = expr` in block.
+> Explicit Resource Management: `using x = expr` in block.
 
 ## PASS
 
 ## Input
 
-- `es = 16`
+- `allowUsingDeclaration = true`
 
 `````js
 {

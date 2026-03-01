@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> await using in async
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 async function f() { await using x = foo(); }

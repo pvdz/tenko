@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> destruct arr
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using [x] = foo();

@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> using as ident
+## PASS
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 var using = 1;

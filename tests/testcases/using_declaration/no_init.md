@@ -5,8 +5,11 @@
 > :: using declaration
 >
 > ::> no init
+## FAIL
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using x;
