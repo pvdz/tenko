@@ -392,6 +392,10 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in sloppy)' + RESET + ', but sloppy failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     } else if (tob.shouldPassAnnexb && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_ON) {
       tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least with annexb)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+    } else if (tob.shouldPassAnnexboth && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_ON) {
+      // PASS ANNEXBOTH: sloppy+annexb must pass (like PASS ANNEXB), but other modes passing is fine
+      // (e.g. strict/module block functions are lex-scoped and never conflict with outer-scope bindings)
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least with annexb/both)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     }
   }
 
