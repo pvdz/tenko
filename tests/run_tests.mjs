@@ -931,6 +931,10 @@ async function cli(tenko) {
     }
     if (tob.printerOutput) console.log(tob.printerOutput[1]);
   }
+
+  console.log(BOLD + '\nProtip: If you are testing this input during development, create a test case for it!' + RESET);
+  console.log('If it is worth testing now, it is worth covering permanently -- you are likely hitting an edge case.\n');
+  console.log('  t new --file <path> --pragma <PASS|FAIL|...> --input <code> [--desc <desc>] [--opt key=value]\n');
 }
 
 async function main(tenko) {

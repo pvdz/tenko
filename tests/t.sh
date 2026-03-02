@@ -78,6 +78,7 @@ Tenko CLI Toolkit help:
  Shortcuts for common tools I use to work on Tenko.
  Note that tests or anything depending on node_modules will not work on an npm checkout, that'd need a git clone.
 
+ new <args>    Create a new test case file. Args: --file <path> --pragma <PASS|FAIL|...> --input <code> [--desc <desc>] [--opt key=value]
  i <code>      Run test with custom input. Runs sloppy and sloppy webcompat by default. (stdin not supported)
  f <path>      Run a specific .md parser test file (the a/ b/ \"diff\" prefix is checked)
  ff <path>     Run a test file (or folder of .md files, recursively) and force-write output (like \`./t U\` for one file or tree)
@@ -149,6 +150,14 @@ Tenko CLI Toolkit help:
  --output-file <path>  For p6, this is where the report is written
  --write-only  For code coverage, just update the COVERAGE.md file, don't open the html in a browser
         "
+      exit
+      ;;
+    new)
+      # Create a new test case file. Passes remaining args to tests/create_new_test.js
+      shift
+      set -x
+      ./tests/create_new_test.js "$@"
+      set +x
       exit
       ;;
 

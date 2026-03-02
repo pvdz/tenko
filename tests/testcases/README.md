@@ -17,7 +17,19 @@ Many cases were auto-ported from an old system where they were part of a large a
 
 ## Adding a new test case
 
-Instead of copy pasta, a new test case can be added with a fairly simple syntax. Create a new file like this:
+Instead of copy pasta, a new test case can be added with a simple script:
+
+`````
+./t new --file "functions/async/new.js" --pragma "PASS" --input "new async function(){}"
+`````
+
+This will create the start of a new test case and run `./t ff` to generate the output on it.
+
+You can also set `--desc` for more documentation to add to the test case (helpful) and `--opt` to set some otions (target ecma version or other parameters to pass into Tenko).
+
+### Manual
+
+You can also construct a test file that looks like this:
 
 `````
 @ information here
@@ -27,7 +39,7 @@ is put under the description at the top
 rest is test case
 `````
 
-If a file inside `tests/testcases/**` starts with `@` then the test runner assumes it to be a new test file that it needs to generate.
+The test runner will treat a file in `tests/testcases/**` different when the contents starts an `@`. It will assume it to be a new test file that it needs to generate. That's what `./t ff` ends up doing.
 
 The file will be split on `###`.
 - The first part (sans the leading `@`) is used as extra information, which will appear at the top of the generated test file.
