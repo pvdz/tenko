@@ -8926,6 +8926,10 @@ function Parser(code, options = {}) {
     if (!isIdentToken(tok_getType()) || tok_getCanoN() !== 'meta') {
       return THROW_RANGE('`import.meta` expects the identifier `meta` after the dot', tok_getStart(), tok_getStop());
     }
+    // The IdentifierName meta in import.meta must not contain any Unicode escape sequences (e.g. import.m\u0065ta).
+    if (tok_sliceInput(tok_getStart(), tok_getStop()).indexOf('\\') !== -1) {
+      return THROW_RANGE('`import.meta` must not contain escaped characters', tok_getStart(), tok_getStop());
+    }
     let $tp_property_line = tok_getLine();
     let $tp_property_column = tok_getColumn();
     let $tp_property_start = tok_getStart();
