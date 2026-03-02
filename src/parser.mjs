@@ -8656,6 +8656,12 @@ function Parser(code, options = {}) {
         return NOT_ASSIGNABLE;
       case $ID_import:
         if (tok_getType() === $PUNC_PAREN_OPEN) {
+          if (isNewArg === IS_NEW_ARG) {
+            // `new import(x)` is invalid because ImportCall is a CallExpression, not a MemberExpression.
+            // However `new (import(x))` IS valid because (import(x)) is a ParenthesizedExpression (PrimaryExpression).
+            // That case goes through parseGroupToplevels which does not propagate IS_NEW_ARG, so it won't hit this.
+            return THROW_RANGE('Cannot use dynamic import as an argument to `new`, the spec simply does not allow it', $tp_ident_start, $tp_ident_stop);
+          }
           return parseDynamicImport(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, astProp);
         }
         if (tok_getType() === $PUNC_DOT) {
@@ -9021,10 +9027,6 @@ function Parser(code, options = {}) {
     // Note: `new import.meta` is valid; only `new import(...)` (dynamic import) is invalid
     // Note: the `isNewArg` state will make sure the `parseValueTail` function properly deals with the first call arg
     let assignableForPiggies = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, IS_NEW_ARG, NOT_LHSE, 'callee');
-    let calleeNode = _path[_path.length - 1].callee;
-    if (calleeNode && (calleeNode.type === 'ImportExpression' || (calleeNode.type === 'CallExpression' && calleeNode.callee && calleeNode.callee.type === 'Import'))) {
-      return THROW_RANGE('Cannot use dynamic import as an argument to `new`, the spec simply does not allow it', $tp_new_start, tok_getStop());
-    }
     AST_close($tp_new_start, $tp_new_line, $tp_new_column, 'NewExpression');
     // [x]: `async function f(){ (x = new x(await x)) => {} }`
     return setNotAssignable(assignableForPiggies);

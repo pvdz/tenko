@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/import_meta/regression_new_grouped_dynamic_import_rejected.md
+- Path: tests/testcases/import_dynamic/new_grouped_import_with_args.md
 
-> :: import meta
+> :: import dynamic
 >
-> ::> regression new grouped dynamic import rejected
+> ::> new grouped import with args
 >
-> new (import('url')) is valid because (import('url')) is a ParenthesizedExpression (PrimaryExpression)
+> new (import(x))() - grouped import as new callee with call args
 
 ## PASS
 
 ## Input
 
 `````js
-new (import('url'))
+new (import('x'))()
 `````
 
 ## Output
@@ -42,7 +42,7 @@ ast: {
         arguments: [],
         callee: {
           type: 'CallExpression',
-          loc:{start:{line:1,column:5},end:{line:1,column:18},source:''},
+          loc:{start:{line:1,column:5},end:{line:1,column:16},source:''},
           optional: false,
           callee: {
             type: 'Import',
@@ -51,9 +51,9 @@ ast: {
           arguments: [
             {
               type: 'Literal',
-              loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
-              value: 'url',
-              raw: "'url'"
+              loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+              value: 'x',
+              raw: "'x'"
             }
           ]
         }
@@ -62,9 +62,10 @@ ast: {
   ]
 }
 
-tokens (9x):
+tokens (11x):
        ID_new PUNC_PAREN_OPEN ID_import PUNC_PAREN_OPEN STRING_SINGLE
-       PUNC_PAREN_CLOSE PUNC_PAREN_CLOSE ASI
+       PUNC_PAREN_CLOSE PUNC_PAREN_CLOSE PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE ASI
 `````
 
 ### Strict mode
@@ -96,7 +97,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-new (import('url'));
+new (import('x'));
 ````
 
 Produces same AST

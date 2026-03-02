@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/import_meta/regression_new_grouped_dynamic_import_rejected.md
+- Path: tests/testcases/import_dynamic/new_covered_expression_is_valid.md
 
-> :: import meta
+> :: import dynamic
 >
-> ::> regression new grouped dynamic import rejected
+> ::> new covered expression is valid
 >
-> new (import('url')) is valid because (import('url')) is a ParenthesizedExpression (PrimaryExpression)
+> new (import()) is valid syntax (CoverParenthesizedExpressionAndArrowParameterList); runtime throws TypeError
 
 ## PASS
 
 ## Input
 
 `````js
-new (import('url'))
+new (import(''))
 `````
 
 ## Output
@@ -31,18 +31,18 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
       expression: {
         type: 'NewExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
         arguments: [],
         callee: {
           type: 'CallExpression',
-          loc:{start:{line:1,column:5},end:{line:1,column:18},source:''},
+          loc:{start:{line:1,column:5},end:{line:1,column:15},source:''},
           optional: false,
           callee: {
             type: 'Import',
@@ -51,9 +51,9 @@ ast: {
           arguments: [
             {
               type: 'Literal',
-              loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
-              value: 'url',
-              raw: "'url'"
+              loc:{start:{line:1,column:12},end:{line:1,column:14},source:''},
+              value: '',
+              raw: "''"
             }
           ]
         }
@@ -96,7 +96,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-new (import('url'));
+new (import(''));
 ````
 
 Produces same AST
