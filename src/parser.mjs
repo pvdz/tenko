@@ -2340,8 +2340,8 @@ function Parser(code, options = {}) {
     // does not propagate up in any context where it is allowed and when nested in `if` or `else` it's considered to
     // be wrapped in a block. So neither legit function propagates to the parent of the statement that encloses it.
 
-    ASSERT(bindingType !== BINDING_TYPE_FUNC_VAR || ( (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)) || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED) ), 'FUNC_VAR implies valid var-hoisting context (top-level or sloppy block, not async/gen per B.3.2)');
-    ASSERT(bindingType !== BINDING_TYPE_FUNC_STMT || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled === IS_LABELLED), 'FUNC_STMT is only for sloppy labelled plain function decls in blocks (allows duplicate exception)');
+    ASSERT(bindingType !== BINDING_TYPE_FUNC_VAR || ( (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)) || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && options_webCompat === WEB_COMPAT_ON) ), 'FUNC_VAR implies valid var-hoisting context (top-level or sloppy+webcompat block, not async/gen per B.3.2)');
+    ASSERT(bindingType !== BINDING_TYPE_FUNC_STMT || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled === IS_LABELLED && options_webCompat === WEB_COMPAT_ON), 'FUNC_STMT is only for sloppy+webcompat labelled plain function decls in blocks (allows duplicate exception)');
 
     if (bindingType === BINDING_TYPE_FUNC_VAR) {
       // B.3.3.1: In webcompat mode, if the block function's implicit var would conflict with a lexical/catch binding
@@ -3431,22 +3431,24 @@ function Parser(code, options = {}) {
         // [v]: `function f(){}` (top-level script)
         // [v]: `function g(){ function f(){} }` (function body root)
         nameBindingType = BINDING_TYPE_FUNC_VAR;
-      } else if (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED) {
-        // Sloppy plain non-labelled block function → var-like hoisting per Annex B B.3.2/B.3.3.
+      } else if (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED && options_webCompat === WEB_COMPAT_ON) {
+        // Sloppy plain non-labelled block function + webcompat → var-like hoisting per Annex B B.3.2/B.3.3.
         // Only applies to plain FunctionDeclaration (not async/generator — those are always FUNC_LEX in blocks).
+        // Without webcompat, block functions are block-scoped (FUNC_LEX) even in sloppy mode.
         // Note: B.3.3.1 (conflict skip) is handled in SCOPE_addFuncDeclName, not here.
-        // [v]: `{ function f(){} }` (sloppy mode, both with and without annexb)
+        // [v]: `{ function f(){} }` (sloppy+webcompat)
         // [x]: `{ async function f(){} }` → falls to FUNC_LEX below ($tp_async_type !== $UNTYPED)
         // [x]: `{ function *f(){} }` → falls to FUNC_LEX below ($tp_star_type !== $UNTYPED)
         ASSERT($tp_async_type === $UNTYPED, 'async functions in blocks never get FUNC_VAR');
         ASSERT($tp_star_type === $UNTYPED, 'generator functions in blocks never get FUNC_VAR');
         nameBindingType = BINDING_TYPE_FUNC_VAR;
-      } else if (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED) {
-        // Sloppy labelled plain function in block → lexical, but uses FUNC_STMT to allow the
-        // duplicate exception per sec-block-duplicates-allowed-static-semantics:
+      } else if (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED && options_webCompat === WEB_COMPAT_ON) {
+        // Sloppy labelled plain function in block + webcompat → lexical, but uses FUNC_STMT to allow the
+        // duplicate exception per sec-block-duplicates-allowed-static-semantics (part of Annex B):
         // > It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate
         // > entries, unless the source code matching this production is not strict mode code and the
         // > duplicate entries are only bound by FunctionDeclarations.
+        // Without webcompat, labelled block functions are FUNC_LEX (no duplicate exception).
         // [v]: `{ label1: function f(){} ; label2: function f(){} }` (sloppy+webcompat → FUNC_STMT dup OK)
         // [x]: `{ label1: async function f(){} ; label2: async function f(){} }` → FUNC_LEX (dup throws)
         ASSERT(isLabelled === IS_LABELLED, 'by elimination from the previous condition, this must be labelled');
