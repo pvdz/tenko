@@ -1,20 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/functions/declaration/block_scoped/switch_func_var_dupe.md
+- Path: tests/testcases/functions/declaration/block_scoped/catch_body_block_func_and_var_fail.md
 
 > :: functions : declaration : block scoped
 >
-> ::> switch func var dupe
+> ::> catch body block func and var fail
 >
->  This should be an error because function cannot shadow var binding in plain or switch block
-https://twitter.com/Ghost1240145716/status/1151851177849438209
+> Block function and var with same name in catch body is an error in annexB mode.
 
 ## PASS SLOPPY
 
 ## Input
 
 `````js
-switch (0) { case 1: function f() {} default: var f }
+try {} catch(e) { function f() {} var f; }
 `````
 
 ## Output
@@ -32,63 +31,56 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:53},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:42},source:''},
   body: [
     {
-      type: 'SwitchStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:53},source:''},
-      discriminant: {
-        type: 'Literal',
-        loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
-        value: 0,
-        raw: '0'
+      type: 'TryStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:42},source:''},
+      block: {
+        type: 'BlockStatement',
+        loc:{start:{line:1,column:4},end:{line:1,column:6},source:''},
+        body: []
       },
-      cases: [
-        {
-          type: 'SwitchCase',
-          loc:{start:{line:1,column:13},end:{line:1,column:36},source:''},
-          test: {
-            type: 'Literal',
-            loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
-            value: 1,
-            raw: '1'
-          },
-          consequent: [
+      handler: {
+        type: 'CatchClause',
+        loc:{start:{line:1,column:7},end:{line:1,column:42},source:''},
+        param: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:13},end:{line:1,column:14},source:''},
+          name: 'e'
+        },
+        body: {
+          type: 'BlockStatement',
+          loc:{start:{line:1,column:16},end:{line:1,column:42},source:''},
+          body: [
             {
               type: 'FunctionDeclaration',
-              loc:{start:{line:1,column:21},end:{line:1,column:36},source:''},
+              loc:{start:{line:1,column:18},end:{line:1,column:33},source:''},
               generator: false,
               async: false,
               id: {
                 type: 'Identifier',
-                loc:{start:{line:1,column:30},end:{line:1,column:31},source:''},
+                loc:{start:{line:1,column:27},end:{line:1,column:28},source:''},
                 name: 'f'
               },
               params: [],
               body: {
                 type: 'BlockStatement',
-                loc:{start:{line:1,column:34},end:{line:1,column:36},source:''},
+                loc:{start:{line:1,column:31},end:{line:1,column:33},source:''},
                 body: []
               }
-            }
-          ]
-        },
-        {
-          type: 'SwitchCase',
-          loc:{start:{line:1,column:37},end:{line:1,column:51},source:''},
-          test: null,
-          consequent: [
+            },
             {
               type: 'VariableDeclaration',
-              loc:{start:{line:1,column:46},end:{line:1,column:51},source:''},
+              loc:{start:{line:1,column:34},end:{line:1,column:40},source:''},
               kind: 'var',
               declarations: [
                 {
                   type: 'VariableDeclarator',
-                  loc:{start:{line:1,column:50},end:{line:1,column:51},source:''},
+                  loc:{start:{line:1,column:38},end:{line:1,column:39},source:''},
                   id: {
                     type: 'Identifier',
-                    loc:{start:{line:1,column:50},end:{line:1,column:51},source:''},
+                    loc:{start:{line:1,column:38},end:{line:1,column:39},source:''},
                     name: 'f'
                   },
                   init: null
@@ -97,16 +89,17 @@ ast: {
             }
           ]
         }
-      ]
+      },
+      finalizer: null
     }
   ]
 }
 
-tokens (21x):
-       ID_switch PUNC_PAREN_OPEN NUMBER_DEC PUNC_PAREN_CLOSE
-       PUNC_CURLY_OPEN ID_case NUMBER_DEC PUNC_COLON ID_function IDENT
-       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_CURLY_OPEN
-       PUNC_CURLY_CLOSE ID_default PUNC_COLON ID_var IDENT ASI
+tokens (19x):
+       ID_try PUNC_CURLY_OPEN PUNC_CURLY_CLOSE ID_catch
+       PUNC_PAREN_OPEN IDENT PUNC_PAREN_CLOSE PUNC_CURLY_OPEN
+       ID_function IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_CURLY_OPEN PUNC_CURLY_CLOSE ID_var IDENT PUNC_SEMI
        PUNC_CURLY_CLOSE
 `````
 
@@ -118,10 +111,10 @@ Parsed with script goal but as if it was starting with `"use strict"` at the top
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-start@1:0, error@1:50
+start@1:0, error@1:38
 ╔══╦═════════════════
- 1 ║ switch (0) { case 1: function f() {} default: var f }
-   ║                                                   ^------- error
+ 1 ║ try {} catch(e) { function f() {} var f; }
+   ║                                       ^------- error
 ╚══╩═════════════════
 
 `````
@@ -140,10 +133,10 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 throws: Parser error!
   Found a var binding that is duplicate of a lexical binding on the same or lower statement level
 
-start@1:0, error@1:50
+start@1:0, error@1:38
 ╔══╦═════════════════
- 1 ║ switch (0) { case 1: function f() {} default: var f }
-   ║                                                   ^------- error
+ 1 ║ try {} catch(e) { function f() {} var f; }
+   ║                                       ^------- error
 ╚══╩═════════════════
 
 `````
@@ -159,10 +152,8 @@ _Output same as strict mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-switch (0) {
-case 1:
+try {} catch (e) {
 function f() {}
-default:
 var f;
 }
 ````

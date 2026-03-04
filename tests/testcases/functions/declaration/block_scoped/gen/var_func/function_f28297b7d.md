@@ -107,7 +107,17 @@ _Output same as strict mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Found a var binding that is duplicate of a lexical binding on the same or lower statement level
+
+start@1:0, error@1:21
+╔══╦═════════════════
+ 1 ║ { function f(){} var f }
+   ║                      ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Module goal with AnnexB
 

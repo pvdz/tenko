@@ -2363,6 +2363,7 @@ function Parser(code, options = {}) {
         ASSERT(isLabelled !== IS_LABELLED, 'labelled block functions use FUNC_STMT, not FUNC_VAR');
         let scanScoop = scoop;
         let hasConflict = false;
+        let conflictType = BINDING_TYPE_NONE;
         while (scanScoop && scanScoop.type !== SCOPE_LAYER_FUNC_ROOT) {
           if (scanScoop.names !== HAS_NO_BINDINGS && scanScoop.names.has($tp_bindingIdent_canon)) {
             let existingType = scanScoop.names.get($tp_bindingIdent_canon);
@@ -2378,6 +2379,7 @@ function Parser(code, options = {}) {
               || existingType === BINDING_TYPE_CATCH_OTHER
               || existingType === BINDING_TYPE_USING || existingType === BINDING_TYPE_AWAIT_USING) {
               hasConflict = true;
+              conflictType = existingType;
               break;
             }
             // If we see VAR, FUNC_VAR, ARG, or CATCH_IDENT, these don't conflict with var → keep scanning
@@ -2386,12 +2388,33 @@ function Parser(code, options = {}) {
           scanScoop = scanScoop.parent;
         }
         if (hasConflict) {
-          // Skip var creation per B.3.3.1, treat the function as block-scoped only
-          SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, BINDING_TYPE_FUNC_LEX, fdState);
+          // Skip var creation per B.3.3.1, treat the function as block-scoped only.
+          // If conflict was with another sloppy block function (FUNC_STMT), use FUNC_STMT to allow the
+          // duplicate exception (sec-block-duplicates-allowed-static-semantics). Otherwise use FUNC_LEX.
+          let demotedType = conflictType === BINDING_TYPE_FUNC_STMT ? BINDING_TYPE_FUNC_STMT : BINDING_TYPE_FUNC_LEX;
+          SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, demotedType, fdState);
           return;
         }
       }
-      SCOPE_addVarBinding(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType);
+
+      // A sloppy block function is lexically scoped within its declaring block (it is in the block's
+      // LexicallyDeclaredNames), but also gets a var binding hoisted to enclosing scopes per Annex B.
+      // At the block scope: use FUNC_STMT so that `var` in the same block is rejected (verifyDuplicateVarBinding
+      // treats FUNC_STMT as a lex conflict) and duplicate block functions are allowed (the FUNC_STMT duplicate
+      // exception in SCOPE_addLexBinding). At parent scopes: use FUNC_VAR for var hoisting.
+      // [x]: `{ function f(){} var f }` — lex vs var in same block
+      // [x]: `{ function f(){} { var f } }` — var in nested block conflicts with lex in parent block
+      // [v]: `{ function f(){} } var f;` — different scope levels, no conflict
+      // [v]: `{ function f(){} function f(){} }` — duplicate block functions allowed (sloppy+webcompat)
+      if (fdState === FDS_LEX && options_webCompat === WEB_COMPAT_ON) {
+        SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, BINDING_TYPE_FUNC_STMT, fdState);
+        // Hoist var to parent scopes (up to but not including func root)
+        if (scoop.parent && scoop.parent.type !== SCOPE_LAYER_FUNC_ROOT) {
+          SCOPE_addVarBinding(lexerFlags, scoop.parent, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, BINDING_TYPE_FUNC_VAR);
+        }
+      } else {
+        SCOPE_addVarBinding(lexerFlags, scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType);
+      }
     } else {
       ASSERT(bindingType === BINDING_TYPE_FUNC_LEX || bindingType === BINDING_TYPE_FUNC_STMT, 'non-FUNC_VAR must be FUNC_LEX or FUNC_STMT: block-scoped, no var hoisting', bindingType);
       SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, bindingType, fdState);
@@ -2685,10 +2708,12 @@ function Parser(code, options = {}) {
         // https://tc39.es/ecma262/#sec-block-duplicates-allowed-static-semantics
         // > It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate entries, unless the
         // > source code matching this production is not strict mode code and the duplicate entries are only bound by FunctionDeclarations.
-        // Only allow duplicates for FUNC_STMT bindings (sloppy labelled plain FunctionDeclarations in blocks/switches).
-        // In sloppy mode, non-labelled plain block functions go through the FUNC_VAR path (no lex check needed).
+        // Allow duplicates for FUNC_STMT bindings (sloppy plain FunctionDeclarations in blocks/switches, both
+        // labelled and non-labelled). Non-labelled block functions use FUNC_STMT at block scope for lex conflict
+        // detection while hoisting FUNC_VAR to parent scopes. Labelled block functions use FUNC_STMT throughout.
         // Async/generator functions (FUNC_LEX) and strict mode functions (FUNC_LEX) never get this exception.
         // [v]: `{ label1: function f() {} ; label2: function f() {} }` (sloppy+webcompat)
+        // [v]: `{ function f() {} function f() {} }` (sloppy+webcompat, non-labelled duplicate block funcs)
         // [x]: `{ async function f() {} ; async function f() {} }` (always error, FUNC_LEX)
       }
     }
