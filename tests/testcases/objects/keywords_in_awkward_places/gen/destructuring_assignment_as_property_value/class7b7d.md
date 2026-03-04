@@ -6,6 +6,7 @@
 > :: objects : keywords in awkward places : gen : destructuring assignment as property value
 >
 > ::> class7b7d
+## FAIL
 
 ## Input
 
@@ -28,7 +29,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot assign to lhs (starting with `class`) because it is not a valid assignment target
+  Tried to destructure something that is not destructible
 
 start@1:0, error@1:14
 ╔══╦═════════════════

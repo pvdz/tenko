@@ -6,6 +6,7 @@
 > :: objects : keywords in awkward places : gen : in arrow head as alias
 >
 > ::> class7b7d
+## FAIL
 
 ## Input
 
@@ -28,12 +29,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected the closing curly `}` for an object, found `)` instead
+  The left hand side of the arrow is not destructible so arrow is illegal
 
-start@1:0, error@1:13
+start@1:0, error@1:15
 ╔══╦═════════════════
  1 ║ ({x: class{}}) => x;
-   ║              ^------- error
+   ║                ^^------- error
 ╚══╩═════════════════
 
 `````

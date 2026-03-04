@@ -13114,34 +13114,11 @@ function Parser(code, options = {}) {
     // Other keys can occur more than once without error
 
     let hasConstructor = false; // must throw if more than one plain constructor was found
-    let curlyDepth = 1; // class body's opening { already consumed; track nesting so we only break on the class body's }
-    let classBodyCurlyAlreadyConsumed = false;
-
-    while (true) {
-      if (tok_getType() === $PUNC_CURLY_CLOSE) {
-        if (curlyDepth === 0) {
-          // We've consumed all inner `}`s; this is the class body's `}`.
-          if (isExpression === IS_EXPRESSION) {
-            ASSERT_skipDiv($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
-          } else {
-            ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
-          }
-          classBodyCurlyAlreadyConsumed = true;
-          break;
-        }
-        // depth >= 1: consume one `}` (method's or class body's). Use originalOuterLexerFlags so the next token is lexed in outer mode.
-        ASSERT_skipDiv($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
-        curlyDepth--;
-        if (curlyDepth === 0 && tok_getType() === $PUNC_CURLY_CLOSE) continue; // another method's `}`, class body's `}` is next
-        classBodyCurlyAlreadyConsumed = true;
-        break;
-      }
-
+    while (tok_getType() !== $PUNC_CURLY_CLOSE) {
       // note: generator and async state is not reset because computed method names still use the outer class state
       let $tp_memberStart_start = tok_getStart();
       let $tp_memberStart_stop = tok_getStop();
 
-      curlyDepth++; // entering a member that has a body (all class members parsed here do)
       let destructNow = parseClassMethod(lexerFlags, outerLexerFlags, astProp, enclosingScoop);
       if (hasAnyFlag(destructNow, PIGGY_BACK_WAS_CONSTRUCTOR)) {
         if (hasConstructor) {
@@ -13160,17 +13137,15 @@ function Parser(code, options = {}) {
 
     // Note: this uses the lexerFlags as they were when parsing the `class` keyword. This keeps `no-in`, `strict-mode`,
     // and `template` flags in tact without further concern. We must parse them as such when parsing the closing `}`.
-    if (!classBodyCurlyAlreadyConsumed) {
-      if (isExpression === IS_EXPRESSION) {
-        // - `(class x {} / foo)`
-        // - `${class x{}}`
-        ASSERT(tok_getType() === $PUNC_CURLY_CLOSE, 'at the time of writing, the loop above had no abnormal way of exiting so the currtok has to be a curly close here when it reached this point');
-        ASSERT_skipDiv($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
-      } else {
-        // - `class x {} /foo/`
-        // - `class x {} 06`
-        ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
-      }
+    if (isExpression === IS_EXPRESSION) {
+      // - `(class x {} / foo)`
+      // - `${class x{}}`
+      ASSERT(tok_getType() === $PUNC_CURLY_CLOSE, 'at the time of writing, the loop above had no abnormal way of exiting so the currtok has to be a curly close here when it reached this point');
+      ASSERT_skipDiv($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
+    } else {
+      // - `class x {} /foo/`
+      // - `class x {} 06`
+      ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, originalOuterLexerFlags);
     }
 
     // note: generator and async state is not reset because computed method names still use the outer state

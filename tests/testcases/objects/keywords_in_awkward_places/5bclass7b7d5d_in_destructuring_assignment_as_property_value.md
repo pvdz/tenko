@@ -8,6 +8,8 @@
 >
 > property is valid assignment target so should work
 
+## FAIL
+
 ## Input
 
 `````js
@@ -28,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot assign to lhs (starting with `class`) because it is not a valid assignment target
+  Tried to destructure something that is not destructible
 
 start@1:0, error@1:14
 ╔══╦═════════════════
