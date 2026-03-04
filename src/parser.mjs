@@ -11911,6 +11911,14 @@ function Parser(code, options = {}) {
       // - `({get key(){})`
       //          ^^^
 
+      // Private names are not allowed as object literal method keys (only in class bodies)
+      // - `({async #m(){}})`
+      // - `({get #m(){}})`
+      // - `({set #m(x){}})`
+      if ($tp_keyStart_type === $ID_PRIVATE_IDENT) {
+        return THROW_RANGE('Private identifiers are not allowed in object literals or patterns', $tp_keyStart_start, $tp_keyStart_stop);
+      }
+
       ASSERT_skipAny($G_IDENT, lexerFlags); // regex irrelevant because div must lead to an error
 
       AST_setIdent(astProp, $tp_keyStart_start, $tp_keyStart_stop, $tp_keyStart_line, $tp_keyStart_column, $tp_keyStart_canon);
