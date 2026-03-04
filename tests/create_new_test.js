@@ -56,6 +56,8 @@ if (!validPragmas.includes(pragma.toUpperCase())) {
 // Normalize file: ensure .md suffix
 if (!file.endsWith('.md')) file += '.md';
 
+if (file.startsWith('tests/testcases/')) file = file.slice('tests.testcases/'.length);
+
 // Build full relative path
 const relPath = 'tests/testcases/' + file;
 const absPath = resolve(projectRoot, relPath);
