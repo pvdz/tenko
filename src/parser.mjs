@@ -768,10 +768,11 @@ function Parser(code, options = {}) {
   }
   function checkClassFieldNameErrors(isPrivate, isStatic, canon, start, stop) {
     // - `class C { #constructor = 1; }`               error
-    // - `class C { constructor = 1; }`                error (non-static)
+    // - `class C { constructor = 1; }`                error (non-static, non-private)
+    // - `class C { static constructor = 1; }`         error (static, non-private)
     // - `class C { static prototype = 1; }`           error (non-private)
     if (isPrivate && canon === 'constructor') return THROW_RANGE('Class fields may not be named `#constructor`', start, stop);
-    if (!isPrivate && !isStatic && canon === 'constructor') return THROW_RANGE('Class fields may not be named `constructor`', start, stop);
+    if (!isPrivate && canon === 'constructor') return THROW_RANGE('Class fields may not be named `constructor`', start, stop);
     if (isStatic && !isPrivate && canon === 'prototype') return THROW_RANGE('Static class fields may not be named `prototype`', start, stop);
   }
   function parseClassFieldInit(lexerFlags, $tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column) {
