@@ -40,7 +40,7 @@ const ACORN_AST = process.argv.includes('--acorn'); // run Tenko with babelCompa
 const COMPARE_ACORN = process.argv.includes('--test-acorn'); // compare Tenko output for each test with Acorn output?
 const BABEL_AST = process.argv.includes('--babel'); // run Tenko with babelCompat=true?
 const COMPARE_BABEL = process.argv.includes('--test-babel'); // compare Tenko output for each test with Babel output?
-const TARGET_FILE = (process.argv.includes('-f') && process.argv[process.argv.indexOf('-f') + 1]) || '';
+let TARGET_FILE = (process.argv.includes('-f') && process.argv[process.argv.indexOf('-f') + 1]) || '';
 
 if (ACORN_AST) console.log('Generating an Acorn compatible AST for all tests');
 if (BABEL_AST) console.log('Generating a Babel compatible AST for all tests');
@@ -56,11 +56,14 @@ const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const RESET = '\x1b[0m';
 
+// Normalize TARGET_FILE to displayFile format: test262/test/...
+// Accepts: absolute paths, ignore/test262/..., test262/..., or bare filenames/partial paths (substring match)
 if (TARGET_FILE) {
-  if (!TARGET_FILE.startsWith('test262/') && !TARGET_FILE.startsWith('/')) {
-    console.error('\nThe path should be an absolute path or relative to test262 folder, so for example: `test262/test/language/white-space/string-space.js`');
-    process.exit(1);
+  let idx = TARGET_FILE.indexOf('test262/');
+  if (idx !== -1) {
+    TARGET_FILE = TARGET_FILE.slice(idx);
   }
+  // If no test262/ found, TARGET_FILE stays as-is and will be used as a substring match
   console.log('\nFiltering for ' + TARGET_FILE + '\n');
 }
 
@@ -106,6 +109,7 @@ function read(path, file, onContent) {
   }
 }
 let counter = 0;
+let tested = 0;
 let compareDrops = new Set;
 let compareFails = new Set;
 let compareSkips = new Set;
@@ -113,11 +117,13 @@ function onRead(file, content) {
   ++counter;
   // if (counter < 22000) return;
 
-  let displayFile = file.slice(path.resolve(dirname, '../ignore').length + 1);
+  let ignorePrefix = path.resolve(dirname, '../ignore') + '/';
+  let displayFile = file.startsWith(ignorePrefix) ? file.slice(ignorePrefix.length) : path.relative('.', file);
+  let relFile = file.startsWith(ignorePrefix) ? 'ignore/' + displayFile : displayFile;
   if (displayFile.includes('FIXTURE')) return;
 
   if (TARGET_FILE) {
-    if (displayFile !== TARGET_FILE) return;
+    if (!displayFile.includes(TARGET_FILE)) return;
     console.log(BOLD, counter, RESET, 'Testing', BOLD, displayFile, RESET);
     console.log('-> ' + file);
   } else {
@@ -130,6 +136,7 @@ function onRead(file, content) {
     }
   }
 
+  ++tested;
   ASSERT(content.includes('/*---') && content.includes('---*/'), 'missing test262 header', file);
   let header = content.slice(content.indexOf('/*---'), content.indexOf('---*/') + 5);
   // The header is yaml... ... Whatever, split all the things :)
@@ -159,14 +166,14 @@ function onRead(file, content) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw assertion error' + RESET + ' in ' + BOLD + 'sloppy' + RESET);
+      throw new Error('File ' + BOLD + relFile + RESET + BLINK + ' threw assertion error' + RESET + ' in ' + BOLD + 'sloppy' + RESET + '\n  Repro: ./t T ' + relFile);
     }
     if (failed && !(failed.toString().toLowerCase().includes('parser error!') || failed.toString().toLowerCase().includes('lexer error!'))) {
       console.log('\nUnrolling output;\n');
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + 'sloppy' + RESET);
+      throw new Error('File ' + BOLD + relFile + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + 'sloppy' + RESET + '\n  Repro: ./t T ' + relFile);
     }
     if (!failed && !printedOnce) {
       testPrinter(content, 'sloppy', true, z.ast, false, false, false, false, undefined);
@@ -177,7 +184,11 @@ function onRead(file, content) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed, negative);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + ' did not meet expectations in '+BOLD+'sloppy'+RESET+', expecting ' + (negative?'fail':'pass') + ' but got '  + (failed?'fail':'pass'));
+      throw new Error(
+        'File ' + BOLD + relFile + RESET + ' did not meet expectations in ' + BOLD + 'sloppy' + RESET +
+        ', expecting ' + (negative ? 'fail' : 'pass') + ' but got ' + (failed ? 'fail' : 'pass') +
+        '\n  Repro: ./t T ' + relFile
+      );
     }
 
     // #######################
@@ -256,7 +267,8 @@ function onRead(file, content) {
   }
 
   let modstr = flags.includes('module') ? 'module' : 'strict';
-  if (!webcompat && !flags.includes('noStrict')) {
+  // `raw` means "run once, non-strict, don't modify source" — test262 defines no strict-mode expectation for these
+  if (!webcompat && !flags.includes('noStrict') && !flags.includes('raw')) {
     // This is the module run
 
     let failed = false;
@@ -273,13 +285,13 @@ function onRead(file, content) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw assertion error' + RESET + ' in ' + BOLD + modstr + RESET);
+      throw new Error('File ' + BOLD + relFile + RESET + BLINK + ' threw assertion error' + RESET + ' in ' + BOLD + modstr + RESET + '\n  Repro: ./t T ' + relFile);
     }
     if (failed && !(failed.toString().toLowerCase().includes('parser error!') || failed.toString().toLowerCase().includes('lexer error!'))) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + modstr + RESET);
+      throw new Error('File ' + BOLD + relFile + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + modstr + RESET + '\n  Repro: ./t T ' + relFile);
     }
     if (!failed && !printedOnce) {
       testPrinter(content, 'module', false, z.ast, false, false, false, false, undefined);
@@ -289,7 +301,11 @@ function onRead(file, content) {
       stdout.forEach(a => console.log.apply(console, a));
       console.log('e:', failed);
       console.log('flags:', flags);
-      throw new Error('File ' + BOLD + file + RESET + ' did not meet expectations in '+BOLD+modstr+RESET+', expecting ' + (failed?'fail':'pass') + ' but got '  + (!failed?'fail':'pass'));
+      throw new Error(
+        'File ' + BOLD + relFile + RESET + ' did not meet expectations in ' + BOLD + modstr + RESET +
+        ', expecting ' + (negative ? 'fail' : 'pass') + ' but got ' + (failed ? 'fail' : 'pass') +
+        '\n  Repro: ./t T ' + relFile
+      );
     }
 
     // #######################
@@ -388,7 +404,14 @@ function scrubCommentsForBabel(content, z) {
     COLLECT_TOKENS_NONE,
   } = (await import(USE_BUILD ? TENKO_PROD_FILE : TENKO_DEV_FILE)));
 
-  read(PATH262, '', onRead);
+  if (TARGET_FILE && !TARGET_FILE.startsWith('test262/') && fs.existsSync(TARGET_FILE)) {
+    // Direct file path given (e.g. ./t T some-test.js) — read it directly, skip the filter
+    let savedTarget = TARGET_FILE;
+    TARGET_FILE = '';
+    onRead(path.resolve(savedTarget), fs.readFileSync(savedTarget, 'utf8'));
+  } else {
+    read(PATH262, '', onRead);
+  }
 
   // Any file that's skipped (failed+whitelist) or failed is not droppable. Any file that's white listed is not failed.
   compareSkips.forEach(s => (compareFails.delete(s), compareDrops.delete(s)));
@@ -401,6 +424,11 @@ function scrubCommentsForBabel(content, z) {
   if (compareFails.size) {
     console.log(BOLD, 'These files failed the comparison and were not whitelisted', RESET);
     console.log([...compareFails].sort().join('\n'));
+  }
+
+  if (TARGET_FILE && tested === 0) {
+    console.error(RED + 'No tests matched filter: ' + RESET + TARGET_FILE);
+    process.exit(1);
   }
 
   console.log('\nNatural end of this script...\n');
