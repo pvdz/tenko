@@ -1,18 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/rgi_emoji_u_fail.md
+- Path: tests/testcases/regexes/property_escapes/props_of_strings/negated_class_rgi_emoji_v_flag.md
 
-> :: regexes : v flag
+> :: regexes : property escapes : props of strings
 >
-> ::> rgi emoji u fail
+> ::> negated class rgi emoji v flag
+>
+> Property of strings in negated character class is an error with v-flag
+
 ## FAIL
 
 ## Input
 
-- `es = 15`
-
 `````js
-/\p{RGI_Emoji}/u
+/[^\p{RGI_Emoji}]/v
 `````
 
 ## Output
@@ -29,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
+    Regex: Negating a property of strings (`\P{...}`) is not allowed
 
 start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ /\p{RGI_Emoji}/u
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ /[^\p{RGI_Emoji}]/v
+   ║ ^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

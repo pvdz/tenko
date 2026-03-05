@@ -441,9 +441,19 @@ import {
 // https://tc39.es/ecma262/#table-nonbinary-unicode-properties
 // (Manually copied from spec. Note that the numbers of the table is not "fixed" so don't refer to them like that)
 const TABLE_NONBIN_UNI_PROPS = ',General_Category,gc,Script,sc,Script_Extensions,scx,';
-const TABLE_BIN_UNI_PROPS = ',ASCII,ASCII_Hex_Digit,AHex,Alphabetic,Alpha,Any,Assigned,Bidi_Control,Bidi_C,Bidi_Mirrored,Bidi_M,Case_Ignorable,CI,Cased,Changes_When_Casefolded,CWCF,Changes_When_Casemapped,CWCM,Changes_When_Lowercased,CWL,Changes_When_NFKC_Casefolded,CWKCF,Changes_When_Titlecased,CWT,Changes_When_Uppercased,CWU,Dash,Default_Ignorable_Code_Point,DI,Deprecated,Dep,Diacritic,Dia,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Extended_Pictographic,Extender,Ext,Grapheme_Base,Gr_Base,Grapheme_Extend,Gr_Ext,Hex_Digit,Hex,IDS_Binary_Operator,IDSB,IDS_Trinary_Operator,IDST,ID_Continue,IDC,ID_Start,IDS,Ideographic,Ideo,Join_Control,Join_C,Logical_Order_Exception,LOE,Lowercase,Lower,Math,Noncharacter_Code_Point,NChar,Pattern_Syntax,Pat_Syn,Pattern_White_Space,Pat_WS,Quotation_Mark,QMark,Radical,Regional_Indicator,RI,Sentence_Terminal,STerm,Soft_Dotted,SD,Terminal_Punctuation,Term,Unified_Ideograph,UIdeo,Uppercase,Upper,Variation_Selector,VS,White_Space,space,XID_Continue,XIDC,XID_Start,XIDS,';
+const TABLE_BIN_UNI_PROPS = ',ASCII,ASCII_Hex_Digit,AHex,Alphabetic,Alpha,Any,Assigned,Bidi_Control,Bidi_C,Bidi_Mirrored,Bidi_M,Case_Ignorable,CI,Cased,Changes_When_Casefolded,CWCF,Changes_When_Casemapped,CWCM,Changes_When_Lowercased,CWL,Changes_When_NFKC_Casefolded,CWKCF,Changes_When_Titlecased,CWT,Changes_When_Uppercased,CWU,Dash,Default_Ignorable_Code_Point,DI,Deprecated,Dep,Diacritic,Dia,Emoji,Emoji_Component,EComp,Emoji_Modifier,EMod,Emoji_Modifier_Base,EBase,Emoji_Presentation,EPres,Extended_Pictographic,ExtPict,Extender,Ext,Grapheme_Base,Gr_Base,Grapheme_Extend,Gr_Ext,Hex_Digit,Hex,IDS_Binary_Operator,IDSB,IDS_Trinary_Operator,IDST,ID_Continue,IDC,ID_Start,IDS,Ideographic,Ideo,Join_Control,Join_C,Logical_Order_Exception,LOE,Lowercase,Lower,Math,Noncharacter_Code_Point,NChar,Pattern_Syntax,Pat_Syn,Pattern_White_Space,Pat_WS,Quotation_Mark,QMark,Radical,Regional_Indicator,RI,Sentence_Terminal,STerm,Soft_Dotted,SD,Terminal_Punctuation,Term,Unified_Ideograph,UIdeo,Uppercase,Upper,Variation_Selector,VS,White_Space,space,XID_Continue,XIDC,XID_Start,XIDS,';
 const TABLE_GEN_CAT_VALUES = ',Cased_Letter,LC,Close_Punctuation,Pe,Connector_Punctuation,Pc,Control,Cc,cntrl,Currency_Symbol,Sc,Dash_Punctuation,Pd,Decimal_Number,Nd,digit,Enclosing_Mark,Me,Final_Punctuation,Pf,Format,Cf,Initial_Punctuation,Pi,Letter,L,Letter_Number,Nl,Line_Separator,Zl,Lowercase_Letter,Ll,Mark,M,Combining_Mark,Math_Symbol,Sm,Modifier_Letter,Lm,Modifier_Symbol,Sk,Nonspacing_Mark,Mn,Number,N,Open_Punctuation,Ps,Other,C,Other_Letter,Lo,Other_Number,No,Other_Punctuation,Po,Other_Symbol,So,Paragraph_Separator,Zp,Private_Use,Co,Punctuation,P,punct,Separator,Z,Space_Separator,Zs,Spacing_Mark,Mc,Surrogate,Cs,Symbol,S,Titlecase_Letter,Lt,Unassigned,Cn,Uppercase_Letter,Lu,';
-const TABLE_SCRIPT_VALUES = ',Adlam,Adlm,Ahom,Anatolian_Hieroglyphs,Hluw,Arabic,Arab,Armenian,Armn,Avestan,Avst,Balinese,Bali,Bamum,Bamu,Bassa_Vah,Bass,Batak,Batk,Bengali,Beng,Bhaiksuki,Bhks,Bopomofo,Bopo,Brahmi,Brah,Braille,Brai,Buginese,Bugi,Buhid,Buhd,Canadian_Aboriginal,Cans,Carian,Cari,Caucasian_Albanian,Aghb,Chakma,Cakm,Cham,Cherokee,Cher,Common,Zyyy,Coptic,Copt,Qaac,Cuneiform,Xsux,Cypriot,Cprt,Cyrillic,Cyrl,Deseret,Dsrt,Devanagari,Deva,Dogra,Dogr,Duployan,Dupl,Egyptian_Hieroglyphs,Egyp,Elbasan,Elba,Elymaic,Elym,Ethiopic,Ethi,Georgian,Geor,Glagolitic,Glag,Gothic,Goth,Grantha,Gran,Greek,Grek,Gujarati,Gujr,Gunjala_Gondi,Gong,Gurmukhi,Guru,Han,Hani,Hangul,Hang,Hanifi_Rohingya,Rohg,Hanunoo,Hano,Hatran,Hatr,Hebrew,Hebr,Hiragana,Hira,Imperial_Aramaic,Armi,Inherited,Zinh,Qaai,Inscriptional_Pahlavi,Phli,Inscriptional_Parthian,Prti,Javanese,Java,Kaithi,Kthi,Kannada,Knda,Katakana,Kana,Kayah_Li,Kali,Kharoshthi,Khar,Khmer,Khmr,Khojki,Khoj,Khudawadi,Sind,Lao,Laoo,Latin,Latn,Lepcha,Lepc,Limbu,Limb,Linear_A,Lina,Linear_B,Linb,Lisu,Lycian,Lyci,Lydian,Lydi,Mahajani,Mahj,Makasar,Maka,Malayalam,Mlym,Mandaic,Mand,Manichaean,Mani,Marchen,Marc,Medefaidrin,Medf,Masaram_Gondi,Gonm,Meetei_Mayek,Mtei,Mende_Kikakui,Mend,Meroitic_Cursive,Merc,Meroitic_Hieroglyphs,Mero,Miao,Plrd,Modi,Mongolian,Mong,Mro,Mroo,Multani,Mult,Myanmar,Mymr,Nabataean,Nbat,Nandinagari,Nand,New_Tai_Lue,Talu,Newa,Nko,Nkoo,Nushu,Nshu,Nyiakeng_Puachue_Hmong,Hmnp,Ogham,Ogam,Ol_Chiki,Olck,Old_Hungarian,Hung,Old_Italic,Ital,Old_North_Arabian,Narb,Old_Permic,Perm,Old_Persian,Xpeo,Old_Sogdian,Sogo,Old_South_Arabian,Sarb,Old_Turkic,Orkh,Oriya,Orya,Osage,Osge,Osmanya,Osma,Pahawh_Hmong,Hmng,Palmyrene,Palm,Pau_Cin_Hau,Pauc,Phags_Pa,Phag,Phoenician,Phnx,Psalter_Pahlavi,Phlp,Rejang,Rjng,Runic,Runr,Samaritan,Samr,Saurashtra,Saur,Sharada,Shrd,Shavian,Shaw,Siddham,Sidd,SignWriting,Sgnw,Sinhala,Sinh,Sogdian,Sogd,Sora_Sompeng,Sora,Soyombo,Soyo,Sundanese,Sund,Syloti_Nagri,Sylo,Syriac,Syrc,Tagalog,Tglg,Tagbanwa,Tagb,Tai_Le,Tale,Tai_Tham,Lana,Tai_Viet,Tavt,Takri,Takr,Tamil,Taml,Tangut,Tang,Telugu,Telu,Thaana,Thaa,Thai,Tibetan,Tibt,Tifinagh,Tfng,Tirhuta,Tirh,Ugaritic,Ugar,Vai,Vaii,Wancho,Wcho,Warang_Citi,Wara,Yi,Yiii,Zanabazar_Square,Zanb,';
+// Script values are split by Unicode version so they can be gated by targetEsVersion
+// Base table: Unicode 12.0 (ES2020, version 11)
+const TABLE_SCRIPT_VALUES_BASE = ',Adlam,Adlm,Ahom,Anatolian_Hieroglyphs,Hluw,Arabic,Arab,Armenian,Armn,Avestan,Avst,Balinese,Bali,Bamum,Bamu,Bassa_Vah,Bass,Batak,Batk,Bengali,Beng,Bhaiksuki,Bhks,Bopomofo,Bopo,Brahmi,Brah,Braille,Brai,Buginese,Bugi,Buhid,Buhd,Canadian_Aboriginal,Cans,Carian,Cari,Caucasian_Albanian,Aghb,Chakma,Cakm,Cham,Cherokee,Cher,Common,Zyyy,Coptic,Copt,Qaac,Cuneiform,Xsux,Cypriot,Cprt,Cyrillic,Cyrl,Deseret,Dsrt,Devanagari,Deva,Dogra,Dogr,Duployan,Dupl,Egyptian_Hieroglyphs,Egyp,Elbasan,Elba,Elymaic,Elym,Ethiopic,Ethi,Georgian,Geor,Glagolitic,Glag,Gothic,Goth,Grantha,Gran,Greek,Grek,Gujarati,Gujr,Gunjala_Gondi,Gong,Gurmukhi,Guru,Han,Hani,Hangul,Hang,Hanifi_Rohingya,Rohg,Hanunoo,Hano,Hatran,Hatr,Hebrew,Hebr,Hiragana,Hira,Imperial_Aramaic,Armi,Inherited,Zinh,Qaai,Inscriptional_Pahlavi,Phli,Inscriptional_Parthian,Prti,Javanese,Java,Kaithi,Kthi,Kannada,Knda,Katakana,Kana,Kayah_Li,Kali,Kharoshthi,Khar,Khmer,Khmr,Khojki,Khoj,Khudawadi,Sind,Lao,Laoo,Latin,Latn,Lepcha,Lepc,Limbu,Limb,Linear_A,Lina,Linear_B,Linb,Lisu,Lycian,Lyci,Lydian,Lydi,Mahajani,Mahj,Makasar,Maka,Malayalam,Mlym,Mandaic,Mand,Manichaean,Mani,Marchen,Marc,Medefaidrin,Medf,Masaram_Gondi,Gonm,Meetei_Mayek,Mtei,Mende_Kikakui,Mend,Meroitic_Cursive,Merc,Meroitic_Hieroglyphs,Mero,Miao,Plrd,Modi,Mongolian,Mong,Mro,Mroo,Multani,Mult,Myanmar,Mymr,Nabataean,Nbat,Nandinagari,Nand,New_Tai_Lue,Talu,Newa,Nko,Nkoo,Nushu,Nshu,Nyiakeng_Puachue_Hmong,Hmnp,Ogham,Ogam,Ol_Chiki,Olck,Old_Hungarian,Hung,Old_Italic,Ital,Old_North_Arabian,Narb,Old_Permic,Perm,Old_Persian,Xpeo,Old_Sogdian,Sogo,Old_South_Arabian,Sarb,Old_Turkic,Orkh,Oriya,Orya,Osage,Osge,Osmanya,Osma,Pahawh_Hmong,Hmng,Palmyrene,Palm,Pau_Cin_Hau,Pauc,Phags_Pa,Phag,Phoenician,Phnx,Psalter_Pahlavi,Phlp,Rejang,Rjng,Runic,Runr,Samaritan,Samr,Saurashtra,Saur,Sharada,Shrd,Shavian,Shaw,Siddham,Sidd,SignWriting,Sgnw,Sinhala,Sinh,Sogdian,Sogd,Sora_Sompeng,Sora,Soyombo,Soyo,Sundanese,Sund,Syloti_Nagri,Sylo,Syriac,Syrc,Tagalog,Tglg,Tagbanwa,Tagb,Tai_Le,Tale,Tai_Tham,Lana,Tai_Viet,Tavt,Takri,Takr,Tamil,Taml,Tangut,Tang,Telugu,Telu,Thaana,Thaa,Thai,Tibetan,Tibt,Tifinagh,Tfng,Tirhuta,Tirh,Ugaritic,Ugar,Vai,Vaii,Wancho,Wcho,Warang_Citi,Wara,Yi,Yiii,Zanabazar_Square,Zanb,';
+// Unicode 13.0 additions (ES2021, version 12)
+const TABLE_SCRIPT_VALUES_U13 = 'Chorasmian,Chrs,Dives_Akuru,Diak,Khitan_Small_Script,Kits,Yezidi,Yezi,';
+// Unicode 14.0 additions (ES2022, version 13)
+const TABLE_SCRIPT_VALUES_U14 = 'Cypro_Minoan,Cpmn,Old_Uyghur,Ougr,Tangsa,Tnsa,Toto,Vithkuqi,Vith,';
+// Unicode 15.0 additions (ES2023, version 14)
+const TABLE_SCRIPT_VALUES_U15 = 'Kawi,Nag_Mundari,Nagm,';
+// Properties of strings (ES2024, version 15; v-flag only) https://tc39.es/ecma262/#table-binary-unicode-properties-of-strings
+const TABLE_PROPS_OF_STRINGS = ',Basic_Emoji,Emoji_Keycap_Sequence,RGI_Emoji,RGI_Emoji_Flag_Sequence,RGI_Emoji_Modifier_Sequence,RGI_Emoji_Tag_Sequence,RGI_Emoji_ZWJ_Sequence,';
 
 import {
   BAD_ESCAPE,
@@ -569,6 +579,18 @@ function Lexer(
   const supportNullishCoalescing = targetEsVersion >= VERSION_NULLISH_COALESCING || targetEsVersion === VERSION_WHATEVER;
   const supportOptionalChaining = targetEsVersion >= VERSION_OPTIONAL_CHAINING || targetEsVersion === VERSION_WHATEVER;
   const supportLogicCompound = targetEsVersion >= VERSION_LOGICAL_ASSIGNMENT || targetEsVersion === VERSION_WHATEVER;
+
+  // Lazy-built script values table, constructed on first use of \p{Script=...} or \p{sc=...}
+  let _tableScriptValues = '';
+  function getTableScriptValues() {
+    if (_tableScriptValues === '') {
+      _tableScriptValues = TABLE_SCRIPT_VALUES_BASE;
+      if (targetEsVersion >= 12 || targetEsVersion === Infinity) _tableScriptValues += TABLE_SCRIPT_VALUES_U13;
+      if (targetEsVersion >= 13 || targetEsVersion === Infinity) _tableScriptValues += TABLE_SCRIPT_VALUES_U14;
+      if (targetEsVersion >= 14 || targetEsVersion === Infinity) _tableScriptValues += TABLE_SCRIPT_VALUES_U15;
+    }
+    return _tableScriptValues;
+  }
 
   let pointer = 0;
   let len = input.length;
@@ -2680,7 +2702,9 @@ function Lexer(
   let regexBodyHasSyntaxInvalidWithVFlag = false;
   let lastPotentialRegexErrorForVFlag = ''; // message shown when v flag present and regexBodyHasSyntaxInvalidWithVFlag (fallback from lastPotentialRegexError in charclass consumer if unset)
   let regexBodyUsedVOnlySyntax = false; // --, &&, nested [], \q{}; error after flags if no v flag
-  let regexBodyHasRgiEmoji = false; // \p{RGI_Emoji} is only valid with v flag; error after flags if u flag
+  let regexBodyHasPropOfStrings = false; // \p{RGI_Emoji} etc are only valid with v flag; error after flags if u flag
+  let regexBodyHasNegatedPropOfStrings = false; // \P{RGI_Emoji} or [^\p{RGI_Emoji}] etc is always an error (can't negate property of strings)
+  let regexCurrentCharClassIsNegated = false; // set to true while parsing inside [^...], so \p{...} can detect it
   let regexBranchPath = [0]; // ES2025: disjunction branch index at each nesting level (for MightBothParticipate duplicate named group check)
   let declaredGroupNamesWithPath = new Map(); // ES2025: name -> array of { path, pointerStart, pointerEnd } (only when supportRegexDuplicateNamedCaptureGroups)
   function parseRegex(c) {
@@ -2695,7 +2719,8 @@ function Lexer(
     foundInvalidGroupName = false;
     regexBodyHasSyntaxInvalidWithVFlag = false;
     regexBodyUsedVOnlySyntax = false;
-    regexBodyHasRgiEmoji = false;
+    regexBodyHasPropOfStrings = false;
+    regexBodyHasNegatedPropOfStrings = false;
     regexBranchPath = [0];
     declaredGroupNamesWithPath = new Map();
 
@@ -2764,8 +2789,13 @@ function Lexer(
       return $ERROR;
     }
 
-    if (regexBodyHasRgiEmoji && ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
-      regexSyntaxError('The property `RGI_Emoji` is only valid with the v flag');
+    if (regexBodyHasNegatedPropOfStrings && (ustatusFlags === REGEX_GOOD_WITH_U_FLAG || ustatusFlags === REGEX_GOOD_WITH_V_FLAG)) {
+      regexSyntaxError('Negating a property of strings (`\\P{...}`) is not allowed');
+      return $ERROR;
+    }
+
+    if (regexBodyHasPropOfStrings && ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
+      regexSyntaxError('Properties of strings (e.g. `\\p{Basic_Emoji}`) are only valid with the v flag, not the u flag');
       return $ERROR;
     }
 
@@ -3969,11 +3999,13 @@ function Lexer(
     let literalRbracketJustAdded = false; // ] just consumed as literal (v mode)
     let closeBothOnNextRbracket = false; // next ] at depth 2 closes inner and outer (e.g. [][] )
     let seenContentAtCurrentDepth = false; // any non-[ atom since last bracketDepth++; used for "one ] closes all"
+    regexCurrentCharClassIsNegated = false;
     if (c === $$XOR_5E) { // the separate inverting caret check is important for surrogate range checks in super edge cases (there's a test)
       ASSERT_skip($$XOR_5E);
       if (eof()) return regexSyntaxError('Encountered early EOF while parsing char class (2)');
       c = peek();
       hasClassContent = true; // [^] is not empty (negated class)
+      regexCurrentCharClassIsNegated = true;
     }
 
     // With u-flag, a surrogate pair encoded as double unicode quad escapes must be consumed as one char. Without
@@ -5039,6 +5071,8 @@ function Lexer(
     ASSERT(c === $$P_70 || c === $$P_UC_50, 'this should be \\p or \\P', c);
     ASSERT(peek() === c, 'not yet consumed');
 
+    let isNegated = c === $$P_UC_50; // \P vs \p
+
     // introduced in ES9 / ES2018; https://github.com/tc39/proposal-regexp-unicode-property-escapes
     if (!supportRegexPropertyEscapes) {
       let uflagState = updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Property escapes are not supported by the currently targeted language version');
@@ -5204,7 +5238,7 @@ function Lexer(
 
       // Validate value against general category values and script values
       let vc = ',' + value + ',';
-      if (!TABLE_GEN_CAT_VALUES.includes(vc) && !TABLE_SCRIPT_VALUES.includes(vc)) {
+      if (!TABLE_GEN_CAT_VALUES.includes(vc) && !getTableScriptValues().includes(vc)) {
         if (webCompat === WEB_COMPAT_ON) {
           return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'The escaped property value `' + value + '` is not valid (does not appear in "table-unicode-general-category-values" nor "table-unicode-script-values")')
         }
@@ -5235,9 +5269,13 @@ function Lexer(
     // "Table 58": https://tc39.es/ecma262/#table-binary-unicode-properties
     // "Table 59": https://tc39.es/ecma262/#table-unicode-general-category-values
 
-    // RGI_Emoji is valid only with v-flag (unicode sets), not with u-flag. Defer error until flags are known.
-    if (name === 'RGI_Emoji') {
-      regexBodyHasRgiEmoji = true;
+    // Properties of strings (Basic_Emoji, RGI_Emoji, etc.) are only valid with v-flag, not u-flag.
+    // https://tc39.es/ecma262/#table-binary-unicode-properties-of-strings
+    // \P{...} (negated) is always an error for properties of strings.
+    // Defer the u/v check until flags are known.
+    if (TABLE_PROPS_OF_STRINGS.includes(nc)) {
+      if (isNegated || (fromCharClass && regexCurrentCharClassIsNegated)) regexBodyHasNegatedPropOfStrings = true;
+      else regexBodyHasPropOfStrings = true;
       ASSERT_skip($$CURLY_R_7D);
       return REGEX_ALWAYS_GOOD;
     }

@@ -1,15 +1,16 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/rgi_emoji_u_fail.md
+- Path: tests/testcases/regexes/property_escapes/props_of_strings/rgi_emoji_u_flag.md
 
-> :: regexes : v flag
+> :: regexes : property escapes : props of strings
 >
-> ::> rgi emoji u fail
+> ::> rgi emoji u flag
+>
+> Properties of strings are not valid with u-flag, only v-flag
+
 ## FAIL
 
 ## Input
-
-- `es = 15`
 
 `````js
 /\p{RGI_Emoji}/u
