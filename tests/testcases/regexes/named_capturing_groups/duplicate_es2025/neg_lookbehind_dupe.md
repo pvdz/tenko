@@ -1,24 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/named_capturing_groups/duplicate_es2025/neg_lookahead_then_dupe_pass.md
+- Path: tests/testcases/regexes/named_capturing_groups/duplicate_es2025/neg_lookbehind_dupe.md
 
 > :: regexes : named capturing groups : duplicate es2025
 >
-> ::> neg lookahead then dupe pass
+> ::> neg lookbehind dupe
 >
-> regexes : named capturing groups : duplicate ES2025
->
-> > x inside negative lookahead can't participate in successful match; only the later x can.
+> Negative lookbehind with duplicate group name is a syntax error per spec (MightBothParticipate only checks closest shared ancestor, not assertion type)
 
 ## FAIL
 
 ## Input
 
-
 - `es = 16`
 
 `````js
-/(?!(?<x>a))(?<x>b)/
+/(?<x>a)(?<\!(?<x>b))/
 `````
 
 ## Output
@@ -35,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    This group name (`x`) was already used before
+    Regex: Found invalid escape character at the start of a group name identifier
 
-start@1:0, error@1:15
-╔══╦═════════════════
- 1 ║ /(?!(?<x>a))(?<x>b)/
-   ║                ^------- error
-╚══╩═════════════════
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /(?<x>a)(?<\!(?<x>b))/
+   ║ ^^^^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
 
 `````
 

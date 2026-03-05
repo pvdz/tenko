@@ -1,24 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/named_capturing_groups/duplicate_es2025/neg_lookahead_then_dupe_pass.md
+- Path: tests/testcases/regexes/named_capturing_groups/duplicate_es2025/pos_lookahead_same_alt_fail.md
 
 > :: regexes : named capturing groups : duplicate es2025
 >
-> ::> neg lookahead then dupe pass
+> ::> pos lookahead same alt fail
 >
-> regexes : named capturing groups : duplicate ES2025
->
-> > x inside negative lookahead can't participate in successful match; only the later x can.
+> Positive lookahead with dupe in same alternative - closest shared ancestor is Alternative not Disjunction
 
 ## FAIL
 
 ## Input
 
-
 - `es = 16`
 
 `````js
-/(?!(?<x>a))(?<x>b)/
+/(?=(?<x>a))(?<x>b)/
 `````
 
 ## Output
@@ -39,7 +36,7 @@ throws: Lexer error!
 
 start@1:0, error@1:15
 ╔══╦═════════════════
- 1 ║ /(?!(?<x>a))(?<x>b)/
+ 1 ║ /(?=(?<x>a))(?<x>b)/
    ║                ^------- error
 ╚══╩═════════════════
 
