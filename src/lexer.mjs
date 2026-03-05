@@ -559,6 +559,7 @@ function Lexer(
   const supportRegexLookbehinds = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexDotallFlag = targetEsVersion >= 9 || targetEsVersion === Infinity;
   const supportRegexNamedGroups = targetEsVersion >= 9 || targetEsVersion === Infinity;
+  const supportRegexGroupNameUnicodeEscapes = targetEsVersion >= 11 || targetEsVersion === Infinity; // ES2020: \u{...} and \uHH\uLL and literal surrogate pairs valid in group names without u-flag (tc39/ecma262#1869)
   const supportRegexDuplicateNamedCaptureGroups = targetEsVersion >= VERSION_REGEX_DUPLICATE_NAMED_GROUPS || targetEsVersion === VERSION_WHATEVER; // ES2025: duplicate names allowed when they can't both participate (MightBothParticipate)
   const supportRegexModifiers = targetEsVersion >= 16 || targetEsVersion === Infinity; // ES2025: (?ims:pattern) and (?ims-ms:pattern) inline flag modifiers
   const supportRegexIndices = targetEsVersion >= 13 || targetEsVersion === Infinity; // ES2022: hasIndices / d flag
@@ -3436,26 +3437,25 @@ function Lexer(
 
     // [v]: `/(?<輸rest>foo)/u`
     //           ^
-    // The first character is a valid ident start, however, it only is as a code point which is only the case
-    // when u-flag is present. Without u-flag the pair is treated as two individual characters and the surrogate
-    // head is not a valid ident char. As such the group name fails to parse. There are two outcomes now; if the
-    // name was for a capturing group then this is an unrecoverable error because the regex would need to interpret
-    // the start of the group as `(?`, which wants to quantify an atom, except `(` is never allowed to be an atom.
-    // However, if this was the name for a `\k` escape, then in web compat mode it can end up as atoms for the
-    // `\k` escape and the `<`. So we need to check the forCapturing state.
+    // The character is a valid ident start/rest as a codepoint (surrogate pair in the source).
+    // Since ES2020 (tc39/ecma262#1869), the spec allows this without u-flag via:
+    // RegExpIdentifierStart[~UnicodeMode] :: UnicodeLeadSurrogate UnicodeTrailSurrogate
+    // Before ES2020, the surrogate pair was only valid with u-flag.
 
+    // c is just the high surrogate from peek(); read the full codepoint before advancing past the pair
+    let cp = input.codePointAt(pointer);
     skipFastWithoutUpdatingCache();
     skip();
-    lastCanonizedInput += String.fromCodePoint(c);
+    lastCanonizedInput += String.fromCodePoint(cp);
 
-    if (forCapturing === FOR_NAMED_GROUP) {
-      // Error without u-flag because even in webcompat it leads to `(?` which is an illegal quantifier
-      return updateRegexUflagIsMandatory(uflagStatus, 'The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag or v-flag');
-    }
-
-    if (webCompat === WEB_COMPAT_OFF) {
-      // This case can only made to work in web compat mode because that allows `\k` to be an atom
-      return updateRegexUflagIsMandatory(uflagStatus, 'The start of a `\\k` group name had a surrogate pair and is therefor only valid with u-flag or v-flag'); // Let's not promote web compat
+    if (!supportRegexGroupNameUnicodeEscapes) {
+      // Pre-ES2020: surrogate pairs in group names require u-flag
+      if (forCapturing === FOR_NAMED_GROUP) {
+        return updateRegexUflagIsMandatory(uflagStatus, 'The start of the name of a capturing group had a surrogate pair and is therefor only valid with u-flag or v-flag');
+      }
+      if (webCompat === WEB_COMPAT_OFF) {
+        return updateRegexUflagIsMandatory(uflagStatus, 'The start of a `\\k` group name had a surrogate pair and is therefor only valid with u-flag or v-flag');
+      }
     }
 
     return uflagStatus;
@@ -3542,14 +3542,18 @@ function Lexer(
     let c = peek(); // dont read. we dont want to consume a bad \n here
     if (c === $$CURLY_L_7B) {
       c = parseUnicodeRubyEscape();
-
-      // If this is part of a `\k` escape then this might be ok without u-flag in web compat, otherwise it must be error
-      uflagStatus = updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag or v-flag'); // don't mention the webcompat exception
+      // Since ES2020 (tc39/ecma262#1869), group name escapes use RegExpUnicodeEscapeSequence[+UnicodeMode],
+      // so ruby escapes (\u{...}) are valid in group names even without u-flag.
+      // Before ES2020, ruby escapes in group names required u-flag.
+      if (!supportRegexGroupNameUnicodeEscapes) {
+        uflagStatus = updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Found a unicode ruby escape which is only valid with u-flag or v-flag');
+      }
     } else {
       c = parseUnicodeQuadEscape(c, false);
-
-      if (c > 0xffff && forCapturing === FOR_NAMED_GROUP) {
-        // The double quad can be made to work without u-flag but not inside a capturing group because `(?` is invalid
+      // Since ES2020 (tc39/ecma262#1869), group name escapes use RegExpUnicodeEscapeSequence[+UnicodeMode],
+      // so double-quad surrogate pairs are valid in group names even without u-flag.
+      // Before ES2020, double-quad surrogate pairs in capturing group names required u-flag.
+      if (!supportRegexGroupNameUnicodeEscapes && c > 0xffff && forCapturing === FOR_NAMED_GROUP) {
         uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'The name of a capturing group contained a double unicode quad escape which is valid as a surrogate pair which requires u-flag or v-flag and which cannot be made valid without u-flag or v-flag');
       }
     }
@@ -3605,20 +3609,23 @@ function Lexer(
       // [v]: `/(?<輸>x)\k<\ud87e\udddf>)/u`
       // [x]: `/(?<輸>x)\k<\u{2F9DF}>)/`       Webcompat only (where `\k` is a valid atom)
       // [v]: `/(?<輸>x)\k<\u{2F9DF}>)/u`
-      if (forCapturing === FOR_NAMED_GROUP) {
+      // Since ES2020 (tc39/ecma262#1869), group name escapes use RegExpUnicodeEscapeSequence[+UnicodeMode],
+      // so surrogate pair escapes representing valid identifier chars are valid without u-flag.
+      // Before ES2020, these required u-flag.
+      if (!supportRegexGroupNameUnicodeEscapes) {
         // Only for named groups is this a problem because either way (double quad or ruby) the escape cannot
         // contribute a valid ident char to the group name, meaning the group name fails to parse, meaning the
         // interpretation of this part falls back to legacy atoms in web compat mode, and just fails otherwise
-        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a capturing group name that requires the u-flag or v-flag to be considered valid');
-      }
-
-      if (webCompat === WEB_COMPAT_OFF) {
+        if (forCapturing === FOR_NAMED_GROUP) {
+          return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a capturing group name that requires the u-flag or v-flag to be considered valid');
+        }
         // This is a `\k` escape, which can recover from a high codepoint, but only in webcompat mode. In that case
         // the `\k` and `\u` become individual atoms. A quad becomes a trivial atom while a ruby becomes a quantifier
         // like `\u{50000}` in webcompat mode is the letter `u` repeated 50000 times. Otherwise it's still an error.
-        return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a `\\k` escape group name that requires the u-flag or v-flag to be considered valid');
+        if (webCompat === WEB_COMPAT_OFF) {
+          return updateRegexUflagIsMandatory(uflagStatus, 'Found a codepoint in a `\\k` escape group name that requires the u-flag or v-flag to be considered valid');
+        }
       }
-
       return uflagStatus;
     }
 

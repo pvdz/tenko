@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this can not become valid without web compat mode
+    Regex: Encountered invalid unicode escape inside the group name of a `\k` escape, this can not become valid without web compat mode
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -60,12 +60,12 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Found a unicode ruby escape which is only valid with u-flag or v-flag; Encountered invalid unicode escape inside the group name of a `\k` escape, this is invalid with u-flag or v-flag
+    Regex: Encountered invalid unicode escape inside the group name of a `\k` escape, this is invalid with u-flag or v-flag; Found a `\k` that referenced `abc@{xd835}@def` but no capturing group had this name
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /(?<abc\u{1D7D0}def>foo\k<abc\uD835def>)/u
-   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
