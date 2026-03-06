@@ -4039,6 +4039,13 @@ function Lexer(
         // bracketDepth >= 2: ] closes innermost. If next char is not ] or [, and no content at this depth, one ] closes all (e.g. /[[[]]/v). With content (e.g. [a]) we only close one level.
         const next = peekd(1);
         if (bracketDepth >= 2 && next !== $$SQUARE_R_5D && next !== $$SQUARE_L_5B && !seenContentAtCurrentDepth) {
+          // In v mode, `[` starts a nested class and `]` only closes one level, so the outer class would be
+          // unterminated here (e.g. /[[]/v). But in non-v mode, `[` is a literal and this `]` closes the class.
+          // Only flag when `[` was a genuine nested class opener (not from the literal-] + [ combo like /[][]/v).
+          if (!closeBothOnNextRbracket) {
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'In v-mode `[` inside a character class starts a nested class; not enough `]` to close all levels';
+          }
           break; // leave ] for the post-loop ASSERT_skip to consume; closes entire class
         }
         if (bracketDepth === 2 && closeBothOnNextRbracket) {
@@ -4062,7 +4069,6 @@ function Lexer(
           literalRbracketJustAdded = false;
           hasNestedBracket = true;
           hasSeenVModeSyntax = true;
-          regexBodyUsedVOnlySyntax = true;
           hasClassContent = true;
           ASSERT_skip($$SQUARE_L_5B);
           if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
@@ -4559,6 +4565,7 @@ function Lexer(
       }
       seenContentAtCurrentDepth = true;
       hasClassContent = true;
+      if (bracketDepth >= 2) regexBodyUsedVOnlySyntax = true; // content inside nested class confirms v-mode syntax
       c = peek();
     }
 
