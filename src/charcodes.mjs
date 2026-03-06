@@ -93,6 +93,7 @@ const $$LT_3C = 0x3c;
 const $$IS_3D = 0x3d;
 const $$GT_3E = 0x3e;
 const $$QMARK_3F = 0x3f;
+const $$AT_40 = 0x40;
 const $$SQUARE_L_5B = 0x5b;
 const $$BACKSLASH_5C = 0x5c;
 const $$SQUARE_R_5D = 0x5d;
@@ -204,6 +205,7 @@ export {
   $$IS_3D,
   $$GT_3E,
   $$QMARK_3F,
+  $$AT_40,
   $$SQUARE_L_5B,
   $$BACKSLASH_5C,
   $$SQUARE_R_5D,

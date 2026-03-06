@@ -92,6 +92,7 @@ import {
   $$IS_3D,
   $$GT_3E,
   $$QMARK_3F,
+  $$AT_40,
   $$SQUARE_L_5B,
   $$BACKSLASH_5C,
   $$SQUARE_R_5D,
@@ -4094,7 +4095,7 @@ function Lexer(
           continue;
         }
         // && in a char class is v-only syntax (e.g. [a&&b]). Reject when missing left ([&&a]) or right ([a&&]) operand.
-        if (supportRegexVFlag && c === $$AND_26 && !eof() && peekd(1) === $$AND_26) {
+        if (c === $$AND_26 && !eof() && peekd(1) === $$AND_26) {
           if (!hasClassContent) {
             regexBodyHasSyntaxInvalidWithVFlag = true;
             lastPotentialRegexErrorForVFlag = 'Set intersection `&&` requires a left operand in character class with the v flag';
@@ -4114,17 +4115,38 @@ function Lexer(
           continue;
         }
         // Single & in v mode is invalid (only && is set intersection).
-        if (supportRegexVFlag && c === $$AND_26) {
+        if (c === $$AND_26) {
           regexBodyHasSyntaxInvalidWithVFlag = true;
           lastPotentialRegexErrorForVFlag = 'Single `&` in character class is not allowed with the v flag (use `&&` for set intersection)';
         }
         // In v mode, unescaped } outside \q{...} is invalid (stray brace).
-        if (supportRegexVFlag && c === $$CURLY_R_7D) {
+        else if (c === $$CURLY_R_7D) {
           regexBodyHasSyntaxInvalidWithVFlag = true;
           lastPotentialRegexErrorForVFlag = 'Stray `}` in character class is not allowed with the v flag';
         }
+        // In v mode, ClassSetSyntaxCharacter ( ) { / | must be escaped inside character classes.
+        // https://tc39.es/ecma262/#prod-ClassSetSyntaxCharacter
+        // Note: [ ] } \ - are handled elsewhere; ( ) { / | are handled here.
+        else if (c === $$PAREN_L_28 || c === $$PAREN_R_29 || c === $$CURLY_L_7B || c === $$FWDSLASH_2F || c === $$OR_7C) {
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          lastPotentialRegexErrorForVFlag = 'Unescaped `' + String.fromCharCode(c) + '` in character class is not allowed with the v flag (ClassSetSyntaxCharacter must be escaped)';
+        }
+        // In v mode, ClassSetReservedDoublePunctuator: two consecutive identical punctuators from the set
+        // ! # $ % * + , . : ; < = > ? @ ^ ` ~ are reserved and invalid.
+        // https://tc39.es/ecma262/#prod-ClassSetReservedDoublePunctuator
+        // Note: && and -- are handled above as set operators.
+        else if (!eof() && peekd(1) === c && (
+          c === $$EXCL_21 || c === $$HASH_23 || c === $$$_24 || c === $$PERCENT_25 ||
+          c === $$STAR_2A || c === $$PLUS_2B || c === $$COMMA_2C || c === $$DOT_2E ||
+          c === $$COLON_3A || c === $$SEMI_3B || c === $$LT_3C || c === $$IS_3D ||
+          c === $$GT_3E || c === $$QMARK_3F || c === $$AT_40 || c === $$XOR_5E ||
+          c === $$TICK_60 || c === $$TILDE_7E
+        )) {
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          lastPotentialRegexErrorForVFlag = 'Double `' + String.fromCharCode(c) + String.fromCharCode(c) + '` in character class is a reserved double punctuator with the v flag (ClassSetReservedDoublePunctuator)';
+        }
         // In v mode (unicodeSets), \q{...} is a ClassString (multi-code-point string); has its own delimiter/escape rules.
-        if (supportRegexVFlag && c === $$BACKSLASH_5C && neofd(3) && peekd(1) === $$Q_71 && peekd(2) === $$CURLY_L_7B) {
+        else if (c === $$BACKSLASH_5C && neofd(3) && peekd(1) === $$Q_71 && peekd(2) === $$CURLY_L_7B) {
           hasSeenVModeSyntax = true;
           regexBodyUsedVOnlySyntax = true;
           ASSERT_skip($$BACKSLASH_5C);
