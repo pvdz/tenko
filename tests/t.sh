@@ -748,7 +748,7 @@ if [[ "${HF}" = "yes" ]]; then
     echo '###### HF setup complete #####'
 fi
 
-set -x
+#set -x
 
 case "${ACTION}" in
     test262)
