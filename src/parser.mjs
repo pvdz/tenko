@@ -13291,6 +13291,37 @@ function Parser(code, options = {}) {
         //                   ^
         return _parseClassMethodIdentKey(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, false, $UNTYPED, $UNTYPED, $UNTYPED, $UNTYPED, $tp_static_start, $tp_static_stop, $tp_static_line, $tp_static_column, $tp_static_canon, astProp, false);
       }
+      if (tok_getType() === $PUNC_EQ) {
+        // The `static` ident here is an instance field name, not a modifier
+        // - `class x {static = 1;}`
+        //                    ^
+        if (!allowPublicClassFields) {
+          return THROW_RANGE('Class field initializers are not supported in the currently targeted language version', $tp_static_start, tok_getStop());
+        }
+        return parseClassField(lexerFlags, $tp_methodStart_line, $tp_methodStart_column, $tp_methodStart_start, false, $ID_static, $tp_static_start, $tp_static_stop, $tp_static_line, $tp_static_column, $tp_static_canon, astProp);
+      }
+      if (tok_getType() === $PUNC_SEMI || tok_getType() === $PUNC_CURLY_CLOSE) {
+        // The `static` ident here is an instance field name without initializer
+        // - `class x {static;}`
+        //                   ^
+        // - `class x {static}`
+        //                   ^
+        if (!allowPublicClassFields) {
+          return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_static_start, tok_getStop());
+        }
+        checkClassFieldNameErrors(false, false, $tp_static_canon, $tp_static_start, $tp_static_stop);
+        let keyNode = AST_getIdentNode($tp_static_start, $tp_static_stop, $tp_static_line, $tp_static_column, $tp_static_canon);
+        AST_open(astProp, {
+          type: 'PropertyDefinition',
+          loc: undefined,
+          key: keyNode,
+          value: null,
+          computed: false,
+          static: false,
+        });
+        AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
+        return CANT_DESTRUCT;
+      }
     }
 
     // let destructible = MIGHT_DESTRUCT;
