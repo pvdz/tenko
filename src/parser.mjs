@@ -1400,7 +1400,7 @@ function Parser(code, options = {}) {
       }
     }
   }
-  function AST_throwIfIllegalUpdateArg(astProp) {
+  function AST_throwIfIllegalUpdateArg(lexerFlags, astProp) {
     ASSERT(AST_throwIfIllegalUpdateArg.length === arguments.length, 'arg count');
     ASSERT(typeof astProp === 'string', 'astprop string');
 
@@ -1410,6 +1410,10 @@ function Parser(code, options = {}) {
     let head = _path[_path.length - 1];
     let prev = head && head[astProp];
 
+    // Annex B: In sloppy+webcompat, CallExpression is a valid update target (runtime error, not syntax error)
+    // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
+    let allowCall = hasNoFlag(lexerFlags, LF_STRICT_MODE) && options_webCompat === WEB_COMPAT_ON;
+
     // Note: the for-case is nasty because when parsing the lhs the AST is not yet populated with a `for` statement
     // because that particular node type depends on `in`, `of`, or a semi. So the AST could be an array (block body)
     if (
@@ -1417,16 +1421,16 @@ function Parser(code, options = {}) {
       (
         prev instanceof Array ?
           // - `for (x--;;);`
-          !prev.length || (prev[prev.length - 1].type !== 'Identifier' && prev[prev.length - 1].type !== 'MemberExpression') :
+          !prev.length || (prev[prev.length - 1].type !== 'Identifier' && prev[prev.length - 1].type !== 'MemberExpression' && !(allowCall && prev[prev.length - 1].type === 'CallExpression')) :
           // - `[]++`
-          (prev.type !== 'Identifier' && prev.type !== 'MemberExpression')
+          (prev.type !== 'Identifier' && prev.type !== 'MemberExpression' && !(allowCall && prev.type === 'CallExpression'))
       )
     ) {
       // - `++[]`
-      // - `--f()`
+      // - `--f()`      (strict or no webcompat)
       // - `++this`
       // - `[]++`
-      // - `f()--`
+      // - `f()--`      (strict or no webcompat)
       // - `this++`
       return THROW_RANGE('Can only increment or decrement an identifier or member expression', tok_getStart(), tok_getStop());
     }
@@ -9196,7 +9200,7 @@ function Parser(code, options = {}) {
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
     assignable = parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, NOT_NEW_ARG, ONLY_LHSE, 'argument');
 
-    AST_throwIfIllegalUpdateArg('argument');
+    AST_throwIfIllegalUpdateArg(lexerFlags, 'argument');
 
     AST_close($tp_punc_start, $tp_punc_line, $tp_punc_column, 'UpdateExpression');
 
@@ -9794,7 +9798,10 @@ function Parser(code, options = {}) {
     assignable = mergeAssignable(nowAssignable, assignable);
     AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'CallExpression');
 
-    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setNotAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+    // Annex B: In sloppy+webcompat mode, a CallExpression is a valid assignment target (runtime error, not syntax error)
+    // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
+    let callAssignable = (hasNoFlag(lexerFlags, LF_STRICT_MODE) && options_webCompat === WEB_COMPAT_ON) ? assignable : setNotAssignable(assignable);
+    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, callAssignable, isNewArg, NOT_LHSE, astProp);
   }
   function _parseValueTailTemplate(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
     ASSERT(_parseValueTailTemplate.length === arguments.length, 'arg count');
@@ -9905,7 +9912,7 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Cannot postfix `' + opName + '` a non-assignable value', $tp_op_start, $tp_op_stop);
     }
 
-    AST_throwIfIllegalUpdateArg(astProp);
+    AST_throwIfIllegalUpdateArg(lexerFlags, astProp);
 
     ASSERT_skipDiv(opName, lexerFlags);
 
@@ -11099,7 +11106,10 @@ function Parser(code, options = {}) {
         AST_patchAsyncCall($tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, astProp);
       }
 
-      let assignable = parseValueTail(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, NOT_ASSIGNABLE, NOT_NEW_ARG, NOT_LHSE, astProp);
+      // Annex B: In sloppy+webcompat, a CallExpression is a valid assignment target (runtime error, not syntax error)
+      // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
+      let asyncCallAssignable = (hasNoFlag(lexerFlags, LF_STRICT_MODE) && options_webCompat === WEB_COMPAT_ON) ? IS_ASSIGNABLE : NOT_ASSIGNABLE;
+      let assignable = parseValueTail(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, asyncCallAssignable, NOT_NEW_ARG, NOT_LHSE, astProp);
       if (fromStmtOrExpr === IS_STATEMENT) {
         // in expressions operator precedence is handled elsewhere. in statements this is the start,
         assignable = parseExpressionFromOp(lexerFlags, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, assignable, astProp);
