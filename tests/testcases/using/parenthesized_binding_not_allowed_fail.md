@@ -8,9 +8,11 @@
 >
 > parenthesized binding is not a valid BindingPattern/Identifier
 
-## FAIL
+## PASS ANNEXB
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using (x) = foo();
@@ -56,10 +58,68 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
+      expression: {
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+        left: {
+          type: 'CallExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+          optional: false,
+          callee: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+            name: 'using'
+          },
+          arguments: [
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
+              name: 'x'
+            }
+          ]
+        },
+        operator: '=',
+        right: {
+          type: 'CallExpression',
+          loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
+          optional: false,
+          callee: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+            name: 'foo'
+          },
+          arguments: []
+        }
+      }
+    }
+  ]
+}
+
+tokens (10x):
+       ID_using PUNC_PAREN_OPEN IDENT PUNC_PAREN_CLOSE PUNC_EQ IDENT
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+using(x) = foo();
+````
+
+Produces same AST

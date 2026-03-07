@@ -5,6 +5,8 @@
 > :: using declaration
 >
 > ::> no init
+>
+> `using x;` at script top level fails (using not allowed at script top-level, falls to identifier)
 ## FAIL
 
 ## Input
@@ -29,12 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  `using` declarations must have an initializer
+  Unable to ASI
 
-start@1:0, error@1:7
+start@1:0, error@1:6
 ╔══╦════════════════
  1 ║ using x;
-   ║        ^------- error
+   ║       ^------- error
 ╚══╩════════════════
 
 `````
@@ -49,7 +51,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  `using` declarations must have an initializer
+
+start@1:0, error@1:7
+╔══╦════════════════
+ 1 ║ using x;
+   ║        ^------- error
+╚══╩════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -61,4 +73,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

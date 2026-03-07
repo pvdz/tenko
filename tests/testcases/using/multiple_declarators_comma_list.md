@@ -6,7 +6,7 @@
 >
 > ::> multiple declarators comma list
 >
-> multiple declarators (comma list)
+> multiple using declarators
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = foo(), y = bar();
+{ using x = foo(), y = bar(); }
 `````
 
 ## Output
@@ -33,62 +33,68 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:27},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:27},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:31},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:15},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:10},end:{line:1,column:15},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
-              name: 'foo'
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:29},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:17},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+                  name: 'foo'
+                },
+                arguments: []
+              }
             },
-            arguments: []
-          }
-        },
-        {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:17},end:{line:1,column:26},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
-            name: 'y'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:21},end:{line:1,column:26},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:21},end:{line:1,column:24},source:''},
-              name: 'bar'
-            },
-            arguments: []
-          }
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:19},end:{line:1,column:28},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:19},end:{line:1,column:20},source:''},
+                name: 'y'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:23},end:{line:1,column:28},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:23},end:{line:1,column:26},source:''},
+                  name: 'bar'
+                },
+                arguments: []
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (14x):
-       ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_COMMA IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_SEMI
+tokens (16x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_COMMA IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -117,4 +123,10 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy][annexb:no]
+Printer output different from input [sloppy][annexb:no]:
+
+````js
+{using x = foo(), y = bar();}
+````
+
+Produces same AST

@@ -6,7 +6,7 @@
 >
 > ::> private id binding fail
 >
-> private identifiers can't appear as BindingIdentifier
+> `using #x = foo();` at script top level fails (using not allowed at script top-level, falls to identifier)
 
 ## FAIL
 
@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (`#x`) as a variable name because: Private identifiers are only valid in class bodies and in expressions (e.g. this.#x, #x in obj), not as bindings
+  Unable to ASI
 
 start@1:0, error@1:6
 ╔══╦════════════════
@@ -52,7 +52,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot use this name (`#x`) as a variable name because: Private identifiers are only valid in class bodies and in expressions (e.g. this.#x, #x in obj), not as bindings
+
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ using #x = foo();
+   ║       ^^------- error
+╚══╩════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -64,4 +74,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

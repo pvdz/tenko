@@ -1,12 +1,12 @@
 # Tenko parser test case
 
-- Path: tests/testcases/using/destructuring_using_requires_initializer_arr_fail.md
+- Path: tests/testcases/using/using_object_destructuring_after_ident_fail.md
 
 > :: using
 >
-> ::> destructuring using requires initializer arr fail
+> ::> using object destructuring after ident fail
 >
-> destructuring using requires an initializer (array)
+> using does not allow object destructuring after ident binding
 
 ## FAIL
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using [a] ;
+{ using x = null, {} = null; }
 `````
 
 ## Output
@@ -32,12 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Declaration destructuring must have init
+  Destructuring patterns are not allowed in `using` declarations, only plain identifiers
 
-start@1:0, error@1:10
+start@1:0, error@1:18
 ╔══╦═════════════════
- 1 ║ using [a] ;
-   ║           ^------- error
+ 1 ║ { using x = null, {} = null; }
+   ║                   ^------- error
 ╚══╩═════════════════
 
 `````

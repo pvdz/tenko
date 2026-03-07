@@ -6,7 +6,7 @@
 >
 > ::> rest must be last object fail
 >
-> rest property must be last in object binding pattern
+> `using {...rest, a} = obj` fails (no destructuring with using, falls to expression which fails)
 
 ## FAIL
 
@@ -32,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The binding pattern is not destructible
+  Unable to ASI
 
-start@1:0, error@1:19
-╔══╦═════════════════
+start@1:0, error@1:6
+╔══╦════════════════
  1 ║ using {...rest, a} = obj;
-   ║                    ^------- error
-╚══╩═════════════════
+   ║       ^------- error
+╚══╩════════════════
 
 `````
 

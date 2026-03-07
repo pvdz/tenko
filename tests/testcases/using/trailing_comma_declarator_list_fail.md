@@ -6,7 +6,7 @@
 >
 > ::> trailing comma declarator list fail
 >
-> trailing comma not allowed in declarator list
+> `using x = foo(),;` at script top-level fails (using falls back to identifier, ASI fails)
 
 ## FAIL
 
@@ -32,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse a(nother) binding but none was found
+  Unable to ASI
 
-start@1:0, error@1:16
-╔══╦═════════════════
+start@1:0, error@1:6
+╔══╦════════════════
  1 ║ using x = foo(),;
-   ║                 ^------- error
-╚══╩═════════════════
+   ║       ^------- error
+╚══╩════════════════
 
 `````
 
@@ -52,7 +52,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Destructuring patterns are not allowed in `using` declarations, only plain identifiers
+
+start@1:0, error@1:16
+╔══╦═════════════════
+ 1 ║ using x = foo(),;
+   ║                 ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -64,4 +74,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

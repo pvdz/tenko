@@ -108,6 +108,7 @@ const FDS_ILLEGAL = DEVONLY() ? {FDS_ILLEGAL: 1} : 1; // function declaration no
 const FDS_IFELSE = DEVONLY() ? {FDS_IFELSE: 2} : 2;  // if-else specific webcompat exception would apply to a function declaration
 const FDS_LEX = DEVONLY() ? {FDS_LEX: 3} : 3;      // a function declaration would be a lexical binding
 const FDS_VAR = DEVONLY() ? {FDS_VAR: 4} : 4;      // a function declaration would be a var binding
+const FDS_SWITCH_CASE = DEVONLY() ? {FDS_SWITCH_CASE: 5} : 5; // directly inside switch case/default clause (using/await using not allowed here)
 const IS_GLOBAL_TOPLEVEL = DEVONLY() ? {IS_GLOBAL_TOPLEVEL: 1} : true;
 const NOT_GLOBAL_TOPLEVEL = DEVONLY() ? {NOT_GLOBAL_TOPLEVEL: 1} : false;
 const IS_LABELLED = DEVONLY() ? {IS_LABELLED: 1} : true;
@@ -324,6 +325,7 @@ export {
   FDS_IFELSE,
   FDS_LEX,
   FDS_VAR,
+  FDS_SWITCH_CASE,
   IS_GLOBAL_TOPLEVEL,
   NOT_GLOBAL_TOPLEVEL,
   IS_LABELLED,

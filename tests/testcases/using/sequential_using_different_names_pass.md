@@ -6,7 +6,7 @@
 >
 > ::> sequential using different names pass
 >
-> sequential using declarations in same scope with different names
+> sequential using statements
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = foo(); using y = bar();
+{ using x = foo(); using y = bar(); }
 `````
 
 ## Output
@@ -33,69 +33,75 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:33},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:37},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:37},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:15},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:10},end:{line:1,column:15},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
-              name: 'foo'
-            },
-            arguments: []
-          }
-        }
-      ]
-    },
-    {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:17},end:{line:1,column:33},source:''},
-      kind: 'using',
-      declarations: [
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:18},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:17},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+                  name: 'foo'
+                },
+                arguments: []
+              }
+            }
+          ]
+        },
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:23},end:{line:1,column:32},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:23},end:{line:1,column:24},source:''},
-            name: 'y'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:27},end:{line:1,column:32},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:27},end:{line:1,column:30},source:''},
-              name: 'bar'
-            },
-            arguments: []
-          }
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:19},end:{line:1,column:35},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:25},end:{line:1,column:34},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:25},end:{line:1,column:26},source:''},
+                name: 'y'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:29},end:{line:1,column:34},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:29},end:{line:1,column:32},source:''},
+                  name: 'bar'
+                },
+                arguments: []
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (15x):
-       ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_SEMI ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
-       PUNC_PAREN_CLOSE PUNC_SEMI
+tokens (17x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_SEMI ID_using IDENT PUNC_EQ IDENT
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -127,8 +133,10 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
+{
 using x = foo();
 using y = bar();
+}
 ````
 
 Produces same AST

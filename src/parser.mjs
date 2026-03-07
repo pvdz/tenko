@@ -368,7 +368,7 @@ function ASSERT_ASSIGN_EXPR(allowAssignment) {
   ASSERT(allowAssignment === ASSIGN_EXPR_IS_OK || allowAssignment === ASSIGN_EXPR_IS_ERROR, 'allowAssignment is enum', allowAssignment);
 }
 function ASSERT_FDS(fdState) {
-  ASSERT([FDS_ILLEGAL, FDS_IFELSE, FDS_LEX, FDS_VAR].includes(fdState), 'FDS enum', fdState);
+  ASSERT([FDS_ILLEGAL, FDS_IFELSE, FDS_LEX, FDS_VAR, FDS_SWITCH_CASE].includes(fdState), 'FDS enum', fdState);
 }
 function ASSERT_BINDING_TYPE(bindingType) {
   ASSERT([BINDING_TYPE_NONE,BINDING_TYPE_ARG,BINDING_TYPE_VAR,BINDING_TYPE_LET,BINDING_TYPE_CONST,BINDING_TYPE_CLASS,BINDING_TYPE_FUNC_VAR,BINDING_TYPE_FUNC_LEX,BINDING_TYPE_FUNC_STMT,BINDING_TYPE_CATCH_IDENT,BINDING_TYPE_CATCH_OTHER,BINDING_TYPE_USING,BINDING_TYPE_AWAIT_USING].includes(bindingType), 'bindingType is an enum', bindingType);
@@ -501,6 +501,7 @@ import {
   FDS_IFELSE,
   FDS_LEX,
   FDS_VAR,
+  FDS_SWITCH_CASE,
   IS_GLOBAL_TOPLEVEL,
   NOT_GLOBAL_TOPLEVEL,
   IS_LABELLED,
@@ -2362,8 +2363,8 @@ function Parser(code, options = {}) {
     // does not propagate up in any context where it is allowed and when nested in `if` or `else` it's considered to
     // be wrapped in a block. So neither legit function propagates to the parent of the statement that encloses it.
 
-    ASSERT(bindingType !== BINDING_TYPE_FUNC_VAR || ( (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)) || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && options_webCompat === WEB_COMPAT_ON) ), 'FUNC_VAR implies valid var-hoisting context (top-level or sloppy+webcompat block, not async/gen per B.3.2)');
-    ASSERT(bindingType !== BINDING_TYPE_FUNC_STMT || (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled === IS_LABELLED && options_webCompat === WEB_COMPAT_ON), 'FUNC_STMT is only for sloppy+webcompat labelled plain function decls in blocks (allows duplicate exception)');
+    ASSERT(bindingType !== BINDING_TYPE_FUNC_VAR || ( (fdState === FDS_VAR && (hasNoFlag(lexerFlags, LF_IN_GLOBAL) || goalMode === GOAL_SCRIPT)) || ((fdState === FDS_LEX || fdState === FDS_SWITCH_CASE) && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && options_webCompat === WEB_COMPAT_ON) ), 'FUNC_VAR implies valid var-hoisting context (top-level or sloppy+webcompat block, not async/gen per B.3.2)');
+    ASSERT(bindingType !== BINDING_TYPE_FUNC_STMT || ((fdState === FDS_LEX || fdState === FDS_SWITCH_CASE) && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled === IS_LABELLED && options_webCompat === WEB_COMPAT_ON), 'FUNC_STMT is only for sloppy+webcompat labelled plain function decls in blocks (allows duplicate exception)');
 
     if (bindingType === BINDING_TYPE_FUNC_VAR) {
       // B.3.3.1: In webcompat mode, if the block function's implicit var would conflict with a lexical/catch binding
@@ -2380,8 +2381,8 @@ function Parser(code, options = {}) {
       // [v]: `(function(){ try {} catch({f}) { { function f(){} } } }())` (same for catch pattern bindings)
       // [v]: `(function(){ try {} catch(f) { { function f(){} } } }())` (CATCH_IDENT: var IS created per B.3.5)
       // [v]: `(function(f){ { function f(){} } }())` (param: var IS created, param conflicts handled elsewhere)
-      if (fdState === FDS_LEX && options_webCompat === WEB_COMPAT_ON) {
-        ASSERT(hasNoFlag(lexerFlags, LF_STRICT_MODE), 'FUNC_VAR+FDS_LEX is only for sloppy mode plain block functions');
+      if ((fdState === FDS_LEX || fdState === FDS_SWITCH_CASE) && options_webCompat === WEB_COMPAT_ON) {
+        ASSERT(hasNoFlag(lexerFlags, LF_STRICT_MODE), 'FUNC_VAR+FDS_LEX/FDS_SWITCH_CASE is only for sloppy mode plain block functions');
         ASSERT(isLabelled !== IS_LABELLED, 'labelled block functions use FUNC_STMT, not FUNC_VAR');
         let scanScoop = scoop;
         let hasConflict = false;
@@ -2428,7 +2429,7 @@ function Parser(code, options = {}) {
       // [x]: `{ function f(){} { var f } }` — var in nested block conflicts with lex in parent block
       // [v]: `{ function f(){} } var f;` — different scope levels, no conflict
       // [v]: `{ function f(){} function f(){} }` — duplicate block functions allowed (sloppy+webcompat)
-      if (fdState === FDS_LEX && options_webCompat === WEB_COMPAT_ON) {
+      if ((fdState === FDS_LEX || fdState === FDS_SWITCH_CASE) && options_webCompat === WEB_COMPAT_ON) {
         SCOPE_addLexBinding(scoop, $tp_bindingIdent_start, $tp_bindingIdent_stop, $tp_bindingIdent_canon, BINDING_TYPE_FUNC_STMT, fdState);
         // Hoist var to parent scopes (up to but not including func root)
         if (scoop.parent && scoop.parent.type !== SCOPE_LAYER_FUNC_ROOT) {
@@ -2724,7 +2725,7 @@ function Parser(code, options = {}) {
         // [v]: `((x,x))`
         scoop.dupeParamErrorStart = $tp_bindingIdent_start + 1; // offset 1
         scoop.dupeParamErrorStop = $tp_bindingIdent_stop;
-      } else if (options_webCompat !== WEB_COMPAT_ON || value !== BINDING_TYPE_FUNC_STMT || bindingType !== BINDING_TYPE_FUNC_STMT || fdState !== FDS_LEX) {
+      } else if (options_webCompat !== WEB_COMPAT_ON || value !== BINDING_TYPE_FUNC_STMT || bindingType !== BINDING_TYPE_FUNC_STMT || (fdState !== FDS_LEX && fdState !== FDS_SWITCH_CASE)) {
         return THROW_RANGE('Attempted to create a lexical binding for `' + $tp_bindingIdent_canon + '` but another binding already existed on the same level', $tp_bindingIdent_start, $tp_bindingIdent_stop);
       } else {
         // https://tc39.es/ecma262/#sec-block-duplicates-allowed-static-semantics
@@ -3453,18 +3454,19 @@ function Parser(code, options = {}) {
         // [v]: `function f(){}` (top-level script)
         // [v]: `function g(){ function f(){} }` (function body root)
         nameBindingType = BINDING_TYPE_FUNC_VAR;
-      } else if (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED && options_webCompat === WEB_COMPAT_ON) {
+      } else if ((fdState === FDS_LEX || fdState === FDS_SWITCH_CASE) && hasNoFlag(lexerFlags, LF_STRICT_MODE) && isLabelled !== IS_LABELLED && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED && options_webCompat === WEB_COMPAT_ON) {
         // Sloppy plain non-labelled block function + webcompat → var-like hoisting per Annex B B.3.2/B.3.3.
         // Only applies to plain FunctionDeclaration (not async/generator — those are always FUNC_LEX in blocks).
         // Without webcompat, block functions are block-scoped (FUNC_LEX) even in sloppy mode.
         // Note: B.3.3.1 (conflict skip) is handled in SCOPE_addFuncDeclName, not here.
         // [v]: `{ function f(){} }` (sloppy+webcompat)
+        // [v]: `switch(0) { case 0: function f(){} }` (sloppy+webcompat, switch case)
         // [x]: `{ async function f(){} }` → falls to FUNC_LEX below ($tp_async_type !== $UNTYPED)
         // [x]: `{ function *f(){} }` → falls to FUNC_LEX below ($tp_star_type !== $UNTYPED)
         ASSERT($tp_async_type === $UNTYPED, 'async functions in blocks never get FUNC_VAR');
         ASSERT($tp_star_type === $UNTYPED, 'generator functions in blocks never get FUNC_VAR');
         nameBindingType = BINDING_TYPE_FUNC_VAR;
-      } else if (fdState === FDS_LEX && hasNoFlag(lexerFlags, LF_STRICT_MODE) && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED && options_webCompat === WEB_COMPAT_ON) {
+      } else if ((fdState === FDS_LEX || fdState === FDS_SWITCH_CASE) && hasNoFlag(lexerFlags, LF_STRICT_MODE) && $tp_async_type === $UNTYPED && $tp_star_type === $UNTYPED && options_webCompat === WEB_COMPAT_ON) {
         // Sloppy labelled plain function in block + webcompat → lexical, but uses FUNC_STMT to allow the
         // duplicate exception per sec-block-duplicates-allowed-static-semantics (part of Annex B):
         // > It is a Syntax Error if the LexicallyDeclaredNames of StatementList contains any duplicate
@@ -3889,7 +3891,14 @@ function Parser(code, options = {}) {
         return;
 
       case $ID_using:
-        if (allowUsingDeclaration && isLabelled !== IS_LABELLED && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE) {
+        // [v]: `{ using x = foo(); }` — using in block
+        // [v]: `using x = foo();` — using at module top level (module goal)
+        // [x]: `using x = foo();` — using at script top level (script goal)
+        // [x]: `if (y) using x = foo();` — using in single-statement position
+        // [x]: `switch (y) { case 0: using x = foo(); }` — using directly in switch case
+        if (allowUsingDeclaration && isLabelled !== IS_LABELLED && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE && fdState !== FDS_SWITCH_CASE) {
+          // `using` not allowed at script top-level (only inside blocks, for-headers, function bodies, or module top-level)
+          if (isGlobalToplevel === IS_GLOBAL_TOPLEVEL && goalMode === GOAL_SCRIPT) break;
           parseUsingDeclaration(lexerFlags, $tp_ident_start, $tp_ident_line, $tp_ident_column, scoop, labelSet, fdState, nestedLabels, astProp);
           return;
         }
@@ -5653,15 +5662,99 @@ function Parser(code, options = {}) {
     //                ^^
     // [v]: `for (using of x)` — `using` is a var name
     //                ^^
-    if ((isIdentToken($tp_usingArg_type) || $tp_usingArg_type === $PUNC_CURLY_OPEN || $tp_usingArg_type === $PUNC_BRACKET_OPEN) && tok_getNlwas() === false) {
-      if ($tp_usingArg_type === $ID_in || $tp_usingArg_type === $ID_of) {
-        // [v]: `for (using in x)` / `for (using of x)` — `using` is a var name
+    // Note: destructuring patterns ({, [) are not allowed with `using` declarations (only BindingIdentifier)
+    if (isIdentToken($tp_usingArg_type) && tok_getNlwas() === false) {
+      if ($tp_usingArg_type === $ID_in) {
+        // [v]: `for (using in x)` — `using` is a var name
         AST_setIdent(astProp, $tp_usingIdent_start, $tp_usingIdent_stop, $tp_usingIdent_line, $tp_usingIdent_column, $tp_usingIdent_canon);
         return IS_ASSIGNABLE;
       }
 
+      if ($tp_usingArg_type === $ID_of) {
+        // Disambiguation: `for (using of x)` vs `for (using of = null;;)`
+        // - `for (using of x)` — for-of where `using` is a plain variable name as LHS
+        // - `for (using of of [0, 1, 2])` — for-of where `using` is LHS, `of[0,1,2]` is iterable
+        // - `for (using of = null;;)` — C-style for with `using` declaration, `of` as binding name
+        // Per spec, the 'using of' lookahead restriction only applies to for-of/for-await-of.
+        // In a C-style for statement, `using of = ...` is a using declaration (like `let of = ...`).
+        // To disambiguate, consume `of` and check whether `=` follows.
+
+        let $tp_of_type = tok_getType();
+        let $tp_of_start = tok_getStart();
+        let $tp_of_stop = tok_getStop();
+        let $tp_of_line = tok_getLine();
+        let $tp_of_column = tok_getColumn();
+        let $tp_of_canon = tok_getCanoN();
+
+        ASSERT_skipDiv($ID_of, lexerFlags); // consume `of`; div because `of` as varname could be followed by `/` as division
+
+        if (tok_getType() === $PUNC_EQ) {
+          // [v]: `for (using of = null;;)` — C-style for with `using` declaration, `of` as binding name
+          //                    ^
+          // We already consumed `using` and `of`. Build the VariableDeclaration AST manually since
+          // parseAnyVarDeclaration expects the binding identifier to be the current token.
+
+          fatalBindingIdentCheck($tp_of_type, $tp_of_start, $tp_of_stop, $tp_of_canon, BINDING_TYPE_USING, lexerFlags);
+          SCOPE_actuallyAddBinding(lexerFlags, scoop, $tp_of_start, $tp_of_stop, $tp_of_canon, BINDING_TYPE_USING);
+
+          AST_open(astProp, {
+            type: 'VariableDeclaration',
+            loc: undefined,
+            kind: 'using',
+            declarations: [],
+          });
+
+          AST_setIdent('declarations', $tp_of_start, $tp_of_stop, $tp_of_line, $tp_of_column, $tp_of_canon);
+
+          ASSERT_skipToExpressionStart('=', lexerFlags);
+          AST_wrapClosedCustom('declarations', {
+            type: 'VariableDeclarator',
+            loc: undefined,
+            id: undefined,
+            init: undefined,
+          }, 'id');
+          parseExpression(lexerFlags | LF_IN_FOR_LHS, 'init');
+          AST_close($tp_of_start, $tp_of_line, $tp_of_column, 'VariableDeclarator');
+
+          // Handle additional declarators: `for (using of = null, x = y;;)`
+          while (tok_getType() === $PUNC_COMMA) {
+            ASSERT_skipRex(',', lexerFlags);
+            let $tp_nextBinding_start = tok_getStart();
+            let $tp_nextBinding_line = tok_getLine();
+            let $tp_nextBinding_column = tok_getColumn();
+            parseBinding(lexerFlags | LF_IN_FOR_LHS, $tp_nextBinding_start, $tp_nextBinding_line, $tp_nextBinding_column, scoop, BINDING_TYPE_USING, FROM_FOR_HEADER, ASSIGNMENT_IS_INIT, UNDEF_EXPORTS, UNDEF_EXPORTS, 'declarations');
+          }
+
+          AST_close($tp_usingIdent_start, $tp_usingIdent_line, $tp_usingIdent_column, ['VariableDeclaration', 'ExpressionStatement']);
+
+          // Current token is `;`. Return to parseForHeaderRest which wraps in ForStatement.
+          return IS_ASSIGNABLE;
+        }
+
+        // [v]: `for (using of x)` — for-of where `using` is a plain variable name as LHS
+        //                   ^  (current token, `of` already consumed)
+        // Set `using` as the LHS identifier and handle for-of inline since `of` is already consumed.
+        AST_setIdent(astProp, $tp_usingIdent_start, $tp_usingIdent_stop, $tp_usingIdent_line, $tp_usingIdent_column, $tp_usingIdent_canon);
+
+        AST_wrapClosedCustom(astProp, {
+          type: 'ForOfStatement',
+          loc: undefined,
+          left: undefined,
+          right: undefined,
+          await: false, // `for await` goes through parseForHeaderAwaitUsing, not here
+          body: undefined,
+        }, 'left');
+
+        // `of` is already consumed; parse the right-hand expression directly
+        // Note: for-of rhs is an AssignmentExpression, not SequenceExpression
+        parseExpression(lexerFlags, 'right');
+
+        // Current token is `)`. parseForHeaderRest detects this and skips.
+        _forUsingOfParsedInline = true;
+        return IS_ASSIGNABLE;
+      }
+
       // [v]: `for (using x of y)` — this is a using declaration
-      // [v]: `for (using {x} of y)` / `for (using [x] of y)` — destructuring in using declaration
       parseAnyVarDeclaration(lexerFlags | LF_IN_FOR_LHS, $tp_usingIdent_start, $tp_usingIdent_line, $tp_usingIdent_column, scoop, BINDING_TYPE_USING, FROM_FOR_HEADER, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
 
       // [x]: `for (using x in y)` — for-in not allowed with `using`
@@ -5713,8 +5806,9 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags);
 
-    if ((!isIdentToken(tok_getType()) && tok_getType() !== $PUNC_CURLY_OPEN && tok_getType() !== $PUNC_BRACKET_OPEN) || tok_getNlwas() === true) {
-      return THROW_RANGE('`await using` in for-header must be followed by a binding identifier or pattern', tok_getStart(), tok_getStop());
+    // Note: destructuring patterns ({, [) are not allowed with `await using` declarations (only BindingIdentifier)
+    if (!isIdentToken(tok_getType()) || tok_getNlwas() === true) {
+      return THROW_RANGE('`await using` in for-header must be followed by a binding identifier', tok_getStart(), tok_getStop());
     }
 
     // [v]: `for (await using x of y)` — this is an await using declaration
@@ -5861,6 +5955,7 @@ function Parser(code, options = {}) {
 
     return parseValue(lexerFlags | LF_IN_FOR_LHS, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
+  let _forUsingOfParsedInline = false; // Set by parseForHeaderUsing when `for (using of x)` for-of is fully parsed inline
   function parseForHeader(lexerFlags, $tp_for_start, scoop, awaitable, astProp) {
     ASSERT(arguments.length === parseForHeader.length, 'arg count');
     ASSERT(typeof awaitable === 'boolean');
@@ -5942,6 +6037,13 @@ function Parser(code, options = {}) {
     //           ^
     // - `for (x;;);`
     //          ^
+
+    // `for (using of x)` disambiguation may have already fully parsed the for-of header inline
+    // (see parseForHeaderUsing). In that case the current token is already `)`.
+    if (_forUsingOfParsedInline) {
+      _forUsingOfParsedInline = false;
+      return;
+    }
 
     if (tok_getType() === $ID_of) {
       return parseForFromOf(lexerFlags, $tp_for_start, awaitable, assignable, astProp);
@@ -6818,8 +6920,9 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags); // div; if using is varname then next token can be next line statement start and if that starts with forward slash it's a div
 
-    // `using` is a declaration when followed by an ident, `{`, or `[` on the same line (no newline)
-    if ((isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_BRACKET_OPEN) && tok_getNlwas() === false) {
+    // `using` is a declaration when followed by an ident on the same line (no newline)
+    // Note: destructuring patterns ({, [) are not allowed with `using` declarations (only BindingIdentifier)
+    if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
       parseAnyVarDeclaration(lexerFlags, $tp_using_start, $tp_using_line, $tp_using_column, scoop, BINDING_TYPE_USING, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     }
     else {
@@ -6868,8 +6971,9 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags);
 
-    // `await using` is a declaration when followed by an ident, `{`, or `[` on the same line (no newline after `using`)
-    if ((isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_OPEN || tok_getType() === $PUNC_BRACKET_OPEN) && tok_getNlwas() === false) {
+    // `await using` is a declaration when followed by an ident on the same line (no newline after `using`)
+    // Note: destructuring patterns ({, [) are not allowed with `await using` declarations (only BindingIdentifier)
+    if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
       parseAnyVarDeclaration(lexerFlags, $tp_await_start, $tp_await_line, $tp_await_column, scoop, BINDING_TYPE_AWAIT_USING, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     }
     else {
@@ -7021,8 +7125,9 @@ function Parser(code, options = {}) {
       }
 
       ASSERT_skipToStatementStart(':', lexerFlags);
+      // `using`/`await using` not allowed directly in switch case/default clause
       while (tok_getType() !== $PUNC_CURLY_CLOSE && tok_getType() !== $ID_case && tok_getType() !== $ID_default) {
-        parseNestedBodyPart(lexerFlags, scoop, labelSet, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL, 'consequent');
+        parseNestedBodyPart(lexerFlags, scoop, labelSet, NOT_LABELLED, FDS_SWITCH_CASE, PARENT_NOT_LABEL, 'consequent');
       }
 
       AST_close($tp_caseDefault_start, $tp_caseDefault_line, $tp_caseDefault_column, 'SwitchCase');
@@ -7269,8 +7374,9 @@ function Parser(code, options = {}) {
     }
 
     // `await using x = expr;` — only when `await` is a keyword (async context or module toplevel)
-    // Not allowed as a substatement (like `if (x) await using y = z;`)
-    if ($tp_ident_type === $ID_await && allowUsingDeclaration && tok_getType() === $ID_using && tok_getNlwas() === false && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE) {
+    // [x]: `if (x) await using y = z;` — not allowed as a substatement
+    // [x]: `switch (x) { case 0: await using y = z; }` — not allowed directly in switch case
+    if ($tp_ident_type === $ID_await && allowUsingDeclaration && tok_getType() === $ID_using && tok_getNlwas() === false && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE && fdState !== FDS_SWITCH_CASE) {
       if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC))) {
         parseAwaitUsingDeclaration(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, scoop, astProp);
         return;
@@ -7564,6 +7670,11 @@ function Parser(code, options = {}) {
 
     let mustHaveInit = false;
     let paramSimple = PARAM_UNDETERMINED; // simple if "valid in es5" (list of idents, no inits)
+
+    // `using`/`await using` only allow BindingIdentifier, not destructuring patterns
+    if ((bindingType === BINDING_TYPE_USING || bindingType === BINDING_TYPE_AWAIT_USING) && !isIdentToken(tok_getType())) {
+      return THROW_RANGE('Destructuring patterns are not allowed in `' + (bindingType === BINDING_TYPE_USING ? 'using' : 'await using') + '` declarations, only plain identifiers', tok_getStart(), tok_getStop());
+    }
 
     if (isIdentToken(tok_getType())) {
       // - `var foo = bar;`

@@ -6,7 +6,7 @@
 >
 > ::> arrow function initializer
 >
-> arrow function expression initializer
+> arrow function as using initializer
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = (() => 1);
+{ using x = (() => 1); }
 `````
 
 ## Output
@@ -33,46 +33,52 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:19},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'ArrowFunctionExpression',
-            loc:{start:{line:1,column:11},end:{line:1,column:18},source:''},
-            params: [],
-            id: null,
-            generator: false,
-            async: false,
-            expression: true,
-            body: {
-              type: 'Literal',
-              loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
-              value: 1,
-              raw: '1'
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:22},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:21},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'ArrowFunctionExpression',
+                loc:{start:{line:1,column:13},end:{line:1,column:20},source:''},
+                params: [],
+                id: null,
+                generator: false,
+                async: false,
+                expression: true,
+                body: {
+                  type: 'Literal',
+                  loc:{start:{line:1,column:19},end:{line:1,column:20},source:''},
+                  value: 1,
+                  raw: '1'
+                }
+              }
             }
-          }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (11x):
-       ID_using IDENT PUNC_EQ PUNC_PAREN_OPEN PUNC_PAREN_OPEN
-       PUNC_PAREN_CLOSE PUNC_EQ_GT NUMBER_DEC PUNC_PAREN_CLOSE
-       PUNC_SEMI
+tokens (13x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ PUNC_PAREN_OPEN
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_EQ_GT NUMBER_DEC
+       PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -104,7 +110,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-using x = () => (1);
+{using x = () => (1);}
 ````
 
 Produces same AST

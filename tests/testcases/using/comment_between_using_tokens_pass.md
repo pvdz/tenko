@@ -6,7 +6,7 @@
 >
 > ::> comment between using tokens pass
 >
-> comment between tokens in using declaration
+> comment between using and binding name
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using/*comment*/x = foo();
+{ using/*comment*/x = foo(); }
 `````
 
 ## Output
@@ -33,41 +33,47 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:26},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:30},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:26},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:30},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:16},end:{line:1,column:25},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:16},end:{line:1,column:17},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:20},end:{line:1,column:25},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:20},end:{line:1,column:23},source:''},
-              name: 'foo'
-            },
-            arguments: []
-          }
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:28},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:18},end:{line:1,column:27},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:22},end:{line:1,column:27},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:22},end:{line:1,column:25},source:''},
+                  name: 'foo'
+                },
+                arguments: []
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (8x):
-       ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_SEMI
+tokens (10x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -99,7 +105,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-using x = foo();
+{using x = foo();}
 ````
 
 Produces same AST

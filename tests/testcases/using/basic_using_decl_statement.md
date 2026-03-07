@@ -6,7 +6,7 @@
 >
 > ::> basic using decl statement
 >
-> basic UsingDeclaration at statement level
+> basic using declaration in block
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = foo();
+{ using x = foo(); }
 `````
 
 ## Output
@@ -33,41 +33,47 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:15},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:10},end:{line:1,column:15},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
-              name: 'foo'
-            },
-            arguments: []
-          }
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:18},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:17},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+                  name: 'foo'
+                },
+                arguments: []
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (8x):
-       ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_SEMI
+tokens (10x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -96,4 +102,10 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy][annexb:no]
+Printer output different from input [sloppy][annexb:no]:
+
+````js
+{using x = foo();}
+````
+
+Produces same AST

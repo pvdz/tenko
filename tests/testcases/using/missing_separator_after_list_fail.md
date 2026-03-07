@@ -6,7 +6,7 @@
 >
 > ::> missing separator after list fail
 >
-> missing separator after declaration list
+> `using x = foo(), y = bar() z();` at script top level fails (using not allowed at script top-level, falls to identifier)
 
 ## FAIL
 
@@ -34,11 +34,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Unable to ASI
 
-start@1:0, error@1:27
-╔══╦═════════════════
+start@1:0, error@1:6
+╔══╦════════════════
  1 ║ using x = foo(), y = bar() z();
-   ║                            ^------- error
-╚══╩═════════════════
+   ║       ^------- error
+╚══╩════════════════
 
 `````
 
@@ -52,7 +52,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Unable to ASI
+
+start@1:0, error@1:27
+╔══╦═════════════════
+ 1 ║ using x = foo(), y = bar() z();
+   ║                            ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -64,4 +74,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._

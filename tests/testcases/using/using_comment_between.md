@@ -6,7 +6,7 @@
 >
 > ::> using comment between
 >
-> Block comment between using and identifier should still work
+> comment between using keyword and binding
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using /*comment*/ x = 1;
+{ using /*comment*/ x = 1; }
 `````
 
 ## Output
@@ -33,35 +33,42 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:18},end:{line:1,column:23},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'Literal',
-            loc:{start:{line:1,column:22},end:{line:1,column:23},source:''},
-            value: 1,
-            raw: '1'
-          }
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:26},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:20},end:{line:1,column:25},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:20},end:{line:1,column:21},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'Literal',
+                loc:{start:{line:1,column:24},end:{line:1,column:25},source:''},
+                value: 1,
+                raw: '1'
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (6x):
-       ID_using IDENT PUNC_EQ NUMBER_DEC PUNC_SEMI
+tokens (8x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ NUMBER_DEC PUNC_SEMI
+       PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -93,7 +100,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-using x = 1;
+{using x = 1;}
 ````
 
 Produces same AST

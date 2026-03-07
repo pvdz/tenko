@@ -6,7 +6,7 @@
 >
 > ::> using new expression initializer pass
 >
-> new expression as initializer
+> new expression as using initializer
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = new C();
+{ using x = new C(); }
 `````
 
 ## Output
@@ -33,40 +33,46 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:18},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:17},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'NewExpression',
-            loc:{start:{line:1,column:10},end:{line:1,column:17},source:''},
-            arguments: [],
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},
-              name: 'C'
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:20},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:19},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'NewExpression',
+                loc:{start:{line:1,column:12},end:{line:1,column:19},source:''},
+                arguments: [],
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:16},end:{line:1,column:17},source:''},
+                  name: 'C'
+                }
+              }
             }
-          }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (9x):
-       ID_using IDENT PUNC_EQ ID_new IDENT PUNC_PAREN_OPEN
-       PUNC_PAREN_CLOSE PUNC_SEMI
+tokens (11x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ ID_new IDENT
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -98,7 +104,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-using x = new C;
+{using x = new C;}
 ````
 
 Produces same AST

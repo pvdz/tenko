@@ -6,7 +6,7 @@
 >
 > ::> class expression initializer
 >
-> class expression initializer
+> class expression as using initializer
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = class {};
+{ using x = class {}; }
 `````
 
 ## Output
@@ -33,41 +33,47 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:18},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'ClassExpression',
-            loc:{start:{line:1,column:10},end:{line:1,column:18},source:''},
-            id: null,
-            superClass: null,
-            body: {
-              type: 'ClassBody',
-              loc:{start:{line:1,column:16},end:{line:1,column:18},source:''},
-              body: []
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:21},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:20},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'ClassExpression',
+                loc:{start:{line:1,column:12},end:{line:1,column:20},source:''},
+                id: null,
+                superClass: null,
+                body: {
+                  type: 'ClassBody',
+                  loc:{start:{line:1,column:18},end:{line:1,column:20},source:''},
+                  body: []
+                }
+              }
             }
-          }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (8x):
-       ID_using IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN
-       PUNC_CURLY_CLOSE PUNC_SEMI
+tokens (10x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ ID_class PUNC_CURLY_OPEN
+       PUNC_CURLY_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -99,7 +105,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-using x = class{};
+{using x = class{};}
 ````
 
 Produces same AST

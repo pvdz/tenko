@@ -6,7 +6,7 @@
 >
 > ::> for of array destructuring using pass
 >
-> array destructuring using in for-of
+> `for (using [k, v] of entries)` parses as for-of with `using[k, v]` as member access LHS (not destructuring)
 
 ## PASS
 
@@ -39,32 +39,31 @@ ast: {
       type: 'ForOfStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:32},source:''},
       left: {
-        type: 'VariableDeclaration',
+        type: 'MemberExpression',
         loc:{start:{line:1,column:5},end:{line:1,column:17},source:''},
-        kind: 'using',
-        declarations: [
-          {
-            type: 'VariableDeclarator',
-            loc:{start:{line:1,column:11},end:{line:1,column:17},source:''},
-            id: {
-              type: 'ArrayPattern',
-              loc:{start:{line:1,column:11},end:{line:1,column:17},source:''},
-              elements: [
-                {
-                  type: 'Identifier',
-                  loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
-                  name: 'k'
-                },
-                {
-                  type: 'Identifier',
-                  loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
-                  name: 'v'
-                }
-              ]
+        computed: true,
+        optional: false,
+        object: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
+          name: 'using'
+        },
+        property: {
+          type: 'SequenceExpression',
+          loc:{start:{line:1,column:12},end:{line:1,column:16},source:''},
+          expressions: [
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
+              name: 'k'
             },
-            init: null
-          }
-        ]
+            {
+              type: 'Identifier',
+              loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
+              name: 'v'
+            }
+          ]
+        }
       },
       right: {
         type: 'Identifier',
@@ -113,4 +112,10 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy][annexb:no]
+Printer output different from input [sloppy][annexb:no]:
+
+````js
+for ((using[(k, v)]) of entries) {}
+````
+
+Produces same AST

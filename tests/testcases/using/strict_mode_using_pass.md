@@ -6,7 +6,7 @@
 >
 > ::> strict mode using pass
 >
-> strict mode + using declaration
+> using in strict mode
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-"use strict"; using x = foo();
+"use strict"; { using x = foo(); }
 `````
 
 ## Output
@@ -33,7 +33,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:30},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:34},source:''},
   body: [
     {
       type: 'ExpressionStatement',
@@ -47,38 +47,45 @@ ast: {
       directive: 'use strict'
     },
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:14},end:{line:1,column:30},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:14},end:{line:1,column:34},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:20},end:{line:1,column:29},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:20},end:{line:1,column:21},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'CallExpression',
-            loc:{start:{line:1,column:24},end:{line:1,column:29},source:''},
-            optional: false,
-            callee: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:24},end:{line:1,column:27},source:''},
-              name: 'foo'
-            },
-            arguments: []
-          }
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:16},end:{line:1,column:32},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:22},end:{line:1,column:31},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:22},end:{line:1,column:23},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:26},end:{line:1,column:31},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:26},end:{line:1,column:29},source:''},
+                  name: 'foo'
+                },
+                arguments: []
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (10x):
-       STRING_DOUBLE PUNC_SEMI ID_using IDENT PUNC_EQ IDENT
-       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI
+tokens (12x):
+       STRING_DOUBLE PUNC_SEMI PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ
+       IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI
+       PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -111,7 +118,7 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 "use strict";
-using x = foo();
+{using x = foo();}
 ````
 
 Produces same AST

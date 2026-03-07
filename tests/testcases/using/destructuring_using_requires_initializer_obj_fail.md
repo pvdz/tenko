@@ -6,7 +6,7 @@
 >
 > ::> destructuring using requires initializer obj fail
 >
-> destructuring using requires an initializer (object)
+> `using { a } ;` fails (no object destructuring with using)
 
 ## FAIL
 
@@ -32,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Declaration destructuring must have init
+  Unable to ASI
 
-start@1:0, error@1:12
-╔══╦═════════════════
+start@1:0, error@1:6
+╔══╦════════════════
  1 ║ using { a } ;
-   ║             ^------- error
-╚══╩═════════════════
+   ║       ^------- error
+╚══╩════════════════
 
 `````
 

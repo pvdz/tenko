@@ -6,7 +6,7 @@
 >
 > ::> nested array binding pass
 >
-> nested array binding
+> `using [a, [b]] = arr` parses as member access + assignment (not destructuring)
 
 ## PASS
 
@@ -36,24 +36,32 @@ ast: {
   loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
+      type: 'ExpressionStatement',
       loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
-      kind: 'using',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:20},source:''},
-          id: {
-            type: 'ArrayPattern',
-            loc:{start:{line:1,column:6},end:{line:1,column:14},source:''},
-            elements: [
+      expression: {
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:20},source:''},
+        left: {
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:14},source:''},
+          computed: true,
+          optional: false,
+          object: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+            name: 'using'
+          },
+          property: {
+            type: 'SequenceExpression',
+            loc:{start:{line:1,column:7},end:{line:1,column:13},source:''},
+            expressions: [
               {
                 type: 'Identifier',
                 loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
                 name: 'a'
               },
               {
-                type: 'ArrayPattern',
+                type: 'ArrayExpression',
                 loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
                 elements: [
                   {
@@ -64,14 +72,15 @@ ast: {
                 ]
               }
             ]
-          },
-          init: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:17},end:{line:1,column:20},source:''},
-            name: 'arr'
           }
+        },
+        operator: '=',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:17},end:{line:1,column:20},source:''},
+          name: 'arr'
         }
-      ]
+      }
     }
   ]
 }
@@ -108,4 +117,10 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy][annexb:no]
+Printer output different from input [sloppy][annexb:no]:
+
+````js
+using[(a, [b])] = arr;
+````
+
+Produces same AST

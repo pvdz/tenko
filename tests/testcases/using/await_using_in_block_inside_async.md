@@ -1,12 +1,12 @@
 # Tenko parser test case
 
-- Path: tests/testcases/using/await_using_destructuring_pass.md
+- Path: tests/testcases/using/await_using_in_block_inside_async.md
 
 > :: using
 >
-> ::> await using destructuring pass
+> ::> await using in block inside async
 >
-> await-using + destructuring
+> await-using inside block within async function
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-async function f(){ await using { a } = foo(); }
+async function f(){ { await using x = foo(); } }
 `````
 
 ## Output
@@ -51,48 +51,35 @@ ast: {
         loc:{start:{line:1,column:18},end:{line:1,column:48},source:''},
         body: [
           {
-            type: 'VariableDeclaration',
+            type: 'BlockStatement',
             loc:{start:{line:1,column:20},end:{line:1,column:46},source:''},
-            kind: 'await using',
-            declarations: [
+            body: [
               {
-                type: 'VariableDeclarator',
-                loc:{start:{line:1,column:32},end:{line:1,column:45},source:''},
-                id: {
-                  type: 'ObjectPattern',
-                  loc:{start:{line:1,column:32},end:{line:1,column:37},source:''},
-                  properties: [
-                    {
-                      type: 'Property',
+                type: 'VariableDeclaration',
+                loc:{start:{line:1,column:22},end:{line:1,column:44},source:''},
+                kind: 'await using',
+                declarations: [
+                  {
+                    type: 'VariableDeclarator',
+                    loc:{start:{line:1,column:34},end:{line:1,column:43},source:''},
+                    id: {
+                      type: 'Identifier',
                       loc:{start:{line:1,column:34},end:{line:1,column:35},source:''},
-                      key: {
+                      name: 'x'
+                    },
+                    init: {
+                      type: 'CallExpression',
+                      loc:{start:{line:1,column:38},end:{line:1,column:43},source:''},
+                      optional: false,
+                      callee: {
                         type: 'Identifier',
-                        loc:{start:{line:1,column:34},end:{line:1,column:35},source:''},
-                        name: 'a'
+                        loc:{start:{line:1,column:38},end:{line:1,column:41},source:''},
+                        name: 'foo'
                       },
-                      kind: 'init',
-                      method: false,
-                      computed: false,
-                      value: {
-                        type: 'Identifier',
-                        loc:{start:{line:1,column:34},end:{line:1,column:35},source:''},
-                        name: 'a'
-                      },
-                      shorthand: true
+                      arguments: []
                     }
-                  ]
-                },
-                init: {
-                  type: 'CallExpression',
-                  loc:{start:{line:1,column:40},end:{line:1,column:45},source:''},
-                  optional: false,
-                  callee: {
-                    type: 'Identifier',
-                    loc:{start:{line:1,column:40},end:{line:1,column:43},source:''},
-                    name: 'foo'
-                  },
-                  arguments: []
-                }
+                  }
+                ]
               }
             ]
           }
@@ -104,9 +91,9 @@ ast: {
 
 tokens (18x):
        ID_async ID_function IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_CURLY_OPEN ID_await ID_using PUNC_CURLY_OPEN IDENT
-       PUNC_CURLY_CLOSE PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_SEMI PUNC_CURLY_CLOSE
+       PUNC_CURLY_OPEN PUNC_CURLY_OPEN ID_await ID_using IDENT PUNC_EQ
+       IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI
+       PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -138,7 +125,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async function f() {await using {a} = foo();}
+async function f() {{await using x = foo();}}
 ````
 
 Produces same AST

@@ -6,7 +6,7 @@
 >
 > ::> trailing after rest array fail
 >
-> trailing element after rest is not allowed
+> `using [a, ...rest,] = arr` fails (no destructuring with using, spread in member access is invalid)
 
 ## FAIL
 
@@ -32,12 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The binding pattern is not destructible
+  Unexpected spread/rest dots
 
-start@1:0, error@1:20
+start@1:0, error@1:10
 ╔══╦═════════════════
  1 ║ using [a, ...rest,] = arr;
-   ║                     ^------- error
+   ║           ^------- error
 ╚══╩═════════════════
 
 `````

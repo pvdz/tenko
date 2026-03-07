@@ -6,7 +6,7 @@
 >
 > ::> rest must be last array fail
 >
-> rest element must be last in array binding pattern
+> `using [ ...rest, a ] = arr` fails (no destructuring with using, spread in member access is invalid)
 
 ## FAIL
 
@@ -32,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The binding pattern is not destructible
+  Unexpected spread/rest dots
 
-start@1:0, error@1:21
-╔══╦═════════════════
+start@1:0, error@1:8
+╔══╦════════════════
  1 ║ using [ ...rest, a ] = arr;
-   ║                      ^------- error
-╚══╩═════════════════
+   ║         ^------- error
+╚══╩════════════════
 
 `````
 

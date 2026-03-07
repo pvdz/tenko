@@ -5,6 +5,9 @@
 > :: using declaration
 >
 > ::> multiple
+>
+> multiple using declarations
+
 ## PASS
 
 ## Input
@@ -12,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = a, y = b;
+{ using x = a, y = b; }
 `````
 
 ## Output
@@ -30,49 +33,55 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:19},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:11},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
-            name: 'a'
-          }
-        },
-        {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:13},end:{line:1,column:18},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:13},end:{line:1,column:14},source:''},
-            name: 'y'
-          },
-          init: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
-            name: 'b'
-          }
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:21},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:13},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
+              },
+              init: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:12},end:{line:1,column:13},source:''},
+                name: 'a'
+              }
+            },
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:15},end:{line:1,column:20},source:''},
+              id: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:15},end:{line:1,column:16},source:''},
+                name: 'y'
+              },
+              init: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:19},end:{line:1,column:20},source:''},
+                name: 'b'
+              }
+            }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (10x):
-       ID_using IDENT PUNC_EQ IDENT PUNC_COMMA IDENT PUNC_EQ IDENT
-       PUNC_SEMI
+tokens (12x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ IDENT PUNC_COMMA IDENT
+       PUNC_EQ IDENT PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -101,4 +110,10 @@ _Output same as sloppy mode._
 
 ## AST Printer
 
-Printer output was same as input [sloppy][annexb:no]
+Printer output different from input [sloppy][annexb:no]:
+
+````js
+{using x = a, y = b;}
+````
+
+Produces same AST

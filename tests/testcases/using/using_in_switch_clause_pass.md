@@ -6,7 +6,7 @@
 >
 > ::> using in switch clause pass
 >
-> lexical declaration in switch clause (single switch scope)
+> using inside block within switch case is valid
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-switch (n) { case 0: using x = foo(); break; }
+switch (n) { case 0: { using x = foo(); break; } }
 `````
 
 ## Output
@@ -33,11 +33,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:46},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:50},source:''},
   body: [
     {
       type: 'SwitchStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:46},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:50},source:''},
       discriminant: {
         type: 'Identifier',
         loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
@@ -46,7 +46,7 @@ ast: {
       cases: [
         {
           type: 'SwitchCase',
-          loc:{start:{line:1,column:13},end:{line:1,column:44},source:''},
+          loc:{start:{line:1,column:13},end:{line:1,column:48},source:''},
           test: {
             type: 'Literal',
             loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
@@ -55,36 +55,42 @@ ast: {
           },
           consequent: [
             {
-              type: 'VariableDeclaration',
-              loc:{start:{line:1,column:21},end:{line:1,column:37},source:''},
-              kind: 'using',
-              declarations: [
+              type: 'BlockStatement',
+              loc:{start:{line:1,column:21},end:{line:1,column:48},source:''},
+              body: [
                 {
-                  type: 'VariableDeclarator',
-                  loc:{start:{line:1,column:27},end:{line:1,column:36},source:''},
-                  id: {
-                    type: 'Identifier',
-                    loc:{start:{line:1,column:27},end:{line:1,column:28},source:''},
-                    name: 'x'
-                  },
-                  init: {
-                    type: 'CallExpression',
-                    loc:{start:{line:1,column:31},end:{line:1,column:36},source:''},
-                    optional: false,
-                    callee: {
-                      type: 'Identifier',
-                      loc:{start:{line:1,column:31},end:{line:1,column:34},source:''},
-                      name: 'foo'
-                    },
-                    arguments: []
-                  }
+                  type: 'VariableDeclaration',
+                  loc:{start:{line:1,column:23},end:{line:1,column:39},source:''},
+                  kind: 'using',
+                  declarations: [
+                    {
+                      type: 'VariableDeclarator',
+                      loc:{start:{line:1,column:29},end:{line:1,column:38},source:''},
+                      id: {
+                        type: 'Identifier',
+                        loc:{start:{line:1,column:29},end:{line:1,column:30},source:''},
+                        name: 'x'
+                      },
+                      init: {
+                        type: 'CallExpression',
+                        loc:{start:{line:1,column:33},end:{line:1,column:38},source:''},
+                        optional: false,
+                        callee: {
+                          type: 'Identifier',
+                          loc:{start:{line:1,column:33},end:{line:1,column:36},source:''},
+                          name: 'foo'
+                        },
+                        arguments: []
+                      }
+                    }
+                  ]
+                },
+                {
+                  type: 'BreakStatement',
+                  loc:{start:{line:1,column:40},end:{line:1,column:46},source:''},
+                  label: null
                 }
               ]
-            },
-            {
-              type: 'BreakStatement',
-              loc:{start:{line:1,column:38},end:{line:1,column:44},source:''},
-              label: null
             }
           ]
         }
@@ -93,11 +99,11 @@ ast: {
   ]
 }
 
-tokens (19x):
+tokens (21x):
        ID_switch PUNC_PAREN_OPEN IDENT PUNC_PAREN_CLOSE
-       PUNC_CURLY_OPEN ID_case NUMBER_DEC PUNC_COLON ID_using IDENT
-       PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_SEMI
-       ID_break PUNC_SEMI PUNC_CURLY_CLOSE
+       PUNC_CURLY_OPEN ID_case NUMBER_DEC PUNC_COLON PUNC_CURLY_OPEN
+       ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_SEMI ID_break PUNC_SEMI PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -130,8 +136,10 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 switch (n) {case 0:
+{
 using x = foo();
-break;}
+break;
+}}
 ````
 
 Produces same AST

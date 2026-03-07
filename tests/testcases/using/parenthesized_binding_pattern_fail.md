@@ -8,9 +8,11 @@
 >
 > parenthesized binding pattern not allowed in declarations
 
-## FAIL
+## PASS ANNEXB
 
 ## Input
+
+- `allowUsingDeclaration = true`
 
 `````js
 using ( { a } ) = obj;
@@ -56,10 +58,81 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:22},source:''},
+      expression: {
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+        left: {
+          type: 'CallExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:15},source:''},
+          optional: false,
+          callee: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+            name: 'using'
+          },
+          arguments: [
+            {
+              type: 'ObjectExpression',
+              loc:{start:{line:1,column:8},end:{line:1,column:13},source:''},
+              properties: [
+                {
+                  type: 'Property',
+                  loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+                  key: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+                    name: 'a'
+                  },
+                  kind: 'init',
+                  method: false,
+                  computed: false,
+                  value: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+                    name: 'a'
+                  },
+                  shorthand: true
+                }
+              ]
+            }
+          ]
+        },
+        operator: '=',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:18},end:{line:1,column:21},source:''},
+          name: 'obj'
+        }
+      }
+    }
+  ]
+}
+
+tokens (10x):
+       ID_using PUNC_PAREN_OPEN PUNC_CURLY_OPEN IDENT PUNC_CURLY_CLOSE
+       PUNC_PAREN_CLOSE PUNC_EQ IDENT PUNC_SEMI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+using({a}) = obj;
+````
+
+Produces same AST

@@ -6,7 +6,7 @@
 >
 > ::> asi at end of input
 >
-> ASI at end of input (semicolon optional)
+> using with ASI at block end
 
 ## PASS
 
@@ -15,7 +15,7 @@
 - `allowUsingDeclaration = true`
 
 `````js
-using x = foo() + bar()
+{ using x = foo() + bar() }
 `````
 
 ## Output
@@ -33,57 +33,64 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:27},source:''},
   body: [
     {
-      type: 'VariableDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
-      kind: 'using',
-      declarations: [
+      type: 'BlockStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:27},source:''},
+      body: [
         {
-          type: 'VariableDeclarator',
-          loc:{start:{line:1,column:6},end:{line:1,column:23},source:''},
-          id: {
-            type: 'Identifier',
-            loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-            name: 'x'
-          },
-          init: {
-            type: 'BinaryExpression',
-            loc:{start:{line:1,column:10},end:{line:1,column:23},source:''},
-            left: {
-              type: 'CallExpression',
-              loc:{start:{line:1,column:10},end:{line:1,column:15},source:''},
-              optional: false,
-              callee: {
+          type: 'VariableDeclaration',
+          loc:{start:{line:1,column:2},end:{line:1,column:25},source:''},
+          kind: 'using',
+          declarations: [
+            {
+              type: 'VariableDeclarator',
+              loc:{start:{line:1,column:8},end:{line:1,column:25},source:''},
+              id: {
                 type: 'Identifier',
-                loc:{start:{line:1,column:10},end:{line:1,column:13},source:''},
-                name: 'foo'
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'x'
               },
-              arguments: []
-            },
-            operator: '+',
-            right: {
-              type: 'CallExpression',
-              loc:{start:{line:1,column:18},end:{line:1,column:23},source:''},
-              optional: false,
-              callee: {
-                type: 'Identifier',
-                loc:{start:{line:1,column:18},end:{line:1,column:21},source:''},
-                name: 'bar'
-              },
-              arguments: []
+              init: {
+                type: 'BinaryExpression',
+                loc:{start:{line:1,column:12},end:{line:1,column:25},source:''},
+                left: {
+                  type: 'CallExpression',
+                  loc:{start:{line:1,column:12},end:{line:1,column:17},source:''},
+                  optional: false,
+                  callee: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:12},end:{line:1,column:15},source:''},
+                    name: 'foo'
+                  },
+                  arguments: []
+                },
+                operator: '+',
+                right: {
+                  type: 'CallExpression',
+                  loc:{start:{line:1,column:20},end:{line:1,column:25},source:''},
+                  optional: false,
+                  callee: {
+                    type: 'Identifier',
+                    loc:{start:{line:1,column:20},end:{line:1,column:23},source:''},
+                    name: 'bar'
+                  },
+                  arguments: []
+                }
+              }
             }
-          }
+          ]
         }
       ]
     }
   ]
 }
 
-tokens (12x):
-       ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_PLUS IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE ASI
+tokens (14x):
+       PUNC_CURLY_OPEN ID_using IDENT PUNC_EQ IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_PLUS IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE ASI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -115,7 +122,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-using x = foo() + bar();
+{using x = foo() + bar();}
 ````
 
 Produces same AST

@@ -6,7 +6,7 @@
 >
 > ::> using let binding fail
 >
-> `using let = x;` should fail because `let` cannot be a binding name in a `using` declaration (per tc39.es spec)
+> `using let = x;` at script top level fails (using not allowed at script top-level, falls to identifier)
 
 ## FAIL
 
@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (`let`) as a variable name because: Can not use `let` as a binding name inside a `using` declaration
+  Unable to ASI
 
 start@1:0, error@1:6
 ╔══╦════════════════
@@ -52,7 +52,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot use this name (`let`) as a variable name because: Can not use `let` as a binding name inside a `using` declaration
+
+start@1:0, error@1:6
+╔══╦════════════════
+ 1 ║ using let = x;
+   ║       ^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -64,4 +74,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._
