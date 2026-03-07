@@ -1,19 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/html_comments/close_comment/sol_with_tail.md
+- Path: tests/testcases/html_comments/close_comment/first_line_after_token.md
 
 > :: html comments : close comment
 >
-> ::> sol with tail
+> ::> first line after token
 >
-> An "html closing comment" at start of input with tail is valid in sloppy+annexB (InputElementHashbangOrRegExp)
+> HTML close comment on the first line after a real token is NOT valid
 
-## PASS ANNEXB
+## FAIL
 
 ## Input
 
 `````js
---> a b
+x --> a comment
+
 `````
 
 ## Output
@@ -30,12 +31,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Expected to parse a value
+  Unable to ASI
 
-start@1:0, error@1:2
+start@1:0, error@1:8
 ╔══╦════════════════
- 1 ║ --> a b
-   ║   ^------- error
+ 1 ║ x --> a comment
+   ║         ^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -56,29 +57,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:7},source:''},
-  body: []
-}
-
-tokens (1x):
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-
-````
-
-Produces same AST

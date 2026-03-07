@@ -1420,15 +1420,15 @@ function Lexer(
     if (parsingGoal === GOAL_SCRIPT && webCompat === WEB_COMPAT_ON && !eofd(1) && peeky($$DASH_2D) && peekd(1) === $$GT_3E) {
       // https://tc39.github.io/ecma262/#sec-html-like-comments
       // This extension is not allowed when parsing source code using the goal symbol Module
-      // There are two valid ways of closing html comment;
+      // There are three valid ways of having an html close comment;
       // - <a multi-line comment that contains at least one newline> <space>* <html close>
       // - <newline> <space>* <html close>
-      // TODO: and properly parse this, not like the duplicate hack it is now
-      if (consumedNewlinesBeforeSolid === true) {
+      // - at the start of input (InputElementHashbangOrRegExp allows HTMLCloseComment on the first line)
+      if (consumedNewlinesBeforeSolid === true || solidTokenCount === 0) {
         return parseCommentHtmlClose();
       } else {
-        // Note that the `-->` is not picked up as a comment since that requires a newline to precede it.
-        // TODO: do we report this anywhere? This isn't an error but most likely end up being one
+        // Note that the `-->` is not picked up as a comment since that requires a newline to precede it
+        // (or being at the start of input, which is already handled above).
       }
     }
     return parseSameOrCompound($$DASH_2D); // - -- -=

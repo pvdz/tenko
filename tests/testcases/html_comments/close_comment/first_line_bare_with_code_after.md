@@ -1,21 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/html_comments/close_comment/html_close_comment_can_have_multiple_multiline_comment_on_a_single_line_before_it.md
+- Path: tests/testcases/html_comments/close_comment/first_line_bare_with_code_after.md
 
 > :: html comments : close comment
 >
-> ::> html close comment can have multiple multiline comment on a single line before it
+> ::> first line bare with code after
 >
-> https://tc39.github.io/ecma262/#sec-html-like-comments
->
-> Similar to a MultiLineComment that contains a line terminator code point, a SingleLineHTMLCloseComment is considered to be a LineTerminator for purposes of parsing by the syntactic grammar.
->
-> note: the SingleLineHTMLCloseComment is not "just" `-->` and so arbitrary occurrences of that token do not yield a pseudo-newline (in particular, I don't think it closes an html open...)
+> HTML close comment at start of first line followed by code on next line
+
+## PASS ANNEXB
 
 ## Input
 
 `````js
-/* a b c */ /* a b c */ /* a b c */ --> foo bar baz
+--> a comment
+throw new EvalError();
+
 `````
 
 ## Output
@@ -34,11 +34,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-start@1:0, error@1:38
-╔══╦═════════════════
- 1 ║ /* a b c */ /* a b c */ /* a b c */ --> foo bar baz
-   ║                                       ^------- error
-╚══╩═════════════════
+start@1:0, error@1:2
+╔══╦════════════════
+ 1 ║ --> a comment
+   ║   ^------- error
+ 2 ║ throw new EvalError();
+╚══╩════════════════
 
 `````
 
@@ -61,12 +62,28 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:51},source:''},
-  body: []
+  loc:{start:{line:1,column:0},end:{line:3,column:0},source:''},
+  body: [
+    {
+      type: 'ThrowStatement',
+      loc:{start:{line:2,column:0},end:{line:2,column:22},source:''},
+      argument: {
+        type: 'NewExpression',
+        loc:{start:{line:2,column:6},end:{line:2,column:21},source:''},
+        arguments: [],
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:2,column:10},end:{line:2,column:19},source:''},
+          name: 'EvalError'
+        }
+      }
+    }
+  ]
 }
 
-tokens (1x):
-
+tokens (7x):
+       ID_throw ID_new IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_SEMI
 `````
 
 ### Module goal with AnnexB
@@ -80,7 +97,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-
+throw new EvalError;
 ````
 
 Produces same AST

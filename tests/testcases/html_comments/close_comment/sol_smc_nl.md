@@ -6,9 +6,9 @@
 >
 > ::> sol smc nl
 >
-> An "html closing comment" after a multi-line comment without newlines is not legal
+> An "html closing comment" after a single-line block comment on the first line is valid in sloppy+annexB (InputElementHashbangOrRegExp)
 
-## FAIL
+## PASS ANNEXB
 
 ## Input
 
@@ -56,10 +56,29 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+  body: []
+}
+
+tokens (1x):
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+
+````
+
+Produces same AST

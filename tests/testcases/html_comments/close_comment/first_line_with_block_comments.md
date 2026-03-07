@@ -1,21 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/html_comments/close_comment/html_close_comment_can_have_multiple_multiline_comment_on_a_single_line_before_it.md
+- Path: tests/testcases/html_comments/close_comment/first_line_with_block_comments.md
 
 > :: html comments : close comment
 >
-> ::> html close comment can have multiple multiline comment on a single line before it
+> ::> first line with block comments
 >
-> https://tc39.github.io/ecma262/#sec-html-like-comments
->
-> Similar to a MultiLineComment that contains a line terminator code point, a SingleLineHTMLCloseComment is considered to be a LineTerminator for purposes of parsing by the syntactic grammar.
->
-> note: the SingleLineHTMLCloseComment is not "just" `-->` and so arbitrary occurrences of that token do not yield a pseudo-newline (in particular, I don't think it closes an html open...)
+> HTML close comment at the first line preceded by single-line block comments is valid in sloppy+annexB (InputElementHashbangOrRegExp)
+
+## PASS ANNEXB
 
 ## Input
 
 `````js
-/* a b c */ /* a b c */ /* a b c */ --> foo bar baz
+/* a comment */ /*another comment*/--> a comment
+
 `````
 
 ## Output
@@ -34,10 +33,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Expected to parse a value
 
-start@1:0, error@1:38
+start@1:0, error@1:37
 ╔══╦═════════════════
- 1 ║ /* a b c */ /* a b c */ /* a b c */ --> foo bar baz
-   ║                                       ^------- error
+ 1 ║ /* a comment */ /*another comment*/--> a comment
+   ║                                      ^------- error
 ╚══╩═════════════════
 
 `````
@@ -61,7 +60,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:51},source:''},
+  loc:{start:{line:1,column:0},end:{line:2,column:0},source:''},
   body: []
 }
 
