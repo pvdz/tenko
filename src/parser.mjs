@@ -10036,9 +10036,12 @@ function Parser(code, options = {}) {
       });
     }
 
-    ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, lexerFlags); // The arg to dynamic import is mandatory and an arbitrary expr
+    // Inside import() parens we are no longer in the for-header LHS context; e.g. `for (import('x' in {});_;_);`
+    let importLexerFlags = sansFlag(lexerFlags, LF_IN_FOR_LHS);
 
-    let assignable = parseExpression(lexerFlags, acornCompat ? 'source' : 'arguments');
+    ASSERT_skipToExpressionStart($PUNC_PAREN_OPEN, importLexerFlags); // The arg to dynamic import is mandatory and an arbitrary expr
+
+    let assignable = parseExpression(importLexerFlags, acornCompat ? 'source' : 'arguments');
 
     if (tok_getType() === $PUNC_COMMA) {
       // Optional second argument for import attributes: import('x', { with: { type: 'json' } })
@@ -10046,17 +10049,17 @@ function Parser(code, options = {}) {
         return THROW_RANGE('Dynamic `import` only expected exactly one argument and does not allow for a trailing comma', $tp_import_start, tok_getStop());
       }
 
-      ASSERT_skipAny($PUNC_COMMA, lexerFlags);
+      ASSERT_skipAny($PUNC_COMMA, importLexerFlags);
 
       if (tok_getType() === $PUNC_PAREN_CLOSE) {
         // import('x',) -- trailing comma after first arg, no second arg
         // That's fine, do nothing
       } else {
-        assignable = parseExpression(lexerFlags, acornCompat ? 'options' : 'arguments');
+        assignable = parseExpression(importLexerFlags, acornCompat ? 'options' : 'arguments');
 
         // Allow trailing comma after second arg
         if (tok_getType() === $PUNC_COMMA) {
-          ASSERT_skipAny($PUNC_COMMA, lexerFlags);
+          ASSERT_skipAny($PUNC_COMMA, importLexerFlags);
         }
 
         if (tok_getType() !== $PUNC_PAREN_CLOSE) {
@@ -10066,12 +10069,6 @@ function Parser(code, options = {}) {
     }
 
     if (tok_getType() !== $PUNC_PAREN_CLOSE) {
-      // Error path
-
-      if (tok_getType() === $ID_in) {
-        return THROW_RANGE('The dynamic import syntax explicitly forbids the `in` operator', tok_getStart(), tok_getStop());
-      }
-
       // [x]: `import(a b)`
       return THROW_RANGE('The dynamic `import` argument was followed by unknown content', tok_getStart(), tok_getStop());
     }
