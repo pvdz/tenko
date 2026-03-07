@@ -5377,7 +5377,7 @@ function Lexer(
           return regexSyntaxError('Invalid modifier flag in remove set (only i, m, s allowed) [ord=' + c + ']');
         }
       }
-      if (removeMask === 0) return regexSyntaxError('Modifier group: second flag set cannot be empty after `-`');
+      if (addMask === 0 && removeMask === 0) return regexSyntaxError('Modifier group: both flag sets cannot be empty around `-`');
     }
     if (eof() || peek() !== $$COLON_3A) return regexSyntaxError('Modifier group: expected `:` after modifier flags');
     ASSERT_skip($$COLON_3A);

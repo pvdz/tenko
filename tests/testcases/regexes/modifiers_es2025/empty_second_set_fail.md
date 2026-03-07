@@ -6,14 +6,14 @@
 >
 > ::> empty second set fail
 >
-> regexes : modifiers es2025 : empty second set after minus
+> regexes : modifiers es2025 : empty second set after minus fails pre-es2025
 
 ## FAIL
 
 ## Input
 
 
-- `es = 16`
+- `es = 15`
 
 `````js
 /(?i-:a)/
@@ -33,12 +33,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Modifier group: second flag set cannot be empty after `-`
+    Regex: Illegal character after pseudo group marker `(?` [ord=105]
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /(?i-:a)/
-   ║ ^^^^^------- error
+   ║ ^^^------- error
 ╚══╩════════════════
 
 `````
