@@ -145,7 +145,7 @@ function onRead(file, content) {
   // The header is yaml... ... Whatever, split all the things :)
   let flags = header.match(/\n\s*flags: \[(.*?)\]/);
   let features = header.match(/\n\s*features: \[(.*?)\]/);
-  features = features ? features[1].split(', ') : [];
+  features = features ? features[1].split(/\s*,\s*/g) : [];
   flags = flags ? flags[1].split(/\s*,\s*/g) : [];
   let negative = /\n\s*negative:/.test(header) && !/\n\s*phase:\s*runtime/.test(header) && !header.includes('phase: resolution');
   let webcompat = file.includes('annexB');
@@ -196,7 +196,7 @@ function onRead(file, content) {
       throw new Error('File ' + BOLD + relFile + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + 'sloppy' + RESET + '\n  Repro: ./t T ' + relFile);
     }
     if (!failed && !printedOnce) {
-      testPrinter(content, 'sloppy', true, z.ast, false, false, false, false, undefined);
+      testPrinter(content, 'sloppy', true, z.ast, false, false, false, false, useUsing ? {allowUsingDeclaration: true} : undefined);
       printedOnce = true;
     }
     if (!!failed !== negative) {
@@ -314,7 +314,7 @@ function onRead(file, content) {
       throw new Error('File ' + BOLD + relFile + RESET + BLINK + ' threw an unexpected error' + RESET + ' in ' + BOLD + modstr + RESET + '\n  Repro: ./t T ' + relFile);
     }
     if (!failed && !printedOnce) {
-      testPrinter(content, 'module', false, z.ast, false, false, false, false, undefined);
+      testPrinter(content, 'module', false, z.ast, false, false, false, false, useUsing ? {allowUsingDeclaration: true} : undefined);
       printedOnce = true;
     }
     if (!!failed !== negative) {
