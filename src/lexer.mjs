@@ -2379,9 +2379,10 @@ function Lexer(
       return s.length === 1 ? VALID_SINGLE_CHAR : VALID_DOUBLE_CHAR;
     }
     // Supplementary Unicode 17.0 check: Node/V8 may not yet have these in \p{ID_Start}/\p{ID_Continue}
+    // Gated to targetEsVersion >= 17 (ES2026) or Infinity (default), consistent with script table gating.
     // ID_Start chars are also valid ID_Continue, so check U17_ID_START for both scanners.
     // U17_ID_CONTINUE_ONLY is only checked for the continue/rest scanner.
-    if (isInU17Ranges(c, U17_ID_START) || (regexScanner === getIdRestRegexSuperSlow() && isInU17Ranges(c, U17_ID_CONTINUE_ONLY))) {
+    if ((targetEsVersion >= 17 || targetEsVersion === Infinity) && (isInU17Ranges(c, U17_ID_START) || (regexScanner === getIdRestRegexSuperSlow() && isInU17Ranges(c, U17_ID_CONTINUE_ONLY)))) {
       return s.length === 1 ? VALID_SINGLE_CHAR : VALID_DOUBLE_CHAR;
     }
     return INVALID_IDENT_CHAR;
