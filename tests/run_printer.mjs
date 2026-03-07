@@ -48,6 +48,7 @@ function testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, reducePr
   if (!ignoreProblems && printerStatus !== 'same' && printerStatus !== 'diff-same') {
     let reducedInput;
     let outFileBase = 'tests/testcases/todo/_fuzz-printer-fail';
+    fs.mkdirSync('tests/testcases/todo', { recursive: true });
     let outFile = outFileBase + '.md';
     let n = 0;
     while (fs.existsSync(outFile)) {

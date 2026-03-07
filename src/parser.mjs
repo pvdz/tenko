@@ -456,6 +456,7 @@ import {
   PIGGY_BACK_WAS_CONSTRUCTOR,
   PIGGY_BACK_WAS_PROTO,
   PIGGY_BACK_WAS_ARROW,
+  PIGGY_BACK_WAS_PRIVATE_IDENT,
   NO_SPREAD,
   LAST_SPREAD,
   MID_SPREAD,
@@ -8204,6 +8205,12 @@ function Parser(code, options = {}) {
       assignable |= parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column, coalSeen,'right');
     }
 
+    // Spec: `PrivateIdentifier in ShiftExpression` — the RHS is ShiftExpression, not RelationalExpression.
+    // A bare PrivateIdentifier is not a valid ShiftExpression, so `#x in #y in z` is a SyntaxError.
+    if (hasAllFlags(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT)) {
+      return THROW_RANGE('A PrivateIdentifier is not a valid RHS for `in`; the RHS of `PrivateIdentifier in` is ShiftExpression', $tp_rightExprStart_start, tok_getStart());
+    }
+
     // Can't parse `||` or `&&` _after_ `??` on same level so don't have to check this inside the loop
     preventNullishWithLogic(tok_getType(), tok_getStart(), tok_getStop(), coalSeen);
 
@@ -8789,7 +8796,8 @@ function Parser(code, options = {}) {
         if (!allowPrivateClassFields) {
           return THROW_RANGE('Private identifier (as in `#x in obj`) is not supported in the currently targeted language version', $tp_ident_start, $tp_ident_stop);
         }
-        if (bindingType !== BINDING_TYPE_NONE) {
+        if (bindingType !== BINDING_TYPE_NONE && bindingType !== BINDING_TYPE_ARG) {
+          // BINDING_TYPE_ARG is allowed because `(#x in obj)` is valid inside a group that might be arrow params
           return THROW_RANGE('Private identifier is only valid as the left-hand side of an `in` expression', $tp_ident_start, $tp_ident_stop);
         }
         // Standalone #x is only valid when immediately followed by `in` (e.g. #x in obj)
@@ -8802,7 +8810,7 @@ function Parser(code, options = {}) {
         // Record use for AllPrivateIdentifiersValid check
         usePrivateName($tp_ident_canon, $tp_ident_start, $tp_ident_stop);
         AST_setNode(astProp, AST_getPrivateIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon));
-        return NOT_ASSIGNABLE;
+        return NOT_ASSIGNABLE | PIGGY_BACK_WAS_PRIVATE_IDENT;
     }
 
     // - `x` but not `true`

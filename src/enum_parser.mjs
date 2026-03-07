@@ -75,6 +75,7 @@ const PIGGY_BACK_SAW_YIELD = 1 << 7; // parsed an expression containing `yield` 
 const PIGGY_BACK_WAS_CONSTRUCTOR = 1 << 8; // signal having found a constructor (special case)
 const PIGGY_BACK_WAS_PROTO = 1 << 9; // signal that a `__proto__: x` was parsed (do detect double occurrence)
 const PIGGY_BACK_WAS_ARROW = 1 << 10; // signal that double proto was found on object; error in web compat outside of arrow headers
+const PIGGY_BACK_WAS_PRIVATE_IDENT = 1 << 11; // signal that the value was a bare PrivateIdentifier (#x), needs to be consumed by `in`
 const NO_SPREAD = DEVONLY() ? {NO_SPREAD: 1} : 0;
 const LAST_SPREAD = DEVONLY() ? {LAST_SPREAD: 1} : 1;
 const MID_SPREAD = DEVONLY() ? {MID_SPREAD: 1} : 2;
@@ -159,6 +160,7 @@ const PIGGIES = (0
   | PIGGY_BACK_WAS_CONSTRUCTOR
   | PIGGY_BACK_WAS_PROTO
   | PIGGY_BACK_WAS_ARROW
+  | PIGGY_BACK_WAS_PRIVATE_IDENT
 );
 function getPiggies(flags) {
   return flags & PIGGIES;
@@ -184,6 +186,10 @@ function P(f, arr) {
   if (f & PIGGY_BACK_WAS_ARROW) {
     arr.push('PIGGY_BACK_WAS_ARROW');
     f ^= PIGGY_BACK_WAS_ARROW;
+  }
+  if (f & PIGGY_BACK_WAS_PRIVATE_IDENT) {
+    arr.push('PIGGY_BACK_WAS_PRIVATE_IDENT');
+    f ^= PIGGY_BACK_WAS_PRIVATE_IDENT;
   }
   return f;
 }
@@ -272,6 +278,7 @@ export {
   PIGGY_BACK_WAS_CONSTRUCTOR,
   PIGGY_BACK_WAS_PROTO,
   PIGGY_BACK_WAS_ARROW,
+  PIGGY_BACK_WAS_PRIVATE_IDENT,
   NO_SPREAD,
   LAST_SPREAD,
   MID_SPREAD,
