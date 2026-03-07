@@ -11778,7 +11778,6 @@ function Parser(code, options = {}) {
       }
       let currentDestruct = parseObjectPart(lexerFlags, scoop, bindingType, exportedNames, exportedBindings, astProp);
       if (hasAnyFlag(currentDestruct, PIGGY_BACK_WAS_PROTO)) {
-        ASSERT(options_webCompat === WEB_COMPAT_ON, 'this piggy should not appear if the web compat flag wasnt set');
         currentDestruct &= ~PIGGY_BACK_WAS_PROTO; // Since the bit was set, this should unset it without further checks
 
         // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
@@ -12073,8 +12072,8 @@ function Parser(code, options = {}) {
       AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
 
       let destructible = MIGHT_DESTRUCT;
-      if (options_webCompat === WEB_COMPAT_ON && $tp_propLeadingIdent_canon === '__proto__') {
-        // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      if ($tp_propLeadingIdent_canon === '__proto__') {
+        // https://tc39.es/ecma262/#sec-__proto__-property-names-in-object-initializers (Annex B.3.1, normative)
         // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
         destructible = PIGGY_BACK_WAS_PROTO;
       }
@@ -12719,10 +12718,10 @@ function Parser(code, options = {}) {
 
       let destructible_forPiggies = MIGHT_DESTRUCT;
 
-      // https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // https://tc39.es/ecma262/#sec-__proto__-property-names-in-object-initializers (Annex B.3.1, normative)
       // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
       // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
-      if (options_webCompat === WEB_COMPAT_ON && $tp_lit_canon === '__proto__') {
+      if ($tp_lit_canon === '__proto__') {
         destructible_forPiggies |= PIGGY_BACK_WAS_PROTO;
       }
 
