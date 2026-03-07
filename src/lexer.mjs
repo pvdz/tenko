@@ -1376,12 +1376,12 @@ function Lexer(
     // There is a nasty edge case regarding nul (zero byte); In sloppy webcompat mode the nul escape may be followed by
     // an 8 or 9 and still be a valid nul. In other modes and templates, `\08` and `\09` are considered syntax errors.
 
-    // Strings: octal escapes are only supported in sloppy mode with web compat enabled
+    // Strings: octal escapes are valid in sloppy mode (part of the main spec, not Annex B)
     // Template literals: explicitly do never support octal escapes so trigger a syntax error in the parser
     // Tagged templates: are allowed to have bad escapes although they will cause `.value` to be `null` in the AST
     // (Note that we do not know here whether the template will be tagged or just a literal, so just return BAD_ESCAPE)
 
-    if (!alwaysAllowOctalEscapes && (webCompat === WEB_COMPAT_OFF || forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE)) {
+    if (!alwaysAllowOctalEscapes && (forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE)) {
       // If octals are invalid, then the nul escape can not be followed by 8 or 9 either
       // Note: in templates, octals are never valid escapes so `\08` is always a bad escape regardless of mode
       if (a === $$0_30 && (b < $$0_30 || b > $$9_39)) {
@@ -1399,11 +1399,9 @@ function Lexer(
 
       if (forTemplate) {
         if (!lastReportableLexerError) lastReportableLexerError = 'Illegal legacy octal escape in template, where octal escapes are never allowed';
-      } else if ((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
-        if (!lastReportableLexerError) lastReportableLexerError = 'Illegal legacy octal escape in strict mode';
       } else {
-        ASSERT(webCompat === WEB_COMPAT_OFF);
-        if (!lastReportableLexerError) lastReportableLexerError = 'Octal escapes are only allowed in sloppy mode with web compat enabled';
+        ASSERT((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE);
+        if (!lastReportableLexerError) lastReportableLexerError = 'Illegal legacy octal escape in strict mode';
       }
       return BAD_ESCAPE;
     }
