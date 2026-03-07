@@ -145,6 +145,7 @@ Tenko CLI Toolkit help:
  --node-prof   Calls nodejs with \`--prof\` and generates a flamechart afterwards with \`npx pflames\`. Only for selected commands.
  --stable      Requires sudo! For benchmarking, try to setup a stable environment by disabling cpu turbo, RT prio, and cpu shielding on 1,2,3 (works on my machine, ymmv)
  --max n       Max number of iterations for \`./t p6\` (per parser per input). Default is 100.
+ --skip <n>    For t/T, skip to test index n (tests before n are skipped)
  --input-file <path>   For p6, this overrides the test file to benchmark
  --input-mde <mode>    For p6, this tells the parser in what mode to parse the input file (sloppy, strict, module, web)
  --output-file <path>  For p6, this is where the report is written
@@ -451,6 +452,10 @@ Tenko CLI Toolkit help:
     --write-only)
       WRITE_ONLY='yes'
       ;;
+    --skip)
+      shift
+      SKIP_TO="--skip $1"
+      ;;
 
     6)  ES='--es6'  ;;
     7)  ES='--es7'  ;;
@@ -752,7 +757,7 @@ fi
 
 case "${ACTION}" in
     test262)
-      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules tests/test262.mjs -f "${ARG}" ${ACORN} ${BABEL} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR}
+      ${NODE_BIN} ${INSPECT_NODE} --experimental-modules tests/test262.mjs -f "${ARG}" ${ACORN} ${BABEL} ${ANNEXB} ${BUILD} ${INSPECT_ZEPAR} ${SKIP_TO}
     ;;
 
     fuzz)

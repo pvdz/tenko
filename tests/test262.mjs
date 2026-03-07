@@ -41,7 +41,9 @@ const COMPARE_ACORN = process.argv.includes('--test-acorn'); // compare Tenko ou
 const BABEL_AST = process.argv.includes('--babel'); // run Tenko with babelCompat=true?
 const COMPARE_BABEL = process.argv.includes('--test-babel'); // compare Tenko output for each test with Babel output?
 let TARGET_FILE = (process.argv.includes('-f') && process.argv[process.argv.indexOf('-f') + 1]) || '';
+let SKIP_TO = (process.argv.includes('--skip') && parseInt(process.argv[process.argv.indexOf('--skip') + 1], 10)) || 0;
 
+if (SKIP_TO) console.log('Skipping to test index ' + SKIP_TO);
 if (ACORN_AST) console.log('Generating an Acorn compatible AST for all tests');
 if (BABEL_AST) console.log('Generating a Babel compatible AST for all tests');
 if (COMPARE_ACORN) console.log('Comparing to Acorn output');
@@ -116,7 +118,7 @@ let compareFails = new Set;
 let compareSkips = new Set;
 function onRead(file, content) {
   ++counter;
-  // if (counter < 22000) return;
+  if (SKIP_TO && counter < SKIP_TO) return;
 
   let ignorePrefix = path.resolve(dirname, '../ignore') + '/';
   let displayFile = file.startsWith(ignorePrefix) ? file.slice(ignorePrefix.length) : path.relative('.', file);
