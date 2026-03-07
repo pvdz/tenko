@@ -390,7 +390,10 @@ function ExportNamedDeclaration(node) {
 }
 function ExportSpecifier(node) {
   assert(node.type, 'ExportSpecifier');
-  return (node.local.name !== node.exported.name ? $(node.local) + ' as ' : '') + $(node.exported);
+  // When local or exported is a Literal (string export name), always use `as` form
+  let localKey = node.local.type === 'Literal' ? node.local.raw : node.local.name;
+  let exportedKey = node.exported.type === 'Literal' ? node.exported.raw : node.exported.name;
+  return (localKey !== exportedKey ? $(node.local) + ' as ' : '') + $(node.exported);
 }
 function ExpressionStatement(node) {
   assert(node.type, 'ExpressionStatement');

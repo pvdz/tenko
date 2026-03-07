@@ -13,6 +13,11 @@
 - Support ES2022 (version 13): top-level await in Module is now allowed when `targetEsVersion` is 13 (or 2022) or higher.
   - When `toplevelAwait` is left undefined (default), top-level await is allowed in Module goal for ES2022+.
   - Explicit override: `toplevelAwait: true` forces it on (e.g. for older targets); `toplevelAwait: false` forces it off.
+- Support ES2022: Arbitrary module namespace names — string literals as import/export specifier names.
+  - `export { x as "foo" }`, `export { "foo" } from "bar"`, `import { "foo" as x } from "bar"`, `export * as "foo" from "bar"`.
+  - String as local (binding) name without `from` clause is a syntax error per spec.
+  - Unpaired surrogates in string export names are rejected (IsStringWellFormedUnicode).
+  - Gated by `targetEsVersion` 13 (or 2022). Printer handles `Literal` nodes in specifiers.
 - Support ES2022 class static blocks: `static { ... }` in class bodies.
   - Parser emits ESTree node type `StaticBlock` with `body` (array of statements). Gated by `targetEsVersion` 13 (or 2022); use `--es13` or `es = 13` in tests for static block.
   - Printer and walker support `StaticBlock`. Scope of a static block correctly chains to the enclosing scope (for class declarations), so `var` in a static block is attributed to the enclosing function/script and duplicate var/lex checks apply as for a normal block.

@@ -389,6 +389,7 @@ import {
   VERSION_EXPORT_STAR_AS,
   VERSION_IMPORT_META,
   VERSION_TOPLEVEL_AWAIT,
+  VERSION_ARBITRARY_MODULE_NS_NAMES,
   VERSION_IMPORT_ATTRIBUTES,
   VERSION_WHATEVER,
   IS_ASYNC,
@@ -699,6 +700,7 @@ function Parser(code, options = {}) {
   let allowClassStaticBlock = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022
   let allowPublicClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 public class field initializers (a = b; a;)
   let allowPrivateClassFields = (targetEsVersion >= VERSION_TOPLEVEL_AWAIT || targetEsVersion === VERSION_WHATEVER); // ES2022 private fields/methods (#x, this.#x, #x in obj)
+  let allowArbitraryModuleNsNames = (targetEsVersion >= VERSION_ARBITRARY_MODULE_NS_NAMES || targetEsVersion === VERSION_WHATEVER); // ES2022 string literals as import/export names
   let allowUsingDeclaration = !!options_allowUsingDeclaration; // Explicit opt-in flag (not tied to ES version)
   let allowImportAttributes = (targetEsVersion >= VERSION_IMPORT_ATTRIBUTES || targetEsVersion === VERSION_WHATEVER); // ES2025
 
@@ -1845,6 +1847,19 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Next token should be an ident but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
     }
   }
+  function verifyModuleExportNameStringWellFormed($tp_start, $tp_stop, $tp_canon) {
+    // ModuleExportName : StringLiteral — It is a Syntax Error if IsStringWellFormedUnicode of the StringValue is false.
+    for (let i = 0; i < $tp_canon.length; ++i) {
+      let code = $tp_canon.charCodeAt(i);
+      if (code >= 0xD800 && code <= 0xDBFF) {
+        let next = $tp_canon.charCodeAt(i + 1);
+        if (!(next >= 0xDC00 && next <= 0xDFFF)) return THROW_RANGE('Module export name string must be well-formed unicode; found a lone high surrogate', $tp_start, $tp_stop);
+        ++i;
+      } else if (code >= 0xDC00 && code <= 0xDFFF) {
+        return THROW_RANGE('Module export name string must be well-formed unicode; found a lone low surrogate', $tp_start, $tp_stop);
+      }
+    }
+  }
   function ASSERT_skipToArrowOrDie(what, lexerFlags) {
     skipToArrowOrDie(lexerFlags);
   }
@@ -2134,10 +2149,10 @@ function Parser(code, options = {}) {
     skipToIdentCurlyClose(lexerFlags);
   }
   function skipToIdentCurlyClose(lexerFlags) {
-    // Next token must be ident, or `}`, with maybe some whitespace
+    // Next token must be ident, string (arbitrary module namespace names), or `}`, with maybe some whitespace
     skipAny(lexerFlags);
     // Since the rest has to check it anyways we don't need to validate it here
-    ASSERT_VALID( isIdentToken(tok_getType()) || tok_getType() === $PUNC_CURLY_CLOSE, 'not many options, wanted ident }');
+    ASSERT_VALID( isIdentToken(tok_getType()) || isStringToken(tok_getType()) || tok_getType() === $PUNC_CURLY_CLOSE, 'not many options, wanted ident string }');
   }
   function ASSERT_skipToIdentStarCurlyOpenParenOpenString(what, lexerFlags) {
     skipToIdentStarCurlyOpenParenOpenString(lexerFlags);
@@ -4843,25 +4858,37 @@ function Parser(code, options = {}) {
         return THROW_RANGE('The `export * as x from src`, syntax was introduced in ES2020 but currently targeted version is lower', $tp_export_start, tok_getStop());
       }
 
-      ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
-      // note: the exported _name_ can be any identifier, keywords included
+      // note: the exported _name_ can be any identifier or string, keywords included
+      skipAny(lexerFlags);
+      if (!isIdentToken(tok_getType()) && !isStringToken(tok_getType())) {
+        return THROW_RANGE('Next token should be an ident or string but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
+      }
 
+      let exportedNameIsString = isStringToken(tok_getType());
+      if (exportedNameIsString && !allowArbitraryModuleNsNames) {
+        return THROW_RANGE('String literal export names (arbitrary module namespace names) were introduced in ES2022 but currently targeted version is lower', tok_getStart(), tok_getStop());
+      }
       let $tp_exportedName_line = tok_getLine();
       let $tp_exportedName_column = tok_getColumn();
       let $tp_exportedName_start = tok_getStart();
       let $tp_exportedName_stop = tok_getStop();
       let $tp_exportedName_canon = tok_getCanoN();
 
+      if (exportedNameIsString) verifyModuleExportNameStringWellFormed($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
       addNameToExports(exportedNames, $tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
 
       // Must skip to `from` but we'll check for that explicitly next, so just skipAny
-      ASSERT_skipAny($G_IDENT, lexerFlags);
+      ASSERT_skipAny(exportedNameIsString ? $G_STRING : $G_IDENT, lexerFlags);
+
+      let exportedNode = exportedNameIsString
+        ? AST_getStringNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon, false)
+        : AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon);
 
       // Create specifiers here because location of the specifier is the `* as x` part only (same for estree and babel)
       let specifiers = [{
         type: 'ExportNamespaceSpecifier',
         loc: AST_getClosedLoc($tp_star_start, $tp_star_line, $tp_star_column),
-        exported: AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon),
+        exported: exportedNode,
       }];
       if (options_nodeRange) specifiers[0].range = [$tp_star_start, $tp_exportedName_stop];
 
@@ -4976,7 +5003,7 @@ function Parser(code, options = {}) {
       let tmpExportedBindings = new Set;
       ASSERT(tmpExportedBindings._ = 'exported bindings');
       ASSERT(tmpExportedBindings._i = ++uid_counter);
-      parseExportObject(lexerFlags, tmpExportedNames, tmpExportedBindings);
+      let hasStringLocal = parseExportObject(lexerFlags, tmpExportedNames, tmpExportedBindings);
 
       if (tok_getType() === $ID_from) {
         // drop the tmp lists
@@ -4997,6 +5024,11 @@ function Parser(code, options = {}) {
           AST_set('attributes', []);
         }
       } else {
+        // `export { "foo" }` or `export { "foo" as bar }` without `from` is a syntax error
+        // (string as local name requires a `from` clause, per spec ReferencedBindings early error)
+        if (hasStringLocal) {
+          return THROW_RANGE('Export specifiers with a string as the local name require a `from` clause', $tp_export_start, $tp_export_stop);
+        }
         AST_set('source', null);
         AST_set('attributes', []);
         // pump the names into the real sets now
@@ -5209,9 +5241,12 @@ function Parser(code, options = {}) {
     // - `export {...} from 'x'`
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
 
-    // A specifier must start with an ident and may have a trailing comma
-    while (isIdentToken(tok_getType())) {
-      parseExportSpecifier(lexerFlags, tmpExportedNames, tmpExportedBindings);
+    // Track whether any specifier used a string as the local name (needs `from` clause)
+    let hasStringLocal = false;
+
+    // A specifier must start with an ident or string (arbitrary module namespace names) and may have a trailing comma
+    while (isIdentToken(tok_getType()) || isStringToken(tok_getType())) {
+      if (parseExportSpecifier(lexerFlags, tmpExportedNames, tmpExportedBindings)) hasStringLocal = true;
 
       if (tok_getType() !== $PUNC_COMMA) break; // Must mean `}` or error
 
@@ -5229,6 +5264,8 @@ function Parser(code, options = {}) {
     }
 
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlags);
+
+    return hasStringLocal;
   }
   function parseExportSpecifier(lexerFlags, tmpExportedNames, tmpExportedBindings) {
     ASSERT(parseExportSpecifier.length === arguments.length, 'arg count');
@@ -5243,8 +5280,21 @@ function Parser(code, options = {}) {
     //            ^
     // - `export {a, b} from 'x'`
     //               ^
+    // - `export {"a"} from 'x'`           (arbitrary module namespace names)
+    //            ^^^
+    // - `export {"a" as b} from 'x'`      (arbitrary module namespace names)
+    //            ^^^
+    // - `export {a as "b"} from 'x'`      (arbitrary module namespace names)
+    //                 ^^^
+    // - `export {"a" as "b"} from 'x'`    (arbitrary module namespace names)
+    //            ^^^    ^^^
 
     // Start with left of the (optional) `as`
+
+    let nameIsString = isStringToken(tok_getType());
+    if (nameIsString && !allowArbitraryModuleNsNames) {
+      return THROW_RANGE('String literal export names (arbitrary module namespace names) were introduced in ES2022 but currently targeted version is lower', tok_getStart(), tok_getStop());
+    }
 
     let $tp_name_type = tok_getType();
     let $tp_name_line = tok_getLine();
@@ -5255,6 +5305,7 @@ function Parser(code, options = {}) {
 
     // Exported name is either the right of the `as`, if present at all, and otherwise same as name
 
+    let exportedNameIsString = nameIsString;
     let $tp_exportedName_type = $tp_name_type;
     let $tp_exportedName_line = tok_getLine();
     let $tp_exportedName_column = tok_getColumn();
@@ -5262,15 +5313,22 @@ function Parser(code, options = {}) {
     let $tp_exportedName_stop = tok_getStop();
     let $tp_exportedName_canon = tok_getCanoN();
 
-    ASSERT_skipAny($G_IDENT, lexerFlags);
+    ASSERT_skipAny(nameIsString ? $G_STRING : $G_IDENT, lexerFlags);
     ASSERT_VALID(tok_getType() === $ID_as || tok_getType() === $PUNC_COMMA || tok_getType() === $PUNC_CURLY_CLOSE, 'limited options, wanted `as` comma or closing curly');
 
     // while the `$tt_nameToken` should be a valid non-keyword identifier, it also has to be bound and as such we
     // don't have to check it here since we already apply bind checks anyways and binding would apply this check
     if (tok_getType() === $ID_as) { // `export {x as y}` NOT `export {x:y}`
-      ASSERT_skipToIdentOrDie($ID_as, lexerFlags);
-      // note: the exported _name_ can be any identifier, keywords included
+      // note: the exported _name_ can be any identifier or string, keywords included
+      skipAny(lexerFlags);
+      if (!isIdentToken(tok_getType()) && !isStringToken(tok_getType())) {
+        return THROW_RANGE('Next token should be an ident or string but was `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '`', tok_getStart(), tok_getStop());
+      }
 
+      exportedNameIsString = isStringToken(tok_getType());
+      if (exportedNameIsString && !allowArbitraryModuleNsNames) {
+        return THROW_RANGE('String literal export names (arbitrary module namespace names) were introduced in ES2022 but currently targeted version is lower', tok_getStart(), tok_getStop());
+      }
       $tp_exportedName_type = tok_getType();
       $tp_exportedName_line = tok_getLine();
       $tp_exportedName_column = tok_getColumn();
@@ -5278,7 +5336,7 @@ function Parser(code, options = {}) {
       $tp_exportedName_stop = tok_getStop();
       $tp_exportedName_canon = tok_getCanoN();
 
-      ASSERT_skipAny($G_IDENT, lexerFlags);
+      ASSERT_skipAny(exportedNameIsString ? $G_STRING : $G_IDENT, lexerFlags);
     }
 
     if ($tp_name_type === $ID_PRIVATE_IDENT) {
@@ -5287,16 +5345,30 @@ function Parser(code, options = {}) {
     if ($tp_exportedName_type === $ID_PRIVATE_IDENT) {
       return THROW_RANGE('Private identifiers are not allowed in export specifiers', $tp_exportedName_start, $tp_exportedName_stop);
     }
+    if (nameIsString) verifyModuleExportNameStringWellFormed($tp_name_start, $tp_name_stop, $tp_name_canon);
+    if (exportedNameIsString) verifyModuleExportNameStringWellFormed($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
 
     addNameToExports(tmpExportedNames, $tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_canon);
-    addBindingToExports(tmpExportedBindings, $tp_name_canon);
+    // When name is a string, don't add to bindings (string locals are only valid with `from`, validated later)
+    if (!nameIsString) {
+      addBindingToExports(tmpExportedBindings, $tp_name_canon);
+    }
+
+    let localNode = nameIsString
+      ? AST_getStringNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon, false)
+      : AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon);
+    let exportedNode = exportedNameIsString
+      ? AST_getStringNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon, false)
+      : AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon);
 
     AST_setClosedNode($tp_name_start, 'specifiers', {
       type: 'ExportSpecifier',
       loc: AST_getClosedLoc($tp_name_start, $tp_name_line, $tp_name_column),
-      local: AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon),
-      exported: AST_getIdentNode($tp_exportedName_start, $tp_exportedName_stop, $tp_exportedName_line, $tp_exportedName_column, $tp_exportedName_canon),
+      local: localNode,
+      exported: exportedNode,
     });
+
+    return nameIsString;
   }
 
   function parseForStatement(lexerFlags, scoop, labelSet, astProp) {
@@ -6320,7 +6392,7 @@ function Parser(code, options = {}) {
     //           ^
     ASSERT_skipToIdentCurlyClose($PUNC_CURLY_OPEN, lexerFlags);
 
-    while (isIdentToken(tok_getType())) {
+    while (isIdentToken(tok_getType()) || isStringToken(tok_getType())) {
       parseImportSpecifier(lexerFlags, scoop);
 
       if (tok_getType() !== $PUNC_COMMA) break; // Must mean `}` or error
@@ -6363,6 +6435,13 @@ function Parser(code, options = {}) {
     //            ^
     // - `import {a, b} from 'x'`
     //               ^
+    // - `import {"a" as b} from 'x'`    (arbitrary module namespace names)
+    //            ^^^
+
+    let nameIsString = isStringToken(tok_getType());
+    if (nameIsString && !allowArbitraryModuleNsNames) {
+      return THROW_RANGE('String literal import names (arbitrary module namespace names) were introduced in ES2022 but currently targeted version is lower', tok_getStart(), tok_getStop());
+    }
 
     let $tp_name_line = tok_getLine();
     let $tp_name_column = tok_getColumn();
@@ -6379,7 +6458,7 @@ function Parser(code, options = {}) {
     let $tp_local_stop = tok_getStop();
     let $tp_local_canon = tok_getCanoN();
 
-    ASSERT_skipToAsCommaCurlyClose($G_IDENT, lexerFlags);
+    ASSERT_skipToAsCommaCurlyClose(nameIsString ? $G_STRING : $G_IDENT, lexerFlags);
 
     // https://tc39.github.io/ecma262/#sec-createimportbinding
     // The concrete Environment Record method CreateImportBinding for module Environment Records creates a new initialized
@@ -6404,15 +6483,23 @@ function Parser(code, options = {}) {
       $tp_local_canon = tok_getCanoN();
 
       ASSERT_skipAny($G_IDENT, lexerFlags);
+    } else if (nameIsString) {
+      // - `import {"a"} from 'x'`  -- string imported name without `as` is invalid, must bind to a local name
+      return THROW_RANGE('Import specifiers with a string as the imported name require an `as` clause', $tp_name_start, $tp_name_stop);
     }
+    if (nameIsString) verifyModuleExportNameStringWellFormed($tp_name_start, $tp_name_stop, $tp_name_canon);
 
     fatalBindingIdentCheck($tp_local_type, $tp_local_start, $tp_local_stop, $tp_local_canon, BINDING_TYPE_CONST, lexerFlags);
     SCOPE_addLexBinding(scoop, $tp_local_start, $tp_local_stop, $tp_local_canon, BINDING_TYPE_LET, FDS_ILLEGAL);
 
+    let importedNode = nameIsString
+      ? AST_getStringNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon, false)
+      : AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon);
+
     AST_setClosedNode($tp_name_start, 'specifiers', {
       type: 'ImportSpecifier',
       loc: AST_getClosedLoc($tp_name_start, $tp_name_line, $tp_name_column),
-      imported: AST_getIdentNode($tp_name_start, $tp_name_stop, $tp_name_line, $tp_name_column, $tp_name_canon),
+      imported: importedNode,
       local: AST_getIdentNode($tp_local_start, $tp_local_stop, $tp_local_line, $tp_local_column, $tp_local_canon),
     });
   }
