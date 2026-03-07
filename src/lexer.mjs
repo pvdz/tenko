@@ -2813,20 +2813,29 @@ function Lexer(
       }
     }
 
-    if (reffedGroupNames !== ',' && (webCompat === WEB_COMPAT_OFF || declaredGroupNames !== ',')) {
-      // We need to validate the referenced group names with `\k` atom escapes.
-      // In web compat mode, we can ignore that if no names were declared at all
-      // This is a fairly unused functionality so I'm going to do this in a slow path for now.
-      let bad = false;
-      reffedGroupNames.split(',').filter(Boolean).forEach(name => {
-        if (!declaredGroupNames.includes(',' + name + ',')) {
-          // This would only be valid if there were no names but by definition this is a name.
-          regexSyntaxError('Found a `\\k` that referenced `' + name + '` but no capturing group had this name');
-          bad = true;
+    if (reffedGroupNames !== ',') {
+      if (declaredGroupNames === ',') {
+        // No named groups exist. `\k<x>` is only valid without u-flag or v-flag (it matches literal chars).
+        // With u-flag or v-flag, `\k` requires NamedCaptureGroups to be true, which requires a named group.
+        if (ustatusFlags === REGEX_GOOD_WITH_U_FLAG || ustatusFlags === REGEX_GOOD_WITH_V_FLAG) {
+          regexSyntaxError('Found a `\\k` escape but the regex has no named groups and the u-flag or v-flag is set');
+          return $ERROR;
         }
-      });
-      if (bad) {
-        return $ERROR;
+        // Without u/v flag, `\k<x>` is treated as literal chars (valid)
+        ustatusBody = updateRegexUflagIsIllegal(ustatusBody, 'A `\\k` escape without named groups is only valid without u-flag or v-flag');
+      } else {
+        // Named groups exist. Validate that all referenced names exist.
+        // This is a fairly unused functionality so I'm going to do this in a slow path for now.
+        let bad = false;
+        reffedGroupNames.split(',').filter(Boolean).forEach(name => {
+          if (!declaredGroupNames.includes(',' + name + ',')) {
+            regexSyntaxError('Found a `\\k` that referenced `' + name + '` but no capturing group had this name');
+            bad = true;
+          }
+        });
+        if (bad) {
+          return $ERROR;
+        }
       }
     }
 
@@ -3720,10 +3729,7 @@ function Lexer(
         let va = getHexValue(a);
         if (va === HEX_OOB) {
           let reason = 'First char of hex escape not a valid digit';
-          if (webCompat === WEB_COMPAT_ON) {
-            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-          }
-          return regexSyntaxError(reason);
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
         }
         ASSERT_skip(a);
         if (eof()) {
@@ -3734,10 +3740,7 @@ function Lexer(
         let vb = getHexValue(b);
         if (vb === HEX_OOB) {
           let reason = 'Second char of hex escape not a valid digit';
-          if (webCompat === WEB_COMPAT_ON) {
-            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-          }
-          return regexSyntaxError(reason);
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
         }
         ASSERT_skip(b);
         return REGEX_ALWAYS_GOOD;
@@ -3902,13 +3905,9 @@ function Lexer(
         return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
 
       case REGATOM_ESC_WC:
-        // Non-special letters can only be escaped in webcompat mode and without u-flag
+        // Non-special letters can only be escaped without u-flag or v-flag (identity escape)
         ASSERT_skip(c);
-        if (webCompat === WEB_COMPAT_ON) {
-          // Atom escape was acceptable but only without u-flag
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag or v-flag');
-        }
-        return regexSyntaxError('Cannot escape this letter [' + String.fromCharCode(c) + ']');
+        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag or v-flag');
 
       // <SCRUB ASSERTS>
       default:
