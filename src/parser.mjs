@@ -135,6 +135,7 @@ import {
   LF_CHAINING,
   LF_NOT_IN_FUNC,
   LF_IN_CLASS_FIELD_INIT,
+  LF_IN_STATIC_BLOCK,
 
   L,
 } from './lexerflags.mjs';
@@ -4249,6 +4250,12 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Cannot `await` as the arg of `new`', $tp_await_start, $tp_await_stop);
     }
 
+    if (hasAllFlags(lexerFlags, LF_IN_STATIC_BLOCK)) {
+      // - `class C { static { await 0; } }`
+      // - `async function f() { class C { static { await 0; } } }`
+      return THROW_RANGE('Cannot use `await` in a static block', $tp_await_start, $tp_await_stop);
+    }
+
     if (hasAllFlags(lexerFlags, LF_IN_FUNC_ARGS)) {
       // Illegal without arg (would already fail for that reason alone)
       // - `function f(x = await){}`
@@ -4374,7 +4381,11 @@ function Parser(code, options = {}) {
   function parseStaticBlock(lexerFlags, astProp, enclosingScoop) {
     ASSERT(parseStaticBlock.length === arguments.length, 'arg count');
     ASSERT(tok_getType() === $PUNC_CURLY_OPEN, 'static block must start with {');
-    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI);
+    // ClassStaticBlockStatementList: StatementList[~Yield, +Await, ~Return]
+    // The +Await means `await` is a keyword (cannot be used as identifier/binding/label).
+    // Additionally: "It is a Syntax Error if ContainsAwait of ClassStaticBlockStatementList is true."
+    // So `await expr` is also disallowed. LF_IN_ASYNC makes `await` a keyword, LF_IN_STATIC_BLOCK rejects await expressions.
+    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK;
     let $tp_curly_start = tok_getStart();
     let $tp_curly_line = tok_getLine();
     let $tp_curly_column = tok_getColumn();
@@ -5343,6 +5354,10 @@ function Parser(code, options = {}) {
       // - "Top-Level Await" contexts; which you leave once you go inside a function/arrow
       //   - so the second check asserts that TLA is enabled (TLA only applies with goal=module) and we are not inside any kind of function
       //   - note: if we're inside an async function then the first check already passes
+      // `for await` is never legal in a static block, even when inside an async function
+      if (hasAnyFlag(lexerFlags, LF_IN_STATIC_BLOCK)) {
+        return THROW_RANGE('Cannot use `for await` in a static block', $tp_for_start, $tp_await_stop);
+      }
       if (
         hasNoFlag(lexerFlags, LF_IN_ASYNC) &&
         !(allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC))
