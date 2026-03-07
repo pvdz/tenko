@@ -13654,6 +13654,14 @@ function Parser(code, options = {}) {
       AST_setIdent(astProp, $tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon);
     }
 
+    if (isPrivateKey && $tp_key_canon === 'constructor') {
+      // - `class C { #constructor() {} }`               error
+      // - `class C { static #constructor() {} }`        error
+      // - `class C { static async * #constructor() {} }`  error
+      // ClassElementName : PrivateName ; It is a Syntax Error if StringValue of PrivateName is "#constructor"
+      return THROW_RANGE('Class methods may not be named `#constructor`', $tp_key_start, $tp_key_stop);
+    }
+
     if (isStatic && !isPrivateKey && $tp_key_canon === 'prototype') {
       // - `class x {static prototype(){}}`              error: static method named prototype
       // - `class x {static #prototype(){}}`             ok: private names are exempt from prototype restriction
