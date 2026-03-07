@@ -387,15 +387,15 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
     if (tob.shouldPassAny) {
       tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS' + RESET + ', but it failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     } else if (tob.shouldPassModule && testVariant === TEST_MODULE) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in module)' + RESET + ', but module failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (only in module)' + RESET + ', but module failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     } else if (tob.shouldPassSloppy && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_OFF) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least in sloppy)' + RESET + ', but sloppy failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (only in sloppy)' + RESET + ', but sloppy failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     } else if (tob.shouldPassAnnexb && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_ON) {
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least with annexb)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (only with sloppy annexb)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     } else if (tob.shouldPassAnnexboth && testVariant === TEST_SLOPPY && webcompatMode === WEB_COMPAT_ON) {
       // PASS ANNEXBOTH: sloppy+annexb must pass (like PASS ANNEXB), but other modes passing is fine
       // (e.g. strict/module block functions are lex-scoped and never conflict with outer-scope bindings)
-      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (at least with annexb/both)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
+      tob.continuePrint = BLINK + 'FILE ASSERTED TO PASS (only with sloppy/module annexb)' + RESET + ', but annexb failed (goal=' + (testVariant === TEST_MODULE ? 'module':'sloppy') + ',annexb=' + (webcompatMode === WEB_COMPAT_ON ? 'on':'off')+')';
     }
   }
 
