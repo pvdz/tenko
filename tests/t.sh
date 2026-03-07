@@ -155,9 +155,9 @@ Tenko CLI Toolkit help:
     new)
       # Create a new test case file. Passes remaining args to tests/create_new_test.js
       shift
-      set -x
+#      set -x
       ./tests/create_new_test.js "$@"
-      set +x
+#      set +x
       exit
       ;;
 
