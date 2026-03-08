@@ -459,6 +459,7 @@ import {
   PIGGY_BACK_WAS_ARROW,
   PIGGY_BACK_WAS_PRIVATE_IDENT,
   PIGGY_BACK_WAS_ASYNC_OF,
+  PIGGY_BACK_FOR_USING_OF_INLINE,
   NO_SPREAD,
   LAST_SPREAD,
   MID_SPREAD,
@@ -5766,8 +5767,7 @@ function Parser(code, options = {}) {
         parseExpression(lexerFlags, 'right');
 
         // Current token is `)`. parseForHeaderRest detects this and skips.
-        _forUsingOfParsedInline = true;
-        return IS_ASSIGNABLE;
+        return IS_ASSIGNABLE | PIGGY_BACK_FOR_USING_OF_INLINE;
       }
 
       // [v]: `for (using x of y)` — this is a using declaration
@@ -5971,7 +5971,7 @@ function Parser(code, options = {}) {
 
     return parseValue(lexerFlags | LF_IN_FOR_LHS, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
-  let _forUsingOfParsedInline = false; // Set by parseForHeaderUsing when `for (using of x)` for-of is fully parsed inline
+
 
   function parseForHeader(lexerFlags, $tp_for_start, scoop, awaitable, astProp) {
     ASSERT(arguments.length === parseForHeader.length, 'arg count');
@@ -6057,8 +6057,7 @@ function Parser(code, options = {}) {
 
     // `for (using of x)` disambiguation may have already fully parsed the for-of header inline
     // (see parseForHeaderUsing). In that case the current token is already `)`.
-    if (_forUsingOfParsedInline) {
-      _forUsingOfParsedInline = false;
+    if (hasAllFlags(assignable, PIGGY_BACK_FOR_USING_OF_INLINE)) {
       return;
     }
 

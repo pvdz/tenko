@@ -78,6 +78,7 @@ const PIGGY_BACK_WAS_PROTO = 1 << 9; // signal that a `__proto__: x` was parsed 
 const PIGGY_BACK_WAS_ARROW = 1 << 10; // signal that double proto was found on object; error in web compat outside of arrow headers
 const PIGGY_BACK_WAS_PRIVATE_IDENT = 1 << 11; // signal that the value was a bare PrivateIdentifier (#x), needs to be consumed by `in`
 const PIGGY_BACK_WAS_ASYNC_OF = 1 << 12; // signal that LHS was bare `async` followed by `of` in for-header (spec: [lookahead != async of])
+const PIGGY_BACK_FOR_USING_OF_INLINE = 1 << 13; // signal that `for (using of x)` for-of was fully parsed inline by parseForHeaderUsing
 const NO_SPREAD = DEVONLY() ? {NO_SPREAD: 1} : 0;
 const LAST_SPREAD = DEVONLY() ? {LAST_SPREAD: 1} : 1;
 const MID_SPREAD = DEVONLY() ? {MID_SPREAD: 1} : 2;
@@ -165,6 +166,7 @@ const PIGGIES = (0
   | PIGGY_BACK_WAS_ARROW
   | PIGGY_BACK_WAS_PRIVATE_IDENT
   | PIGGY_BACK_WAS_ASYNC_OF
+  | PIGGY_BACK_FOR_USING_OF_INLINE
 );
 function getPiggies(flags) {
   return flags & PIGGIES;
@@ -198,6 +200,10 @@ function P(f, arr) {
   if (f & PIGGY_BACK_WAS_ASYNC_OF) {
     arr.push('PIGGY_BACK_WAS_ASYNC_OF');
     f ^= PIGGY_BACK_WAS_ASYNC_OF;
+  }
+  if (f & PIGGY_BACK_FOR_USING_OF_INLINE) {
+    arr.push('PIGGY_BACK_FOR_USING_OF_INLINE');
+    f ^= PIGGY_BACK_FOR_USING_OF_INLINE;
   }
   return f;
 }
@@ -289,6 +295,7 @@ export {
   PIGGY_BACK_WAS_ARROW,
   PIGGY_BACK_WAS_PRIVATE_IDENT,
   PIGGY_BACK_WAS_ASYNC_OF,
+  PIGGY_BACK_FOR_USING_OF_INLINE,
   NO_SPREAD,
   LAST_SPREAD,
   MID_SPREAD,
