@@ -230,6 +230,9 @@ Tenko CLI Toolkit help:
       TMPDIR=$(mktemp -d)
       trap 'rm -rf "${TMPDIR}"; exit 130' INT TERM
       PIDS=()
+      # Run duplicate input check in parallel with the chunks
+      ${NODE_BIN} --experimental-modules tests/run_tests.mjs --dupes-only --quiet > "${TMPDIR}/dupes.log" 2>/dev/null &
+      PIDS_DUPES=$!
       for i in $(seq 0 $((CORES-1))); do
         ${NODE_BIN} --experimental-modules --max-old-space-size=8192 tests/run_tests.mjs -u --quiet --chunk ${i}/${CORES} ${ANNEXB} ${BUILD} ${ES} > "${TMPDIR}/${i}.log" 2>"${TMPDIR}/${i}.err" &
         PIDS+=($!)
@@ -242,6 +245,11 @@ Tenko CLI Toolkit help:
           cat "${TMPDIR}/${j}.err"
         fi
       done
+      # Show duplicate input report if any
+      wait ${PIDS_DUPES} 2>/dev/null
+      if [[ -s "${TMPDIR}/dupes.log" ]]; then
+        cat "${TMPDIR}/dupes.log"
+      fi
       rm -rf "${TMPDIR}"
       if [[ ${FAIL} -eq 0 ]]; then
         echo "All ${CORES} chunks passed."

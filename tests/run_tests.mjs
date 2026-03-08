@@ -109,6 +109,8 @@ const CHUNK_TOTAL = CHUNK_ARG ? parseInt(CHUNK_ARG.split('/')[1], 10) : -1;
 
 const TENKO_DEV_FILE = '../src/index.mjs';
 const TENKO_PROD_FILE = '../build/tenko.prod.mjs';
+const DUPES_ONLY = process.argv.includes('--dupes-only');
+if (DUPES_ONLY) { console.time = () => {}; console.timeEnd = () => {}; }
 
 if (!QUIET_FILE) console.log('Start of Tenko test suite');
 
@@ -241,6 +243,23 @@ let compareAcorn;
 let ignoreTenkoTestForAcorn;
 let processAcornResult;
 
+
+function reportDuplicateInputs(list) {
+  let inputsSeen = new Map(); // key -> fileShort
+  let dupeCount = 0;
+  for (let tob of list) {
+    let key = JSON.stringify(tob.inputOptions) + '\0' + tob.inputCode;
+    let prev = inputsSeen.get(key);
+    if (prev !== undefined) {
+      ++dupeCount;
+      if (dupeCount <= 10) console.log(DIM + 'Duplicate input:' + RESET + ' ' + tob.fileShort + DIM + ' same as ' + RESET + prev);
+    } else {
+      inputsSeen.set(key, tob.fileShort);
+    }
+  }
+  if (dupeCount > 10) console.log(DIM + '... and ' + (dupeCount - 10) + ' more duplicates' + RESET);
+  if (dupeCount) console.log(BOLD + 'Total duplicate inputs: ' + dupeCount + RESET);
+}
 
 async function extractFiles(list) {
   if (!RUN_VERBOSE_IN_SERIAL) console.time('$$ Test file extraction time');
@@ -971,6 +990,9 @@ async function main(tenko) {
   if (!QUIET_FILE) console.log('Read', list.length, 'files');
 
   await extractFiles(list);
+
+  reportDuplicateInputs(list);
+
   let beforeLen = list.length;
   if (!TARGET_FILE) list = list.filter(tob => !tob.aboveTheFold.toLowerCase().includes('\n## skip\n'));
   if (!QUIET_FILE) console.log('Filtered', beforeLen - list.length,'skipped tests (containing `## skip`)');
@@ -1346,7 +1368,16 @@ if (INPUT_OVERRIDE) {
   if (!QUIET_FILE) console.log('Read all test files, gathered', files.length, 'files');
 }
 
-if (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE) {
+if (DUPES_ONLY) {
+  // Lightweight: read all files, check for duplicate inputs, report, exit
+  (async () => {
+    let allFiles = files.filter(f => !f.endsWith('autogen.md'));
+    let allList = await readFiles(allFiles);
+    allList = allList.filter(tob => !tob.fileShort.startsWith('tests/testcases/todo/'));
+    await extractFiles(allList);
+    reportDuplicateInputs(allList);
+  })();
+} else if (AUTO_GENERATE || AUTO_GENERATE_CONSERVATIVE) {
   loadParsers().then(gen);
 } else if (INPUT_OVERRIDE) {
   loadParsers().then(cli);
