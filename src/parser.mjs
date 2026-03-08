@@ -4415,7 +4415,14 @@ function Parser(code, options = {}) {
     // The +Await means `await` is a keyword (cannot be used as identifier/binding/label).
     // Additionally: "It is a Syntax Error if ContainsAwait of ClassStaticBlockStatementList is true."
     // So `await expr` is also disallowed. LF_IN_ASYNC makes `await` a keyword, LF_IN_STATIC_BLOCK rejects await expressions.
-    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI | LF_IN_SWITCH | LF_IN_ITERATION) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK;
+    // ~Yield: strip LF_IN_GENERATOR so `yield` is not a keyword/expression here
+    // - `function *g() { class C { static { yield; } } }`   error, yield is not allowed
+    // - `function *g() { class C { static { yield 1; } } }` error, yield expression not allowed
+    // ~Return: handled by checking LF_IN_STATIC_BLOCK in parseReturnStatement
+    // - `function f() { class C { static { return; } } }`   error, return is not allowed
+    // new.target is allowed in static blocks (evaluates to undefined at runtime)
+    // - `class C { static { new.target; } }`                 ok, new.target is allowed
+    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_GENERATOR) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK | LF_CAN_NEW_DOT_TARGET;
     let $tp_curly_start = tok_getStart();
     let $tp_curly_line = tok_getLine();
     let $tp_curly_column = tok_getColumn();
@@ -7021,6 +7028,10 @@ function Parser(code, options = {}) {
     let $tp_return_column = tok_getColumn();
     let $tp_return_start = tok_getStart();
 
+    if (hasAllFlags(lexerFlags, LF_IN_STATIC_BLOCK)) {
+      // ClassStaticBlockStatementList: StatementList[~Return] -- return is never allowed in static blocks
+      return THROW_RANGE('Cannot use `return` in a class static block', $tp_return_start, $tp_return_start + 1);
+    }
     if (!allowGlobalReturn && hasAllFlags(lexerFlags, LF_IN_GLOBAL)) {
       return THROW_RANGE('Not configured to parse `return` statement in global, bailing', $tp_return_start, $tp_return_start + 1);
     }
