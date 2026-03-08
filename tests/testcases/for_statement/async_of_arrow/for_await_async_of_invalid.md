@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/parens/arrow/arrow_async_for_of_async_ident_use_binding.md
+- Path: tests/testcases/for_statement/async_of_arrow/for_await_async_of_invalid.md
 
-> :: parens : arrow
+> :: for statement : async of arrow
 >
-> ::> arrow async for of async ident use binding
+> ::> for await async of invalid
 >
-> bare async as for-of LHS is invalid per spec lookahead restriction: [lookahead != async of]
+> bare async as for-await-of LHS is invalid per spec lookahead restriction
 
 ## FAIL
 
 ## Input
 
 `````js
-for (async of [1,2,3]) { console.log(async); }
+async function f() { for await (async of []) ; }
 `````
 
 ## Output
@@ -32,11 +32,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot use `async` as a for-of LHS because the spec forbids `[lookahead != async of]` to avoid ambiguity with `async of =>`
 
-start@1:0, error@1:5
-╔══╦════════════════
- 1 ║ for (async of [1,2,3]) { console.log(async); }
-   ║      ^^^^^^^^------- error
-╚══╩════════════════
+start@1:0, error@1:32
+╔══╦═════════════════
+ 1 ║ async function f() { for await (async of []) ; }
+   ║                                 ^^^^^^^^------- error
+╚══╩═════════════════
 
 `````
 

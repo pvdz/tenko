@@ -458,6 +458,7 @@ import {
   PIGGY_BACK_WAS_PROTO,
   PIGGY_BACK_WAS_ARROW,
   PIGGY_BACK_WAS_PRIVATE_IDENT,
+  PIGGY_BACK_WAS_ASYNC_OF,
   NO_SPREAD,
   LAST_SPREAD,
   MID_SPREAD,
@@ -4162,7 +4163,8 @@ function Parser(code, options = {}) {
       if ($tp_afterAsync_type === $ID_of && hasAllFlags(lexerFlags, LF_IN_FOR_LHS)) {
         // - `for (async of x);` / `for await (async of x);` — async as var name, `of` is for-of keyword
         // Note: `for (async of => {}; ...)` is handled in parseForHeaderRest after `of` is seen
-        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp);
+        // Piggyback PIGGY_BACK_WAS_ASYNC_OF to signal parseForHeaderRest that the LHS was bare `async`
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp) | PIGGY_BACK_WAS_ASYNC_OF;
       }
       // Outside for-headers, `async of => {}` falls through to parseParenlessArrowAfterAsync below
       // - `async of => of`        — async arrow with `of` as param name
@@ -5970,6 +5972,7 @@ function Parser(code, options = {}) {
     return parseValue(lexerFlags | LF_IN_FOR_LHS, ASSIGN_EXPR_IS_OK, NOT_NEW_ARG, NOT_LHSE, astProp);
   }
   let _forUsingOfParsedInline = false; // Set by parseForHeaderUsing when `for (using of x)` for-of is fully parsed inline
+
   function parseForHeader(lexerFlags, $tp_for_start, scoop, awaitable, astProp) {
     ASSERT(arguments.length === parseForHeader.length, 'arg count');
     ASSERT(typeof awaitable === 'boolean');
@@ -6093,9 +6096,22 @@ function Parser(code, options = {}) {
         }, 'init');
         return parseForFromSemi(lexerFlags, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column);
       }
-      // - `for (async of x)` — for-of where `async` is the LHS
-      // - `for (async of []) {}` — for-of where `async` is LHS, `[]` is iterable
-      // - `for await (async of x)` — for-await-of, `async` is LHS
+      // - `for (async of x)` — spec says: [lookahead ∉ { async of }]
+      // - `for (async of []) {}` — same restriction
+      // - `for await (async of x)` — same restriction
+      // Bare `async` as for-of LHS is banned by the spec to avoid ambiguity with `async of => ...`.
+      // Use `for ((async) of x)` or `for (async.x of x)` instead.
+      // - `for (async.x of [1]) ;` — ok, LHS is member expression not bare `async`
+      // - `for ((async) of [1]) ;` — ok, LHS is parenthesized
+      // Only error when the LHS was exactly bare `async` (piggyback flag set by _parseAsync).
+      // - `for (async of x)` — PIGGY_BACK_WAS_ASYNC_OF is set → error
+      // - `for (async.x of x)` — flag not set (`.x` parsed by parseValueTail) → ok
+      // - `for (\u0061sync of x)` — flag not set (escaped form not caught by _parseAsync) → ok
+      // - `for ((async) of x)` — flag not set (paren-wrapped, different parse path) → ok
+      if (hasAllFlags(assignable, PIGGY_BACK_WAS_ASYNC_OF)) {
+        return THROW_RANGE('Cannot use `async` as a for-of LHS because the spec forbids `[lookahead != async of]` to avoid ambiguity with `async of =>`', $tp_startOfForHeader_start, $tp_of_stop);
+      }
+      // Not bare `async`, proceed as normal for-of
       // `of` is already consumed. Build ForOfStatement inline.
       if (notAssignable(assignable)) {
         return THROW_RANGE('Left part of for-of must be assignable', $tp_for_start, $tp_of_stop);

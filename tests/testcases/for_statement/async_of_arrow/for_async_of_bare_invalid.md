@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/parens/arrow/arrow_async_for_of_async_ident_use_binding.md
+- Path: tests/testcases/for_statement/async_of_arrow/for_async_of_bare_invalid.md
 
-> :: parens : arrow
+> :: for statement : async of arrow
 >
-> ::> arrow async for of async ident use binding
+> ::> for async of bare invalid
 >
-> bare async as for-of LHS is invalid per spec lookahead restriction: [lookahead != async of]
+> bare async as for-of LHS is invalid per spec lookahead restriction
 
 ## FAIL
 
 ## Input
 
 `````js
-for (async of [1,2,3]) { console.log(async); }
+for (async of [1]) ;
 `````
 
 ## Output
@@ -34,7 +34,7 @@ throws: Parser error!
 
 start@1:0, error@1:5
 ╔══╦════════════════
- 1 ║ for (async of [1,2,3]) { console.log(async); }
+ 1 ║ for (async of [1]) ;
    ║      ^^^^^^^^------- error
 ╚══╩════════════════
 
