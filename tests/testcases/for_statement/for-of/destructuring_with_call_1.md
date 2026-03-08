@@ -6,6 +6,8 @@
 >
 > ::> destructuring with call 1
 
+## PASS ANNEXB
+
 ## Input
 
 `````js
@@ -52,10 +54,85 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
+  body: [
+    {
+      type: 'ForOfStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
+      left: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:5},end:{line:1,column:15},source:''},
+        optional: false,
+        callee: {
+          type: 'ArrayExpression',
+          loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
+          elements: [
+            {
+              type: 'MemberExpression',
+              loc:{start:{line:1,column:6},end:{line:1,column:9},source:''},
+              computed: false,
+              optional: false,
+              object: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
+                name: 'a'
+              },
+              property: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:8},end:{line:1,column:9},source:''},
+                name: 'b'
+              }
+            }
+          ]
+        },
+        arguments: [
+          {
+            type: 'Identifier',
+            loc:{start:{line:1,column:11},end:{line:1,column:14},source:''},
+            name: 'foo'
+          }
+        ]
+      },
+      right: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:19},end:{line:1,column:20},source:''},
+        name: 'c'
+      },
+      await: false,
+      body: {
+        type: 'ExpressionStatement',
+        loc:{start:{line:1,column:22},end:{line:1,column:23},source:''},
+        expression: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:22},end:{line:1,column:23},source:''},
+          name: 'd'
+        }
+      }
+    }
+  ]
+}
+
+tokens (16x):
+       ID_for PUNC_PAREN_OPEN PUNC_BRACKET_OPEN IDENT PUNC_DOT IDENT
+       PUNC_BRACKET_CLOSE PUNC_PAREN_OPEN IDENT PUNC_PAREN_CLOSE ID_of
+       IDENT PUNC_PAREN_CLOSE IDENT ASI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+for (([a.b](foo)) of c) d;
+````
+
+Produces same AST

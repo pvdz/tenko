@@ -8,6 +8,8 @@
 >
 > for-in allows certain lhs that starts with `let`. In strict mode all bets are off.
 
+## PASS ANNEXB
+
 ## Input
 
 `````js
@@ -64,10 +66,55 @@ _Output same as strict mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+  body: [
+    {
+      type: 'ForInStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:17},source:''},
+      left: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:5},end:{line:1,column:8},source:''},
+          name: 'let'
+        },
+        arguments: []
+      },
+      right: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},
+        name: 'x'
+      },
+      body: {
+        type: 'EmptyStatement',
+        loc:{start:{line:1,column:16},end:{line:1,column:17},source:''}
+      }
+    }
+  ]
+}
+
+tokens (10x):
+       ID_for PUNC_PAREN_OPEN ID_let PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       ID_in IDENT PUNC_PAREN_CLOSE PUNC_SEMI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as strict mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+for ((let()) in x) ;
+````
+
+Produces same AST

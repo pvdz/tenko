@@ -8,6 +8,8 @@
 >
 > this is invalid since this is parsed as `async(x) = y`
 
+## PASS ANNEXB
+
 ## Input
 
 `````js
@@ -56,10 +58,62 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:2,column:9},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:2,column:9},source:''},
+      expression: {
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:2,column:8},source:''},
+        left: {
+          type: 'CallExpression',
+          loc:{start:{line:1,column:0},end:{line:2,column:4},source:''},
+          optional: false,
+          callee: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+            name: 'async'
+          },
+          arguments: [
+            {
+              type: 'Identifier',
+              loc:{start:{line:2,column:2},end:{line:2,column:3},source:''},
+              name: 'x'
+            }
+          ]
+        },
+        operator: '=',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:2,column:7},end:{line:2,column:8},source:''},
+          name: 'y'
+        }
+      }
+    }
+  ]
+}
+
+tokens (8x):
+       ID_async PUNC_PAREN_OPEN IDENT PUNC_PAREN_CLOSE PUNC_EQ IDENT
+       PUNC_SEMI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+async(x) = y;
+````
+
+Produces same AST

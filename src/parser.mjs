@@ -4153,13 +4153,19 @@ function Parser(code, options = {}) {
         return parseAsyncFunctionDecl(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, fromStmtOrExpr, scoop, isExport, exportedBindings, isLabelled, fdState, astProp);
       }
 
-      if ($tp_afterAsync_type === $ID_in || $tp_afterAsync_type === $ID_instanceof || $tp_afterAsync_type === $ID_of) {
+      if ($tp_afterAsync_type === $ID_in || $tp_afterAsync_type === $ID_instanceof) {
         // - `async in x`
         // - `async instanceof x`
-        // - `for (async of x);` / `for await (async of x);` — async is contextual keyword, fine as binding ident
-
         return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp);
       }
+
+      if ($tp_afterAsync_type === $ID_of && hasAllFlags(lexerFlags, LF_IN_FOR_LHS)) {
+        // - `for (async of x);` / `for await (async of x);` — async as var name, `of` is for-of keyword
+        // Note: `for (async of => {}; ...)` is handled in parseForHeaderRest after `of` is seen
+        return parseExpressionAfterAsyncAsVarName(lexerFlags, fromStmtOrExpr, $tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, isNewArg, allowAssignment, astProp);
+      }
+      // Outside for-headers, `async of => {}` falls through to parseParenlessArrowAfterAsync below
+      // - `async of => of`        — async arrow with `of` as param name
 
       // - `async foo => ..`                        ok
       //          ^
@@ -6054,7 +6060,56 @@ function Parser(code, options = {}) {
     }
 
     if (tok_getType() === $ID_of) {
-      return parseForFromOf(lexerFlags, $tp_for_start, awaitable, assignable, astProp);
+      // Disambiguation: `for (async of x)` vs `for (async of => {}; ...)`
+      // The LHS `async` is already parsed as an identifier. If `of` is the for-of keyword, proceed normally.
+      // But if `of => ...` follows, this is actually `async of => {}` (an async arrow as C-style for init).
+      // We can only distinguish by consuming `of` and checking for `=>`.
+      let $tp_of_start = tok_getStart();
+      let $tp_of_stop = tok_getStop();
+      let $tp_of_line = tok_getLine();
+      let $tp_of_column = tok_getColumn();
+      let $tp_of_canon = tok_getCanoN();
+      // - `for (async of => {}; ...)` — next is `=>`
+      // - `for (async of x) ;`       — next is expression start (ident `x`)
+      // - `for (async of []) {}`     — next is expression start (`[`)
+      // - `for (async of /x/) ;`     — next is regex
+      ASSERT_skipRex($ID_of, lexerFlags); // consume `of`; rex because next could be expression start or `=>`
+      if (tok_getType() === $PUNC_EQ_GT) {
+        // - `for (async of => {}; i < 10; ++i)` — C-style for with async arrow expression
+        //                  ^^
+        // The LHS `async` ident was already emitted to AST. We need to replace it with an async arrow.
+        // Rewrite: remove the `async` ident, parse `async of => {}` as the full init expression.
+        AST_popNode(astProp);
+        parseArrowParenlessFromPunc(sansFlag(lexerFlags, LF_IN_FOR_LHS), $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column, $ID_of, $tp_of_start, $tp_of_stop, $tp_of_line, $tp_of_column, $tp_of_canon, ASSIGN_EXPR_IS_OK, PARAMS_ALL_SIMPLE, $ID_async, astProp);
+        // After the arrow is parsed, we're in a C-style for. Continue parsing from the current token.
+        // The arrow expression is the `init`. Now parse the rest as ForStatement.
+        AST_wrapClosedCustom(astProp, {
+          type: 'ForStatement',
+          loc: undefined,
+          init: undefined,
+          test: undefined,
+          update: undefined,
+          body: undefined,
+        }, 'init');
+        return parseForFromSemi(lexerFlags, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column);
+      }
+      // - `for (async of x)` — for-of where `async` is the LHS
+      // - `for (async of []) {}` — for-of where `async` is LHS, `[]` is iterable
+      // - `for await (async of x)` — for-await-of, `async` is LHS
+      // `of` is already consumed. Build ForOfStatement inline.
+      if (notAssignable(assignable)) {
+        return THROW_RANGE('Left part of for-of must be assignable', $tp_for_start, $tp_of_stop);
+      }
+      AST_wrapClosedCustom(astProp, {
+        type: 'ForOfStatement',
+        loc: undefined,
+        left: undefined,
+        right: undefined,
+        await: awaitable,
+        body: undefined,
+      }, 'left');
+      parseExpression(lexerFlags, 'right');
+      return;
     }
 
     if (awaitable) {
