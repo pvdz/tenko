@@ -734,20 +734,21 @@ function Parser(code, options = {}) {
   function pushPrivateNameScope() {
     privateNameScopeStack.push({declared: new Map(), uses: []});
   }
-  function declarePrivateName(name, kind, start, stop) {
+  function declarePrivateName(name, kind, isStatic, start, stop) {
     // - `class C { #x; #x; }`                  -- error: duplicate
-    // - `class C { get #x(){} set #x(v){} }`   -- ok: getter+setter pair
+    // - `class C { get #x(){} set #x(v){} }`   -- ok: getter+setter pair (same static-ness)
+    // - `class C { get #x(){} static set #x(v){} }`  -- error: static mismatch
     ASSERT(privateNameScopeStack.length > 0, 'must be inside a class body');
     let scope = privateNameScopeStack[privateNameScopeStack.length - 1];
     let existing = scope.declared.get(name);
     if (existing !== undefined) {
-      let combined = existing | kind;
-      if (combined !== (PRIVATE_KIND_GETTER | PRIVATE_KIND_SETTER)) {
+      let combined = existing.kind | kind;
+      if (combined !== (PRIVATE_KIND_GETTER | PRIVATE_KIND_SETTER) || existing.isStatic !== isStatic) {
         return THROW_RANGE('Duplicate private name `#' + name + '`', start, stop);
       }
-      scope.declared.set(name, combined);
+      scope.declared.set(name, {kind: combined, isStatic});
     } else {
-      scope.declared.set(name, kind);
+      scope.declared.set(name, {kind, isStatic});
     }
   }
   function usePrivateName(name, start, stop) {
@@ -13600,7 +13601,7 @@ function Parser(code, options = {}) {
 
     let isPrivate = $tp_key_type === $ID_PRIVATE_IDENT;
     checkClassFieldNameErrors(isPrivate, isStatic, $tp_key_canon, $tp_key_start, $tp_key_stop);
-    if (isPrivate) declarePrivateName($tp_key_canon, PRIVATE_KIND_OTHER, $tp_key_start, $tp_key_stop);
+    if (isPrivate) declarePrivateName($tp_key_canon, PRIVATE_KIND_OTHER, isStatic, $tp_key_start, $tp_key_stop);
 
     let keyNode = $tp_key_type === $ID_PRIVATE_IDENT
       ? AST_getPrivateIdentNode($tp_key_start, $tp_key_stop, $tp_key_line, $tp_key_column, $tp_key_canon)
@@ -13675,7 +13676,7 @@ function Parser(code, options = {}) {
         return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
       }
       checkClassFieldNameErrors(isPrivate, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
-      if (isPrivate) declarePrivateName($tp_ident_canon, PRIVATE_KIND_OTHER, $tp_ident_start, $tp_ident_stop);
+      if (isPrivate) declarePrivateName($tp_ident_canon, PRIVATE_KIND_OTHER, isStatic, $tp_ident_start, $tp_ident_stop);
 
       let keyNode = $tp_ident_type === $ID_PRIVATE_IDENT
         ? AST_getPrivateIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon)
@@ -13811,7 +13812,7 @@ function Parser(code, options = {}) {
             return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
           }
           checkClassFieldNameErrors(isPrivate, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
-          if (isPrivate) declarePrivateName($tp_ident_canon, PRIVATE_KIND_OTHER, $tp_ident_start, $tp_ident_stop);
+          if (isPrivate) declarePrivateName($tp_ident_canon, PRIVATE_KIND_OTHER, isStatic, $tp_ident_start, $tp_ident_stop);
           let keyNode = isPrivate
             ? AST_getPrivateIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon)
             : AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
@@ -13954,7 +13955,7 @@ function Parser(code, options = {}) {
     if (isPrivateKey) {
       // If `kind` is "getset" then we'll have seen both the getter and setter already and seeing either again is still a dupe error.
       let privateKind = (kind === 'get') ? PRIVATE_KIND_GETTER : (kind === 'set') ? PRIVATE_KIND_SETTER : PRIVATE_KIND_OTHER;
-      declarePrivateName($tp_key_canon, privateKind, $tp_key_start, $tp_key_stop);
+      declarePrivateName($tp_key_canon, privateKind, isStatic, $tp_key_start, $tp_key_stop);
     }
 
     // - `class A {async get foo(){}}`
