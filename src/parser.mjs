@@ -13722,12 +13722,50 @@ function Parser(code, options = {}) {
         // The next token may now only be the key
         // - `class x {get key(){}}`
         //                 ^
+        // ASI: if there was a newline and the next token is `*`, treat `get` as a field name
+        // - `class x {get \n *a(){}}` => field `get` + generator method `*a(){}`
+        if (tok_getNlwas() === true && tok_getType() === $PUNC_STAR) {
+          if (!allowPublicClassFields) {
+            return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
+          }
+          checkClassFieldNameErrors(false, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
+          let keyNode = AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
+          AST_open(astProp, {
+            type: 'PropertyDefinition',
+            loc: undefined,
+            key: keyNode,
+            value: null,
+            computed: false,
+            static: isStatic,
+          });
+          AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
+          return CANT_DESTRUCT;
+        }
         $tp_get_type = $ID_get;
         break;
       case $ID_set:
         // The next token may now only be the key
-        // - `class x {get key(){}}`
+        // - `class x {set key(v){}}`
         //                 ^
+        // ASI: if there was a newline and the next token is `*`, treat `set` as a field name
+        // - `class x {set \n *a(x){}}` => field `set` + generator method `*a(x){}`
+        if (tok_getNlwas() === true && tok_getType() === $PUNC_STAR) {
+          if (!allowPublicClassFields) {
+            return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
+          }
+          checkClassFieldNameErrors(false, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
+          let keyNode = AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
+          AST_open(astProp, {
+            type: 'PropertyDefinition',
+            loc: undefined,
+            key: keyNode,
+            value: null,
+            computed: false,
+            static: isStatic,
+          });
+          AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
+          return CANT_DESTRUCT;
+        }
         $tp_set_type = $ID_set;
         break;
       case $ID_async:
