@@ -4414,7 +4414,7 @@ function Parser(code, options = {}) {
     // The +Await means `await` is a keyword (cannot be used as identifier/binding/label).
     // Additionally: "It is a Syntax Error if ContainsAwait of ClassStaticBlockStatementList is true."
     // So `await expr` is also disallowed. LF_IN_ASYNC makes `await` a keyword, LF_IN_STATIC_BLOCK rejects await expressions.
-    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK;
+    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI | LF_IN_SWITCH | LF_IN_ITERATION) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK;
     let $tp_curly_start = tok_getStart();
     let $tp_curly_line = tok_getLine();
     let $tp_curly_column = tok_getColumn();
