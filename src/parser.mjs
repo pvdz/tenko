@@ -3909,7 +3909,7 @@ function Parser(code, options = {}) {
         return;
     }
 
-    parseIdentLabelOrExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp);
+    parseIdentLabelOrExpressionStatement(lexerFlags, scoop, labelSet, isLabelled, fdState, nestedLabels, astProp);
   }
 
   function parseFromNumberStatement(lexerFlags, astProp) {
@@ -7333,7 +7333,7 @@ function Parser(code, options = {}) {
     AST_close($tp_while_start, $tp_while_line, $tp_while_column, 'WhileStatement');
   }
 
-  function parseIdentLabelOrExpressionStatement(lexerFlags, scoop, labelSet, fdState, nestedLabels, astProp) {
+  function parseIdentLabelOrExpressionStatement(lexerFlags, scoop, labelSet, isLabelled, fdState, nestedLabels, astProp) {
     ASSERT(parseIdentLabelOrExpressionStatement.length === arguments.length, 'arg count');
     ASSERT(isIdentToken(tok_getType()), 'should not have consumed the ident yet');
     ASSERT(typeof astProp === 'string', 'should be string');
@@ -7376,7 +7376,8 @@ function Parser(code, options = {}) {
     // `await using x = expr;` — only when `await` is a keyword (async context or module toplevel)
     // [x]: `if (x) await using y = z;` — not allowed as a substatement
     // [x]: `switch (x) { case 0: await using y = z; }` — not allowed directly in switch case
-    if ($tp_ident_type === $ID_await && allowUsingDeclaration && tok_getType() === $ID_using && tok_getNlwas() === false && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE && fdState !== FDS_SWITCH_CASE) {
+    // [x]: `label: await using y = z;` — not allowed in labeled statement position
+    if ($tp_ident_type === $ID_await && allowUsingDeclaration && tok_getType() === $ID_using && tok_getNlwas() === false && isLabelled !== IS_LABELLED && fdState !== FDS_ILLEGAL && fdState !== FDS_IFELSE && fdState !== FDS_SWITCH_CASE) {
       if (hasAnyFlag(lexerFlags, LF_IN_ASYNC) || (allowToplevelAwait && goalMode === GOAL_MODULE && hasAnyFlag(lexerFlags, LF_NOT_IN_FUNC))) {
         parseAwaitUsingDeclaration(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, scoop, astProp);
         return;
