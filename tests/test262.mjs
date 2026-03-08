@@ -143,10 +143,28 @@ function onRead(file, content) {
   ASSERT(content.includes('/*---') && content.includes('---*/'), 'missing test262 header', file);
   let header = content.slice(content.indexOf('/*---'), content.indexOf('---*/') + 5);
   // The header is yaml... ... Whatever, split all the things :)
+  // Test262 headers use two YAML formats for flags/features:
+  //   Inline:    `flags: [noStrict, raw]`
+  //   Multiline: `flags:\n  - noStrict\n  - raw`
+  // The staging/sm tests (SpiderMonkey) commonly use multiline format, so we must handle both.
+  // Getting this wrong silently drops flags like noStrict/onlyStrict/module/raw, causing
+  // tests to run in wrong modes (e.g. running a noStrict test in strict mode).
   let flags = header.match(/\n\s*flags: \[(.*?)\]/);
+  if (flags) {
+    flags = flags[1].split(/\s*,\s*/g);
+  } else {
+    // Multiline: capture all `  - value` lines after `flags:`, extract the values
+    let flagsMulti = header.match(/\n\s*flags:\s*\n((?:\s+-\s+\S+\n?)*)/);
+    flags = flagsMulti ? flagsMulti[1].match(/(?<=- )\S+/g) || [] : [];
+  }
   let features = header.match(/\n\s*features: \[(.*?)\]/);
-  features = features ? features[1].split(/\s*,\s*/g) : [];
-  flags = flags ? flags[1].split(/\s*,\s*/g) : [];
+  if (features) {
+    features = features[1].split(/\s*,\s*/g);
+  } else {
+    // Same multiline handling for features
+    let featuresMulti = header.match(/\n\s*features:\s*\n((?:\s+-\s+\S+\n?)*)/);
+    features = featuresMulti ? featuresMulti[1].match(/(?<=- )\S+/g) || [] : [];
+  }
   let negative = /\n\s*negative:/.test(header) && !/\n\s*phase:\s*runtime/.test(header) && !header.includes('phase: resolution');
   let webcompat = file.includes('annexB');
 
