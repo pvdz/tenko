@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/async_of_arrow/for_await_async_of_invalid.md
+- Path: tests/testcases/for_statement/async_of_arrow/for_await_async_of_valid.md
 
 > :: for statement : async of arrow
 >
-> ::> for await async of invalid
+> ::> for await async of valid
 >
-> bare async as for-await-of LHS is valid; the [lookahead != async of] restriction only applies to for-of, not for-await-of
+> for-await-of with bare async as LHS should be valid; the [lookahead \!= async of] restriction only applies to for-of, not for-await-of per the spec
 
 ## PASS
 
 ## Input
 
 `````js
-async function f() { for await (async of []) ; }
+async function f() { for await (async of [1]) ; }
 `````
 
 ## Output
@@ -31,11 +31,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:48},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:49},source:''},
   body: [
     {
       type: 'FunctionDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:48},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:49},source:''},
       generator: false,
       async: true,
       id: {
@@ -46,11 +46,11 @@ ast: {
       params: [],
       body: {
         type: 'BlockStatement',
-        loc:{start:{line:1,column:19},end:{line:1,column:48},source:''},
+        loc:{start:{line:1,column:19},end:{line:1,column:49},source:''},
         body: [
           {
             type: 'ForOfStatement',
-            loc:{start:{line:1,column:21},end:{line:1,column:46},source:''},
+            loc:{start:{line:1,column:21},end:{line:1,column:47},source:''},
             left: {
               type: 'Identifier',
               loc:{start:{line:1,column:32},end:{line:1,column:37},source:''},
@@ -58,13 +58,20 @@ ast: {
             },
             right: {
               type: 'ArrayExpression',
-              loc:{start:{line:1,column:41},end:{line:1,column:43},source:''},
-              elements: []
+              loc:{start:{line:1,column:41},end:{line:1,column:44},source:''},
+              elements: [
+                {
+                  type: 'Literal',
+                  loc:{start:{line:1,column:42},end:{line:1,column:43},source:''},
+                  value: 1,
+                  raw: '1'
+                }
+              ]
             },
             await: true,
             body: {
               type: 'EmptyStatement',
-              loc:{start:{line:1,column:45},end:{line:1,column:46},source:''}
+              loc:{start:{line:1,column:46},end:{line:1,column:47},source:''}
             }
           }
         ]
@@ -73,11 +80,11 @@ ast: {
   ]
 }
 
-tokens (17x):
+tokens (18x):
        ID_async ID_function IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
        PUNC_CURLY_OPEN ID_for ID_await PUNC_PAREN_OPEN ID_async ID_of
-       PUNC_BRACKET_OPEN PUNC_BRACKET_CLOSE PUNC_PAREN_CLOSE PUNC_SEMI
-       PUNC_CURLY_CLOSE
+       PUNC_BRACKET_OPEN NUMBER_DEC PUNC_BRACKET_CLOSE
+       PUNC_PAREN_CLOSE PUNC_SEMI PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -109,7 +116,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async function f() {for await ((async) of []) ;}
+async function f() {for await ((async) of [1]) ;}
 ````
 
 Produces same AST

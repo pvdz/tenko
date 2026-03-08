@@ -6095,19 +6095,21 @@ function Parser(code, options = {}) {
         }, 'init');
         return parseForFromSemi(lexerFlags, $tp_startOfForHeader_start, $tp_startOfForHeader_line, $tp_startOfForHeader_column);
       }
-      // - `for (async of x)` — spec says: [lookahead ∉ { async of }]
+      // - `for (async of x)` — spec says: [lookahead ∉ { let, async of }]
       // - `for (async of []) {}` — same restriction
-      // - `for await (async of x)` — same restriction
       // Bare `async` as for-of LHS is banned by the spec to avoid ambiguity with `async of => ...`.
       // Use `for ((async) of x)` or `for (async.x of x)` instead.
+      // However, `for await (async of x)` does NOT have this restriction!
+      // The spec grammar for for-await-of only has [lookahead ≠ let], not [lookahead ∉ { let, async of }].
       // - `for (async.x of [1]) ;` — ok, LHS is member expression not bare `async`
       // - `for ((async) of [1]) ;` — ok, LHS is parenthesized
       // Only error when the LHS was exactly bare `async` (piggyback flag set by _parseAsync).
       // - `for (async of x)` — PIGGY_BACK_WAS_ASYNC_OF is set → error
+      // - `for await (async of x)` — PIGGY_BACK_WAS_ASYNC_OF is set but awaitable → ok
       // - `for (async.x of x)` — flag not set (`.x` parsed by parseValueTail) → ok
       // - `for (\u0061sync of x)` — flag not set (escaped form not caught by _parseAsync) → ok
       // - `for ((async) of x)` — flag not set (paren-wrapped, different parse path) → ok
-      if (hasAllFlags(assignable, PIGGY_BACK_WAS_ASYNC_OF)) {
+      if (!awaitable && hasAllFlags(assignable, PIGGY_BACK_WAS_ASYNC_OF)) {
         return THROW_RANGE('Cannot use `async` as a for-of LHS because the spec forbids `[lookahead != async of]` to avoid ambiguity with `async of =>`', $tp_startOfForHeader_start, $tp_of_stop);
       }
       // Not bare `async`, proceed as normal for-of
