@@ -6,6 +6,7 @@ REPL: https://pvdz.github.io/tenko/repl
 
 - Supports:
   - Anything stage 4 up to and including ES2025
+  - Explicit resource ("using") stage 3 (under flag)
   - Regex syntax (deep)
   - Parsing modes:
     - Sloppy / non-strict
@@ -20,7 +21,7 @@ REPL: https://pvdz.github.io/tenko/repl
   - Supports location data (matching Acorn/Babel for reference)
 - Tests
   - 29k input syntax tests
-  - Passes test262 suite (at least as per March 2026), without exception
+  - Passes test262 suite (at least as per March 2026), without exception (./t t)
 
 # Name
 
