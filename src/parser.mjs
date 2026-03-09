@@ -789,7 +789,10 @@ function Parser(code, options = {}) {
     // - `class C { 'key' = 1; }`                      literal field init
     // - `class C { [expr] = 1; }`                     computed field init
     ASSERT_skipAny($PUNC_EQ, lexerFlags);
-    let fieldFlags = lexerFlags | LF_IN_CLASS_FIELD_INIT;
+    // Field initializers create a new function boundary that is neither async nor a generator.
+    // `async function f() { class C { x = await; } }` — await is an identifier, not AwaitExpression
+    // `function* g() { class C { x = yield; } }` — yield is an identifier, not YieldExpression
+    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR) | LF_IN_CLASS_FIELD_INIT;
     let $tp_value_start = tok_getStart();
     let $tp_value_line = tok_getLine();
     let $tp_value_column = tok_getColumn();
