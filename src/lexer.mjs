@@ -2041,7 +2041,7 @@ function Lexer(
         return THROW('The BigInt syntax is supported in ES11+ / ES2020 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
       }
       ASSERT_skip($$N_6E);
-      return $NUMBER_BIG_DEC;
+      return $NUMBER_BIG_BIN;
     }
 
     return $NUMBER_BIN;
