@@ -5638,7 +5638,7 @@ function Parser(code, options = {}) {
     //               ^
     // [x]: `for (let() in x);`
     // [v]: `for (let().foo in x);`
-    // [x]: `for (let=10;;);`
+    // [v]: `for (let=10;;);`
     // [v]: `for (let.foo;;);`
     // [v]: `for (let();;);`
     // [x]: `for (let.foo of x);`
@@ -8560,7 +8560,7 @@ function Parser(code, options = {}) {
     }
     return assignableForPiggies;
   }
-  function _parseExpressions(lexerFlags, $tp_startOfFirstExpr_start, $tp_startOfFirstExpr_line, $tp_startOfFirstExpr_colun, assignableForPiggies, astProp, allowSpread = false) {
+  function _parseExpressions(lexerFlags, $tp_startOfFirstExpr_start, $tp_startOfFirstExpr_line, $tp_startOfFirstExpr_column, assignableForPiggies, astProp, allowSpread = false) {
     ASSERT(arguments.length === _parseExpressions.length, 'arg count');
     ASSERT(tok_getType() === $PUNC_COMMA, 'confirm at callsite');
     AST_wrapClosedIntoArrayCustom(astProp, {
@@ -8569,7 +8569,7 @@ function Parser(code, options = {}) {
       expressions: undefined,
     }, 'expressions');
     assignableForPiggies = __parseExpressions(lexerFlags, assignableForPiggies, 'expressions', allowSpread);
-    AST_close($tp_startOfFirstExpr_start, $tp_startOfFirstExpr_line, $tp_startOfFirstExpr_colun, 'SequenceExpression');
+    AST_close($tp_startOfFirstExpr_start, $tp_startOfFirstExpr_line, $tp_startOfFirstExpr_column, 'SequenceExpression');
     return assignableForPiggies; // since we asserted a comma, we can be certain about this
   }
   function __parseExpressions(lexerFlags, assignableForPiggies, astProp, allowSpread) {

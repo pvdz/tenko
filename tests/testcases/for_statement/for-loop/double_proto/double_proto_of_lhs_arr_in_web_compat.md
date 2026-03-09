@@ -5,7 +5,6 @@
 > :: for statement : for-loop : double proto
 >
 > ::> double proto of lhs arr in web compat
-
 ## FAIL
 
 ## Input

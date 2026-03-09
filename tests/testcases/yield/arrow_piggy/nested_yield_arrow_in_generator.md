@@ -1,16 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/for_statement/for-loop/double_proto/double_proto_of_lhs_obj_in_web_compat.md
+- Path: tests/testcases/yield/arrow_piggy/nested_yield_arrow_in_generator.md
 
-> :: for statement : for-loop : double proto
+> :: yield : arrow piggy
 >
-> ::> double proto of lhs obj in web compat
+> ::> nested yield arrow in generator
+>
+> yield in nested arrow params inside generator
+
 ## FAIL
 
 ## Input
 
 `````js
-for ({__proto__: 1, __proto__: 2};;);
+function *g() { (x = (yield) => {}) => {} }
 `````
 
 ## Output
@@ -27,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use lhs as regular for-loop because it must destruct
+  The left hand side of the arrow is not destructible so arrow is illegal
 
-start@1:0, error@1:5
-╔══╦════════════════
- 1 ║ for ({__proto__: 1, __proto__: 2};;);
-   ║      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
-╚══╩════════════════
+start@1:0, error@1:29
+╔══╦═════════════════
+ 1 ║ function *g() { (x = (yield) => {}) => {} }
+   ║                              ^^------- error
+╚══╩═════════════════
 
 `````
 
