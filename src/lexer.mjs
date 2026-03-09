@@ -3146,9 +3146,17 @@ function Lexer(
               uflagStatus = updateRegexUflagIsMandatory(uflagStatus, lastPotentialRegexError);
             }
             else if (escapeStatus === REGEX_GOOD_RUBY_EDGE_CASE) {
-              // Edge case for `/\u{1}/`, to detect double quantifiers after a proper ruby without u-flag in webcompat
-              // If it reached this point, the escape is still valid with and without u-flag. Do not propagate the edge case flag.
-              afterAtom = false;
+              // Edge case for digits-only ruby escape like `/\u{100}/` in webcompat mode without u-flag.
+              // Without u-flag: `\u` is identity escape, `{100}` is quantifier, so no atom follows.
+              // With u-flag: `\u{100}` is a ruby escape atom, so quantifiers (`*`, `+`, `{`) are valid after it.
+              // If a quantifier follows, u-flag must be mandatory (only valid interpretation is ruby escape atom).
+              // The `?` case is already consumed inside parseUnicodeEscapeForRegexAtom as a non-greedy modifier.
+              if (neof() && (peeky($$STAR_2A) || peeky($$PLUS_2B) || peeky($$CURLY_L_7B))) {
+                uflagStatus = updateRegexUflagIsMandatory(uflagStatus, 'A quantifier after a digits-only ruby escape requires u-flag or v-flag');
+                // afterAtom stays true (set on line 3125), so the quantifier is processed by the main loop
+              } else {
+                afterAtom = false;
+              }
             }
           }
         }
