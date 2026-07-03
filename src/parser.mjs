@@ -4328,7 +4328,10 @@ function Parser(code, options = {}) {
     });
 
     // - `await ()=>x` is an error (arrows are assignable)
-    parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument'); // await expr arg is never optional
+    let argAssignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument'); // await expr arg is never optional
+
+    // [x]: `await #x in obj` — a bare PrivateIdentifier must be the entire lhs of `in`, it can not be an await arg
+    if (hasAllFlags(argAssignable, PIGGY_BACK_WAS_PRIVATE_IDENT)) return THROW_RANGE('A PrivateIdentifier is only valid as the entire left-hand side of an `in` expression, it can not be the arg of `await`', $tp_await_start, tok_getStart());
 
     if (tok_getType() === $PUNC_STAR_STAR) {
       return THROW_RANGE('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)', tok_getStart(), tok_getStop());
@@ -8418,6 +8421,8 @@ function Parser(code, options = {}) {
         repeat = true;
       }
       else if (isNonAssignBinOp($tp_next_type, lexerFlags)) {
+        // A bare PrivateIdentifier (`#x in obj`) is consumed by the `in` op that has it as its lhs, so drop the signal
+        if ($tp_next_type === $ID_in && hasAllFlags(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT)) assignable = sansFlag(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT);
         let nowAssignable = parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_firstExpr_start, $tp_firstExpr_line, $tp_firstExpr_column, COAL_SEEN_NEITHER, astProp);
         assignable = setNotAssignable(nowAssignable | assignable);
         repeat = true;
@@ -8489,13 +8494,19 @@ function Parser(code, options = {}) {
     // for if the previous op was also `**` (and we don't need other checks because it is the strongest binary op).
     let otherStrength = getStrength($tp_op_type, $tp_op_start, $tp_op_stop);
     while (continueParsingBinOp(lexerFlags, otherStrength)) {
+      // If the rhs was a bare PrivateIdentifier (`a || #x in obj`) then the stronger `in` op we are about to
+      // parse has it as its lhs and consumes it, so drop the signal before it trips the check below.
+      if (tok_getType() === $ID_in && hasAllFlags(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT)) assignable = sansFlag(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT);
       assignable |= parseExpressionFromBinaryOpOnlyStronger(lexerFlags, $tp_rightExprStart_start, $tp_rightExprStart_line, $tp_rightExprStart_column, coalSeen,'right');
     }
 
     // Spec: `PrivateIdentifier in ShiftExpression` — the RHS is ShiftExpression, not RelationalExpression.
     // A bare PrivateIdentifier is not a valid ShiftExpression, so `#x in #y in z` is a SyntaxError.
+    // Also reached when the op binds at least as strong as `in`, like `x + #y in z`, where the private
+    // ident becomes an operand of that op instead of the entire lhs of the `in`, which is also a SyntaxError.
     if (hasAllFlags(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT)) {
-      return THROW_RANGE('A PrivateIdentifier is not a valid RHS for `in`; the RHS of `PrivateIdentifier in` is ShiftExpression', $tp_rightExprStart_start, tok_getStart());
+      if ($tp_op_type === $ID_in) return THROW_RANGE('A PrivateIdentifier is not a valid RHS for `in`; the RHS of `PrivateIdentifier in` is ShiftExpression', $tp_rightExprStart_start, tok_getStart());
+      return THROW_RANGE('A PrivateIdentifier is only valid as the entire left-hand side of an `in` expression, it can not be an operand of `' + tok_sliceInput($tp_op_start, $tp_op_stop) + '`', $tp_rightExprStart_start, tok_getStart());
     }
 
     // Can't parse `||` or `&&` _after_ `??` on same level so don't have to check this inside the loop
@@ -9369,6 +9380,10 @@ function Parser(code, options = {}) {
     // Note: `new import.meta` is valid; only `new import(...)` (dynamic import) is invalid
     // Note: the `isNewArg` state will make sure the `parseValueTail` function properly deals with the first call arg
     let assignableForPiggies = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, IS_NEW_ARG, NOT_LHSE, 'callee');
+
+    // [x]: `new #x in obj` — a bare PrivateIdentifier must be the entire lhs of `in`, it can not be the callee of `new`
+    if (hasAllFlags(assignableForPiggies, PIGGY_BACK_WAS_PRIVATE_IDENT)) return THROW_RANGE('A PrivateIdentifier is only valid as the entire left-hand side of an `in` expression, it can not be the callee of `new`', $tp_new_start, tok_getStart());
+
     AST_close($tp_new_start, $tp_new_line, $tp_new_column, 'NewExpression');
     // [x]: `async function f(){ (x = new x(await x)) => {} }`
     return setNotAssignable(assignableForPiggies);
@@ -9425,6 +9440,9 @@ function Parser(code, options = {}) {
     });
     // dont parse just any standard expression. instead stop when you find any infix operator
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
+
+    // [x]: `typeof #x in obj` — a bare PrivateIdentifier must be the entire lhs of `in`, it can not be a unary arg
+    if (hasAllFlags(assignable, PIGGY_BACK_WAS_PRIVATE_IDENT)) return THROW_RANGE('A PrivateIdentifier is only valid as the entire left-hand side of an `in` expression, it can not be the arg of `' + opName + '`', $tp_unary_start, tok_getStart());
 
     // <SCRUB AST>
     if (opName === 'delete') {
@@ -14213,7 +14231,9 @@ function Parser(code, options = {}) {
     // Note: the expression of computed keys of class methods are parsed with the context before the class
     // So the context is not guaranteed to be strict, async, or anything else.
     // We have to propagate the piggies in case the parent turns out to be a function param / default.
-    let assignable_forPiggies = parseExpression(outerLexerFlags, astProp);
+    // Exception: the class's own private names are in scope in its computed keys (`class C { #x; [#x in obj](){} }`),
+    // so keep the class body signal on. The private name scope was already pushed, so undeclared names still throw.
+    let assignable_forPiggies = parseExpression(outerLexerFlags | LF_IN_CLASS_BODY, astProp);
 
     // - `async function f(){    (fail = class A {[await foo](){}; "x"(){}}) => {}    }`
     // - `(fail = class A {[await](){}; "x"(){}}) => {}`
