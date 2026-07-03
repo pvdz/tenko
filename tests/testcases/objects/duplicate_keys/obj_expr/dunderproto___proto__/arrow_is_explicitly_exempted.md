@@ -12,7 +12,7 @@
 > 
 > > It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__" and at least two of those entries were obtained from productions of the form PropertyDefinition:PropertyName:AssignmentExpression .
 > 
-> This restriction only applies to webcompat mode (annex B)
+> Since ES2022 this early error is main-body 13.2.5.1 and applies in every mode; when targeting ES2021 or lower it is Annex B.3.1 and only applies in webcompat mode (see tests/testcases/objects/duplicate_keys/proto_versions/)
 
 ## Input
 

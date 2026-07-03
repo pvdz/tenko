@@ -1,23 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/objects/duplicate_keys/obj_expr/dunderproto___proto__/async_arrow_is_explicitly_exempted.md
+- Path: tests/testcases/objects/duplicate_keys/proto_versions/dup_proto_arrow_exempt_es13.md
 
-> :: objects : duplicate keys : obj expr : dunderproto proto
+> :: objects : duplicate keys : proto versions
 >
-> ::> async arrow is explicitly exempted
+> ::> dup proto arrow exempt es13
 >
-> rule does not applying when parsing potential async arrow
-> 
-> https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
-> 
-> > It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__" and at least two of those entries were obtained from productions of the form PropertyDefinition:PropertyName:AssignmentExpression .
-> 
-> Since ES2022 this early error is main-body 13.2.5.1 and applies in every mode; when targeting ES2021 or lower it is Annex B.3.1 and only applies in webcompat mode (see tests/testcases/objects/duplicate_keys/proto_versions/)
+> duplicate proto exempt when object refines to arrow parameters
+
+## PASS
 
 ## Input
 
+- `es = 13`
+
 `````js
-async ({ __proto__: x, __proto__: y}) => x;
+({__proto__: a, __proto__: b}) => x;
 `````
 
 ## Output
@@ -35,25 +33,25 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:43},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:36},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:43},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:36},source:''},
       expression: {
         type: 'ArrowFunctionExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:42},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:35},source:''},
         params: [
           {
             type: 'ObjectPattern',
-            loc:{start:{line:1,column:7},end:{line:1,column:36},source:''},
+            loc:{start:{line:1,column:1},end:{line:1,column:29},source:''},
             properties: [
               {
                 type: 'Property',
-                loc:{start:{line:1,column:9},end:{line:1,column:21},source:''},
+                loc:{start:{line:1,column:2},end:{line:1,column:14},source:''},
                 key: {
                   type: 'Identifier',
-                  loc:{start:{line:1,column:9},end:{line:1,column:18},source:''},
+                  loc:{start:{line:1,column:2},end:{line:1,column:11},source:''},
                   name: '__proto__'
                 },
                 kind: 'init',
@@ -61,17 +59,17 @@ ast: {
                 computed: false,
                 value: {
                   type: 'Identifier',
-                  loc:{start:{line:1,column:20},end:{line:1,column:21},source:''},
-                  name: 'x'
+                  loc:{start:{line:1,column:13},end:{line:1,column:14},source:''},
+                  name: 'a'
                 },
                 shorthand: false
               },
               {
                 type: 'Property',
-                loc:{start:{line:1,column:23},end:{line:1,column:35},source:''},
+                loc:{start:{line:1,column:16},end:{line:1,column:28},source:''},
                 key: {
                   type: 'Identifier',
-                  loc:{start:{line:1,column:23},end:{line:1,column:32},source:''},
+                  loc:{start:{line:1,column:16},end:{line:1,column:25},source:''},
                   name: '__proto__'
                 },
                 kind: 'init',
@@ -79,8 +77,8 @@ ast: {
                 computed: false,
                 value: {
                   type: 'Identifier',
-                  loc:{start:{line:1,column:34},end:{line:1,column:35},source:''},
-                  name: 'y'
+                  loc:{start:{line:1,column:27},end:{line:1,column:28},source:''},
+                  name: 'b'
                 },
                 shorthand: false
               }
@@ -89,11 +87,11 @@ ast: {
         ],
         id: null,
         generator: false,
-        async: true,
+        async: false,
         expression: true,
         body: {
           type: 'Identifier',
-          loc:{start:{line:1,column:41},end:{line:1,column:42},source:''},
+          loc:{start:{line:1,column:34},end:{line:1,column:35},source:''},
           name: 'x'
         }
       }
@@ -101,8 +99,8 @@ ast: {
   ]
 }
 
-tokens (16x):
-       ID_async PUNC_PAREN_OPEN PUNC_CURLY_OPEN IDENT PUNC_COLON IDENT
+tokens (15x):
+       PUNC_PAREN_OPEN PUNC_CURLY_OPEN IDENT PUNC_COLON IDENT
        PUNC_COMMA IDENT PUNC_COLON IDENT PUNC_CURLY_CLOSE
        PUNC_PAREN_CLOSE PUNC_EQ_GT IDENT PUNC_SEMI
 `````
@@ -136,7 +134,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-async ({__proto__:x, __proto__:y}) => (x);
+({__proto__:a, __proto__:b}) => (x);
 ````
 
 Produces same AST

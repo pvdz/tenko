@@ -618,6 +618,14 @@ function Lexer(
   const supportRegexVFlag = targetEsVersion >= 15 || targetEsVersion === Infinity; // ES2024: unicodeSets mode (v flag), mutually exclusive with u
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
   const supportBigInt = targetEsVersion >= VERSION_BIGINT || targetEsVersion === VERSION_WHATEVER;
+  // ES2022 (tc39/ecma262#2525) moved LegacyOctalEscapeSequence and NonOctalDecimalEscapeSequence (\8 \9) from
+  // Annex B.1.2 into the main String Literals grammar, gated only on strictness. Before that they were Annex B
+  // syntax, so when targeting ES2021 or lower they additionally require webcompat mode.
+  const supportMainGrammarStringOctals = targetEsVersion >= 13 || targetEsVersion === Infinity;
+  // ES2024 added HTMLCloseComment as a direct alternative of the Annex B goal symbol (InputElementHashbangOrRegExp),
+  // legalizing `-->` at the start of input without a preceding LineTerminatorSequence. Before that, annex B
+  // SingleLineHTMLCloseComment strictly required the preceding newline, so a leading `-->` was an error everywhere.
+  const supportFirstLineHtmlClose = targetEsVersion >= 15 || targetEsVersion === Infinity;
   const supportNullishCoalescing = targetEsVersion >= VERSION_NULLISH_COALESCING || targetEsVersion === VERSION_WHATEVER;
   const supportOptionalChaining = targetEsVersion >= VERSION_OPTIONAL_CHAINING || targetEsVersion === VERSION_WHATEVER;
   const supportLogicCompound = targetEsVersion >= VERSION_LOGICAL_ASSIGNMENT || targetEsVersion === VERSION_WHATEVER;
@@ -1359,6 +1367,11 @@ function Lexer(
           : 'The grammar does not allow to escape the 8 or the 9 character';
         return BAD_ESCAPE;
       }
+      if (!supportMainGrammarStringOctals && webCompat === WEB_COMPAT_OFF) {
+        // NonOctalDecimalEscapeSequence was Annex B only before ES2022, so it needs webcompat for older targets
+        if (!lastReportableLexerError) lastReportableLexerError = 'Escaping the 8 or 9 character in a string requires webcompat mode when targeting below ES2022 (it moved from Annex B into the main grammar in ES2022)';
+        return BAD_ESCAPE;
+      }
       lastCanonizedInput += String.fromCharCode(a);
       ++lastCanonizedInputLen;
       return GOOD_ESCAPE;
@@ -1377,12 +1390,13 @@ function Lexer(
     // There is a nasty edge case regarding nul (zero byte); In sloppy webcompat mode the nul escape may be followed by
     // an 8 or 9 and still be a valid nul. In other modes and templates, `\08` and `\09` are considered syntax errors.
 
-    // Strings: octal escapes are valid in sloppy mode (part of the main spec, not Annex B)
+    // Strings: octal escapes are valid in sloppy mode. Since ES2022 that is part of the main spec grammar; before
+    // that (targeting es <= 12) it is Annex B.1.2 syntax and additionally requires webcompat mode.
     // Template literals: explicitly do never support octal escapes so trigger a syntax error in the parser
     // Tagged templates: are allowed to have bad escapes although they will cause `.value` to be `null` in the AST
     // (Note that we do not know here whether the template will be tagged or just a literal, so just return BAD_ESCAPE)
 
-    if (!alwaysAllowOctalEscapes && (forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE)) {
+    if (!alwaysAllowOctalEscapes && (forTemplate || (lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE || (!supportMainGrammarStringOctals && webCompat === WEB_COMPAT_OFF))) {
       // If octals are invalid, then the nul escape can not be followed by 8 or 9 either
       // Note: in templates, octals are never valid escapes so `\08` is always a bad escape regardless of mode
       if (a === $$0_30 && (b < $$0_30 || b > $$9_39)) {
@@ -1400,9 +1414,11 @@ function Lexer(
 
       if (forTemplate) {
         if (!lastReportableLexerError) lastReportableLexerError = 'Illegal legacy octal escape in template, where octal escapes are never allowed';
-      } else {
-        ASSERT((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE);
+      } else if ((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
         if (!lastReportableLexerError) lastReportableLexerError = 'Illegal legacy octal escape in strict mode';
+      } else {
+        ASSERT(!supportMainGrammarStringOctals && webCompat === WEB_COMPAT_OFF, 'only remaining reason to be here');
+        if (!lastReportableLexerError) lastReportableLexerError = 'Octal escapes in strings require webcompat mode when targeting below ES2022 (they moved from Annex B into the main grammar in ES2022)';
       }
       return BAD_ESCAPE;
     }
@@ -1464,8 +1480,8 @@ function Lexer(
       // There are three valid ways of having an html close comment;
       // - <a multi-line comment that contains at least one newline> <space>* <html close>
       // - <newline> <space>* <html close>
-      // - at the start of input (InputElementHashbangOrRegExp allows HTMLCloseComment on the first line)
-      if (consumedNewlinesBeforeSolid === true || solidTokenCount === 0) {
+      // - at the start of input (ES2024+: InputElementHashbangOrRegExp allows HTMLCloseComment on the first line)
+      if (consumedNewlinesBeforeSolid === true || (solidTokenCount === 0 && supportFirstLineHtmlClose)) {
         return parseCommentHtmlClose();
       } else {
         // Note that the `-->` is not picked up as a comment since that requires a newline to precede it

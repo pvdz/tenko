@@ -389,6 +389,7 @@ import {
   VERSION_EXPORT_STAR_AS,
   VERSION_IMPORT_META,
   VERSION_TOPLEVEL_AWAIT,
+  VERSION_DUP_PROTO_MAIN,
   VERSION_ARBITRARY_MODULE_NS_NAMES,
   VERSION_IMPORT_ATTRIBUTES,
   VERSION_WHATEVER,
@@ -714,6 +715,9 @@ function Parser(code, options = {}) {
   // operators (`??=`, `&&=`, `||=`) per its note, and web-compat is not `simple` so destructuring targets still reject.
   // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
   let allowCallAssignmentTarget = options_webCompat === WEB_COMPAT_ON;
+  // ES2022 moved the duplicate `__proto__` early error from Annex B.3.1 into the main body (13.2.5.1), so from
+  // es13 on it applies in every mode; when targeting ES2021 or lower it is Annex B and only applies in webcompat mode.
+  let checkDupProto = (targetEsVersion >= VERSION_DUP_PROTO_MAIN || targetEsVersion === VERSION_WHATEVER) || options_webCompat === WEB_COMPAT_ON;
 
   // Private name scope tracking (AllPrivateIdentifiersValid, no duplicate private bound names)
   // Stack of {declared: Map<name, kind_bitmask>, uses: [{name, start, stop}]}
@@ -12403,8 +12407,9 @@ function Parser(code, options = {}) {
       AST_setIdent(astProp, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop, $tp_propLeadingIdent_line, $tp_propLeadingIdent_column, $tp_propLeadingIdent_canon);
 
       let destructible = MIGHT_DESTRUCT;
-      if ($tp_propLeadingIdent_canon === '__proto__') {
-        // https://tc39.es/ecma262/#sec-__proto__-property-names-in-object-initializers (Annex B.3.1, normative)
+      if (checkDupProto && $tp_propLeadingIdent_canon === '__proto__') {
+        // https://tc39.es/ecma262/#sec-__proto__-property-names-in-object-initializers
+        // Main body 13.2.5.1 since ES2022 (all modes); Annex B.3.1 (webcompat only) when targeting ES2021 or lower
         // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
         destructible = PIGGY_BACK_WAS_PROTO;
       }
@@ -13052,10 +13057,11 @@ function Parser(code, options = {}) {
 
       let destructible_forPiggies = MIGHT_DESTRUCT;
 
-      // https://tc39.es/ecma262/#sec-__proto__-property-names-in-object-initializers (Annex B.3.1, normative)
+      // https://tc39.es/ecma262/#sec-__proto__-property-names-in-object-initializers
+      // Main body 13.2.5.1 since ES2022 (all modes); Annex B.3.1 (webcompat only) when targeting ES2021 or lower
       // > "at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName : AssignmentExpression"
       // `{"__proto__": 1, __proto__: 2}` is still an error, only for key:value (not shorthand or methods)
-      if ($tp_lit_canon === '__proto__') {
+      if (checkDupProto && $tp_lit_canon === '__proto__') {
         destructible_forPiggies |= PIGGY_BACK_WAS_PROTO;
       }
 

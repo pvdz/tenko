@@ -1,19 +1,22 @@
 # Tenko parser test case
 
-- Path: tests/testcases/assigns/call_expr_assign/call_destructuring_rest_fail.md
+- Path: tests/testcases/html_comments/close_comment_versions/after_newline_es6.md
 
-> :: assigns : call expr assign
+> :: html comments : close comment versions
 >
-> ::> call destructuring rest fail
+> ::> after newline es6
 >
-> call is never a destructuring target even with web compat
+> close comment after a newline: legal annex B in every edition (SingleLineHTMLCloseComment)
 
-## FAIL
+## PASS ANNEXB
 
 ## Input
 
+- `es = 6`
+
 `````js
-[x, y, ...z()] = obj
+;
+--> foo bar
 `````
 
 ## Output
@@ -30,13 +33,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Tried to destructure something that is not destructible
+  Expected to parse a value
 
-start@1:0, error@1:15
-╔══╦═════════════════
- 1 ║ [x, y, ...z()] = obj
-   ║                ^------- error
-╚══╩═════════════════
+start@1:0, error@2:2
+╔══╦════════════════
+ 1 ║ ;
+ 2 ║ --> foo bar
+   ║   ^------- error
+╚══╩════════════════
 
 `````
 
@@ -56,10 +60,34 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:2,column:11},source:''},
+  body: [
+    {
+      type: 'EmptyStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:1},source:''}
+    }
+  ]
+}
+
+tokens (2x):
+       PUNC_SEMI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+;
+````
+
+Produces same AST

@@ -1,23 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/objects/duplicate_keys/obj_expr/dunderproto___proto__/async_call_wrapped_is_explicitly_exempted.md
+- Path: tests/testcases/objects/duplicate_keys/proto_versions/dup_proto_es13.md
 
-> :: objects : duplicate keys : obj expr : dunderproto proto
+> :: objects : duplicate keys : proto versions
 >
-> ::> async call wrapped is explicitly exempted
+> ::> dup proto es13
 >
-> rule does not applying when parsing potential async arrow
-> 
-> https://tc39.github.io/ecma262/#sec-__proto__-property-names-in-object-initializers
-> 
-> > It is a Syntax Error if PropertyNameList of PropertyDefinitionList contains any duplicate entries for "__proto__" and at least two of those entries were obtained from productions of the form PropertyDefinition:PropertyName:AssignmentExpression .
-> 
-> Since ES2022 this early error is main-body 13.2.5.1 and applies in every mode; when targeting ES2021 or lower it is Annex B.3.1 and only applies in webcompat mode (see tests/testcases/objects/duplicate_keys/proto_versions/)
+> duplicate proto in ES2022: main body 13.2.5.1, error in all modes
+
+## FAIL
 
 ## Input
 
+- `es = 13`
+
 `````js
-async({ __proto__: x, __proto__: y});
+({__proto__: a, __proto__: b});
 `````
 
 ## Output
@@ -36,10 +34,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Group contained a value that must destruct but this was not an arrow so it is invalid
 
-start@1:0, error@1:5
+start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ async({ __proto__: x, __proto__: y});
-   ║      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+ 1 ║ ({__proto__: a, __proto__: b});
+   ║ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
