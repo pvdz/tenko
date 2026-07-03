@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/bracket_literal_then_nested.md
+- Path: tests/testcases/regexes/vflag/bracket_literal_then_nested.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> bracket literal then nested
 >

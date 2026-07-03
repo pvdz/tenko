@@ -53,10 +53,93 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:41},source:''},
+  body: [
+    {
+      type: 'FunctionDeclaration',
+      loc:{start:{line:1,column:0},end:{line:1,column:41},source:''},
+      generator: true,
+      async: false,
+      id: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
+        name: 'g'
+      },
+      params: [],
+      body: {
+        type: 'BlockStatement',
+        loc:{start:{line:1,column:14},end:{line:1,column:41},source:''},
+        body: [
+          {
+            type: 'ExpressionStatement',
+            loc:{start:{line:1,column:16},end:{line:1,column:39},source:''},
+            expression: {
+              type: 'AssignmentExpression',
+              loc:{start:{line:1,column:16},end:{line:1,column:38},source:''},
+              left: {
+                type: 'CallExpression',
+                loc:{start:{line:1,column:16},end:{line:1,column:33},source:''},
+                optional: false,
+                callee: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:16},end:{line:1,column:21},source:''},
+                  name: 'async'
+                },
+                arguments: [
+                  {
+                    type: 'AssignmentExpression',
+                    loc:{start:{line:1,column:23},end:{line:1,column:32},source:''},
+                    left: {
+                      type: 'Identifier',
+                      loc:{start:{line:1,column:23},end:{line:1,column:24},source:''},
+                      name: 'x'
+                    },
+                    operator: '=',
+                    right: {
+                      type: 'YieldExpression',
+                      loc:{start:{line:1,column:27},end:{line:1,column:32},source:''},
+                      delegate: false,
+                      argument: null
+                    }
+                  }
+                ]
+              },
+              operator: '=',
+              right: {
+                type: 'ObjectExpression',
+                loc:{start:{line:1,column:36},end:{line:1,column:38},source:''},
+                properties: []
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+
+tokens (18x):
+       ID_function PUNC_STAR IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
+       PUNC_CURLY_OPEN ID_async PUNC_PAREN_OPEN IDENT PUNC_EQ ID_yield
+       PUNC_PAREN_CLOSE PUNC_EQ PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
+       PUNC_SEMI PUNC_CURLY_CLOSE
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+function* g() {async(x = (yield)) = {};}
+````
+
+Produces same AST

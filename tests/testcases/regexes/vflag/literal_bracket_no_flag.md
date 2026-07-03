@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/literal_bracket_no_flag.md
+- Path: tests/testcases/regexes/vflag/literal_bracket_no_flag.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> literal bracket no flag
 >

@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/nested_class_escaped_content.md
+- Path: tests/testcases/regexes/vflag/nested_class_escaped_content.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> nested class escaped content
 >

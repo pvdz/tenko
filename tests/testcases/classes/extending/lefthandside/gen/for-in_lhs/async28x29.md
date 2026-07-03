@@ -54,10 +54,61 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+  body: [
+    {
+      type: 'ForInStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:21},source:''},
+      left: {
+        type: 'CallExpression',
+        loc:{start:{line:1,column:5},end:{line:1,column:13},source:''},
+        optional: false,
+        callee: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:5},end:{line:1,column:10},source:''},
+          name: 'async'
+        },
+        arguments: [
+          {
+            type: 'Identifier',
+            loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
+            name: 'x'
+          }
+        ]
+      },
+      right: {
+        type: 'Identifier',
+        loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
+        name: 'x'
+      },
+      body: {
+        type: 'EmptyStatement',
+        loc:{start:{line:1,column:20},end:{line:1,column:21},source:''}
+      }
+    }
+  ]
+}
+
+tokens (11x):
+       ID_for PUNC_PAREN_OPEN ID_async PUNC_PAREN_OPEN IDENT
+       PUNC_PAREN_CLOSE ID_in IDENT PUNC_PAREN_CLOSE PUNC_SEMI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+for ((async(x)) in x) ;
+````
+
+Produces same AST

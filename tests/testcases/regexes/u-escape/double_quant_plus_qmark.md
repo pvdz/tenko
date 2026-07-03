@@ -60,7 +60,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Encountered unescaped quantifier (ord=43) without a value to quantify
+    Regex: A quantifier after a digits-only ruby escape requires u-flag or v-flag; Regex contained syntax that is only valid with the u-flag or v-flag but neither was present
 
 start@1:0, error@1:0
 ╔══╦════════════════

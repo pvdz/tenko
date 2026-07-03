@@ -53,7 +53,17 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  The left hand side of the arrow is not destructible so arrow is illegal
+
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ ({foo: fail() = x}) => x
+   ║                     ^^------- error
+╚══╩═════════════════
+
+`````
 
 ### Module goal with AnnexB
 

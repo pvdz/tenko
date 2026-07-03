@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/triple_nested_all_closed.md
+- Path: tests/testcases/regexes/vflag/triple_nested_all_closed.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> triple nested all closed
 >

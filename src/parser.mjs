@@ -706,6 +706,14 @@ function Parser(code, options = {}) {
   let allowArbitraryModuleNsNames = (targetEsVersion >= VERSION_ARBITRARY_MODULE_NS_NAMES || targetEsVersion === VERSION_WHATEVER); // ES2022 string literals as import/export names
   let allowUsingDeclaration = !!options_allowUsingDeclaration; // Explicit opt-in flag (not tied to ES version)
   let allowImportAttributes = (targetEsVersion >= VERSION_IMPORT_ATTRIBUTES || targetEsVersion === VERSION_WHATEVER); // ES2025
+  // Annex B "Runtime Errors for Function Call Assignment Targets" (living spec B.3.9). This codifies web reality
+  // dating back to ES5, where `LeftHandSideExpression : CallExpression` made `f() = x` syntactically legal and
+  // PutValue threw a runtime ReferenceError. ES2015 turned it into an early (Reference) error in the main body but
+  // web browsers kept the ES5 behavior for sloppy code; the annex restores it: no early error, runtime ReferenceError.
+  // Covers `=`, compound assignment, update expressions, and for-in/of heads; explicitly NOT the logical assignment
+  // operators (`??=`, `&&=`, `||=`) per its note, and web-compat is not `simple` so destructuring targets still reject.
+  // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
+  let allowCallAssignmentTarget = options_webCompat === WEB_COMPAT_ON;
 
   // Private name scope tracking (AllPrivateIdentifiersValid, no duplicate private bound names)
   // Stack of {declared: Map<name, kind_bitmask>, uses: [{name, start, stop}]}
@@ -1421,9 +1429,10 @@ function Parser(code, options = {}) {
     let head = _path[_path.length - 1];
     let prev = head && head[astProp];
 
-    // Annex B: In sloppy+webcompat, CallExpression is a valid update target (runtime error, not syntax error)
+    // ES2026 draft Annex B.3.9: in sloppy web-compat code a CallExpression is a valid update target (the update
+    // throws a runtime ReferenceError instead of being an early error)
     // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
-    let allowCall = hasNoFlag(lexerFlags, LF_STRICT_MODE) && options_webCompat === WEB_COMPAT_ON;
+    let allowCall = allowCallAssignmentTarget && hasNoFlag(lexerFlags, LF_STRICT_MODE);
 
     // Note: the for-case is nasty because when parsing the lhs the AST is not yet populated with a `for` statement
     // because that particular node type depends on `in`, `of`, or a semi. So the AST could be an array (block body)
@@ -1438,10 +1447,10 @@ function Parser(code, options = {}) {
       )
     ) {
       // - `++[]`
-      // - `--f()`      (strict or no webcompat)
+      // - `--f()`      (strict, no webcompat, or es<=16)
       // - `++this`
       // - `[]++`
-      // - `f()--`      (strict or no webcompat)
+      // - `f()--`      (strict, no webcompat, or es<=16)
       // - `this++`
       return THROW_RANGE('Can only increment or decrement an identifier or member expression', tok_getStart(), tok_getStop());
     }
@@ -8383,6 +8392,14 @@ function Parser(code, options = {}) {
 
     let $tp_eq_type = tok_getType();
 
+    // ES2026 draft Annex B.3.9 note: the web-compat allowance for a function call as assignment target covers `=`
+    // and the compound AssignmentOperator forms but explicitly NOT the logical assignment operators.
+    // The CANT_DESTRUCT rider on an assignable lhs uniquely marks a web-compat call target (see _parseValueTailCall).
+    // - `f() ??= x` / `f() &&= x` / `f() ||= x` (error even in sloppy web-compat)
+    if (hasAllFlags(lhsAssignable, CANT_DESTRUCT) && ($tp_eq_type === $PUNC_AND_AND_EQ || $tp_eq_type === $PUNC_OR_OR_EQ || $tp_eq_type === $PUNC_QMARK_QMARK_EQ)) {
+      return THROW_RANGE('Cannot use a function call as the target of a logical assignment operator (the web compat allowance only covers `=` and compound assignments)', tok_getStart(), tok_getStop());
+    }
+
     AST_convertArrayToPattern($tp_eq_type, astProp)
 
     // Note: assignment to object/array is caught elsewhere
@@ -10052,7 +10069,9 @@ function Parser(code, options = {}) {
       object: objectNode,
       property: propertyNode,
     });
-    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setAssignable(assignable), isNewArg, NOT_LHSE, astProp);
+    // A `.x` member tail makes the whole value a MemberExpression, whose AssignmentTargetType is `simple` even when
+    // the object is a call (`f().x`), so clear any web-compat CANT_DESTRUCT rider left by a preceding call tail.
+    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, sansFlag(setAssignable(assignable), CANT_DESTRUCT), isNewArg, NOT_LHSE, astProp);
   }
   function _parseValueTailDynamicProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, isOptional, astProp) {
     // parseMemberExpression dynamic
@@ -10081,7 +10100,9 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($PUNC_BRACKET_CLOSE, lexerFlags);
     AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'MemberExpression');
-    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, setAssignable(assignable), isNewArg, NOT_LHSE, astProp); // member expressions are assignable
+    // A `[x]` computed member tail makes the whole value a MemberExpression (AssignmentTargetType `simple`) even
+    // when the object is a call (`f()[0]`), so clear any web-compat CANT_DESTRUCT rider left by a call tail.
+    return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, sansFlag(setAssignable(assignable), CANT_DESTRUCT), isNewArg, NOT_LHSE, astProp); // member expressions are assignable
   }
   function _parseValueTailCall(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, isOptional, astProp) {
     ASSERT(_parseValueTailCall.length === arguments.length, 'arg count');
@@ -10111,9 +10132,13 @@ function Parser(code, options = {}) {
     assignable = mergeAssignable(nowAssignable, assignable);
     AST_close($tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, 'CallExpression');
 
-    // Annex B: In sloppy+webcompat mode, a CallExpression is a valid assignment target (runtime error, not syntax error)
+    // ES2026 draft Annex B.3.9: in sloppy web-compat code a call is a `web-compat` assignment target — assignment,
+    // update, and for-in/of heads throw a runtime ReferenceError instead of an early error. Since web-compat is not
+    // `simple`, a call still is never a valid destructuring target (`[f()] = x`), so ride CANT_DESTRUCT along.
     // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
-    let callAssignable = (hasNoFlag(lexerFlags, LF_STRICT_MODE) && options_webCompat === WEB_COMPAT_ON) ? assignable : setNotAssignable(assignable);
+    // In every ratified edition (ES2015-ES2025) the AssignmentTargetType of a call is invalid, so without the
+    // web-compat gate (or when targeting es<=16) the call is simply not assignable at all.
+    let callAssignable = (allowCallAssignmentTarget && hasNoFlag(lexerFlags, LF_STRICT_MODE)) ? (assignable | CANT_DESTRUCT) : setNotAssignable(assignable);
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, callAssignable, isNewArg, NOT_LHSE, astProp);
   }
   function _parseValueTailTemplate(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
@@ -11416,9 +11441,10 @@ function Parser(code, options = {}) {
         AST_patchAsyncCall($tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, astProp);
       }
 
-      // Annex B: In sloppy+webcompat, a CallExpression is a valid assignment target (runtime error, not syntax error)
-      // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
-      let asyncCallAssignable = (hasNoFlag(lexerFlags, LF_STRICT_MODE) && options_webCompat === WEB_COMPAT_ON) ? IS_ASSIGNABLE : NOT_ASSIGNABLE;
+      // A call like `async(x)` is a CallExpression; per ES2026 draft Annex B.3.9 it is a `web-compat` assignment
+      // target in sloppy web-compat code (runtime ReferenceError, not early error), but never a destructuring
+      // target, so ride CANT_DESTRUCT (see _parseValueTailCall).
+      let asyncCallAssignable = (allowCallAssignmentTarget && hasNoFlag(lexerFlags, LF_STRICT_MODE)) ? (IS_ASSIGNABLE | CANT_DESTRUCT) : NOT_ASSIGNABLE;
       let assignable = parseValueTail(lexerFlags, $tp_async_start, $tp_async_line, $tp_async_column, asyncCallAssignable, NOT_NEW_ARG, NOT_LHSE, astProp);
       if (fromStmtOrExpr === IS_STATEMENT) {
         // in expressions operator precedence is handled elsewhere. in statements this is the start,
@@ -12801,7 +12827,10 @@ function Parser(code, options = {}) {
 
     let valueAssignable = parseValueAfterIdent(lexerFlags, $tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon, bindingType, ASSIGN_EXPR_IS_OK, 'value');
 
-    if (notAssignable(valueAssignable)) {
+    // A web-compat call value (`{foo: fail()}`) is assignable but rides CANT_DESTRUCT: it can be a simple assignment
+    // target (`fail() = x`) but never a destructuring target (`{foo: fail()} = x`), and a default (`{foo: fail() = x}`)
+    // does not change that, so treat it as CANT_DESTRUCT rather than DESTRUCT_ASSIGN_ONLY.
+    if (notAssignable(valueAssignable) || hasAllFlags(valueAssignable, CANT_DESTRUCT)) {
       // [v]: `({foo: true / false});`
       //                   ^
 
@@ -14436,7 +14465,9 @@ function Parser(code, options = {}) {
     } else {
       assignable = parseValueTail(lexerFlags, $tp_valueStart_start, $tp_valueStart_line, $tp_valueStart_column, assignable, NOT_NEW_ARG, NOT_LHSE, astProp);
       // (If there is no tail the input assignable is returned...)
-      if (isAssignable(assignable)) {
+      // A web-compat call tail (`[x].map(y,z)`) is assignable but rides CANT_DESTRUCT: it is a valid simple
+      // assignment target yet never a destructuring target, so it must not clear the pattern's CANT_DESTRUCT.
+      if (isAssignable(assignable) && hasNoFlag(assignable, CANT_DESTRUCT)) {
         // The destructibility of the whole expression solely depends on the tail
         // For example, `foo`, `foo.bar`, `foo().bar`, `{...x}[y]`, are all assignable and therefor assign-destructible
         destructible = sansFlag(destructible, CANT_DESTRUCT | DESTRUCT_ASSIGN_ONLY | MUST_DESTRUCT);
@@ -14458,7 +14489,8 @@ function Parser(code, options = {}) {
           // - `[x.y = a] = z`
         }
       } else if (firstOpNotAssign) {
-        if (notAssignable(assignable)) {
+        // A web-compat call tail is assignable but rides CANT_DESTRUCT, so honor it here too.
+        if (notAssignable(assignable) || hasAllFlags(assignable, CANT_DESTRUCT)) {
 
           // [v]: `[...[x].map(y, z)];`
           // [x]: `[...[x].map(y, z)] = a;`
@@ -14670,8 +14702,10 @@ function Parser(code, options = {}) {
         assignable = parseExpressionFromOp(lexerFlags, $tp_argStart_start, $tp_argStart_stop, $tp_argStart_line, $tp_argStart_column, assignable, astProp);
       }
 
-      if (notAssignable(assignable)) {
+      if (notAssignable(assignable) || hasAllFlags(assignable, CANT_DESTRUCT)) {
         // `[...a+b]`
+        // A web-compat call (`f() = x` is allowed) is assignable but rides CANT_DESTRUCT because it is never a
+        // valid rest/destructuring target (`[...z()] = x`), so honor the rider even though it reports assignable.
         destructible |= CANT_DESTRUCT;
       } else if (willBeSimple) {
         // Skip dupe check because it may end up not a binding

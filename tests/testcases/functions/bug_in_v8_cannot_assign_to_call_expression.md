@@ -54,7 +54,17 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Expected to parse a value
+
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ function f([x=x()=x]){},({x:{1:y()=x},x:{7:3}})>x
+   ║                        ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Module goal with AnnexB
 

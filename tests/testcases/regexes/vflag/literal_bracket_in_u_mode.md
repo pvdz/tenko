@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/literal_bracket_in_u_mode.md
+- Path: tests/testcases/regexes/vflag/literal_bracket_in_u_mode.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> literal bracket in u mode
 >

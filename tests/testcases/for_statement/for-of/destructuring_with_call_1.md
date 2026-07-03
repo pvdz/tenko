@@ -5,7 +5,6 @@
 > :: for statement : for-of
 >
 > ::> destructuring with call 1
-
 ## PASS ANNEXB
 
 ## Input

@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/nested_with_content_and_outer.md
+- Path: tests/testcases/regexes/vflag/nested_with_content_and_outer.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> nested with content and outer
 >

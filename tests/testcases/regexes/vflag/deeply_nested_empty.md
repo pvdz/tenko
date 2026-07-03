@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/deeply_nested_empty.md
+- Path: tests/testcases/regexes/vflag/deeply_nested_empty.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> deeply nested empty
 >

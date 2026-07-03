@@ -1,8 +1,8 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regex/vflag/empty_nested_class_proper.md
+- Path: tests/testcases/regexes/vflag/empty_nested_class_proper.md
 
-> :: regex : vflag
+> :: regexes : vflag
 >
 > ::> empty nested class proper
 >

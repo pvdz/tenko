@@ -2375,6 +2375,12 @@ function Lexer(
     let s = String.fromCodePoint(c);
     ASSERT(s.length === 1 || s.length === 2, 'up to four bytes...'); // js strings are 16bit
     if (regexScanner.test(s)) {
+      // A modern runtime may already include the Unicode 17.0 additions in its own \p{ID_Start}/\p{ID_Continue}
+      // data. Those codepoints are gated to targetEsVersion >= 17, so explicitly exclude them for older targets.
+      // - `var ࢏;` with es=16 must fail even when the runtime ships Unicode 17.0
+      if (targetEsVersion !== Infinity && targetEsVersion < 17 && (isInU17Ranges(c, U17_ID_START) || isInU17Ranges(c, U17_ID_CONTINUE_ONLY))) {
+        return INVALID_IDENT_CHAR;
+      }
       return s.length === 1 ? VALID_SINGLE_CHAR : VALID_DOUBLE_CHAR;
     }
     // Supplementary Unicode 17.0 check: Node/V8 may not yet have these in \p{ID_Start}/\p{ID_Continue}
@@ -3788,7 +3794,13 @@ function Lexer(
         let va = getHexValue(a);
         if (va === HEX_OOB) {
           let reason = 'First char of hex escape not a valid digit';
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+          // A broken `\x` is only a valid identity escape (`x` is UnicodeIDContinue) via Annex B, so without
+          // webcompat it is a SyntaxError in every mode. With webcompat it is good without u/v flag.
+          // - `/\x/` (webcompat: identity escape of `x`) vs `/\x/u` (always error)
+          if (webCompat === WEB_COMPAT_ON) {
+            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+          }
+          return regexSyntaxError(reason);
         }
         ASSERT_skip(a);
         if (eof()) {
@@ -3799,7 +3811,11 @@ function Lexer(
         let vb = getHexValue(b);
         if (vb === HEX_OOB) {
           let reason = 'Second char of hex escape not a valid digit';
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+          // As above: a `\xH` with a bad second digit is Annex-B-only, so a SyntaxError without webcompat.
+          if (webCompat === WEB_COMPAT_ON) {
+            return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
+          }
+          return regexSyntaxError(reason);
         }
         ASSERT_skip(b);
         return REGEX_ALWAYS_GOOD;
@@ -3964,9 +3980,15 @@ function Lexer(
         return regexSyntaxError('Regular expressions do not support line continuations (escaped newline)');
 
       case REGATOM_ESC_WC:
-        // Non-special letters can only be escaped without u-flag or v-flag (identity escape)
+        // Non-special letters can only be escaped in webcompat mode and without u-flag. A letter is UnicodeIDContinue,
+        // so `IdentityEscape :: [~UnicodeMode] SourceCharacter but not UnicodeIDContinue` rejects it in the main
+        // grammar; only Annex B `SourceCharacterIdentityEscape` permits it. Without webcompat this is a SyntaxError.
         ASSERT_skip(c);
-        return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag or v-flag');
+        if (webCompat === WEB_COMPAT_ON) {
+          // Atom escape was acceptable but only without u-flag
+          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Atom escape can only escape certain letters without u-flag or v-flag');
+        }
+        return regexSyntaxError('Cannot escape this letter [' + String.fromCharCode(c) + ']');
 
       // <SCRUB ASSERTS>
       default:
@@ -4079,7 +4101,7 @@ function Lexer(
         if (!supportRegexVFlag || bracketDepth === 1) {
           // First ] with no content: can be literal ] (e.g. []] or [][]) or empty class [].
           if (supportRegexVFlag) {
-            if (bracketDepth === 1 && !hasClassContent && (peekd(1) === $$SQUARE_R_5D || peekd(1) === $$SQUARE_L_5B)) {
+            if (bracketDepth === 1 && !hasClassContent && neofd(2) && (peekd(1) === $$SQUARE_R_5D || peekd(1) === $$SQUARE_L_5B)) {
               ASSERT_skip($$SQUARE_R_5D);
               hasClassContent = true;
               literalRbracketJustAdded = true;
@@ -4095,7 +4117,7 @@ function Lexer(
           break;
         }
         // bracketDepth >= 2: ] closes innermost. If next char is not ] or [, and no content at this depth, one ] closes all (e.g. /[[[]]/v). With content (e.g. [a]) we only close one level.
-        const next = peekd(1);
+        const next = neofd(2) ? peekd(1) : 0; // 0 when at EOF; matches neither `]` nor `[` below
         if (bracketDepth >= 2 && next !== $$SQUARE_R_5D && next !== $$SQUARE_L_5B && !seenContentAtCurrentDepth) {
           // In v mode, `[` starts a nested class and `]` only closes one level, so the outer class would be
           // unterminated here (e.g. /[[]/v). But in non-v mode, `[` is a literal and this `]` closes the class.
@@ -4142,7 +4164,7 @@ function Lexer(
           (hasNestedBracket || hasSeenVModeSyntax || (urangeLeft !== -1 && prev !== $$DASH_2D)) &&
           prev !== $$DASH_2D &&
           c === $$DASH_2D &&
-          !eof() &&
+          neofd(3) &&
           peekd(1) === $$DASH_2D &&
           peekd(2) !== $$SQUARE_R_5D &&
           peekd(2) !== $$DASH_2D &&
@@ -4159,7 +4181,7 @@ function Lexer(
           continue;
         }
         // && in a char class is v-only syntax (e.g. [a&&b]). Reject when missing left ([&&a]) or right ([a&&]) operand.
-        if (c === $$AND_26 && !eof() && peekd(1) === $$AND_26) {
+        if (c === $$AND_26 && neofd(2) && peekd(1) === $$AND_26) {
           if (!hasClassContent) {
             regexBodyHasSyntaxInvalidWithVFlag = true;
             lastPotentialRegexErrorForVFlag = 'Set intersection `&&` requires a left operand in character class with the v flag';
@@ -4199,7 +4221,7 @@ function Lexer(
         // ! # $ % * + , . : ; < = > ? @ ^ ` ~ are reserved and invalid.
         // https://tc39.es/ecma262/#prod-ClassSetReservedDoublePunctuator
         // Note: && and -- are handled above as set operators.
-        else if (!eof() && peekd(1) === c && (
+        else if (neofd(2) && peekd(1) === c && (
           c === $$EXCL_21 || c === $$HASH_23 || c === $$$_24 || c === $$PERCENT_25 ||
           c === $$STAR_2A || c === $$PLUS_2B || c === $$COMMA_2C || c === $$DOT_2E ||
           c === $$COLON_3A || c === $$SEMI_3B || c === $$LT_3C || c === $$IS_3D ||

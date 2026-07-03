@@ -1,10 +1,10 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/nested_lbracket_trap_v_pass.md
+- Path: tests/testcases/regexes/v_flag/nested_lbracket_trap_v_fail.md
 
 > :: regexes : v flag
 >
-> ::> nested lbracket trap v pass
+> ::> nested lbracket trap v fail
 >
 > In v-mode each `[` inside a class starts a nested class, so `[[[]]` needs three `]` to close all levels. With only two `]`, the outer class is unterminated.
 

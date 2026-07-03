@@ -54,10 +54,148 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+      expression: {
+        type: 'BinaryExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:25},source:''},
+        left: {
+          type: 'ObjectExpression',
+          loc:{start:{line:1,column:1},end:{line:1,column:22},source:''},
+          properties: [
+            {
+              type: 'Property',
+              loc:{start:{line:1,column:2},end:{line:1,column:13},source:''},
+              key: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:2},end:{line:1,column:3},source:''},
+                name: 'x'
+              },
+              kind: 'init',
+              method: false,
+              computed: false,
+              value: {
+                type: 'ObjectExpression',
+                loc:{start:{line:1,column:4},end:{line:1,column:13},source:''},
+                properties: [
+                  {
+                    type: 'Property',
+                    loc:{start:{line:1,column:5},end:{line:1,column:12},source:''},
+                    key: {
+                      type: 'Literal',
+                      loc:{start:{line:1,column:5},end:{line:1,column:6},source:''},
+                      value: 1,
+                      raw: '1'
+                    },
+                    kind: 'init',
+                    method: false,
+                    computed: false,
+                    value: {
+                      type: 'AssignmentExpression',
+                      loc:{start:{line:1,column:7},end:{line:1,column:12},source:''},
+                      left: {
+                        type: 'CallExpression',
+                        loc:{start:{line:1,column:7},end:{line:1,column:10},source:''},
+                        optional: false,
+                        callee: {
+                          type: 'Identifier',
+                          loc:{start:{line:1,column:7},end:{line:1,column:8},source:''},
+                          name: 'y'
+                        },
+                        arguments: []
+                      },
+                      operator: '=',
+                      right: {
+                        type: 'Identifier',
+                        loc:{start:{line:1,column:11},end:{line:1,column:12},source:''},
+                        name: 'x'
+                      }
+                    },
+                    shorthand: false
+                  }
+                ]
+              },
+              shorthand: false
+            },
+            {
+              type: 'Property',
+              loc:{start:{line:1,column:14},end:{line:1,column:21},source:''},
+              key: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},
+                name: 'x'
+              },
+              kind: 'init',
+              method: false,
+              computed: false,
+              value: {
+                type: 'ObjectExpression',
+                loc:{start:{line:1,column:16},end:{line:1,column:21},source:''},
+                properties: [
+                  {
+                    type: 'Property',
+                    loc:{start:{line:1,column:17},end:{line:1,column:20},source:''},
+                    key: {
+                      type: 'Literal',
+                      loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
+                      value: 7,
+                      raw: '7'
+                    },
+                    kind: 'init',
+                    method: false,
+                    computed: false,
+                    value: {
+                      type: 'Literal',
+                      loc:{start:{line:1,column:19},end:{line:1,column:20},source:''},
+                      value: 3,
+                      raw: '3'
+                    },
+                    shorthand: false
+                  }
+                ]
+              },
+              shorthand: false
+            }
+          ]
+        },
+        operator: '>',
+        right: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:24},end:{line:1,column:25},source:''},
+          name: 'x'
+        }
+      }
+    }
+  ]
+}
+
+tokens (27x):
+       PUNC_PAREN_OPEN PUNC_CURLY_OPEN IDENT PUNC_COLON
+       PUNC_CURLY_OPEN NUMBER_DEC PUNC_COLON IDENT PUNC_PAREN_OPEN
+       PUNC_PAREN_CLOSE PUNC_EQ IDENT PUNC_CURLY_CLOSE PUNC_COMMA
+       IDENT PUNC_COLON PUNC_CURLY_OPEN NUMBER_DEC PUNC_COLON
+       NUMBER_DEC PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE PUNC_PAREN_CLOSE
+       PUNC_GT IDENT ASI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
 _Output same as sloppy mode._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+({x:{1:y() = x}, x:{7:3}}) > x;
+````
+
+Produces same AST
