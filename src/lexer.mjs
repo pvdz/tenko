@@ -4462,7 +4462,8 @@ function Lexer(
               let prior = regionGroupNames.get(regionCurName);
               let here = regionBranch.slice();
               if (prior) for (const p of prior) {
-                let minLen = Math.min(p.length, here.length), diverges = false;
+                let minLen = Math.min(p.length, here.length);
+                let diverges = false;
                 for (let k = 0; k < minLen; k++) if (p[k] !== here[k]) { diverges = true; break; }
                 if (!diverges) return regexSyntaxError('This regex group name (`' + regionCurName + '`) was already used before in a way where both can participate');
               }
