@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: In v-mode `[` inside a character class starts a nested class; not enough `]` to close all levels
+    Regex: With the v flag the character class would still be open at the `/` (which would also have to be escaped inside a class), so this regex is only valid without the v flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

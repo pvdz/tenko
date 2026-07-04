@@ -800,11 +800,15 @@ function Parser(code, options = {}) {
     // - `class C { x = 1; }`                          ident field init
     // - `class C { 'key' = 1; }`                      literal field init
     // - `class C { [expr] = 1; }`                     computed field init
-    ASSERT_skipAny($PUNC_EQ, lexerFlags);
+    // The `=` is followed by an AssignmentExpression, so the next `/` must be lexed as a regex, not division.
+    // (`class C { r = /^a/g; }` — regex field init). Use skipRex, not skipAny which assumes division.
+    ASSERT_skipToExpressionStart($PUNC_EQ, lexerFlags);
     // Field initializers create a new function boundary that is neither async nor a generator.
     // `async function f() { class C { x = await; } }` — await is an identifier, not AwaitExpression
     // `function* g() { class C { x = yield; } }` — yield is an identifier, not YieldExpression
-    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR) | LF_IN_CLASS_FIELD_INIT;
+    // new.target is allowed in a field initializer (evaluates to undefined at runtime), like a static block.
+    // - `class C { t = new.target === undefined; }`         ok, new.target is allowed
+    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR) | LF_IN_CLASS_FIELD_INIT | LF_CAN_NEW_DOT_TARGET;
     let $tp_value_start = tok_getStart();
     let $tp_value_line = tok_getLine();
     let $tp_value_column = tok_getColumn();
@@ -4464,7 +4468,10 @@ function Parser(code, options = {}) {
     while (tok_getType() !== $PUNC_CURLY_CLOSE) {
       parseNestedBodyPart(lexerFlagsNoTemplate, scoop, EMPTY_LABEL_SET, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL, 'body');
     }
-    ASSERT_skipToStatementStart($PUNC_CURLY_CLOSE, lexerFlags);
+    // Back in the class body after the static block: the next token is a class element key (may be `*` `#` `[`
+    // `get` `static` `;` `}`), not a statement start. Consume the `}` with skipDiv like a method body does, else a
+    // following generator method (`static{}*m(){}`) trips the statement-start assertion.
+    ASSERT_skipDiv($PUNC_CURLY_CLOSE, lexerFlags);
     AST_close($tp_curly_start, $tp_curly_line, $tp_curly_column, 'StaticBlock');
     return CANT_DESTRUCT;
   }
@@ -5580,11 +5587,14 @@ function Parser(code, options = {}) {
         return IS_ASSIGNABLE; // the `let` variable name is assignable
       }
 
-      if ($tp_letArg_type === $ID_of) {
-        // [x]: `for (let of y);`
-        //                ^^
-        return THROW_RANGE('A `for (let of ...)` is always illegal', $tp_for_start, $tp_letArg_stop);
-      }
+      // Note: `of` is a valid BindingIdentifier (a contextual keyword, not reserved), so when the token after `let`
+      // is `of` it is the *binding name*, not the for-of keyword. The real of/in keyword (or `=`/`;`/`,`) follows it.
+      // - `for (let of of y);`   ok: bind `of`, iterate `y` (for-of)
+      // - `for (let of in y);`   ok: bind `of` (for-in)
+      // - `for (let of;;);`      ok: bind `of`, C-style
+      // - `for (let of y);`      error: after binding `of` there is no valid of/in/=/;/, (handled downstream)
+      // (Treating `let` itself as a for-of binding-expression, i.e. `for (let of y)` as `(let) of (y)`, stays illegal
+      //  via the grammar's `[lookahead ≠ let]`; that is the single-`of` case which still fails below.)
 
       // [v]: `for (let x of y);`
       //                ^
@@ -5640,7 +5650,8 @@ function Parser(code, options = {}) {
     // [x]: `for (let() of y);`
     // [v]: `for (let();;);`
 
-    ASSERT($tp_letArg_type !== $PUNC_BRACKET_CLOSE, 'case handled above');
+    // Note:  is handled above, but  (BRACKET_CLOSE) is NOT: in sloppy mode  is  as a var name
+    // then a stray , which the expression fallback below parses and reports as a normal error.
     ASSERT($tp_letArg_type !== $ID_in, 'case handled above');
     ASSERT($tp_letArg_type !== $ID_of, 'case handled above');
 

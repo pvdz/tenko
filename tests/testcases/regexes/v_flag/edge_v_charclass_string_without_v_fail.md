@@ -5,7 +5,9 @@
 > :: regexes : v flag
 >
 > ::> edge v charclass string without v fail
-## FAIL
+>
+> Without the v flag `\q` is the annex B identity escape of q (SourceCharacterIdentityEscape) followed by literal brace atoms: webcompat only, invalid with the u flag
+## PASS ANNEXB
 
 ## Input
 
@@ -29,7 +31,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Regex used v-mode character class syntax (e.g. set difference `--` or nested sets) but did not have the v flag
+    Regex: Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -55,10 +57,41 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+ast: {
+  type: 'Program',
+  loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+  body: [
+    {
+      type: 'ExpressionStatement',
+      loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+      expression: {
+        type: 'Literal',
+        loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+        value: null,
+        regex: { pattern: '[\\q{x}]', flags: '' },
+        raw: '/[\\q{x}]/'
+      }
+    }
+  ]
+}
+
+tokens (3x):
+       REGEXN ASI
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._
+
+## AST Printer
+
+Printer output different from input [sloppy][annexb:yes]:
+
+````js
+/[\q{x}]/;
+````
+
+Produces same AST

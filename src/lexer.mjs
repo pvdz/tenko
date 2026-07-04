@@ -1088,8 +1088,9 @@ function Lexer(
     return $PUNC_DOT;
   }
   function parseTripleDot() {
-    // we just parsed a dot
-    if (peekd(1) === $$DOT_2E) {
+    // we just parsed a dot. peekd(1) reads pointer+1, so guard with neofd(2); a `..` at EOF (no third dot to
+    // inspect) falls through to the else, which returns the token and lets the parser report the error.
+    if (neofd(2) && peekd(1) === $$DOT_2E) {
       ASSERT_skip($$DOT_2E);
       ASSERT_skip($$DOT_2E);
       return $PUNC_DOT_DOT_DOT;
@@ -2390,20 +2391,21 @@ function Lexer(
     }
     let s = String.fromCodePoint(c);
     ASSERT(s.length === 1 || s.length === 2, 'up to four bytes...'); // js strings are 16bit
+    // Whether this codepoint is a Unicode 17.0 (ES2026) identifier addition. These are gated to es>=17 (or the
+    // default Infinity). ID_Start chars are valid for both scanners; ID_Continue-only chars only for the rest scanner.
+    let isU17Addition = isInU17Ranges(c, U17_ID_START) || (regexScanner === getIdRestRegexSuperSlow() && isInU17Ranges(c, U17_ID_CONTINUE_ONLY));
+    let allowU17 = targetEsVersion >= 17 || targetEsVersion === Infinity;
     if (regexScanner.test(s)) {
-      // A modern runtime may already include the Unicode 17.0 additions in its own \p{ID_Start}/\p{ID_Continue}
-      // data. Those codepoints are gated to targetEsVersion >= 17, so explicitly exclude them for older targets.
+      // The host engine may already ship a Unicode version that classifies these as ID_Start/ID_Continue. To gate by
+      // spec version (not by whatever Unicode data the host happens to have) we must subtract U17 additions when
+      // es<17, just as we add them below when the host engine is older. Keeps Tenko spec-compliant, not host-compliant.
       // - `var ࢏;` with es=16 must fail even when the runtime ships Unicode 17.0
-      if (targetEsVersion !== Infinity && targetEsVersion < 17 && (isInU17Ranges(c, U17_ID_START) || isInU17Ranges(c, U17_ID_CONTINUE_ONLY))) {
-        return INVALID_IDENT_CHAR;
-      }
+      if (!allowU17 && isU17Addition) return INVALID_IDENT_CHAR;
       return s.length === 1 ? VALID_SINGLE_CHAR : VALID_DOUBLE_CHAR;
     }
     // Supplementary Unicode 17.0 check: Node/V8 may not yet have these in \p{ID_Start}/\p{ID_Continue}
     // Gated to targetEsVersion >= 17 (ES2026) or Infinity (default), consistent with script table gating.
-    // ID_Start chars are also valid ID_Continue, so check U17_ID_START for both scanners.
-    // U17_ID_CONTINUE_ONLY is only checked for the continue/rest scanner.
-    if ((targetEsVersion >= 17 || targetEsVersion === Infinity) && (isInU17Ranges(c, U17_ID_START) || (regexScanner === getIdRestRegexSuperSlow() && isInU17Ranges(c, U17_ID_CONTINUE_ONLY)))) {
+    if (allowU17 && isU17Addition) {
       return s.length === 1 ? VALID_SINGLE_CHAR : VALID_DOUBLE_CHAR;
     }
     return INVALID_IDENT_CHAR;
@@ -2657,7 +2659,9 @@ function Lexer(
     if (peeky($$DOT_2E)) {
       // Must prevent parsing `a?.2` as a `?.` token as it will lead to an incorrect error, if the `.2` case is valid
       // (Spec explicitly disallows a digit after `?.`)
-      if (neofd(1)) {
+      // Guard peekd(1) with neofd(2): peekd(1) reads pointer+1, which is only in bounds when pointer <= len-2.
+      // (`a?.` at EOF has the `.` as the last char, so there is nothing after it to inspect.)
+      if (neofd(2)) {
         let c = peekd(1);
         if (c >= $$0_30 && c <= $$9_39) {
           // [v]: `a ?.2 : b`
@@ -2776,6 +2780,9 @@ function Lexer(
   let regexBodyHasSyntaxInvalidWithVFlag = false;
   let lastPotentialRegexErrorForVFlag = ''; // message shown when v flag present and regexBodyHasSyntaxInvalidWithVFlag (fallback from lastPotentialRegexError in charclass consumer if unset)
   let regexBodyUsedVOnlySyntax = false; // --, &&, nested [], \q{}; error after flags if no v flag
+  let regexBodyNestedClassTailRbracket = false; // `]` consumed after the `]` that closes the class without v (`/[[a]]/`); without v it is a bare `]` in the body: webcompat only, invalid with u flag
+  let regexBodyOpCharsInvalidSansUV = false; // the non-v non-u reading of chars consumed as v operators / \q strings is invalid (`/[a--b]/` is the out-of-order range a-to-dash without flags) — the v flag itself is exempt
+  let regexBodyOpCharsInvalidWithU = false; // the u reading of chars consumed as v operators / \q strings is invalid (`/[a--b]/u`) — the v flag itself is exempt
   let regexBodyHasPropOfStrings = false; // \p{RGI_Emoji} etc are only valid with v flag; error after flags if u flag
   let regexBodyHasNegatedPropOfStrings = false; // \P{RGI_Emoji} or [^\p{RGI_Emoji}] etc is always an error (can't negate property of strings)
   let regexCurrentCharClassIsNegated = false; // set to true while parsing inside [^...], so \p{...} can detect it
@@ -2793,6 +2800,9 @@ function Lexer(
     foundInvalidGroupName = false;
     regexBodyHasSyntaxInvalidWithVFlag = false;
     regexBodyUsedVOnlySyntax = false;
+    regexBodyNestedClassTailRbracket = false;
+    regexBodyOpCharsInvalidSansUV = false;
+    regexBodyOpCharsInvalidWithU = false;
     regexBodyHasPropOfStrings = false;
     regexBodyHasNegatedPropOfStrings = false;
     regexBranchPath = [0];
@@ -2863,6 +2873,28 @@ function Lexer(
       return $ERROR;
     }
 
+    if (regexBodyOpCharsInvalidSansUV && ustatusFlags !== REGEX_GOOD_WITH_V_FLAG && ustatusFlags !== REGEX_GOOD_WITH_U_FLAG) {
+      // - `/[a--b]/` (without flags the chars consumed as v operators read as the out-of-order range a-to-dash)
+      regexSyntaxError('Without the v flag the characters of a `--` / `&&` / `\\q{...}` construct are plain class atoms, and that reading of this class is invalid (for example an out-of-order range)');
+      return $ERROR;
+    }
+
+    if (regexBodyOpCharsInvalidWithU && ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
+      // - `/[a--b]/u` (with the u flag the chars consumed as v operators read as the out-of-order range a-to-dash)
+      regexSyntaxError('With the u flag the characters of a `--` / `&&` / `\\q{...}` construct are plain class atoms, and that reading of this class is invalid (for example an out-of-order range or a class escape range)');
+      return $ERROR;
+    }
+
+    if (regexBodyNestedClassTailRbracket && ustatusFlags !== REGEX_GOOD_WITH_V_FLAG) {
+      // - `/[[a]]/` (without the v flag the class closed at the first unescaped `]` and the second is a bare `]` in the body)
+      // - `/[\q{ab}]/` (without the v flag `\q` is an annex B identity escape)
+      // - `/[[a]\d]/` `/[[a]}]/` (escapes and stray braces after the non-v class close are annex B body syntax)
+      if (webCompat === WEB_COMPAT_OFF || ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
+        regexSyntaxError('Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag');
+        return $ERROR;
+      }
+    }
+
     if (regexBodyHasNegatedPropOfStrings && (ustatusFlags === REGEX_GOOD_WITH_U_FLAG || ustatusFlags === REGEX_GOOD_WITH_V_FLAG)) {
       regexSyntaxError('Negating a property of strings (`\\P{...}`) is not allowed');
       return $ERROR;
@@ -2924,6 +2956,14 @@ function Lexer(
       // body had an escape or char class range that is invalid with a u or v flag
       if (ustatusFlags !== REGEX_GOOD_WITH_U_FLAG && ustatusFlags !== REGEX_GOOD_WITH_V_FLAG) return $REGEXN;
       regexSyntaxError(lastPotentialRegexError || 'Regex contained syntax that is invalid with the u-flag or v-flag but the u-flag or v-flag was present');
+      return $ERROR;
+    }
+
+    if (ustatusBody === REGEX_ALWAYS_BAD) {
+      // The body has contradictory flag requirements: some construct requires u/v while another forbids it, so
+      // no flag combination is valid (`/\k<n>\p{L}/` without a named group: `\p` needs u, bare `\k` forbids u).
+      // updateRegexUflagState already reported the error via regexSyntaxError, so just fail cleanly.
+      ASSERT(lastReportableLexerError, 'reaching ALWAYS_BAD body status means a hard error was already reported');
       return $ERROR;
     }
 
@@ -4076,6 +4116,142 @@ function Lexer(
     // Only treat --/&& as set operators when we've seen a nested [; otherwise [^--] and [a&&b] are valid (range / two &).
     let hasNestedBracket = false;
 
+    // The lexical grammar is flag independent: without the v flag the class always closes at the first unescaped `]`
+    // (RegularExpressionClassChar excludes `]`) and a later unescaped `[` opens a new class in the body. Track that
+    // reading while the v reading keeps us in the class through nested brackets, because an unescaped `/` outside
+    // the non-v class must end the regex literal.
+    // - `x=/[-[\]a]/g;` (the nested `[` keeps the v reading open past the `]` that closes the class without v)
+    let nonVInClass = true;
+    // While consuming chars that are body content in the non-v reading, track what the body grammar allows next:
+    // 2 = after an atom (a quantifier may follow), 1 = after a quantifier (only a lazy `?` may follow),
+    // 0 = after an assertion/lazy marker (no quantifier may follow), 3/4 = inside a bounded quantifier `{...}`
+    // (3 = no digit seen yet, 4 = digit seen so `}` may close it).
+    // - `/[[a]+]/` `/[[a]+?]/` `/[[a]{2,3}]/` (valid body syntax) vs `/[[a]+*]/` `/[[a]?*]/` (nothing to repeat)
+    let nonVRegionState = 2;
+    // Parens in the ambiguous region open real groups in the non-v body reading; track balance so an unterminated
+    // group rejects (`/[[a](]/` is invalid in every reading). Note: these groups do not add to nCapturingParens,
+    // which can misvalidate backreferences that follow such rare regexes in pure (non-webcompat) mode.
+    let regionParenDepth = 0;
+    // Region-local duplicate named-group detection (MightBothParticipate, ES2025 22.2.1.1). Named groups in the
+    // ambiguous body tail are real captures; two with the same name in the same disjunction alternative are an
+    // error. Track a branch path (branch index per group-nesting depth, bumped by `|`) and each declared name.
+    // - `/[[a](?<n>y)(?<n>y)]/` invalid (same alternative) vs `/[[a](?<n>y)|(?<n>y)]/` valid (different alternatives)
+    let regionBranch = [0];
+    let regionGroupNames = new Map(); // name -> array of branch-path snapshots
+    let regionCurName = '';
+    // In the v reading a nested `[` starts a fresh class, so a dash or set operator right after it has no lhs
+    // operand (`/[[-]a]/v`, `/[[--a]]/v`). The non-v range tracking can't tell (it sees the literal `[` as a
+    // potential range lhs), so track it separately. A negation caret directly after the `[` is a marker, not an
+    // operand, so it keeps the state (2 = just opened, 1 = only a caret since, 0 = an operand was consumed).
+    let vAfterNestedOpen = 0;
+
+    // v reading: a ClassSetExpression is either a ClassUnion (operands and ranges juxtaposed), a pure
+    // ClassIntersection chain (`A&&B&&C`) or a pure ClassSubtraction chain (`A--B--C`) — never a mix, and chain
+    // operands are single ClassSetOperands (ES2024 22.2.1). Track per nesting depth: the expression kind
+    // (0 = undetermined, 1 = union, 2 = intersection, 3 = subtraction) and operands since the last operator.
+    // - `/[ab&&c]/v` `/[a&&bc]/v` `/[a-b&&c]/v` `/[a&&b--c]/v` (all invalid) vs `/[a&&b&&c]/v` `/[a-bc-d]/v` (valid)
+    let vKindStack = [0];
+    let vItemStack = [0];
+    // MayContainStrings tracking per class depth (ES2024 22.2.1.1): a negated class `[^...]` is a Syntax Error if
+    // its contents may contain strings. A \q{...} with an empty or multi-char alternative may; a single char or
+    // class escape may not. Union: any operand may; ClassIntersection A&&B: both must; ClassSubtraction A--B: A must.
+    let vNegStack = [0]; // depth 0 (outer class) negation is read from regexCurrentCharClassIsNegated at finish time
+    let vStrAnyStack = [false];  // OR of operand string-flags (for union)
+    let vStrAllStack = [true];   // AND of operand string-flags (for intersection)
+    let vStrFirstStack = [false];// first operand's string-flag (for subtraction)
+    let vStrFirstSetStack = [false]; // whether the first operand of this depth has been recorded yet
+    function vOperandStr(mayStr) {
+      const d = vNegStack.length - 1;
+      if (!vStrFirstSetStack[d]) { vStrFirstStack[d] = mayStr; vStrFirstSetStack[d] = true; } // first operand of the whole expression
+      if (mayStr) vStrAnyStack[d] = true;
+      if (!mayStr) vStrAllStack[d] = false;
+    }
+    function vClassMayContainStrings(d) {
+      const k = vKindStack[d];
+      if (k === 2) return vStrAllStack[d];   // intersection
+      if (k === 3) return vStrFirstStack[d]; // subtraction
+      return vStrAnyStack[d];                // union (or single operand)
+    }
+    function vFinishClass(d, negated) {
+      if (negated && vClassMayContainStrings(d)) {
+        regexBodyHasSyntaxInvalidWithVFlag = true;
+        lastPotentialRegexErrorForVFlag = 'A negated character class `[^...]` may not contain strings (a \\q{...} with an empty or multi-code-point alternative, or an intersection/subtraction that yields strings) with the v flag';
+      }
+    }
+    // v reading range tracking, independent of the non-v machinery (which is skipped in the ambiguous region):
+    // a range needs a rangeable lhs (a single ClassSetCharacter: plain char or single-char escape — not a nested
+    // class, \q string or class escape like \d), then the dash, then a rangeable rhs.
+    let vPrevOperandRangeable = false;
+    let vPendingRangeDash = false;
+    let vRangeLhs = -1; // codepoint of the potential range lhs (for the v-side out-of-order check in the region)
+    function vStripCp(cp) {
+      if (cp & REGEX_CHARCLASS_WAS_RUBY) cp ^= REGEX_CHARCLASS_WAS_RUBY;
+      if (cp & REGEX_CHARCLASS_BAD_WITH_U_FLAG) cp ^= REGEX_CHARCLASS_BAD_WITH_U_FLAG;
+      if (cp & REGEX_CHARCLASS_BAD_WITH_V_FLAG) cp ^= REGEX_CHARCLASS_BAD_WITH_V_FLAG;
+      if (cp & REGEX_CHARCLASS_BAD_SANS_U_FLAG) cp ^= REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+      return cp;
+    }
+    function vOperandEvent() {
+      const d = vKindStack.length - 1;
+      vItemStack[d]++;
+      if (vKindStack[d] >= 2 && vItemStack[d] >= 2) {
+        regexBodyHasSyntaxInvalidWithVFlag = true;
+        lastPotentialRegexErrorForVFlag = 'With the v flag, operands of `&&` / `--` chains must be single ClassSetOperands separated by the operator';
+      }
+      else if (vKindStack[d] === 0 && vItemStack[d] >= 2) vKindStack[d] = 1; // two juxtaposed operands: a union
+    }
+    function vRangeEvent() {
+      const d = vKindStack.length - 1;
+      if (vKindStack[d] >= 2) {
+        regexBodyHasSyntaxInvalidWithVFlag = true;
+        lastPotentialRegexErrorForVFlag = 'With the v flag, a range is only valid in a union, not in an `&&` / `--` chain';
+      }
+      else vKindStack[d] = 1; // a range makes the expression a union
+      if (vItemStack[d] > 1) vItemStack[d]--; // the lhs and rhs operands merged into one range item
+    }
+    function vOpEvent(kind) {
+      const d = vKindStack.length - 1;
+      if (vKindStack[d] === 1 || (vKindStack[d] >= 2 && vKindStack[d] !== kind)) {
+        regexBodyHasSyntaxInvalidWithVFlag = true;
+        lastPotentialRegexErrorForVFlag = 'With the v flag, `&&` and `--` chains can not be mixed with each other or with union syntax';
+      }
+      vKindStack[d] = kind;
+      vItemStack[d] = 0;
+    }
+
+    // Account one literal class atom with code unit `cu` for the non-v (and u) readings. Used by the `--`/`&&`/\q
+    // handlers which consume their chars wholesale: without the v flag those chars are plain ClassAtoms and still
+    // participate in ranges (`[a-&&]` is the range a-to-`&` plus `&`; `[a--b]` is the invalid range a-to-`-` plus
+    // `-b`), so mirror the end-of-loop range bookkeeping here.
+    function nonVAtomAccounting(cu) {
+      // Note: violations here must NOT poison the v verdict (these chars were consumed as valid v operators or
+      // \q string content), so they use the v-exempt op-chars flags instead of the shared flagState.
+      if (urangeOpen) {
+        if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || urangeLeft > cu) {
+          regexBodyOpCharsInvalidWithU = true; // class escape range / out-of-order range in the u reading
+        }
+        urangeOpen = false;
+        urangeLeft = -1;
+      } else if (cu === $$DASH_2D && urangeLeft !== -1) {
+        urangeOpen = true;
+      } else {
+        urangeLeft = cu;
+      }
+      if (nrangeOpen) {
+        if (nrangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE) {
+          if (webCompat === WEB_COMPAT_OFF) regexBodyOpCharsInvalidSansUV = true;
+        } else if (nrangeLeft > cu) {
+          regexBodyOpCharsInvalidSansUV = true; // out-of-order range in the plain reading
+        }
+        nrangeOpen = false;
+        nrangeLeft = -1;
+      } else if (cu === $$DASH_2D && nrangeLeft !== -1) {
+        nrangeOpen = true;
+      } else {
+        nrangeLeft = cu;
+      }
+    }
+
     let prev = 0;
     let surrogate = 0; // current surrogate if prev is a head and c is a tail
     let isSurrogate = false;
@@ -4101,7 +4277,8 @@ function Lexer(
       ASSERT_skip($$XOR_5E);
       if (eof()) return regexSyntaxError('Encountered early EOF while parsing char class (2)');
       c = peek();
-      hasClassContent = true; // [^] is not empty (negated class)
+      // Note: do not set hasClassContent here; the `^` is the negation marker, not an operand, so `&&` right after
+      // it still has no left operand in the v reading (`/[^&&a]/v` is invalid, ClassIntersection needs operands)
       regexCurrentCharClassIsNegated = true;
     }
 
@@ -4119,37 +4296,58 @@ function Lexer(
           if (supportRegexVFlag) {
             if (bracketDepth === 1 && !hasClassContent && neofd(2) && (peekd(1) === $$SQUARE_R_5D || peekd(1) === $$SQUARE_L_5B)) {
               ASSERT_skip($$SQUARE_R_5D);
+              nonVInClass = false; // without v this `]` closed the (empty) class
+              nonVRegionState = 2; // the (empty) class is a quantifiable atom in the body
               hasClassContent = true;
               literalRbracketJustAdded = true;
+              if (peek() === $$SQUARE_R_5D) {
+                // `[]]`: the v reading is an empty class followed by a bare `]`, which must be escaped in a class
+                // and is not valid on its own, so this is invalid with the v flag. (`[][` is fine with v: it is an
+                // empty class followed by a new class, and `ClassContents :: [empty]` has no mode guard.)
+                regexBodyHasSyntaxInvalidWithVFlag = true;
+                lastPotentialRegexErrorForVFlag = 'A `]` inside a character class must be escaped with the v flag';
+              }
               if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
               c = peek();
               continue;
             }
-            if (bracketDepth === 1 && !hasClassContent) {
-              regexBodyHasSyntaxInvalidWithVFlag = true;
-              lastPotentialRegexErrorForVFlag = 'Empty character class is not allowed with the v flag';
-            }
+            // Note: an empty class `[]` is valid with the v flag too: `ClassContents :: [empty]` carries no
+            // [UnicodeSetsMode] guard (ES2024 22.2.1), so nothing to flag here.
           }
           break;
         }
-        // bracketDepth >= 2: ] closes innermost. If next char is not ] or [, and no content at this depth, one ] closes all (e.g. /[[[]]/v). With content (e.g. [a]) we only close one level.
-        const next = neofd(2) ? peekd(1) : 0; // 0 when at EOF; matches neither `]` nor `[` below
-        if (bracketDepth >= 2 && next !== $$SQUARE_R_5D && next !== $$SQUARE_L_5B && !seenContentAtCurrentDepth) {
-          // In v mode, `[` starts a nested class and `]` only closes one level, so the outer class would be
-          // unterminated here (e.g. /[[]/v). But in non-v mode, `[` is a literal and this `]` closes the class.
-          // Only flag when `[` was a genuine nested class opener (not from the literal-] + [ combo like /[][]/v).
-          if (!closeBothOnNextRbracket) {
-            regexBodyHasSyntaxInvalidWithVFlag = true;
-            lastPotentialRegexErrorForVFlag = 'In v-mode `[` inside a character class starts a nested class; not enough `]` to close all levels';
-          }
-          break; // leave ] for the post-loop ASSERT_skip to consume; closes entire class
-        }
+        // bracketDepth >= 2: this ] closes the innermost nested class in the v reading and continues scanning.
+        // (In the non-v reading the first unescaped `]` already closed the class; the region machinery models the
+        // rest as body content, and an unterminated v class ends up at the `/` exit or EOF error naturally, so no
+        // special "one ] closes all" handling is needed — an empty nested class is a valid v operand: `/[[]--[a]]/v`.)
         if (bracketDepth === 2 && closeBothOnNextRbracket) {
           closeBothOnNextRbracket = false;
           break; // leave ] for the post-loop ASSERT_skip to consume
         }
         bracketDepth--;
         hasClassContent = true;
+        // At depth >= 3 the non-v class may have closed at an even earlier `]`, making this one a bare `]` in the
+        // regex body of that reading (`/[[[b]]/u` must reject: bare `]` is webcompat only and invalid with u)
+        if (!nonVInClass) regexBodyNestedClassTailRbracket = true;
+        nonVInClass = false; // without v this `]` closed the class (or the one a later `[` reopened)
+        vAfterNestedOpen = 0; // the closed nested class is a full operand in the v reading
+        vPrevOperandRangeable = false; vPendingRangeDash = false; // a class is not a range operand
+        let vNestedMayStr = false;
+        if (vNegStack.length > 1) {
+          const nd = vNegStack.length - 1;
+          const nestedNeg = vNegStack[nd];
+          vFinishClass(nd, nestedNeg); // a negated nested class may not contain strings (errors if it does)
+          // A negated NestedClass matches single code points only, so it never contributes strings to the outer
+          // expression; a non-negated one contributes its own MayContainStrings.
+          vNestedMayStr = nestedNeg ? false : vClassMayContainStrings(nd);
+          vKindStack.pop(); vItemStack.pop(); vNegStack.pop(); vStrAnyStack.pop(); vStrAllStack.pop(); vStrFirstStack.pop(); vStrFirstSetStack.pop();
+        }
+        vOperandEvent(); // the closed nested class is one operand of the outer expression
+        vOperandStr(vNestedMayStr);
+        nonVRegionState = 2; // a class is a quantifiable atom in the body
+        // A pending range dash before the closing `]` is a literal trailing dash (`/[[a-]x]/`), and body chars in
+        // the region never participate in class ranges, so drop all range state at this boundary.
+        urangeOpen = false; nrangeOpen = false; urangeLeft = -1; nrangeLeft = -1;
         ASSERT_skip($$SQUARE_R_5D);
         if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
         c = peek();
@@ -4159,6 +4357,44 @@ function Lexer(
       if (supportRegexVFlag) {
         // In v mode, [ starts a nested set; track depth and consume as literal/set start.
         if (c === $$SQUARE_L_5B) {
+          // In the non-v (and u) reading this `[` is a literal class char (0x5B). The nested-class handling below
+          // `continue`s past the normal range bookkeeping at the end of the loop, so resolve any pending range here
+          // with 0x5B as its rhs, mirroring the end-of-loop range validation.
+          // - `/[a-[]/` (invalid: 0x61 > 0x5B in every reading)   - `/[A-[]/g` (valid without v: 0x41 <= 0x5B)
+          // - `/[\s-[a]]/g` (webcompat tolerates a class escape "range" as literals)
+          if (urangeOpen || nrangeOpen || vPendingRangeDash) {
+            // With the v flag a nested class can never be a range operand
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'A range with a nested class as its right operand is invalid with the v flag';
+            if (urangeOpen) {
+              if (urangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE) {
+                flagState = updateRegexUflagIsIllegal(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` not allowed in "ranges" when u-flag or v-flag is set');
+              } else if (urangeLeft > $$SQUARE_L_5B) {
+                flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right, ' + urangeLeft + ' > ' + $$SQUARE_L_5B + ') which is illegal with u-flag or v-flag');
+              }
+              urangeOpen = false;
+            }
+            if (nrangeOpen) {
+              if (nrangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE) {
+                if (webCompat === WEB_COMPAT_OFF) {
+                  flagState = updateRegexUflagIsMandatory(flagState, 'Character class escapes `\\d \\D \\s \\S \\w \\W \\p \\P` not allowed in ranges');
+                }
+              } else if (nrangeLeft > $$SQUARE_L_5B) {
+                flagState = updateRegexUflagIsMandatory(flagState, 'Encountered incorrect range (left>right, ' + nrangeLeft + ' > ' + $$SQUARE_L_5B + ') when parsing as if without u-flag or v-flag');
+              }
+              nrangeOpen = false;
+            }
+            urangeLeft = -1;
+            nrangeLeft = -1;
+          } else if (nonVInClass) {
+            // Not a range rhs: in the non-v reading the literal `[` can itself start a range (`/[[-x]/` is 0x5B-0x78)
+            urangeLeft = $$SQUARE_L_5B;
+            nrangeLeft = $$SQUARE_L_5B;
+          } else {
+            // Reopening a class from the body region: range tracking starts fresh inside the new class
+            urangeLeft = -1;
+            nrangeLeft = -1;
+          }
           bracketDepth++;
           seenContentAtCurrentDepth = false;
           if (literalRbracketJustAdded) closeBothOnNextRbracket = true;
@@ -4166,10 +4402,147 @@ function Lexer(
           hasNestedBracket = true;
           hasSeenVModeSyntax = true;
           hasClassContent = true;
+          nonVInClass = true; // without v this `[` is a literal inside the class, or opens a new class in the body
+          vAfterNestedOpen = 2; // v reading: nested class just opened, a dash/operator here has no lhs operand
+          vPrevOperandRangeable = false; vPendingRangeDash = false;
+          vKindStack.push(0); vItemStack.push(0); // fresh ClassSetExpression state for the nested class
+          vNegStack.push(0); vStrAnyStack.push(false); vStrAllStack.push(true); vStrFirstStack.push(false); vStrFirstSetStack.push(false);
           ASSERT_skip($$SQUARE_L_5B);
           if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
           c = peek();
           continue;
+        }
+
+        // In the non-v reading the class already closed at an earlier unescaped `]`, so an unescaped `/` here ends
+        // the regex literal (the lexical grammar is flag independent). No valid v reading is cut short: with the v
+        // flag an unescaped `/` inside a class would be invalid anyway (ClassSetSyntaxCharacter must be escaped).
+        // - `x=/[-[\]{}()*+?.,\\^$|#\s]/g;x`
+        if (c === $$FWDSLASH_2F && !nonVInClass) {
+          if (regionParenDepth > 0) {
+            // Both readings are dead: the non-v body has an unterminated group and the v class has an unescaped `/`
+            return regexSyntaxError('Unterminated group in the tail of a character class (and the class would be unterminated with the v flag)');
+          }
+          if (nonVRegionState === 3 || nonVRegionState === 4) {
+            // An unfinished `{...` at the exit was not a quantifier after all: an annex B literal brace (`/[[]{/u`)
+            regexBodyNestedClassTailRbracket = true;
+          }
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          lastPotentialRegexErrorForVFlag = 'With the v flag the character class would still be open at the `/` (which would also have to be escaped inside a class), so this regex is only valid without the v flag';
+          return flagState; // pointer is at the `/`; the caller parses it as the end of the regex body
+        }
+
+        // Chars after the `]` that closed the class in the non-v reading are body content in that reading, while the
+        // v reading has them inside the still-open class. Model the body grammar closely enough for verdicts:
+        // literals, quantifiers (incl. bounded and lazy), alternation, assertions, groups (incl. (?: (?= (?! (?<),
+        // escapes (one atom each, annex B only sans-v) and stray `}` (annex B literal). The v-side validity of these
+        // same chars is checked by the surrounding v machinery independently.
+        if (!nonVInClass) {
+          if (nonVRegionState === 3 || nonVRegionState === 4) {
+            // Inside a bounded quantifier `{n}`/`{n,}`/`{n,m}` in the body reading
+            if (c >= $$0_30 && c <= $$9_39) nonVRegionState = 4;
+            else if (c === $$COMMA_2C && nonVRegionState === 4) nonVRegionState = 4;
+            else if (c === $$CURLY_R_7D && nonVRegionState === 4) nonVRegionState = 1; // closed; a lazy `?` may follow
+            else {
+              // The `{...` was not a valid braced quantifier, so it is a literal `{` (annex B ExtendedPatternCharacter)
+              // followed by literal atoms — webcompat only, invalid with u. `/[[a]{x}]/g` is valid; `.../u` is not.
+              regexBodyNestedClassTailRbracket = true;
+              nonVRegionState = 2; // the `{` is a literal atom; whatever this char is, treat as a following atom
+            }
+          }
+          else if (nonVRegionState === 7) {
+            // First char after `(?<`: `=`/`!` start a lookbehind body; anything else starts a group name
+            if (c === $$IS_3D || c === $$EXCL_21) nonVRegionState = 0;
+            else { nonVRegionState = 8; regionCurName = String.fromCharCode(c); }
+          }
+          else if (nonVRegionState === 8) {
+            // Loosely consuming a (?<name> head: anything up to the closing `>`
+            if (c === $$GT_3E) {
+              nonVRegionState = 0;
+              // Register the name; a prior same-named group whose path shares a prefix might both participate
+              let prior = regionGroupNames.get(regionCurName);
+              let here = regionBranch.slice();
+              if (prior) for (const p of prior) {
+                let minLen = Math.min(p.length, here.length), diverges = false;
+                for (let k = 0; k < minLen; k++) if (p[k] !== here[k]) { diverges = true; break; }
+                if (!diverges) return regexSyntaxError('This regex group name (`' + regionCurName + '`) was already used before in a way where both can participate');
+              }
+              if (!prior) { prior = []; regionGroupNames.set(regionCurName, prior); }
+              prior.push(here);
+            } else {
+              regionCurName += String.fromCharCode(c);
+            }
+          }
+          else if (nonVRegionState === 6) {
+            // Right after `(?`: qualifier of a special group
+            if (c === $$COLON_3A || c === $$IS_3D || c === $$EXCL_21) nonVRegionState = 0;
+            else if (c === $$LT_3C) nonVRegionState = 7;
+            else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; } // `(?x` is not a valid group head
+          }
+          else if (nonVRegionState === 5 && c === $$QMARK_3F) {
+            nonVRegionState = 6; // `(?` special group head
+          }
+          else if (c === $$BACKSLASH_5C) {
+            // The escape machinery below consumes and validates the whole escape (as a class escape, which matches
+            // the v reading); for the non-v body reading it is one atom. Designated escapes (\d \n \x41 ...) and
+            // escaped punctuation are valid strict body escapes; identity-escaped letters and digit backrefs are
+            // annex B territory (webcompat only, invalid with u). `\b`/`\B` are body assertions: not quantifiable.
+            let esc = neofd(2) ? peekd(1) : 0;
+            let escLower = esc | 32;
+            let isLetter = escLower >= $$A_61 && escLower <= $$Z_7A;
+            let isStrictLetter = esc === $$D_64 || esc === $$D_UC_44 || esc === $$S_73 || esc === $$S_UC_53
+              || esc === $$W_77 || esc === $$W_UC_57 || esc === $$B_62 || esc === $$B_UC_42
+              || esc === $$F_66 || esc === $$N_6E || esc === $$R_72 || esc === $$T_74 || esc === $$V_76
+              || esc === $$X_78 || esc === $$U_75 || esc === $$C_63;
+            if ((isLetter && !isStrictLetter) || (esc >= $$1_31 && esc <= $$9_39)) regexBodyNestedClassTailRbracket = true;
+            else if (!isLetter && esc !== $$0_30) {
+              // Escaped punctuation: valid strict body escape ([~U] IdentityEscape excludes only UnicodeIDContinue)
+              // but with the u flag only SyntaxCharacters and `/` may be identity-escaped in the body (`/[[]\-/u`)
+              let isSyntaxChar = esc === $$XOR_5E || esc === $$$_24 || esc === $$BACKSLASH_5C || esc === $$DOT_2E
+                || esc === $$STAR_2A || esc === $$PLUS_2B || esc === $$QMARK_3F || esc === $$PAREN_L_28
+                || esc === $$PAREN_R_29 || esc === $$SQUARE_L_5B || esc === $$SQUARE_R_5D || esc === $$CURLY_L_7B
+                || esc === $$CURLY_R_7D || esc === $$OR_7C || esc === $$FWDSLASH_2F;
+              if (!isSyntaxChar) regexBodyOpCharsInvalidWithU = true;
+            }
+            nonVRegionState = (esc === $$B_62 || esc === $$B_UC_42) ? 0 : 2;
+          }
+          else if (c === $$PAREN_L_28) {
+            regionParenDepth++;
+            regionBranch.push(0); // enter a new group-nesting level for the branch path
+            nonVRegionState = 5; // group opened; quantifiers may not start a group body
+          }
+          else if (c === $$PAREN_R_29) {
+            if (regionParenDepth > 0) { regionParenDepth--; if (regionBranch.length > 1) regionBranch.pop(); nonVRegionState = 2; } // a group is a quantifiable atom
+            else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; } // stray `)` is invalid in the body too
+          }
+          else if (c === $$CURLY_R_7D) {
+            // A stray `}` is a valid annex B body literal (ExtendedPatternCharacter allows it)
+            regexBodyNestedClassTailRbracket = true;
+            nonVRegionState = 2;
+          }
+          else if (c === $$CURLY_L_7B) {
+            // - `x=/[[a]{2}]/g;` (bounded quantifier after the class atom is valid body syntax)
+            if (nonVRegionState === 2) nonVRegionState = 3;
+            else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; }
+          }
+          else if (c === $$STAR_2A || c === $$PLUS_2B) {
+            // - `x=/[[a]+]/g;` (one quantifier after the class atom is valid body syntax)
+            // - `x=/[[a]+*]/g;` (a second quantifier is invalid in the body, and `+*` is also invalid with the v flag)
+            if (nonVRegionState === 2) nonVRegionState = 1;
+            else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; }
+          }
+          else if (c === $$QMARK_3F) {
+            // `?` is a quantifier after an atom, or the lazy marker right after another quantifier (`+?`, `{2}?`)
+            if (nonVRegionState === 2) nonVRegionState = 1;
+            else if (nonVRegionState === 1) nonVRegionState = 0;
+            else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; }
+          }
+          else if (c === $$OR_7C || c === $$XOR_5E || c === $$$_24) {
+            if (c === $$OR_7C) regionBranch[regionBranch.length - 1]++; // alternation bumps the branch at this level
+            nonVRegionState = 0; // valid body syntax (alternation / assertion) but not quantifiable
+          }
+          else {
+            nonVRegionState = 2; // plain literal (or `.`): a valid body atom that can take a quantifier
+          }
         }
 
         // In v mode (unicodeSets), -- is set difference when we have a non-dash lhs and a rhs (so [a--b--c] and [\q{ab}--\q{ab}] work; [+--]/[--0]/[---+]/[---0] stay legacy). Do not treat -- when followed by - (e.g. [^---]/g) or when preceded by - (e.g. [---+]/[---0]).
@@ -4180,7 +4553,7 @@ function Lexer(
           (hasNestedBracket || hasSeenVModeSyntax || (urangeLeft !== -1 && prev !== $$DASH_2D)) &&
           prev !== $$DASH_2D &&
           c === $$DASH_2D &&
-          neofd(3) &&
+          neofd(3) && // peekd(2) reads pointer+2; a real `--rhs` set difference always has >=3 chars ahead
           peekd(1) === $$DASH_2D &&
           peekd(2) !== $$SQUARE_R_5D &&
           peekd(2) !== $$DASH_2D &&
@@ -4188,7 +4561,20 @@ function Lexer(
         ) {
           seenContentAtCurrentDepth = true;
           literalRbracketJustAdded = false;
-          regexBodyUsedVOnlySyntax = true;
+          // The v reading consumes this as the set difference operator. Without the v flag the two dashes are plain
+          // ClassAtoms with normal range semantics: `[a--b]` is the range a-to-`-` (out of order, an error) plus
+          // `-b`, while `[+--x]` style forms stay legal — mirror the regular range bookkeeping for both dashes.
+          if (vAfterNestedOpen !== 0 || vItemStack[vItemStack.length - 1] === 0 || urangeOpen || vPendingRangeDash) {
+            // - `/[[--a]]/v` (set difference right after a nested class open has no left operand)
+            // - `/[a---b]/v` (a dangling range dash before the operator)
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'Set difference `--` requires a left operand in character class with the v flag';
+          }
+          if (nonVInClass) { nonVAtomAccounting($$DASH_2D); nonVAtomAccounting($$DASH_2D); }
+          else nonVRegionState = 2; // two `-` literals in the body reading; the last is a quantifiable atom
+          vPrevOperandRangeable = false; vPendingRangeDash = false;
+          vOpEvent(3);
+          vAfterNestedOpen = 0;
           hasClassContent = true;
           ASSERT_skip($$DASH_2D);
           ASSERT_skip($$DASH_2D);
@@ -4197,32 +4583,47 @@ function Lexer(
           continue;
         }
         // && in a char class is v-only syntax (e.g. [a&&b]). Reject when missing left ([&&a]) or right ([a&&]) operand.
+        // peekd(1) reads pointer+1, so guard with neofd(2) (a lone trailing `&` at EOF is not `&&`).
         if (c === $$AND_26 && neofd(2) && peekd(1) === $$AND_26) {
-          if (!hasClassContent) {
+          if (!hasClassContent || vAfterNestedOpen !== 0 || vItemStack[vItemStack.length - 1] === 0) {
+            // No left operand at class start (`/[&&a]/v`) or right after a nested open / its negation caret
+            // (`/[[&&a]]/v`, `/[[^&&a]]/v`) — the caret is a marker, not an operand
             regexBodyHasSyntaxInvalidWithVFlag = true;
             lastPotentialRegexErrorForVFlag = 'Set intersection `&&` requires a left operand in character class with the v flag';
           }
+          if (urangeOpen || vPendingRangeDash) {
+            // - `/[a-&&b]/v` (a dangling range dash before the operator)
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'Set intersection `&&` can not follow a dangling range dash with the v flag';
+          }
+          vPrevOperandRangeable = false; vPendingRangeDash = false;
+          vOpEvent(2);
           seenContentAtCurrentDepth = true;
           literalRbracketJustAdded = false;
-          regexBodyUsedVOnlySyntax = true;
+          // The v reading consumes this as the set intersection operator. Without the v flag the two `&` are plain
+          // ClassAtoms (`/[a&&b]/` is just four literal chars) with normal range semantics (`[a-&&]` has the range
+          // a-to-`&`), so mirror the regular range bookkeeping for both.
+          if (nonVInClass) { nonVAtomAccounting($$AND_26); nonVAtomAccounting($$AND_26); }
+          else nonVRegionState = 2; // two `&` literals in the body reading; the last is a quantifiable atom
+          vAfterNestedOpen = 0;
           hasClassContent = true;
           ASSERT_skip($$AND_26);
           ASSERT_skip($$AND_26);
+          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
           if (peek() === $$SQUARE_R_5D) {
             regexBodyHasSyntaxInvalidWithVFlag = true;
             lastPotentialRegexErrorForVFlag = 'Set intersection `&&` requires a right operand in character class with the v flag';
           }
-          if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
           c = peek();
           continue;
         }
-        // Single & in v mode is invalid (only && is set intersection).
-        if (c === $$AND_26) {
-          regexBodyHasSyntaxInvalidWithVFlag = true;
-          lastPotentialRegexErrorForVFlag = 'Single `&` in character class is not allowed with the v flag (use `&&` for set intersection)';
-        }
+        // A single `&` is a valid ClassSetReservedPunctuator literal in v mode (only `&&` is set intersection,
+        // handled above). Likewise other single reserved punctuators (! # % : ; < = > @ ` ~ , etc.) are valid as a
+        // lone character; only their doubled forms are reserved (ClassSetReservedDoublePunctuator, handled below).
+        // - `/[a&b]/v`     ok, `&` is a literal ampersand
+        // - `/[a&&b]/v`    set intersection (handled above)
         // In v mode, unescaped } outside \q{...} is invalid (stray brace).
-        else if (c === $$CURLY_R_7D) {
+        if (c === $$CURLY_R_7D) {
           regexBodyHasSyntaxInvalidWithVFlag = true;
           lastPotentialRegexErrorForVFlag = 'Stray `}` in character class is not allowed with the v flag';
         }
@@ -4237,7 +4638,8 @@ function Lexer(
         // ! # $ % * + , . : ; < = > ? @ ^ ` ~ are reserved and invalid.
         // https://tc39.es/ecma262/#prod-ClassSetReservedDoublePunctuator
         // Note: && and -- are handled above as set operators.
-        else if (neofd(2) && peekd(1) === c && (
+        // peekd(1) reads pointer+1, so guard with neofd(2): a candidate char at EOF cannot be a doubled punctuator.
+        else if (neofd(2) && peekd(1) === c && !(c === $$XOR_5E && vAfterNestedOpen === 2) && (
           c === $$EXCL_21 || c === $$HASH_23 || c === $$$_24 || c === $$PERCENT_25 ||
           c === $$STAR_2A || c === $$PLUS_2B || c === $$COMMA_2C || c === $$DOT_2E ||
           c === $$COLON_3A || c === $$SEMI_3B || c === $$LT_3C || c === $$IS_3D ||
@@ -4250,16 +4652,29 @@ function Lexer(
         // In v mode (unicodeSets), \q{...} is a ClassString (multi-code-point string); has its own delimiter/escape rules.
         else if (c === $$BACKSLASH_5C && neofd(3) && peekd(1) === $$Q_71 && peekd(2) === $$CURLY_L_7B) {
           hasSeenVModeSyntax = true;
-          regexBodyUsedVOnlySyntax = true;
+          // Without the v flag this is the annex B identity escape of `q` followed by literal brace atoms
+          // (`/[\q{ab}]/` is q { a b } in webcompat), so it is webcompat-only sans-v and invalid with the u flag.
+          regexBodyNestedClassTailRbracket = true;
+          if (urangeOpen) {
+            // - `/[a-\q{x}]/v` (a ClassString can not be a range operand with the v flag)
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            lastPotentialRegexErrorForVFlag = 'A \\q{...} string can not be the operand of a range with the v flag';
+          }
+          if (nonVInClass) nonVAtomAccounting($$Q_71); // the escape yields the atom `q` in the non-v reading
           ASSERT_skip($$BACKSLASH_5C);
           ASSERT_skip($$Q_71);
           ASSERT_skip($$CURLY_L_7B);
+          if (nonVInClass) nonVAtomAccounting($$CURLY_L_7B);
           if (eof()) return regexSyntaxError('Unexpected early EOF while parsing \\q{...} in character class');
           c = peek();
-          if (c === $$CURLY_R_7D) {
-            regexBodyHasSyntaxInvalidWithVFlag = true;
-            lastPotentialRegexErrorForVFlag = 'Empty \\q{} is not allowed with the v flag';
-          }
+          // Note: an empty `\q{}` is a valid ClassString (`ClassString :: [empty]`); it just MayContainStrings, so
+          // it is only an error inside a negated class (handled by vFinishClass), not on its own.
+          // MayContainStrings of the disjunction: true if any `|`-separated alternative is not exactly one code
+          // point (empty or multi-code-point). Track code-point count of the current alternative (`>` counts a
+          // surrogate pair as one). `qMayStr` becomes true as soon as any alternative is empty or length >= 2.
+          let qAltCodePoints = 0;
+          let qMayStr = false;
+          let qPrevHigh = false; // previous consumed unit was a high surrogate (so a low surrogate merges into it)
           while (c !== $$CURLY_R_7D) {
             if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
               return regexSyntaxError('Encountered newline inside \\q{...} in character class');
@@ -4268,15 +4683,39 @@ function Lexer(
               ASSERT_skip($$BACKSLASH_5C);
               if (eof()) return regexSyntaxError('Unexpected early EOF after backslash in \\q{...}');
               ASSERT_skip(peek());
+              // Approximate the non-v reading of the escaped char as a plain atom (no range participation)
+              if (nonVInClass) { urangeOpen = false; nrangeOpen = false; urangeLeft = -1; nrangeLeft = -1; }
+              qAltCodePoints++; qPrevHigh = false; // an escape is one code point (\uXXXX\uYYYY pairs are rare; approximate)
+            } else if (c === $$OR_7C) {
+              // Alternative separator: finalize the alternative just scanned
+              if (qAltCodePoints !== 1) qMayStr = true;
+              qAltCodePoints = 0; qPrevHigh = false;
+              ASSERT_skip($$OR_7C);
+              if (nonVInClass) nonVAtomAccounting($$OR_7C);
             } else {
+              if (c === $$PAREN_L_28 || c === $$PAREN_R_29 || c === $$SQUARE_L_5B || c === $$SQUARE_R_5D || c === $$CURLY_L_7B || c === $$FWDSLASH_2F || c === $$DASH_2D) {
+                // A ClassString is a sequence of ClassSetCharacters, which exclude the ClassSetSyntaxCharacters,
+                // so an unescaped `-` etc inside \q{...} is invalid with the v flag (`/[\q{a-b}]/v`)
+                regexBodyHasSyntaxInvalidWithVFlag = true;
+                lastPotentialRegexErrorForVFlag = 'An unescaped `' + String.fromCharCode(c) + '` inside \\q{...} is not a valid ClassSetCharacter with the v flag';
+              }
+              // count code points: a low surrogate right after a high surrogate is the tail of one code point
+              if (!(qPrevHigh && c >= 0xDC00 && c <= 0xDFFF)) qAltCodePoints++;
+              qPrevHigh = c >= 0xD800 && c <= 0xDBFF;
               ASSERT_skip(c);
+              if (nonVInClass) nonVAtomAccounting(c); // contents are literal atoms in the non-v reading
             }
             if (eof()) return regexSyntaxError('Unexpected early EOF while parsing \\q{...} in character class');
             c = peek();
           }
+          if (qAltCodePoints !== 1) qMayStr = true; // finalize the last alternative
           ASSERT_skip($$CURLY_R_7D);
+          if (nonVInClass) nonVAtomAccounting($$CURLY_R_7D);
           seenContentAtCurrentDepth = true;
           hasClassContent = true;
+          vAfterNestedOpen = 0; // a \q{...} ClassString is a full operand in the v reading
+          vOperandEvent();
+          vOperandStr(qMayStr);
           if (eof()) return regexSyntaxError('Unexpected early EOF while parsing character class');
           c = peek();
           continue;
@@ -4294,6 +4733,7 @@ function Lexer(
       // There is no single escape that can be combined with an existing character here as a surrogate pair.
       // Ruby escapes can yield codepoints > 0xffff, and double unicode quad escapes can. Only other way is literal.
       let wasEscape = false;
+      let vRangeClosedHere = false; // set when a c1-c2 range completes on this char (for the v operand accounting)
       let wasDoubleQuad = false;
       let wasBadUniEscape = false;
       let wasPropEscape = false;
@@ -4505,15 +4945,22 @@ function Lexer(
         isSurrogateHead = isSurrogateLead(c);
       }
 
-      // In v mode, bare (unescaped) - is not allowed; must be \- or part of -- or a range (lhs already seen).
-      // Defer error until flags are parsed so /[^--]/g (no v flag) still parses.
-      if (supportRegexVFlag && c === $$DASH_2D && !wasEscape && urangeLeft === -1) {
+      // In v mode, bare (unescaped) - is not allowed; must be \- or part of -- (consumed above) or a c1-c2 range.
+      // Defer error until flags are parsed so /[^--]/g (no v flag) still parses. A dash is not a valid range dash
+      // when: there is no rangeable lhs (class start, after a nested `[`, a closed `]`, a \q string, a class escape
+      // or a completed range), it trails the class (no rhs), or it is itself a range rhs (`/[&--]/v`).
+      if (supportRegexVFlag && c === $$DASH_2D && !wasEscape && (
+        // Note: the dash was already consumed at this point, so the char after it is peek(), not peekd(1)
+        vPendingRangeDash || !vPrevOperandRangeable || (eof() ? true : peek() === $$SQUARE_R_5D)
+      )) {
         regexBodyHasSyntaxInvalidWithVFlag = true;
         lastPotentialRegexErrorForVFlag = 'Cannot use unescaped `-` in a regex char class with the v flag';
       }
 
       // For the case where there IS a u-flag:
-      if (urangeOpen) {
+      // Note: chars in the ambiguous region (after the `]` that closed the class in the non-v reading) are body
+      // atoms in that reading, so they never participate in class ranges (`/[[a]z-a]/g` has no range).
+      if (nonVInClass && urangeOpen) {
         // if c is a head we must check the next char for being a tail before we can determine the code _point_
         // otoh, if c is a tail or a non-surrogate then we can now safely do range checks since the codepoint wont change
         // if this is a head and the previous was too then the previous was the rhs on its own and we check `prev`
@@ -4533,12 +4980,13 @@ function Lexer(
             flagState = updateRegexUflagIsIllegal(flagState, 'Encountered incorrect range (left>right, ' + urangeLeft + ' > ' + urangeRight + ', 0x' + urangeLeft.toString(16) + ' > 0x' + urangeRight.toString(16) + ') which is illegal with u-flag or v-flag');
           }
           urangeLeft = -1;
+          vRangeClosedHere = true; // the lhs, dash and this rhs form one ClassSetRange item in the v reading
         }
         else {
           // range remains open because this was a surrogate head and the next character may still be part of the range
         }
       }
-      else if (c === $$DASH_2D && !wasEscape && urangeLeft !== -1) {
+      else if (nonVInClass && c === $$DASH_2D && !wasEscape && urangeLeft !== -1) {
         // If the dash was escaped, it should not cause a range
         // [v]: `/[a-]/`
         //          ^
@@ -4546,7 +4994,7 @@ function Lexer(
         //          ^
         urangeOpen = true;
       }
-      else {
+      else if (nonVInClass) {
         ASSERT(urangeOpen === false, 'U: we should only be updating left codepoint if we are not inside a range');
         urangeLeft = isSurrogate ? surrogate : c;
       }
@@ -4624,7 +5072,9 @@ function Lexer(
           cTmp = cTail; // Note: cTail can still be >0xffff if it's the first iteration
         }
 
-        if (nrangeOpen) {
+        // Note: chars in the ambiguous region (after the `]` that closed the class in the non-v reading) are body
+        // atoms in that reading, so they never participate in class ranges (`/[[a]z-a]/g` has no range).
+        if (nonVInClass && nrangeOpen) {
           const nrangeRight = cTmp; // without u-flag it's always just one char
           if (nrangeLeft === REGEX_CHARCLASS_CLASS_ESCAPE || nrangeRight === REGEX_CHARCLASS_CLASS_ESCAPE) {
             // Class escapes are illegal for ranges, however, they are allowed and ignored in webcompat mode
@@ -4641,12 +5091,12 @@ function Lexer(
           nrangeLeft = -1;
           nrangeOpen = false;
         }
-        else if (cTmp === $$DASH_2D && !wasEscape && nrangeLeft !== -1) {
+        else if (nonVInClass && cTmp === $$DASH_2D && !wasEscape && nrangeLeft !== -1) {
           ASSERT(nrangeLeft !== -1, 'N if we are opening a range here then we should have parsed and set the left codepoint value by now');
           // If the dash was escaped, it should not cause a range
           nrangeOpen = true;
         }
-        else {
+        else if (nonVInClass) {
           ASSERT(nrangeOpen === false, 'N we should only be updating left codepoint if we are not inside a range');
           nrangeLeft = cTmp;
         }
@@ -4661,8 +5111,62 @@ function Lexer(
       }
       seenContentAtCurrentDepth = true;
       hasClassContent = true;
-      if (bracketDepth >= 2) regexBodyUsedVOnlySyntax = true; // content inside nested class confirms v-mode syntax
+      if (supportRegexVFlag) {
+        if (vAfterNestedOpen === 2 && c === $$XOR_5E && !wasEscape) {
+          // A caret straight after the nested `[` is the negation marker, not an operand
+          vAfterNestedOpen = 1;
+          vNegStack[vNegStack.length - 1] = 1; // this nested class is negated (`[^...]`)
+        } else {
+          vAfterNestedOpen = 0;
+          if (c === $$DASH_2D && !wasEscape) {
+            // A valid range dash (invalid ones were flagged above); the rhs operand completes the range
+            vPendingRangeDash = vPrevOperandRangeable && !eof() && peek() !== $$SQUARE_R_5D;
+            vPrevOperandRangeable = false;
+          } else if (vPendingRangeDash) {
+            vPendingRangeDash = false;
+            vRangeEvent(); // lhs + dash + this rhs collapse into a single ClassSetRange item
+            if (c === REGEX_CHARCLASS_CLASS_ESCAPE) {
+              // - `/[a-\d]/v` (a class escape can not be a range operand)
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              lastPotentialRegexErrorForVFlag = 'A class escape like `\\d` can not be a range operand with the v flag';
+            } else if (vRangeLhs > vStripCp(isSurrogate ? surrogate : c)) {
+              // - `/[[a]z-a]/v` (out-of-order range; in the ambiguous region only this v-side check sees it)
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              lastPotentialRegexErrorForVFlag = 'Encountered an out-of-order range (left > right) which is invalid with the v flag';
+            }
+            vPrevOperandRangeable = false; // a completed range is not a range lhs (`/[a-z-x]/v` is invalid)
+          } else if (!(isSurrogate && !wasEscape)) {
+            // a literal surrogate tail merged into the head that was already counted; anything else is an operand
+            vOperandEvent();
+            vOperandStr(false); // a single ClassSetCharacter or class escape never contributes strings
+            // Only a single ClassSetCharacter can start a range; class escapes (\d etc, marked with the special
+            // REGEX_CHARCLASS_* sentinel values) can not.
+            vPrevOperandRangeable = c !== REGEX_CHARCLASS_CLASS_ESCAPE;
+            if (vPrevOperandRangeable) vRangeLhs = vStripCp(isSurrogate ? surrogate : c);
+          }
+        }
+      }
+      // Note: content at bracketDepth >= 2 while nonVInClass is plain class content in the non-v reading (the nested
+      // `[` is a literal there), so it must not require the v flag; the ambiguous tail region is handled above.
       c = peek();
+    }
+
+    // The `]` we break on closes the class in the v reading, but if the non-v reading already closed the class at an
+    // earlier `]` then without the v flag this one is a bare `]` in the regex body: webcompat only, invalid with u.
+    // - `x=/[[a]]/g;`
+    // The outer class closes here in the v reading: a negated outer class may not contain strings.
+    // (The outer `^` is consumed before the stacks exist, so read the reliable flag rather than vNegStack[0].)
+    vFinishClass(0, regexCurrentCharClassIsNegated ? 1 : 0);
+
+    if (!nonVInClass) regexBodyNestedClassTailRbracket = true;
+    if (nonVRegionState === 3 || nonVRegionState === 4) {
+      // An unfinished `{...` before the closing `]` was not a quantifier: an annex B literal brace
+      regexBodyNestedClassTailRbracket = true;
+    }
+    if (regionParenDepth > 0) {
+      // The non-v body reading has an unterminated group (`/[[a](]/`) and the v reading would have had unescaped
+      // parens in the class, so no reading is valid.
+      return regexSyntaxError('Unterminated group in the tail of a character class');
     }
 
     ASSERT_skip($$SQUARE_R_5D);
@@ -5166,14 +5670,11 @@ function Lexer(
 
       case REGCLS_ESC_DASH: {
         // \-
+        // Valid in every mode: sans-u via `IdentityEscape[~U] :: SourceCharacter but not UnicodeIDContinue`
+        // (a dash is not IDContinue), with the u flag via the designated `ClassEscape[+U] :: -`, and with the
+        // v flag as the escape of a ClassSetSyntaxCharacter.
         ASSERT_skip($$DASH_2D);
-        if (webCompat === WEB_COMPAT_ON) {
-          return $$DASH_2D;
-        }
-        // only valid with u-flag or v-flag!
-        // Note: In v-mode, \- is valid (ClassSetSyntaxCharacter), but we defer the check until we know the flags
-        updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'Escaping a dash in a char class is not allowed');
-        return $$DASH_2D | REGEX_CHARCLASS_BAD_SANS_U_FLAG;
+        return $$DASH_2D;
       }
 
       case REGCLS_ESC_NL:
@@ -5233,6 +5734,12 @@ function Lexer(
     }
 
     c = ASSERT_skipPeek($$CURLY_L_7B);
+
+    if (eof()) {
+      // `\p{` at EOF: unterminated property escape (`/[\p{` or `/\p{`). Error before the scan loop reads past end.
+      if (webCompat === WEB_COMPAT_ON) return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Encountered early EOF while parsing `\\p` property escape');
+      return regexSyntaxError('Encountered early EOF while parsing `\\p` property escape');
+    }
 
     // While there is particular syntax for parsing the name, the name must ultimately pass a hardcoded whitelist
     // and so we don't have to parse with much care. Just consume alphanumeric chars into the name and value until

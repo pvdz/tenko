@@ -60,7 +60,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in "ranges" when u-flag or v-flag is set
+    Regex: Character class escapes `\d \D \s \S \w \W \p \P` not allowed in "ranges" when u-flag or v-flag is set; A class escape like `\d` can not be a range operand with the v flag
 
 start@1:0, error@1:0
 ╔══╦════════════════

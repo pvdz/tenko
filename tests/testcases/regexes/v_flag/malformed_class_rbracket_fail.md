@@ -57,7 +57,7 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag or v-flag; Empty character class is not allowed with the v flag
+    Regex: Encountered unescaped closing square bracket `]` while not parsing a character class, which is only valid without u-flag or v-flag
 
 start@1:0, error@1:0
 ╔══╦════════════════
