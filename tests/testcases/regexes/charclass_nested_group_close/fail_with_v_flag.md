@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_stray_rparen_fail.md
+- Path: tests/testcases/regexes/charclass_nested_group_close/fail_with_v_flag.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : charclass nested group close
 >
-> ::> region stray rparen fail
+> ::> fail with v flag
 >
-> stray closing paren in the region is invalid in every reading
+> with v flag the nested class is genuinely unterminated: invalid
 
 ## FAIL
 
 ## Input
 
 `````js
-x=/[[a])]/g;
+/([\][])/v
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Found unescaped closing paren `)` without a group being open
+    Regex: With the v flag the character class would still be open at the `)` (which would also have to be escaped inside a class), so this regex is only valid without the v flag
 
-start@1:0, error@1:2
+start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ x=/[[a])]/g;
-   ║   ^^^^^^------- error
+ 1 ║ /([\][])/v
+   ║ ^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

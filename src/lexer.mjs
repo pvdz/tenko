@@ -4513,7 +4513,17 @@ function Lexer(
           }
           else if (c === $$PAREN_R_29) {
             if (regionParenDepth > 0) { regionParenDepth--; if (regionBranch.length > 1) regionBranch.pop(); nonVRegionState = 2; } // a group is a quantifiable atom
-            else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; } // stray `)` is invalid in the body too
+            else {
+              // This `)` does not match a group opened inside the region, so in the non-v body reading it closes a
+              // group opened in the enclosing regex body (the class already closed at an earlier `]`). The class
+              // parser can not track that group, so return control to `_parseRegexBody` with the pointer left on the
+              // `)`; it closes the enclosing group there (or rejects a genuinely unmatched `)`). The v reading has
+              // the class still open here (an unescaped `)` inside it), so that reading is invalid — mirror the `/`
+              // exit above. - `/([()\][%!^"`<>&|;, *?])/g` (the nested `[...]` keeps the v class open past the `)`)
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              lastPotentialRegexErrorForVFlag = 'With the v flag the character class would still be open at the `)` (which would also have to be escaped inside a class), so this regex is only valid without the v flag';
+              return flagState; // pointer is at the `)`; the caller parses it as the close of the enclosing group
+            }
           }
           else if (c === $$CURLY_R_7D) {
             // A stray `}` is a valid annex B body literal (ExtendedPatternCharacter allows it)

@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_stray_rparen_fail.md
+- Path: tests/testcases/regexes/charclass_nested_group_close/fail_unmatched_paren.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : charclass nested group close
 >
-> ::> region stray rparen fail
+> ::> fail unmatched paren
 >
-> stray closing paren in the region is invalid in every reading
+> stray ) with no enclosing group is unmatched: invalid
 
 ## FAIL
 
 ## Input
 
 `````js
-x=/[[a])]/g;
+/[\][])/
 `````
 
 ## Output
@@ -32,10 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Found unescaped closing paren `)` without a group being open
 
-start@1:0, error@1:2
+start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ x=/[[a])]/g;
-   ║   ^^^^^^------- error
+ 1 ║ /[\][])/
+   ║ ^^^^^^^------- error
 ╚══╩════════════════
 
 `````
