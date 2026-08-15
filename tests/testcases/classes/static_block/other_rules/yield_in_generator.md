@@ -1,21 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/classes/static_block/other_rules/yield_in_generator.md
 
-> :: classes : fields
+> :: classes : static block : other rules
 >
-> ::> class field inside func init arguments
+> ::> yield in generator
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> `yield` is not available in a static block inside a generator
 
 ## FAIL
 
 ## Input
 
 `````js
-function f() {
-  class C { x = arguments; }
-}
+function *g(){ class C { static { yield; } } }
 `````
 
 ## Output
@@ -32,14 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Cannot use `yield` outside of generator functions when in strict mode
 
-start@1:0, error@2:16
+start@1:0, error@1:34
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ function *g(){ class C { static { yield; } } }
+   ║                                   ^^^^^------- error
 ╚══╩═════════════════
 
 `````

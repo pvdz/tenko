@@ -1,21 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/classes/static_block/function_decls/func_named_arguments.md
 
-> :: classes : fields
+> :: classes : static block : function decls
 >
-> ::> class field inside func init arguments
+> ::> func named arguments
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> a static block is strict so `arguments` is not a valid function name
 
 ## FAIL
 
 ## Input
 
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C { static { function arguments(){} } }
 `````
 
 ## Output
@@ -32,14 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Cannot use this name (`arguments`) as a variable name because: Cannot create a binding named `arguments` in strict mode
 
-start@1:0, error@2:16
+start@1:0, error@1:28
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C { static { function arguments(){} } }
+   ║                             ^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````

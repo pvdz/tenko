@@ -1,21 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/classes/static_block/var_scope/catch_pattern_param_var.md
 
-> :: classes : fields
+> :: classes : static block : var scope
 >
-> ::> class field inside func init arguments
+> ::> catch pattern param var
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> a destructured catch param may not be shadowed by var
 
 ## FAIL
 
 ## Input
 
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C { static { try {} catch ([e]) { var e; } } }
 `````
 
 ## Output
@@ -32,14 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Can not create a binding for `e` because was already bound as a catch clause pattern binding
 
-start@1:0, error@2:16
+start@1:0, error@1:44
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C { static { try {} catch ([e]) { var e; } } }
+   ║                                             ^------- error
 ╚══╩═════════════════
 
 `````

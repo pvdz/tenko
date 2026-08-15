@@ -1,21 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/using/await_using_static_block/for_of_head.md
 
-> :: classes : fields
+> :: using : await using static block
 >
-> ::> class field inside func init arguments
+> ::> for of head
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> the same in a for-of header
 
 ## FAIL
 
 ## Input
 
+- `allowUsingDeclaration = true`
+
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C { static { for (await using x of y); } }
 `````
 
 ## Output
@@ -32,14 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Cannot use `await using` in a static block
 
-start@1:0, error@2:16
+start@1:0, error@1:24
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C { static { for (await using x of y); } }
+   ║                         ^^^^^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````

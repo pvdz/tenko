@@ -1,21 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/classes/static_block/other_rules/super_call.md
 
-> :: classes : fields
+> :: classes : static block : other rules
 >
-> ::> class field inside func init arguments
+> ::> super call
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> `super()` is not
 
 ## FAIL
 
 ## Input
 
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C extends D { static { super(); } }
 `````
 
 ## Output
@@ -32,14 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Can only use `super()` in constructors of classes that extend another class
 
-start@1:0, error@2:16
+start@1:0, error@1:29
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C extends D { static { super(); } }
+   ║                              ^^^^^^------- error
 ╚══╩═════════════════
 
 `````

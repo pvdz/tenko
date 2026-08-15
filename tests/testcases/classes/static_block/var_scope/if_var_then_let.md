@@ -1,21 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/classes/static_block/var_scope/if_var_then_let.md
 
-> :: classes : fields
+> :: classes : static block : var scope
 >
-> ::> class field inside func init arguments
+> ::> if var then let
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> a var in an if body clashes with the block let
 
 ## FAIL
 
 ## Input
 
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C { static { if (1) { var x; } let x; } }
 `````
 
 ## Output
@@ -32,14 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Attempted to create a lexical binding for `x` but another binding already existed on the same level
 
-start@1:0, error@2:16
+start@1:0, error@1:41
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C { static { if (1) { var x; } let x; } }
+   ║                                          ^------- error
 ╚══╩═════════════════
 
 `````

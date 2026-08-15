@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/static_block/scope_var_escapes_to_function.md
+- Path: tests/testcases/classes/static_block/var_scope/outer_var_vs_inner_let.md
 
-> :: classes : static block
+> :: classes : static block : var scope
 >
-> ::> scope var escapes to function
+> ::> outer var vs inner let
 >
-> A var in a static block does not escape to the enclosing function; `return x` is still valid because an unresolved reference is not an early error.
->
+> an outer var does not clash with a let in the static block
+
 ## PASS
 
 ## Input
 
 `````js
-function f() { class C { static { var x = 1; } } return x; }
+function f(){ var x; class C { static { let x; } } }
 `````
 
 ## Output
@@ -31,11 +31,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:60},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:52},source:''},
   body: [
     {
       type: 'FunctionDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:60},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:52},source:''},
       generator: false,
       async: false,
       id: {
@@ -46,59 +46,62 @@ ast: {
       params: [],
       body: {
         type: 'BlockStatement',
-        loc:{start:{line:1,column:13},end:{line:1,column:60},source:''},
+        loc:{start:{line:1,column:12},end:{line:1,column:52},source:''},
         body: [
           {
+            type: 'VariableDeclaration',
+            loc:{start:{line:1,column:14},end:{line:1,column:20},source:''},
+            kind: 'var',
+            declarations: [
+              {
+                type: 'VariableDeclarator',
+                loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
+                id: {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:18},end:{line:1,column:19},source:''},
+                  name: 'x'
+                },
+                init: null
+              }
+            ]
+          },
+          {
             type: 'ClassDeclaration',
-            loc:{start:{line:1,column:15},end:{line:1,column:48},source:''},
+            loc:{start:{line:1,column:21},end:{line:1,column:50},source:''},
             id: {
               type: 'Identifier',
-              loc:{start:{line:1,column:21},end:{line:1,column:22},source:''},
+              loc:{start:{line:1,column:27},end:{line:1,column:28},source:''},
               name: 'C'
             },
             superClass: null,
             body: {
               type: 'ClassBody',
-              loc:{start:{line:1,column:23},end:{line:1,column:48},source:''},
+              loc:{start:{line:1,column:29},end:{line:1,column:50},source:''},
               body: [
                 {
                   type: 'StaticBlock',
-                  loc:{start:{line:1,column:32},end:{line:1,column:46},source:''},
+                  loc:{start:{line:1,column:38},end:{line:1,column:48},source:''},
                   body: [
                     {
                       type: 'VariableDeclaration',
-                      loc:{start:{line:1,column:34},end:{line:1,column:44},source:''},
-                      kind: 'var',
+                      loc:{start:{line:1,column:40},end:{line:1,column:46},source:''},
+                      kind: 'let',
                       declarations: [
                         {
                           type: 'VariableDeclarator',
-                          loc:{start:{line:1,column:38},end:{line:1,column:43},source:''},
+                          loc:{start:{line:1,column:44},end:{line:1,column:45},source:''},
                           id: {
                             type: 'Identifier',
-                            loc:{start:{line:1,column:38},end:{line:1,column:39},source:''},
+                            loc:{start:{line:1,column:44},end:{line:1,column:45},source:''},
                             name: 'x'
                           },
-                          init: {
-                            type: 'Literal',
-                            loc:{start:{line:1,column:42},end:{line:1,column:43},source:''},
-                            value: 1,
-                            raw: '1'
-                          }
+                          init: null
                         }
                       ]
                     }
                   ]
                 }
               ]
-            }
-          },
-          {
-            type: 'ReturnStatement',
-            loc:{start:{line:1,column:49},end:{line:1,column:58},source:''},
-            argument: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:56},end:{line:1,column:57},source:''},
-              name: 'x'
             }
           }
         ]
@@ -107,12 +110,11 @@ ast: {
   ]
 }
 
-tokens (22x):
+tokens (20x):
        ID_function IDENT PUNC_PAREN_OPEN PUNC_PAREN_CLOSE
-       PUNC_CURLY_OPEN ID_class IDENT PUNC_CURLY_OPEN ID_static
-       PUNC_CURLY_OPEN ID_var IDENT PUNC_EQ NUMBER_DEC PUNC_SEMI
-       PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE ID_return IDENT PUNC_SEMI
-       PUNC_CURLY_CLOSE
+       PUNC_CURLY_OPEN ID_var IDENT PUNC_SEMI ID_class IDENT
+       PUNC_CURLY_OPEN ID_static PUNC_CURLY_OPEN ID_let IDENT
+       PUNC_SEMI PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -145,8 +147,8 @@ Printer output different from input [sloppy][annexb:no]:
 
 ````js
 function f() {
-class C{static {var x = 1;}}
-return x;
+var x;
+class C{static {let x;}}
 }
 ````
 

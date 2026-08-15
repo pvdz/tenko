@@ -24,7 +24,7 @@ const LF_SUPER_PROP = 1 << ++__$flag_lf; // can read `super.foo` (there are case
 const LF_NOT_KEYWORD = 1 << ++__$flag_lf; // skip keyword check for next ident parse (like member expression property)
 const LF_CHAINING = 1 << ++__$flag_lf; // Currently in an optional chain. If we encounter `?.` do not add another `ChainExpression` node.
 const LF_NOT_IN_FUNC = 1 << ++__$flag_lf; // not inside any function/arrow body; used for TLA (top-level await) — unlike LF_IN_GLOBAL, this flag is NOT stripped by groups/switches/templates
-const LF_IN_CLASS_FIELD_INIT = 1 << ++__$flag_lf; // inside a class field initializer; `arguments` is illegal here (except inside nested non-arrow functions)
+const LF_NO_ARGUMENTS = 1 << ++__$flag_lf; // inside a class field initializer or class static block; `arguments` is illegal here (ContainsArguments), which carries into arrows but not into regular functions
 const LF_IN_STATIC_BLOCK = 1 << ++__$flag_lf; // inside a class static block; `await` (as both keyword and identifier) is illegal here
 ASSERT(__$flag_lf < 32, 'cannot use more than 32 flags');
 // start of the first statement without knowing strict mode status:
@@ -115,9 +115,9 @@ function L(flags) {
     flags ^= LF_NOT_IN_FUNC;
     s.push('LF_NOT_IN_FUNC');
   }
-  if (flags & LF_IN_CLASS_FIELD_INIT) {
-    flags ^= LF_IN_CLASS_FIELD_INIT;
-    s.push('LF_IN_CLASS_FIELD_INIT');
+  if (flags & LF_NO_ARGUMENTS) {
+    flags ^= LF_NO_ARGUMENTS;
+    s.push('LF_NO_ARGUMENTS');
   }
   if (flags & LF_IN_STATIC_BLOCK) {
     flags ^= LF_IN_STATIC_BLOCK;
@@ -152,7 +152,7 @@ export {
   LF_NOT_KEYWORD,
   LF_CHAINING,
   LF_NOT_IN_FUNC,
-  LF_IN_CLASS_FIELD_INIT,
+  LF_NO_ARGUMENTS,
   LF_IN_STATIC_BLOCK,
 
   L,

@@ -1,21 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/classes/static_block/arguments/in_nested_static_block.md
 
-> :: classes : fields
+> :: classes : static block : arguments
 >
-> ::> class field inside func init arguments
+> ::> in nested static block
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> the same in a nested static block
 
 ## FAIL
 
 ## Input
 
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C { static { class D { static { arguments; } } } }
 `````
 
 ## Output
@@ -34,12 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Parser error!
   Cannot reference `arguments` in a class field initializer or class static block
 
-start@1:0, error@2:16
+start@1:0, error@1:38
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C { static { class D { static { arguments; } } } }
+   ║                                       ^^^^^^^^^------- error
 ╚══╩═════════════════
 
 `````

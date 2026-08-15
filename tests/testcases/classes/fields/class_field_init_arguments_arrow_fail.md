@@ -32,7 +32,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in class field initializer
+  Cannot reference `arguments` in a class field initializer or class static block
 
 start@1:0, error@2:12
 ╔══╦═════════════════

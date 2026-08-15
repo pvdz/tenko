@@ -134,7 +134,7 @@ import {
   LF_NOT_KEYWORD,
   LF_CHAINING,
   LF_NOT_IN_FUNC,
-  LF_IN_CLASS_FIELD_INIT,
+  LF_NO_ARGUMENTS,
   LF_IN_STATIC_BLOCK,
 
   L,
@@ -819,7 +819,7 @@ function Parser(code, options = {}) {
     // `function* g() { class C { x = yield; } }` — yield is an identifier, not YieldExpression
     // new.target is allowed in a field initializer (evaluates to undefined at runtime), like a static block.
     // - `class C { t = new.target === undefined; }`         ok, new.target is allowed
-    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR) | LF_IN_CLASS_FIELD_INIT | LF_CAN_NEW_DOT_TARGET;
+    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR) | LF_NO_ARGUMENTS | LF_CAN_NEW_DOT_TARGET;
     let $tp_value_start = tok_getStart();
     let $tp_value_line = tok_getLine();
     let $tp_value_column = tok_getColumn();
@@ -3664,7 +3664,7 @@ function Parser(code, options = {}) {
       | LF_SUPER_PROP
       | LF_SUPER_CALL
       | LF_IN_CLASS_BODY // nested functions/arrows can still use #x in obj if inside a class
-      | LF_IN_CLASS_FIELD_INIT // preserved for arrows; cleared for regular functions below
+      | LF_NO_ARGUMENTS // preserved for arrows; cleared for regular functions below
     );
 
     // the function name can inherit this state from the enclosing scope but all other parts of a function will
@@ -3679,11 +3679,12 @@ function Parser(code, options = {}) {
     // dont remove the template flag here! let curly pair structures deal with this individually (fixes arrows)
     if (funcType === NOT_ARROW) {
       lexerFlags = lexerFlags | LF_CAN_NEW_DOT_TARGET;
-      // `arguments` is valid inside regular functions, even when nested in a class field init
+      // `arguments` is valid inside regular functions, even when nested in a class field init or a static block
       // - `class C { x = function() { return arguments; } }`
+      // - `class C { static { (function(){ return arguments; }); } }`
       //                          ^
       //                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      lexerFlags = lexerFlags & ~LF_IN_CLASS_FIELD_INIT;
+      lexerFlags = lexerFlags & ~LF_NO_ARGUMENTS;
     }
 
     return lexerFlags;
@@ -4479,18 +4480,36 @@ function Parser(code, options = {}) {
     // - `function f() { class C { static { return; } } }`   error, return is not allowed
     // new.target is allowed in static blocks (evaluates to undefined at runtime)
     // - `class C { static { new.target; } }`                 ok, new.target is allowed
-    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_GENERATOR) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK | LF_CAN_NEW_DOT_TARGET;
+    // Contains SuperCall: `super()` is never allowed, not even when the class has a heritage (only a constructor can)
+    // - `class C extends D { static { super(); } }`          error, but `super.x` is fine (LF_SUPER_PROP is kept)
+    // ContainsArguments: `arguments` is an early error here, exactly like in a class field initializer. It carries
+    // into arrows and stops at regular functions, which is what LF_NO_ARGUMENTS does.
+    // - `class C { static { arguments; } }`                  error
+    // - `class C { static { () => arguments; } }`            error, an arrow has no `arguments` of its own
+    // - `class C { static { function f(){ arguments; } } }`  ok, the function has its own `arguments`
+    // LF_IN_GLOBAL is dropped because the block is its own var scope, not the global one, so a top level function
+    // declaration in it must be var-like (see the FDS_VAR below and parseFunctionAfterKeyword).
+    let lexerFlagsNoTemplate = sansFlag(lexerFlags, LF_IN_TEMPLATE | LF_NO_ASI | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION | LF_IN_GENERATOR | LF_SUPER_CALL) | LF_IN_ASYNC | LF_IN_STATIC_BLOCK | LF_CAN_NEW_DOT_TARGET | LF_NO_ARGUMENTS;
     let $tp_curly_start = tok_getStart();
     let $tp_curly_line = tok_getLine();
     let $tp_curly_column = tok_getColumn();
     ASSERT_skipToStatementStart($PUNC_CURLY_OPEN, lexerFlagsNoTemplate);
-    let scoop = (enclosingScoop != null && enclosingScoop !== DO_NOT_BIND && enclosingScoop.isScope)
-      ? SCOPE_addLayer(enclosingScoop, SCOPE_LAYER_BLOCK, 'StaticBlock')
-      : (SCOPE_addLayer(SCOPE_createGlobal('StaticBlock'), SCOPE_LAYER_BLOCK, 'StaticBlock'));
+    // A static block has its own variable scope; it is evaluated as the body of a synthetic method, so a `var` (or a
+    // top level function declaration) inside it belongs to the block and does not reach the enclosing scope at all.
+    // Hence the FUNC_ROOT layer (which stops var hoisting) with the actual block layer on top of it, mirroring how a
+    // function body sits inside its own func root.
+    // - `let x; class C { static { var x; } }`               ok, they are different scopes
+    // - `class C { static { let x; var x; } }`               error, they are the same scope
+    let staticBlockRoot = (enclosingScoop != null && enclosingScoop !== DO_NOT_BIND && enclosingScoop.isScope)
+      ? SCOPE_addLayer(enclosingScoop, SCOPE_LAYER_FUNC_ROOT, 'StaticBlockRoot')
+      : (SCOPE_addLayer(SCOPE_createGlobal('StaticBlock'), SCOPE_LAYER_FUNC_ROOT, 'StaticBlockRoot'));
+    let scoop = SCOPE_addLayer(staticBlockRoot, SCOPE_LAYER_BLOCK, 'StaticBlock');
     AST_open(astProp, { type: 'StaticBlock', loc: undefined, body: [] });
     if (options_exposeScopes) AST_set('$scope', scoop);
     while (tok_getType() !== $PUNC_CURLY_CLOSE) {
-      parseNestedBodyPart(lexerFlagsNoTemplate, scoop, EMPTY_LABEL_SET, NOT_LABELLED, FDS_LEX, PARENT_NOT_LABEL, 'body');
+      // FDS_VAR: the top level of a static block is a function-body-like scope so function declarations are var-like
+      // - `class C { static { function f(){} function f(){} } }`   ok, both are var scoped
+      parseNestedBodyPart(lexerFlagsNoTemplate, scoop, EMPTY_LABEL_SET, NOT_LABELLED, FDS_VAR, PARENT_NOT_LABEL, 'body');
     }
     // Back in the class body after the static block: the next token is a class element key (may be `*` `#` `[`
     // `get` `static` `;` `}`), not a statement start. Consume the `}` with skipDiv like a method body does, else a
@@ -5877,6 +5896,13 @@ function Parser(code, options = {}) {
 
     ASSERT_skipDiv($ID_using, lexerFlags);
 
+    // An `await using` declaration contains an await, and ContainsAwait of a ClassStaticBlockStatementList is an
+    // early error, same as for `for await` and a plain await expression.
+    // - `class C { static { for (await using x of y); } }`
+    if (hasAnyFlag(lexerFlags, LF_IN_STATIC_BLOCK)) {
+      return THROW_RANGE('Cannot use `await using` in a static block', $tp_awaitIdent_start, tok_getStop());
+    }
+
     // Note: destructuring patterns ({, [) are not allowed with `await using` declarations (only BindingIdentifier)
     if (!isIdentToken(tok_getType()) || tok_getNlwas() === true) {
       return THROW_RANGE('`await using` in for-header must be followed by a binding identifier', tok_getStart(), tok_getStop());
@@ -7109,6 +7135,12 @@ function Parser(code, options = {}) {
     // `await using` is a declaration when followed by an ident on the same line (no newline after `using`)
     // Note: destructuring patterns ({, [) are not allowed with `await using` declarations (only BindingIdentifier)
     if (isIdentToken(tok_getType()) && tok_getNlwas() === false) {
+      // An `await using` declaration contains an await, and ContainsAwait of a ClassStaticBlockStatementList is an
+      // early error, same as for `for await` and a plain await expression.
+      // - `class C { static { await using x = y; } }`
+      if (hasAnyFlag(lexerFlags, LF_IN_STATIC_BLOCK)) {
+        return THROW_RANGE('Cannot use `await using` in a static block', $tp_await_start, $tp_using_stop);
+      }
       parseAnyVarDeclaration(lexerFlags, $tp_await_start, $tp_await_line, $tp_await_column, scoop, BINDING_TYPE_AWAIT_USING, FROM_STATEMENT_START, UNDEF_EXPORTS, UNDEF_EXPORTS, astProp);
     }
     else {
@@ -9018,10 +9050,12 @@ function Parser(code, options = {}) {
         // - `class C { x = () => arguments; }`                error: arrow inherits field init scope
         // - `class C { x = function() { arguments; } }`       ok: regular function has own `arguments`
         // - `function f() { class C { x = arguments; } }`     error: the `arguments` is NOT scoped to the outer func
-        if (hasAllFlags(lexerFlags, LF_IN_CLASS_FIELD_INIT)) {
-          // Note: The spec has an explicit early error here (ContainsArguments of Initializer is true -> early error).
-          //       Reject in all modes. (The init will run in a special function so it does not inherit from outer funcs either)
-          return THROW_RANGE('Cannot reference `arguments` in class field initializer', $tp_ident_start, $tp_ident_stop);
+        // - `class C { static { arguments; } }`               error: ContainsArguments in a static block, same rule
+        if (hasAllFlags(lexerFlags, LF_NO_ARGUMENTS)) {
+          // Note: The spec has an explicit early error here (ContainsArguments of Initializer / of
+          //       ClassStaticBlockStatementList is true -> early error).
+          //       Reject in all modes. (Both run in a special function so they do not inherit from outer funcs either)
+          return THROW_RANGE('Cannot reference `arguments` in a class field initializer or class static block', $tp_ident_start, $tp_ident_stop);
         }
         if (tok_getType() === $PUNC_EQ_GT) {
           if (hasAllFlags(lexerFlags, LF_STRICT_MODE)) {
@@ -13004,6 +13038,14 @@ function Parser(code, options = {}) {
     // their validity. This makes the difference between `({x}=y)` and `y={x}` work.
     if (report.length > 0 && $tp_propLeadingIdent_type !== $ID_eval && $tp_propLeadingIdent_type !== $ID_arguments) {
       return THROW_RANGE(report, $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
+    }
+
+    // A shorthand is an IdentifierReference, so ContainsArguments applies to it just as much as to a regular
+    // reference (which is checked in parseValueHeadBodyAfterIdent). As a pattern it is a strict mode error anyway.
+    // - `class C { x = ({arguments}); }`
+    // - `class C { static { ({arguments}); } }`
+    if ($tp_propLeadingIdent_type === $ID_arguments && hasAllFlags(lexerFlags, LF_NO_ARGUMENTS)) {
+      return THROW_RANGE('Cannot reference `arguments` in a class field initializer or class static block', $tp_propLeadingIdent_start, $tp_propLeadingIdent_stop);
     }
 
     // If this isn't a binding, this is a noop

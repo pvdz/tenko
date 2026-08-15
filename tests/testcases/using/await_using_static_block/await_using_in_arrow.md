@@ -1,21 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/fields/class_field_inside_func_init_arguments.md
+- Path: tests/testcases/using/await_using_static_block/await_using_in_arrow.md
 
-> :: classes : fields
+> :: using : await using static block
 >
-> ::> class field inside func init arguments
+> ::> await using in arrow
 >
-> Class field init can _never_ contain `arguments` unscoped because the init runs inside a special function. The spec has an explicit early error for that case (ContainsArguments of Initializer is true -> early error). Reject in all modes.
+> an arrow in a static block is not an async context either
 
 ## FAIL
 
 ## Input
 
+- `allowUsingDeclaration = true`
+
 `````js
-function f() {
-  class C { x = arguments; }
-}
+class C { static { () => { await using x = y; } } }
 `````
 
 ## Output
@@ -32,14 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot reference `arguments` in a class field initializer or class static block
+  Unable to ASI
 
-start@1:0, error@2:16
+start@1:0, error@1:33
 ╔══╦═════════════════
- 1 ║ function f() {
- 2 ║   class C { x = arguments; }
-   ║                 ^^^^^^^^^------- error
- 3 ║ }
+ 1 ║ class C { static { () => { await using x = y; } } }
+   ║                                  ^^^^^------- error
 ╚══╩═════════════════
 
 `````
@@ -54,7 +52,17 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Cannot use `await` as var when goal=module but found `await` outside an async function
+
+start@1:0, error@1:33
+╔══╦═════════════════
+ 1 ║ class C { static { () => { await using x = y; } } }
+   ║                                  ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Sloppy mode with AnnexB
 
@@ -66,4 +74,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as module mode._
