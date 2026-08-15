@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/update_expression/no_tail_after_update/array_elem_assign_rhs.md
 
-> :: optional chaining
+> :: update expression : no tail after update
 >
-> ::> postfix ident plus
+> ::> array elem assign rhs
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the same as the rhs of an assignment
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+x = [typeof a--.c]
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Expected the closing bracket `]` for the array, found `.` instead
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:15
+╔══╦═════════════════
+ 1 ║ x = [typeof a--.c]
+   ║                ^------- error
+╚══╩═════════════════
 
 `````
 

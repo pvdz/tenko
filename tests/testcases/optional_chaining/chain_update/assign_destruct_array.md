@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/optional_chaining/chain_update/assign_destruct_array.md
 
-> :: optional chaining
+> :: optional chaining : chain update
 >
-> ::> postfix ident plus
+> ::> assign destruct array
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> an optional chain is not a valid destructuring target
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+[a?.b.c] = []
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Tried to destructure something that is not destructible
 
-start@1:0, error@1:4
+start@1:0, error@1:9
 ╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
+ 1 ║ [a?.b.c] = []
+   ║          ^------- error
 ╚══╩════════════════
 
 `````

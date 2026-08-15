@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/arrays/destructuring_call_element/nested_in_object.md
 
-> :: optional chaining
+> :: arrays : destructuring call element
 >
-> ::> postfix ident plus
+> ::> nested in object
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the same nested in an object pattern
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+({x: [0(b)]} = y)
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Tried to destructure something that is not destructible
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:13
+╔══╦═════════════════
+ 1 ║ ({x: [0(b)]} = y)
+   ║              ^------- error
+╚══╩═════════════════
 
 `````
 

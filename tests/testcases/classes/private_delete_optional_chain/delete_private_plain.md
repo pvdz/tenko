@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/classes/private_delete_optional_chain/delete_private_plain.md
 
-> :: optional chaining
+> :: classes : private delete optional chain
 >
-> ::> postfix ident plus
+> ::> delete private plain
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> deleting a private field is an error without a chain too
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+class C { #b; m(o){ delete o.#b } }
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Deleting a private field is a syntax error
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ class C { #b; m(o){ delete o.#b } }
+   ║                     ^^^^^^------- error
+╚══╩═════════════════
 
 `````
 

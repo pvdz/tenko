@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/update_expression/no_tail_after_update/array_elem_computed.md
 
-> :: optional chaining
+> :: update expression : no tail after update
 >
-> ::> postfix ident plus
+> ::> array elem computed
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the same for a computed tail
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+[delete a--[c]]
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Expected the closing bracket `]` for the array, found `[` instead
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:11
+╔══╦═════════════════
+ 1 ║ [delete a--[c]]
+   ║            ^------- error
+╚══╩═════════════════
 
 `````
 

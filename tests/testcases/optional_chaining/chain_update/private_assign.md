@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/optional_chaining/chain_update/private_assign.md
 
-> :: optional chaining
+> :: optional chaining : chain update
 >
-> ::> postfix ident plus
+> ::> private assign
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> nor is it an assignment target
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+class C { #x; m(o){ o?.#x = 1 } }
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Cannot assign to lhs (starting with `o`) because it is not a valid assignment target
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:26
+╔══╦═════════════════
+ 1 ║ class C { #x; m(o){ o?.#x = 1 } }
+   ║                           ^------- error
+╚══╩═════════════════
 
 `````
 

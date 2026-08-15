@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/objects/destructuring/call_tail_value/array_value_call_default.md
 
-> :: optional chaining
+> :: objects : destructuring : call tail value
 >
-> ::> postfix ident plus
+> ::> array value call default
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> a call tail value with a default is still not a destructuring target
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+({x: [y].slice(a) = z} = x)
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Cannot assign to lhs (starting with `[`) because it is not a valid assignment target
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:18
+╔══╦═════════════════
+ 1 ║ ({x: [y].slice(a) = z} = x)
+   ║                   ^------- error
+╚══╩═════════════════
 
 `````
 
@@ -56,7 +56,17 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Parser error!
+  Tried to destructure something that is not destructible
+
+start@1:0, error@1:23
+╔══╦═════════════════
+ 1 ║ ({x: [y].slice(a) = z} = x)
+   ║                        ^------- error
+╚══╩═════════════════
+
+`````
 
 ### Module goal with AnnexB
 

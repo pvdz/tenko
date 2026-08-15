@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/update_expression/no_tail_after_update/yield_arg_unary_tail.md
 
-> :: optional chaining
+> :: update expression : no tail after update
 >
-> ::> postfix ident plus
+> ::> yield arg unary tail
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> a yield argument that is a unary expression can not take a tail
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+function *g(){ yield delete a++.b }
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Unable to ASI
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:31
+╔══╦═════════════════
+ 1 ║ function *g(){ yield delete a++.b }
+   ║                                ^------- error
+╚══╩═════════════════
 
 `````
 

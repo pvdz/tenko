@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/optional_chaining/chaining_leak/fail_template_nested_chain_key.md
 
-> :: optional chaining
+> :: optional chaining : chaining leak
 >
-> ::> postfix ident plus
+> ::> fail template nested chain key
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the nested chain in a computed key rejects its own trailing template
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+a?.[b?.c`d`]
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  A value containing the optional chaining operator cannot be followed by a template
 
-start@1:0, error@1:4
+start@1:0, error@1:8
 ╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
+ 1 ║ a?.[b?.c`d`]
+   ║         ^^^------- error
 ╚══╩════════════════
 
 `````

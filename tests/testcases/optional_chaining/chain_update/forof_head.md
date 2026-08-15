@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/optional_chaining/chain_update/forof_head.md
 
-> :: optional chaining
+> :: optional chaining : chain update
 >
-> ::> postfix ident plus
+> ::> forof head
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> an optional chain is not a valid for-of head
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+for (a?.b.c of x);
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Left part of for-of must be assignable
 
-start@1:0, error@1:4
+start@1:0, error@1:0
 ╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
+ 1 ║ for (a?.b.c of x);
+   ║ ^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/arrays/destructuring_call_element/grouped_call_literal.md
 
-> :: optional chaining
+> :: arrays : destructuring call element
 >
-> ::> postfix ident plus
+> ::> grouped call literal
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> a parenthesized call on a literal is not a destructuring target
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+[(0(b))] = y
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Tried to destructure something that is not destructible
 
-start@1:0, error@1:4
+start@1:0, error@1:9
 ╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
+ 1 ║ [(0(b))] = y
+   ║          ^------- error
 ╚══╩════════════════
 
 `````

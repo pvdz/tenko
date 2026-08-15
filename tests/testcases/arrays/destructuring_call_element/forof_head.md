@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/arrays/destructuring_call_element/forof_head.md
 
-> :: optional chaining
+> :: arrays : destructuring call element
 >
-> ::> postfix ident plus
+> ::> forof head
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the same as a for-of head
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+for ([0(b)] of y);
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  The for-header lhs binding pattern is not destructible
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:12
+╔══╦═════════════════
+ 1 ║ for ([0(b)] of y);
+   ║             ^^------- error
+╚══╩═════════════════
 
 `````
 

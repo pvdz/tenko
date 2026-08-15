@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/optional_chaining/chain_update/prefix_dec_computed_tail.md
 
-> :: optional chaining
+> :: optional chaining : chain update
 >
-> ::> postfix ident plus
+> ::> prefix dec computed tail
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> prefix decrement on a computed tail of an optional chain
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+--a?.b[c]
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Can only increment or decrement an identifier or member expression (at EOF)
 
-start@1:0, error@1:4
+start@1:0, error@1:9
 ╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
+ 1 ║ --a?.b[c]
+   ║          ^------- error at EOF
 ╚══╩════════════════
 
 `````

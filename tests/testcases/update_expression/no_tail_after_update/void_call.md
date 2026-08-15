@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/update_expression/no_tail_after_update/void_call.md
 
-> :: optional chaining
+> :: update expression : no tail after update
 >
-> ::> postfix ident plus
+> ::> void call
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the same for void
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+void a++(b)
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Unable to ASI
 
-start@1:0, error@1:4
+start@1:0, error@1:8
 ╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
+ 1 ║ void a++(b)
+   ║         ^------- error
 ╚══╩════════════════
 
 `````

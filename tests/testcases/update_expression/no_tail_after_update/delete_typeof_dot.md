@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/update_expression/no_tail_after_update/delete_typeof_dot.md
 
-> :: optional chaining
+> :: update expression : no tail after update
 >
-> ::> postfix ident plus
+> ::> delete typeof dot
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> the same for nested unary expressions
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+delete typeof a++.b
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  Unable to ASI
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:17
+╔══╦═════════════════
+ 1 ║ delete typeof a++.b
+   ║                  ^------- error
+╚══╩═════════════════
 
 `````
 

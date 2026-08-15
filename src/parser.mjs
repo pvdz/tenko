@@ -715,6 +715,17 @@ function Parser(code, options = {}) {
   // operators (`??=`, `&&=`, `||=`) per its note, and web-compat is not `simple` so destructuring targets still reject.
   // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
   let allowCallAssignmentTarget = options_webCompat === WEB_COMPAT_ON;
+  // Set by the value parsers that produce something which is not a LeftHandSideExpression (a UnaryExpression, an
+  // AwaitExpression, or a YieldExpression). Those can never receive a member/call/template tail, but they can end
+  // in a token that starts one when their argument ended in a postfix update (`delete a++ .b`, since any other
+  // argument consumes its own tail). The next parseValueTail checks it and leaves the pending token alone so ASI
+  // can still apply to it (`delete a++\n[b]` is two statements).
+  // This records the offset of the pending token rather than a boolean, which is what keeps the state from leaking
+  // to a value that did not set it. The parser never backtracks so the token offset only ever moves forward, which
+  // makes a stale state unable to ever match again: parsing anything at all invalidates it. That matters because a
+  // construct _wrapping_ such a value can have a tail of its own (`[typeof a].b`, `(delete a++).b`) and it always
+  // consumed its closing token before parsing that tail.
+  let valueWasNotLhseAtOffset = -1;
   // ES2022 moved the duplicate `__proto__` early error from Annex B.3.1 into the main body (13.2.5.1), so from
   // es13 on it applies in every mode; when targeting ES2021 or lower it is Annex B and only applies in webcompat mode.
   let checkDupProto = (targetEsVersion >= VERSION_DUP_PROTO_MAIN || targetEsVersion === VERSION_WHATEVER) || options_webCompat === WEB_COMPAT_ON;
@@ -1463,6 +1474,18 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Can only increment or decrement an identifier or member expression', tok_getStart(), tok_getStop());
     }
   }
+  // <SCRUB DEV>
+  function ASSERT_valueCanNotHaveTail(astProp) {
+    // Guard rail for `valueWasNotLhseAtOffset`: the state may only ever suppress the tail of the very value that set
+    // it, which is always a unary, await, or yield expression. If a future caller parses a value head without letting
+    // the tail parser see it, and the token happens not to have moved, this fires instead of silently swallowing a
+    // legal tail (which is how `[typeof a].b` once broke).
+    let head = _path[_path.length - 1];
+    let node = head && head[astProp];
+    if (node instanceof Array) node = node[node.length - 1];
+    return !node || node.type === 'UnaryExpression' || node.type === 'AwaitExpression' || node.type === 'YieldExpression';
+  }
+  // </SCRUB DEV>
   function AST_patchAsyncCall($tp_async_start, $tp_async_stop, $tp_async_line, $tp_async_column, $tp_async_canon, astProp) {
     ASSERT(AST_patchAsyncCall.length === arguments.length, 'arg count');
 
@@ -4364,6 +4387,7 @@ function Parser(code, options = {}) {
 
     // See tests/testcases/await/function_piggy/autogen.md
     // See tests/testcases/await/arrow_piggy/autogen.md
+    valueWasNotLhseAtOffset = tok_getStart(); // An AwaitExpression can not have a member/call/template tail
     return NOT_ASSIGNABLE | PIGGY_BACK_SAW_AWAIT;
   }
   function parseAwaitVar(lexerFlags, $tp_await_start, $tp_await_stop, $tp_await_line, $tp_await_column, $tp_await_type, $tp_await_canon, isNewArg, allowAssignment, astProp) {
@@ -8976,6 +9000,7 @@ function Parser(code, options = {}) {
     ASSERT(isIdentToken($tp_ident_type), 'should have consumed token. make sure you checked whether the token after can be div or regex...');
     ASSERT($tp_ident_start !== tok_getStart(), 'should have consumed this');
     ASSERT(typeof astProp === 'string', 'astprop string', astProp);
+
     ASSERT_ASSIGN_EXPR(allowAssignment);
     ASSERT(isNewArg === NOT_NEW_ARG || allowAssignment === ASSIGN_EXPR_IS_ERROR, 'new arg does not allow assignments');
     ASSERT_BINDING_TYPE(bindingType);
@@ -9491,7 +9516,12 @@ function Parser(code, options = {}) {
       // Cannot delete private props either
       // - `class C { #x; m(){ delete this.#x; } }`          // error: delete private field
       // - `class C { #m; x = delete (g().#m); }`             // error: delete private field (covered)
-      if (deleteArg.type === 'MemberExpression' && deleteArg.property.type === 'PrivateIdentifier') {
+      // An optional chain is wrapped in a ChainExpression, so check the outermost link of that chain too
+      // - `class C { #x; m(o){ delete o?.#x; } }`             // error: the chain ends in the private field
+      // - `class C { #x; m(o){ delete o?.b.#x; } }`           // error: idem
+      // - `class C { #x; m(o){ delete o?.#x.b; } }`           // fine: the chain ends in a public prop
+      let deleteTarget = deleteArg.type === 'ChainExpression' ? deleteArg.expression : deleteArg;
+      if (deleteTarget.type === 'MemberExpression' && deleteTarget.property.type === 'PrivateIdentifier') {
         return THROW_RANGE('Deleting a private field is a syntax error', $tp_unary_start, $tp_unary_stop);
       }
     }
@@ -9504,6 +9534,7 @@ function Parser(code, options = {}) {
       // [x]: `typeof 3 ** 2;`
       return THROW_RANGE('The lhs of ** can not be this kind of unary expression (syntactically not allowed, you have to wrap something)', tok_getStart(), tok_getStop());
     }
+    valueWasNotLhseAtOffset = tok_getStart(); // A UnaryExpression can not have a member/call/template tail
     return setNotAssignable(assignable);
   }
   function parseUpdatePrefix(lexerFlags, isNewArg, leftHandSideExpression, opName, astProp) {
@@ -9543,6 +9574,27 @@ function Parser(code, options = {}) {
       prefix: true,
     });
     let assignable = parseValue(lexerFlags, ASSIGN_EXPR_IS_ERROR, NOT_NEW_ARG, NOT_LHSE, 'argument');
+
+    // <SCRUB AST>
+    // The arg must be a simple assignment target. An update/unary/await/yield expression is not, and it can not take
+    // a member or call tail either, so the tail parser below must not get the chance to turn one into a
+    // MemberExpression (`--a--[b].b` is not `--((a--)[b].b)`). Note that the arg only ends up being one of these
+    // when it ended in a postfix update, since any other value consumes its own tail.
+    // - `--a--[b].b`  - `++a.b++.b`  - `--typeof a++.b`
+    let updateArgSoFar = _path[_path.length - 1].argument;
+    if (
+      updateArgSoFar &&
+      (
+        updateArgSoFar.type === 'UpdateExpression' ||
+        updateArgSoFar.type === 'UnaryExpression' ||
+        updateArgSoFar.type === 'AwaitExpression' ||
+        updateArgSoFar.type === 'YieldExpression'
+      )
+    ) {
+      return THROW_RANGE('Can only increment or decrement an identifier or member expression', $tp_punc_start, $tp_punc_stop);
+    }
+    // </SCRUB AST>
+
     assignable = parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, NOT_NEW_ARG, ONLY_LHSE, 'argument');
 
     AST_throwIfIllegalUpdateArg(lexerFlags, 'argument');
@@ -9626,6 +9678,7 @@ function Parser(code, options = {}) {
       return THROW_RANGE('Can not have a `yield` expression on the left side of a ternary', $tp_yield_start, $tp_yield_stop);
     }
 
+    valueWasNotLhseAtOffset = tok_getStart(); // A YieldExpression can not have a member/call/template tail
     return NOT_ASSIGNABLE | PIGGY_BACK_SAW_YIELD;
   }
   function parseYieldStarArgument(lexerFlags, $tp_yield_start, astProp) {
@@ -9912,6 +9965,18 @@ function Parser(code, options = {}) {
     // In ONLY_LHSE (e.g. operand of ++/--) we must parse full LHS including ._ tail; PIGGY_BACK_WAS_ARROW only skips tail when NOT_LHSE
     if (hasAllFlags(assignable, PIGGY_BACK_WAS_ARROW) && leftHandSideExpression === NOT_LHSE) return assignable;
 
+    // The value that was just parsed is a UnaryExpression, AwaitExpression, or YieldExpression. Those are not a
+    // MemberExpression so they can not take a member, call, or template tail at all. This can only happen when their
+    // argument ended in a postfix update, since any other argument consumes its own tail. Leave the pending token
+    // alone so that the caller can still apply ASI to it (`delete a++\n[b]` is two statements).
+    // The offset must still be the pending token; if anything was parsed since, this state is stale and not ours.
+    // - `delete a++.b`  - `typeof a--[b]`  - `[typeof a--.c]`  - `async function f(){ await a++.b }`
+    if (valueWasNotLhseAtOffset === tok_getStart()) {
+      ASSERT(ASSERT_valueCanNotHaveTail(astProp), 'the no-tail state must belong to the value that ends here', astProp);
+      valueWasNotLhseAtOffset = -1;
+      return assignable;
+    }
+
     switch (tok_getType()) {
       case $PUNC_DOT: // niet nodig
         return _parseValueTailDotProperty(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, NOT_OPTIONAL, astProp);
@@ -10103,11 +10168,15 @@ function Parser(code, options = {}) {
     let $tp_propExpr_start = tok_getStart();
     let $tp_propExpr_line = tok_getLine();
     let $tp_propExpr_column = tok_getColumn();
-    let nowAssignable = parseExpressions(sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), 'property');
+    // The key is a fresh expression, it is not part of the optional chain that may contain it. So drop LF_CHAINING;
+    // a tagged template is fine here and a chain of its own gets to inject its own `ChainExpression` node.
+    // - `a?.[b`c`]`  - `a?.[b?.c]`
+    let innerLexerFlags = sansFlag(lexerFlags, LF_CHAINING);
+    let nowAssignable = parseExpressions(sansFlag(innerLexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_IN_GLOBAL | LF_IN_SWITCH | LF_IN_ITERATION), 'property');
     // - `foo[await bar]`  - `a[{...()=>{}}.m()]`  expression can have tail (.m(), etc)
     assignable = mergeAssignable(nowAssignable, assignable);
     assignable = sansFlag(assignable, PIGGY_BACK_WAS_ARROW);
-    assignable = parseValueTail(lexerFlags, $tp_propExpr_start, $tp_propExpr_line, $tp_propExpr_column, assignable, NOT_NEW_ARG, NOT_LHSE, 'property');
+    assignable = parseValueTail(innerLexerFlags, $tp_propExpr_start, $tp_propExpr_line, $tp_propExpr_column, assignable, NOT_NEW_ARG, NOT_LHSE, 'property');
 
     if (tok_getType() !== $PUNC_BRACKET_CLOSE) {
       return THROW_RANGE('Expected the closing bracket `]` for a dynamic property, found `' + tok_sliceInput(tok_getStart(), tok_getStop()) + '` instead', tok_getStart(), tok_getStop());
@@ -10153,7 +10222,10 @@ function Parser(code, options = {}) {
     // https://tc39.es/ecma262/#sec-runtime-errors-for-function-call-assignment-targets
     // In every ratified edition (ES2015-ES2025) the AssignmentTargetType of a call is invalid, so without the
     // web-compat gate (or when targeting es<=16) the call is simply not assignable at all.
-    let callAssignable = (allowCallAssignmentTarget && hasNoFlag(lexerFlags, LF_STRICT_MODE)) ? (assignable | CANT_DESTRUCT) : setNotAssignable(assignable);
+    // Note: `assignable` was merged with the assignability of the _args_, which says nothing about the call itself.
+    // So explicitly (un)set the assignable state here rather than riding whatever the last arg happened to be.
+    // - `f(function(){})++`  (the arg is not assignable but the call still is, in sloppy web-compat)
+    let callAssignable = (allowCallAssignmentTarget && hasNoFlag(lexerFlags, LF_STRICT_MODE)) ? (setAssignable(assignable) | CANT_DESTRUCT) : setNotAssignable(assignable);
     return parseValueTail(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, callAssignable, isNewArg, NOT_LHSE, astProp);
   }
   function _parseValueTailTemplate(lexerFlags, $tp_valueFirst_start, $tp_valueFirst_line, $tp_valueFirst_column, assignable, isNewArg, astProp) {
@@ -10259,6 +10331,15 @@ function Parser(code, options = {}) {
       return assignable;
     }
 
+    // The AssignmentTargetType of an OptionalExpression is always invalid, even for a plain member tail like the `.c`
+    // in `a?.b.c` and even in web-compat sloppy mode. The tail is parsed before the chain marks itself as not
+    // assignable, so the LF_CHAINING state is what tells us the value is (part of) an optional chain here.
+    // - `a?.b.c++`  - `a?.(b)--`  - `a?.b?.[c]++`
+    // (Note: this must be checked _after_ the newline check because ASI still applies: `a?.b.c\n++x` is fine)
+    if (hasAnyFlag(lexerFlags, LF_CHAINING)) {
+      return THROW_RANGE('The postfix `' + opName + '` cannot be applied to an optional chain', $tp_op_start, $tp_op_stop);
+    }
+
     // check for this _after_ the newline check, for cases like
     if (notAssignable(assignable)) {
       // - `"foo"\n++bar`
@@ -10282,7 +10363,10 @@ function Parser(code, options = {}) {
   function parseCallArgs(lexerFlags, astProp) {
     ASSERT_skipToExpressionStartGrouped($PUNC_PAREN_OPEN, lexerFlags);
     // [v]: `for (x(y in z);;);`
-    lexerFlags = sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS);
+    // The args are fresh expressions, they are not part of the optional chain that may contain the call. So drop
+    // LF_CHAINING; a tagged template is fine here and a chain of its own gets to inject its own `ChainExpression`.
+    // - `a?.(b`c`)`  - `a?.(b?.c)`
+    lexerFlags = sansFlag(lexerFlags | LF_NO_ASI, LF_IN_FOR_LHS | LF_CHAINING);
 
     let assignable = ASSIGNABLE_UNDETERMINED;
     if (tok_getType() === $PUNC_PAREN_CLOSE) {
@@ -11824,6 +11908,7 @@ function Parser(code, options = {}) {
 
           // This value is not destructible on its own as there is no ident+more value body that is destructible
           // The optional tail may change this if it is a member expression
+          // - `[typeof a--.c]`   (the element is a unary expression so it may not receive that `.c` tail)
           let nowDestruct = parseOptionalDestructibleRestOfExpression(lexerFlags, $tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, leftAssignable, CANT_DESTRUCT, $PUNC_BRACKET_CLOSE, astProp);
           // We can ignore assignability here because the await/yield flags from the last call will be inside the destruct
           destructible |= nowDestruct;
@@ -11983,11 +12068,15 @@ function Parser(code, options = {}) {
           assignable = setNotAssignable(assignable);
           destructible |= CANT_DESTRUCT;
         }
-        else if (wasParen && isAssignable(assignable) && (bindingType === BINDING_TYPE_NONE || bindingType === BINDING_TYPE_ARG)) {
+        // Note: a web-compat call tail (`[0(b)]`) is assignable but rides CANT_DESTRUCT: it is a valid simple
+        // assignment target yet never a destructuring target.
+        // - `[0(b)] = y`
+        // - `[(x())] = y`
+        else if (wasParen && isAssignable(assignable) && hasNoFlag(assignable, CANT_DESTRUCT) && (bindingType === BINDING_TYPE_NONE || bindingType === BINDING_TYPE_ARG)) {
           // - `[(x)] = obj`
           destructible |=  DESTRUCT_ASSIGN_ONLY;
         }
-        else if (wasParen || notAssignable(assignable)) {
+        else if (wasParen || notAssignable(assignable) || hasAllFlags(assignable, CANT_DESTRUCT)) {
           // - `let [(x)] = obj`
           //            ^
           // - `[x()] = obj`
@@ -12610,9 +12699,14 @@ function Parser(code, options = {}) {
       // Value must have a tail and it is not (immediately) an assignment. At this point, only assign or cant destruct.
       let exprAssignable = parseValueTail(lexerFlags, $tp_start_start, $tp_start_line, $tp_start_column, objAssignable, NOT_NEW_ARG, NOT_LHSE, 'value');
       let wasAssignment = tok_getType() === $PUNC_EQ; // An assignment is destructible
+      let cantDestruct = hasAllFlags(exprAssignable, CANT_DESTRUCT); // Riding a web-compat call tail
       exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, exprAssignable, 'value');
 
-      if (wasAssignment || isAssignable(exprAssignable)) {
+      // A web-compat call tail (`{a: [b].c(d)}`) is assignable but rides CANT_DESTRUCT: it is a valid simple
+      // assignment target yet never a destructuring target, not even with a default.
+      // - `({a: [b].c(d)} = x)`
+      // - `({a: [b].c(d) = e} = x)`
+      if (!cantDestruct && (wasAssignment || isAssignable(exprAssignable))) {
         return DESTRUCT_ASSIGN_ONLY | getPiggies(exprAssignable);
       }
 
@@ -12647,9 +12741,14 @@ function Parser(code, options = {}) {
       // Value must have a tail and it is not (immediately) an assignment. At this point, only assign or cant destruct.
       let exprAssignable = parseValueTail(lexerFlags, $tp_start_start, $tp_start_line, $tp_start_column, objAssignable, NOT_NEW_ARG, NOT_LHSE, 'value');
       let wasAssignment = tok_getType() === $PUNC_EQ; // An assignment is destructible
+      let cantDestruct = hasAllFlags(exprAssignable, CANT_DESTRUCT); // Riding a web-compat call tail
       exprAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, exprAssignable, 'value');
 
-      if (wasAssignment || isAssignable(exprAssignable)) {
+      // A web-compat call tail (`{a: [b].c(d)}`) is assignable but rides CANT_DESTRUCT: it is a valid simple
+      // assignment target yet never a destructuring target, not even with a default.
+      // - `({a: [b].c(d)} = x)`
+      // - `({a: [b].c(d) = e} = x)`
+      if (!cantDestruct && (wasAssignment || isAssignable(exprAssignable))) {
         return DESTRUCT_ASSIGN_ONLY | getPiggies(exprAssignable);
       }
 
@@ -12675,13 +12774,18 @@ function Parser(code, options = {}) {
     // Whatever the value, it may have a tail (like a property or call) which we must validate first
 
     let wasAssignment = tok_getType() === $PUNC_EQ; // An assignment is destructible
+    let cantDestruct = hasAllFlags(valueAssignable, CANT_DESTRUCT); // Riding a web-compat call tail
 
     valueAssignable = parseExpressionFromOp(lexerFlags, $tp_start_start, $tp_start_stop, $tp_start_line, $tp_start_column, valueAssignable, 'value');
 
     // At this point, an assignment implies the whole thing can at best be a destruct assignment (but no longer
     // an arrow for example). If it wasn't an assignment and it wasn't assignable, then it's also not destructible.
 
-    if (wasAssignment || isAssignable(valueAssignable)) {
+    // A web-compat call tail (`{a: "b".c(d)}`) is assignable but rides CANT_DESTRUCT: it is a valid simple
+    // assignment target yet never a destructuring target, not even with a default.
+    // - `({a: "b".c(d)} = x)`
+    // - `({a: "b".c(d) = e} = x)`
+    if (!cantDestruct && (wasAssignment || isAssignable(valueAssignable))) {
       return DESTRUCT_ASSIGN_ONLY | getPiggies(valueAssignable);
     }
 

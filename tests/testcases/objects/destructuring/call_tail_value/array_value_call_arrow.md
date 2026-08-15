@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/optional_chaining/postfix_ident_plus.md
+- Path: tests/testcases/objects/destructuring/call_tail_value/array_value_call_arrow.md
 
-> :: optional chaining
+> :: objects : destructuring : call tail value
 >
-> ::> postfix ident plus
+> ::> array value call arrow
 >
-> Postfix `++` is illegal on optional chain because it is not assignable
+> a call tail value is not a valid arrow param either
 
 ## FAIL
 
 ## Input
 
 `````js
-a?.b++
+({x: [y].slice(a)}) => x
 `````
 
 ## Output
@@ -30,13 +30,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  The postfix `++` cannot be applied to an optional chain
+  The left hand side of the arrow is not destructible so arrow is illegal
 
-start@1:0, error@1:4
-╔══╦════════════════
- 1 ║ a?.b++
-   ║     ^^------- error
-╚══╩════════════════
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ ({x: [y].slice(a)}) => x
+   ║                     ^^------- error
+╚══╩═════════════════
 
 `````
 
