@@ -1,24 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/templates/crlf.md
+- Path: tests/testcases/templates/cr_normalization/tagged_member.md
 
-> :: templates
+> :: templates : cr normalization
 >
-> ::> crlf
+> ::> tagged member
 >
-> Note: the @{xd}@ encodes a CR but the LF is never encoded
->
-> The var `b` should start on the 4th line (not 5th)
+> the same for a member expression tag
 
 ## PASS
 
 ## Input
 
 `````js
-a
-`foo@{xd}@
-bar`
-b
+f.g`a@{xd}@b`
 `````
 
 ## Output
@@ -36,48 +31,50 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:4,column:1},source:''},
+  loc:{start:{line:1,column:0},end:{line:2,column:2},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:3,column:4},source:''},
+      loc:{start:{line:1,column:0},end:{line:2,column:2},source:''},
       expression: {
         type: 'TaggedTemplateExpression',
-        loc:{start:{line:1,column:0},end:{line:3,column:4},source:''},
+        loc:{start:{line:1,column:0},end:{line:2,column:2},source:''},
         tag: {
-          type: 'Identifier',
-          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
-          name: 'a'
+          type: 'MemberExpression',
+          loc:{start:{line:1,column:0},end:{line:1,column:3},source:''},
+          computed: false,
+          optional: false,
+          object: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+            name: 'f'
+          },
+          property: {
+            type: 'Identifier',
+            loc:{start:{line:1,column:2},end:{line:1,column:3},source:''},
+            name: 'g'
+          }
         },
         quasi: {
           type: 'TemplateLiteral',
-          loc:{start:{line:2,column:0},end:{line:3,column:4},source:''},
+          loc:{start:{line:1,column:3},end:{line:2,column:2},source:''},
           expressions: [],
           quasis: [
             {
               type: 'TemplateElement',
-              loc:{start:{line:2,column:1},end:{line:3,column:3},source:''},
+              loc:{start:{line:1,column:4},end:{line:2,column:1},source:''},
               tail: true,
-              value: { raw: 'foo\nbar', cooked: 'foo\nbar' }
+              value: { raw: 'a\nb', cooked: 'a\nb' }
             }
           ]
         }
-      }
-    },
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:4,column:0},end:{line:4,column:1},source:''},
-      expression: {
-        type: 'Identifier',
-        loc:{start:{line:4,column:0},end:{line:4,column:1},source:''},
-        name: 'b'
       }
     }
   ]
 }
 
 tokens (6x):
-       IDENT TICK_PURE ASI IDENT ASI
+       IDENT PUNC_DOT IDENT TICK_PURE ASI
 `````
 
 ### Strict mode
@@ -109,9 +106,8 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-(a)`foo
-bar`;
-b;
+(f.g)`a
+b`;
 ````
 
 Produces same AST

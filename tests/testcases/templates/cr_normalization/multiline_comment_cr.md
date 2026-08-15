@@ -1,17 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/printer/template_with_cr.md
+- Path: tests/testcases/templates/cr_normalization/multiline_comment_cr.md
 
-> :: printer
+> :: templates : cr normalization
 >
-> ::> template with cr
+> ::> multiline comment cr
 >
-> Template with cr (\r) was not properly printed and printed a lf (\n) instead...
+> a CR inside a multi line comment
+
+## PASS
 
 ## Input
 
 `````js
-`@{xd}@`
+/*a@{xd}@b*/x
 `````
 
 ## Output
@@ -29,30 +31,22 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:2,column:1},source:''},
+  loc:{start:{line:1,column:0},end:{line:2,column:4},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:2,column:1},source:''},
+      loc:{start:{line:2,column:3},end:{line:2,column:4},source:''},
       expression: {
-        type: 'TemplateLiteral',
-        loc:{start:{line:1,column:0},end:{line:2,column:1},source:''},
-        expressions: [],
-        quasis: [
-          {
-            type: 'TemplateElement',
-            loc:{start:{line:1,column:1},end:{line:2,column:0},source:''},
-            tail: true,
-            value: { raw: '\n', cooked: '\n' }
-          }
-        ]
+        type: 'Identifier',
+        loc:{start:{line:2,column:3},end:{line:2,column:4},source:''},
+        name: 'x'
       }
     }
   ]
 }
 
 tokens (3x):
-       TICK_PURE ASI
+       IDENT ASI
 `````
 
 ### Strict mode
@@ -84,8 +78,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-`
-`;
+x;
 ````
 
 Produces same AST

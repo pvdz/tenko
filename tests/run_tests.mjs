@@ -305,6 +305,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
         truncCodeFrame: true,
         alwaysAllowOctalEscapes: tob.inputOptions.alwaysAllowOctalEscapes || false,
         allowUsingDeclaration: tob.inputOptions.allowUsingDeclaration || false,
+        templateNewlineNormalization: tob.inputOptions.templateNewlineNormalization ?? true, // `??` because the parser defaults it to true
 
         $log: verbose ? undefined : (...a) => stdout.push(a),
         $warn: verbose ? undefined : (...a) => stdout.push(a),
@@ -332,6 +333,7 @@ function coreTest(tob, tenko, testVariant, annexB, enableCodeFrame = false, code
       const printerParseOptions = {};
       if (tob.inputOptions.alwaysAllowOctalEscapes) printerParseOptions.alwaysAllowOctalEscapes = true;
       if (tob.inputOptions.allowUsingDeclaration) printerParseOptions.allowUsingDeclaration = true;
+      if (tob.inputOptions.templateNewlineNormalization !== undefined) printerParseOptions.templateNewlineNormalization = tob.inputOptions.templateNewlineNormalization;
       const esVersion = FORCED_ES_TARGET ?? tob.inputOptions.es;
       if (esVersion !== undefined && esVersion !== null) printerParseOptions.targetEsVersion = esVersion;
       tob.printerOutput = testPrinter(

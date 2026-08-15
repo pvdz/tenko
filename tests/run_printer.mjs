@@ -24,7 +24,7 @@ function sameFunc(testVariant, enableAnnexb, forTestFile, code, parseOptions) {
   // Get updated AST for new input (it might crash. In fact, is very likely to be illegal)
   let inputAst;
   try {
-    inputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, parseOptions);
+    inputAst = parseWithTenko(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, parseOptions);
   } catch (e) {
     return '(Tenko rejected input: ' + e + ')'
   }
@@ -121,7 +121,7 @@ function _testPrinter(code, testVariant, enableAnnexb, ast, forTestFile, logTime
     let printedAst;
     let reparseError;
     try {
-      printedAst = parseWithTenkoWithTemplateFix(printedCode, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, reparseOptions);
+      printedAst = parseWithTenko(printedCode, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, reparseOptions);
     } catch (e) {
       reparseError = e;
     }
@@ -145,14 +145,13 @@ ${printedCode}
 Tenko failed to parse printed code (with same parameters as original)${errDetail}
 `];
     } else {
-      let templateFriendlyInputAst = parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, reparseOptions);
+      let inputAstForCompare = parseWithTenko(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, reparseOptions);
 
-      let Acrfckld = astToString(templateFriendlyInputAst.ast).replace(/^\s*loc:.*$\n/gm, '');
+      let Acrfckld = astToString(inputAstForCompare.ast).replace(/^\s*loc:.*$\n/gm, '');
       let Bcrfckld = astToString(printedAst.ast).replace(/^\s*loc:.*$\n/gm, '');
 
-      // There's a \n \r mismatch that I couldn't squash and I'm just removing it here because it's too noisy.
-      const A = Acrfckld.replace(/\\r(\\n)?/g, '\\n');
-      const B = Bcrfckld.replace(/\\r(\\n)?/g, '\\n');
+      const A = Acrfckld;
+      const B = Bcrfckld;
 
       if (A === B) {
         return ['diff-same', `
@@ -209,8 +208,11 @@ ${d}
   throw new Error('unreachable');
 }
 
-function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, parseOptions) {
-  ASSERT(parseWithTenkoWithTemplateFix.length === arguments.length, 'arg count');
+function parseWithTenko(code, testVariant, enableAnnexb, TEST_MODULE, COLLECT_TOKENS_SOLID, parseOptions) {
+  ASSERT(parseWithTenko.length === arguments.length, 'arg count');
+  // Note: the printed code must be parsed with the same options as the AST it was printed from, in particular
+  // `templateNewlineNormalization`, or a template containing a <CR> compares a normalized `raw` against a
+  // non-normalized one.
   parseOptions = parseOptions ?? {};
 
   return Tenko(
@@ -222,8 +224,6 @@ function parseWithTenkoWithTemplateFix(code, testVariant, enableAnnexb, TEST_MOD
       webCompat: enableAnnexb,
 
       errorCodeFrame: false,
-
-      templateNewlineNormalization: false, // (!!)
 
       $log: () => {},
       $warn: () => {},

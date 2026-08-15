@@ -1,17 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/printer/template_with_cr.md
+- Path: tests/testcases/templates/cr_normalization/line_comment_cr.md
 
-> :: printer
+> :: templates : cr normalization
 >
-> ::> template with cr
+> ::> line comment cr
 >
-> Template with cr (\r) was not properly printed and printed a lf (\n) instead...
+> a CR ends a single line comment
+
+## PASS
 
 ## Input
 
 `````js
-`@{xd}@`
+//comment@{xd}@x
 `````
 
 ## Output
@@ -33,26 +35,18 @@ ast: {
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:2,column:1},source:''},
+      loc:{start:{line:2,column:0},end:{line:2,column:1},source:''},
       expression: {
-        type: 'TemplateLiteral',
-        loc:{start:{line:1,column:0},end:{line:2,column:1},source:''},
-        expressions: [],
-        quasis: [
-          {
-            type: 'TemplateElement',
-            loc:{start:{line:1,column:1},end:{line:2,column:0},source:''},
-            tail: true,
-            value: { raw: '\n', cooked: '\n' }
-          }
-        ]
+        type: 'Identifier',
+        loc:{start:{line:2,column:0},end:{line:2,column:1},source:''},
+        name: 'x'
       }
     }
   ]
 }
 
 tokens (3x):
-       TICK_PURE ASI
+       IDENT ASI
 `````
 
 ### Strict mode
@@ -84,8 +78,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-`
-`;
+x;
 ````
 
 Produces same AST

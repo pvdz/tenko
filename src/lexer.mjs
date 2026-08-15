@@ -1610,11 +1610,19 @@ function Lexer(
       }
 
       if (c === $$CR_0D) {
+        // Both TV (the cooked value) and TRV (the raw value) normalize a <CR> and a <CR><LF> to a single <LF>, so
+        // the source CR must not end up in the canonized value. Flush what we have and append the <LF> ourselves.
+        // (An explicit escape is the only way to get a CR into the cooked value; those go through the escape path.)
+        // - "`a<CR>b`" and "`a<CR><LF>b`" both cook to `a\nb`, same as "`a<LF>b`"
+        // Note: `raw` is normalized separately, by the parser, from the source slice.
+        lastCanonizedInput += slice(lastOffset, pointer) + '\n';
+        lastCanonizedInputLen += (pointer - lastOffset) + 1;
         ASSERT_skip($$CR_0D);
         // crlf is considered one line for the sake of reporting line-numbers
         if (neof() && peeky($$LF_0A)) {
           ASSERT_skip($$LF_0A);
         }
+        lastOffset = pointer;
         incrementLine();
       } else if (isLfPsLs(c)) {
         ASSERT_skip(c);
