@@ -1,18 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/q_unterminated_fail.md
+- Path: tests/testcases/regexes/unterminated_q_string/bad_v_pipe.md
 
-> :: regexes : v flag
+> :: regexes : unterminated q string
 >
-> ::> q unterminated fail
+> ::> bad v pipe
+>
+> the same with a pipe
+
 ## FAIL
 
 ## Input
 
-- `es = 15`
-
 `````js
-/[\q{abc]/v
+x = /[\q{a|b]/v
 `````
 
 ## Output
@@ -31,10 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Unterminated `\q{...}` in character class with the v flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /[\q{abc]/v
-   ║ ^^^^^^^^^^^------- error
+ 1 ║ x = /[\q{a|b]/v
+   ║     ^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

@@ -1,18 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/q_unterminated_fail.md
+- Path: tests/testcases/regexes/unterminated_q_string/bare_q_v.md
 
-> :: regexes : v flag
+> :: regexes : unterminated q string
 >
-> ::> q unterminated fail
+> ::> bare q v
+>
+> nor with the v flag
+
 ## FAIL
 
 ## Input
 
-- `es = 15`
-
 `````js
-/[\q{abc]/v
+x = /[\q]/v
 `````
 
 ## Output
@@ -29,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Unterminated `\q{...}` in character class with the v flag
+    Regex: Cannot escape `q` in a regex char class
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /[\q{abc]/v
-   ║ ^^^^^^^^^^^------- error
+ 1 ║ x = /[\q]/v
+   ║     ^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -55,10 +56,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: Cannot escape `q` in a regex char class with the u-flag or v-flag
+
+start@1:0, error@1:4
+╔══╦════════════════
+ 1 ║ x = /[\q]/v
+   ║     ^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

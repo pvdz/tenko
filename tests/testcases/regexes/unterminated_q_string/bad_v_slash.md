@@ -1,18 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/q_unterminated_fail.md
+- Path: tests/testcases/regexes/unterminated_q_string/bad_v_slash.md
 
-> :: regexes : v flag
+> :: regexes : unterminated q string
 >
-> ::> q unterminated fail
+> ::> bad v slash
+>
+> the same with a slash
+
 ## FAIL
 
 ## Input
 
-- `es = 15`
-
 `````js
-/[\q{abc]/v
+x = /[\q{a/b]/v
 `````
 
 ## Output
@@ -29,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Unterminated `\q{...}` in character class with the v flag
+    Regex: Unescaped `/` in character class is not allowed with the v flag (ClassSetSyntaxCharacter must be escaped)
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /[\q{abc]/v
-   ║ ^^^^^^^^^^^------- error
+ 1 ║ x = /[\q{a/b]/v
+   ║     ^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

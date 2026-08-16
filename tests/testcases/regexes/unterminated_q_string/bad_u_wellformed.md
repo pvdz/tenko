@@ -1,18 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/q_unterminated_fail.md
+- Path: tests/testcases/regexes/unterminated_q_string/bad_u_wellformed.md
 
-> :: regexes : v flag
+> :: regexes : unterminated q string
 >
-> ::> q unterminated fail
+> ::> bad u wellformed
+>
+> even a well formed \q{...} is invalid with the u flag
+
 ## FAIL
 
 ## Input
 
-- `es = 15`
-
 `````js
-/[\q{abc]/v
+x = /[\q{a}]/u
 `````
 
 ## Output
@@ -29,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Unterminated `\q{...}` in character class with the v flag
+    Regex: Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /[\q{abc]/v
-   ║ ^^^^^^^^^^^------- error
+ 1 ║ x = /[\q{a}]/u
+   ║     ^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

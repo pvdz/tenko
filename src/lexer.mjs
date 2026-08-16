@@ -4710,7 +4710,18 @@ function Lexer(
           let qAltCodePoints = 0;
           let qMayStr = false;
           let qPrevHigh = false; // previous consumed unit was a high surrogate (so a low surrogate merges into it)
+          let qUnterminated = false; // the `\q{` never closed, so only the non-v reading can still be valid
           while (c !== $$CURLY_R_7D) {
+            if (c === $$SQUARE_R_5D || c === $$FWDSLASH_2F) {
+              // The ClassString is not terminated. That is fatal with the v flag, but without it this was never a
+              // ClassString to begin with, so do not consume the `]` (which closes the class) or the `/` (which
+              // ends the regex); leave it to the outer loop, which reads them in the non-v sense.
+              // - `/[\q{a]/` is the class `q { a` in webcompat, while `/[\q{a]/v` is an error
+              regexBodyHasSyntaxInvalidWithVFlag = true;
+              lastPotentialRegexErrorForVFlag = 'Unterminated `\\q{...}` in character class with the v flag';
+              qUnterminated = true;
+              break;
+            }
             if (c === $$CR_0D || c === $$LF_0A || c === $$PS_2028 || c === $$LS_2029) {
               return regexSyntaxError('Encountered newline inside \\q{...} in character class');
             }
@@ -4743,6 +4754,7 @@ function Lexer(
             if (eof()) return regexSyntaxError('Unexpected early EOF while parsing \\q{...} in character class');
             c = peek();
           }
+          if (qUnterminated) continue; // `c` is the unconsumed `]` or `/`; the outer loop deals with it
           if (qAltCodePoints !== 1) qMayStr = true; // finalize the last alternative
           ASSERT_skip($$CURLY_R_7D);
           if (nonVInClass) nonVAtomAccounting($$CURLY_R_7D);
