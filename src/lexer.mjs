@@ -513,6 +513,7 @@ import {
 import {
   VERSION_BIGINT,
   VERSION_NUMERIC_SEPARATOR,
+  VERSION_JSON_SUPERSET,
   VERSION_OPTIONAL_CHAINING,
   VERSION_NULLISH_COALESCING,
   VERSION_LOGICAL_ASSIGNMENT,
@@ -620,6 +621,7 @@ function Lexer(
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
   const supportBigInt = targetEsVersion >= VERSION_BIGINT || targetEsVersion === VERSION_WHATEVER;
   const supportNumericSeparator = targetEsVersion >= VERSION_NUMERIC_SEPARATOR || targetEsVersion === VERSION_WHATEVER; // ES2021: `1_000`
+  const supportJsonSuperset = targetEsVersion >= VERSION_JSON_SUPERSET || targetEsVersion === VERSION_WHATEVER; // ES2019: unescaped <LS>/<PS> in a string literal
   // ES2022 (tc39/ecma262#2525) moved LegacyOctalEscapeSequence and NonOctalDecimalEscapeSequence (\8 \9) from
   // Annex B.1.2 into the main String Literals grammar, gated only on strictness. Before that they were Annex B
   // syntax, so when targeting ES2021 or lower they additionally require webcompat mode.
@@ -1156,7 +1158,8 @@ function Lexer(
                 return $ERROR;
               }
 
-              // Note: LF and PS are newlines that are _explicitly_ allowed in a string, so only check for LF and CR here
+              // Note: <LS> and <PS> are the newlines that a string may contain (ES2019+), so they only set
+              // hadNewline when targeting an older version; LF and CR always do.
               if (hadNewline) {
                 if (!lastReportableLexerError) lastReportableLexerError = 'Encountered newline in string which is not allowed';
                 return $ERROR;
@@ -1181,6 +1184,11 @@ function Lexer(
           case STRING_UNICODE:
             ASSERT_skip(c);
             if (c <= $$LS_2029 && c >= $$PS_2028) {
+              // The JSON superset change (ES2019) added <LS> and <PS> to DoubleStringCharacter and
+              // SingleStringCharacter. Before that they are just LineTerminators, which a string can not contain.
+              // (A `\<LS>` LineContinuation was always fine, and a template may always contain them.)
+              // - `"a<LS>b"` is fine at es10 but not at es9
+              if (!supportJsonSuperset) hadNewline = true;
               // (Increment after consumption as that's what incrementLine expects and asserts)
               // Note: this is not an error but it does increase the line counter
               incrementLine();
