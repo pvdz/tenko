@@ -512,6 +512,7 @@ import {
 } from './enum_lexer.mjs';
 import {
   VERSION_BIGINT,
+  VERSION_NUMERIC_SEPARATOR,
   VERSION_OPTIONAL_CHAINING,
   VERSION_NULLISH_COALESCING,
   VERSION_LOGICAL_ASSIGNMENT,
@@ -618,6 +619,7 @@ function Lexer(
   const supportRegexVFlag = targetEsVersion >= 15 || targetEsVersion === Infinity; // ES2024: unicodeSets mode (v flag), mutually exclusive with u
   const supportHashbang = targetEsVersion >= 14 || targetEsVersion === Infinity; // ES2023: HashbangComment
   const supportBigInt = targetEsVersion >= VERSION_BIGINT || targetEsVersion === VERSION_WHATEVER;
+  const supportNumericSeparator = targetEsVersion >= VERSION_NUMERIC_SEPARATOR || targetEsVersion === VERSION_WHATEVER; // ES2021: `1_000`
   // ES2022 (tc39/ecma262#2525) moved LegacyOctalEscapeSequence and NonOctalDecimalEscapeSequence (\8 \9) from
   // Annex B.1.2 into the main String Literals grammar, gated only on strictness. Before that they were Annex B
   // syntax, so when targeting ES2021 or lower they additionally require webcompat mode.
@@ -1825,6 +1827,7 @@ function Lexer(
 
     if (canStartWithSeparator) {
       while (c === $$LODASH_5F) {
+        if (!supportNumericSeparator) return THROW('The numeric separator is supported in ES12+ / ES2021 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
         ASSERT_skip($$LODASH_5F);
         if (eof()) return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
         c = peek();
@@ -1851,6 +1854,7 @@ function Lexer(
 
       // Every digit may be followed by one underscore, which must then be followed by at least one more digit.
       if (c === $$LODASH_5F) {
+        if (!supportNumericSeparator) return THROW('The numeric separator is supported in ES12+ / ES2021 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
         ASSERT_skip($$LODASH_5F);
         if (eof()) return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
         c = peek();
@@ -1962,6 +1966,7 @@ function Lexer(
       c = peek();
 
       if (c === $$LODASH_5F) {
+        if (!supportNumericSeparator) return THROW('The numeric separator is supported in ES12+ / ES2021 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
         ASSERT_skip($$LODASH_5F);
         if (eof()) {
           return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
@@ -2014,6 +2019,7 @@ function Lexer(
       c = peek();
 
       if (c === $$LODASH_5F) {
+        if (!supportNumericSeparator) return THROW('The numeric separator is supported in ES12+ / ES2021 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
         ASSERT_skip($$LODASH_5F);
         if (eof()) {
           return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
@@ -2060,6 +2066,7 @@ function Lexer(
       c = peek();
 
       if (c === $$LODASH_5F) {
+        if (!supportNumericSeparator) return THROW('The numeric separator is supported in ES12+ / ES2021 (currently parsing ES' + targetEsVersion + ')', startForError, pointer + 1);
         ASSERT_skip($$LODASH_5F);
         if (eof()) {
           return THROW('A numeric separator must be preceded and followed by a digit, EOF is not valid', startForError, pointer);
