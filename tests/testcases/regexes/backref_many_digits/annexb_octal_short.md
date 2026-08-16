@@ -1,15 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/some_annexb_stuff/500_escaped/with_webcompat_without_u-flag.md
+- Path: tests/testcases/regexes/backref_many_digits/annexb_octal_short.md
 
-> :: regexes : some annexb stuff : 500 escaped
+> :: regexes : backref many digits
 >
-> ::> with webcompat without u-flag
+> ::> annexb octal short
+>
+> the same for a two digit index
+
+## PASS ANNEXB
 
 ## Input
 
 `````js
-/\500/
+x = /()()\77/
 `````
 
 ## Output
@@ -28,10 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag or v-flag in webcompat mode)
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\500/
-   ║ ^^^^^^------- error
+ 1 ║ x = /()()\77/
+   ║     ^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -55,24 +59,34 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
       expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-        value: null,
-        regex: { pattern: '\\500', flags: '' },
-        raw: '/\\500/'
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:13},source:''},
+        left: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+          name: 'x'
+        },
+        operator: '=',
+        right: {
+          type: 'Literal',
+          loc:{start:{line:1,column:4},end:{line:1,column:13},source:''},
+          value: null,
+          regex: { pattern: '()()\\77', flags: '' },
+          raw: '/()()\\77/'
+        }
       }
     }
   ]
 }
 
-tokens (3x):
-       REGEXN ASI
+tokens (5x):
+       IDENT PUNC_EQ REGEXN ASI
 `````
 
 ### Module goal with AnnexB
@@ -86,7 +100,7 @@ _Output same as sloppy mode with annexB._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-/\500/;
+x = /()()\77/;
 ````
 
 Produces same AST

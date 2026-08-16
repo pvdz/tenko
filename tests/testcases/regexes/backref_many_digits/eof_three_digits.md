@@ -1,15 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/some_annexb_stuff/500_escaped/with_webcompat_without_u-flag.md
+- Path: tests/testcases/regexes/backref_many_digits/eof_three_digits.md
 
-> :: regexes : some annexb stuff : 500 escaped
+> :: regexes : backref many digits
 >
-> ::> with webcompat without u-flag
+> ::> eof three digits
+>
+> the same after three digits
+
+## FAIL
 
 ## Input
 
 `````js
-/\500/
+x = /\123
 `````
 
 ## Output
@@ -26,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag or v-flag in webcompat mode)
+    Regex: Found EOF before regex was closed
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\500/
-   ║ ^^^^^^------- error
+ 1 ║ x = /\123
+   ║     ^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -52,41 +56,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-ast: {
-  type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-  body: [
-    {
-      type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-      expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:6},source:''},
-        value: null,
-        regex: { pattern: '\\500', flags: '' },
-        raw: '/\\500/'
-      }
-    }
-  ]
-}
-
-tokens (3x):
-       REGEXN ASI
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
-
-## AST Printer
-
-Printer output different from input [sloppy][annexb:yes]:
-
-````js
-/\500/;
-````
-
-Produces same AST
+_Output same as sloppy mode._

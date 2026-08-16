@@ -4094,23 +4094,21 @@ function Lexer(
     ASSERT_skip(c);
 
     if (eof()) return regexSyntaxError('Early EOF while parsing decimal escape in regex');
-    let d = peek();
-    if (d >= $$0_30 && d <= $$9_39) {
+
+    // The production takes any number of digits, so consume them all. Whether the resulting index actually has a
+    // capturing group is checked once the whole body is parsed (and without u/v annexB then reads it as a legacy
+    // octal escape instead), so all this has to do is track the largest index seen.
+    // - `/()()...()\100/u` with a hundred groups is a backreference to the last one
+    let n = c - $$0_30;
+    while (neof()) {
+      let d = peek();
+      if (d < $$0_30 || d > $$9_39) break;
       ASSERT_skip(d);
-      let e = peek();
-      if (e >= $$0_30 && e <= $$9_39) {
-        let reason = 'Parsed too many digits';
-        if (webCompat === WEB_COMPAT_ON) {
-          return updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
-        } else {
-          return regexSyntaxError(reason);
-        }
-      } else {
-        largestBackReference = Math.max(largestBackReference, ((c - $$0_30) * 10) + (d - $$0_30)); // TODO: test the case where largestBackReference was not properly maxed
-      }
-    } else {
-      largestBackReference = Math.max(largestBackReference, c - $$0_30)
+      // An index can never exceed the input length, so stop growing there. This keeps the number small (and exact
+      // for any index that could still match a group) no matter how many digits follow.
+      if (n <= len) n = (n * 10) + (d - $$0_30);
     }
+    largestBackReference = Math.max(largestBackReference, n);
 
     return REGEX_ALWAYS_GOOD;
   }

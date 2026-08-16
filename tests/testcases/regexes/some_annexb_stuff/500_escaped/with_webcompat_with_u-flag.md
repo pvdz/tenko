@@ -27,12 +27,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Parsed too many digits
+    Regex: Largest back reference index exceeded the number of capturing groups (only valid without u-flag or v-flag in webcompat mode)
 
 start@1:0, error@1:0
 ╔══╦════════════════
  1 ║ /\500/u
-   ║ ^^^^^^------- error
+   ║ ^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -53,20 +53,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-throws: Lexer error!
-    Regex: Parsed too many digits
-
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /\500/u
-   ║ ^^^^^^^------- error
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
+_Output same as sloppy mode._
