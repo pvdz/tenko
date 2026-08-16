@@ -4775,24 +4775,11 @@ function Lexer(
         let escapePointer = pointer;
 
         // `c` may be >0xffff by unicode ruby escape or double unicode quad escapes (only...)
+        // Note: RegularExpressionNonTerminator excludes a LineTerminator from the _source_, so only a literal U+2028
+        // or U+2029 is illegal (checked above and in the escape parser). An escape that happens to _denote_ one is
+        // spelled with ASCII characters and is an ordinary ClassAtom.
+        // - `/[\u2028]/` is fine, `/[<LS>]/` is not
         c = parseRegexCharClassEscape(c);
-
-        // RegularExpressionNonTerminator: pattern must not contain U+2028 or U+2029 (line terminators).
-        // This check applies to all escape sequences (including \u, \x, etc.) regardless of flags (u/v).
-        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
-        if (c !== REGEX_CHARCLASS_BAD && c !== REGEX_CHARCLASS_CLASS_ESCAPE && c !== REGEX_CHARCLASS_ESCAPED_UC_B && c !== REGEX_CHARCLASS_ESCAPED_C) {
-          let codePoint = c;
-          // Remove any flags to get the actual code point
-          if (codePoint & REGEX_CHARCLASS_WAS_RUBY) codePoint ^= REGEX_CHARCLASS_WAS_RUBY;
-          if (codePoint & REGEX_CHARCLASS_BAD_WITH_U_FLAG) codePoint ^= REGEX_CHARCLASS_BAD_WITH_U_FLAG;
-          if (codePoint & REGEX_CHARCLASS_BAD_WITH_V_FLAG) codePoint ^= REGEX_CHARCLASS_BAD_WITH_V_FLAG;
-          if (codePoint & REGEX_CHARCLASS_BAD_SANS_U_FLAG) codePoint ^= REGEX_CHARCLASS_BAD_SANS_U_FLAG;
-
-          if (codePoint === $$PS_2028 || codePoint === $$LS_2029) {
-            regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
-            return REGEX_CHARCLASS_BAD;
-          }
-        }
 
         // TODO: /[\u{01}-a]/ if there is a u-flag, this is ok. no u-flag, `}-a` should fail unless webcompat mode
         // in both cases, at this point, it should not yet fail. strict mode is not relevant.
@@ -5463,17 +5450,7 @@ function Lexer(
         }
         ASSERT_skip(b);
 
-        let result = (va << 4) | vb;
-
-        // RegularExpressionNonTerminator: pattern must not contain U+2028 or U+2029 (line terminators).
-        // This check applies regardless of flags (u/v).
-        // https://tc39.es/ecma262/#prod-RegularExpressionNonTerminator
-        if (result === $$PS_2028 || result === $$LS_2029) {
-          regexSyntaxError('Regular expressions do not support line continuations (escaped x2028 x2029)');
-          return REGEX_CHARCLASS_BAD;
-        }
-
-        return result;
+        return (va << 4) | vb;
 
       case REGCLS_ESC_c: {
         // char escapes \c<?>
