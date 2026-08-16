@@ -819,7 +819,11 @@ function Parser(code, options = {}) {
     // `function* g() { class C { x = yield; } }` — yield is an identifier, not YieldExpression
     // new.target is allowed in a field initializer (evaluates to undefined at runtime), like a static block.
     // - `class C { t = new.target === undefined; }`         ok, new.target is allowed
-    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR) | LF_NO_ARGUMENTS | LF_CAN_NEW_DOT_TARGET;
+    // A FieldDefinition may not Contain a SuperCall, not even through an arrow (which does not rebind `super`). A
+    // nested class sets the flag again for its own derived constructor, and `super.x` has its own flag, so both of
+    // those keep working.
+    // - `class A extends B { x = super() }` and `x = () => super()` are errors, `x = super.y` is not
+    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR | LF_SUPER_CALL) | LF_NO_ARGUMENTS | LF_CAN_NEW_DOT_TARGET;
     let $tp_value_start = tok_getStart();
     let $tp_value_line = tok_getLine();
     let $tp_value_column = tok_getColumn();
