@@ -4732,20 +4732,40 @@ function Lexer(
               // matter how many chars spell it, so the rest must not be counted as extra code points, and the `}`
               // of a `\u{...}` must not be mistaken for the end of the `\q{...}`.
               // - `/[^\q{A}]/v` and `/[^\q{\u{1F600}}]/v` are one code point, so they contain no strings
-              // (Which escapes are legal here at all is a separate concern, validated elsewhere.)
+              // Only `\b`, a CharacterEscape, or an escaped ClassSetReservedPunctuator is a ClassSetCharacter, so
+              // a class escape, a decimal escape, a `\k`, a nested `\q` and any malformed escape are invalid. They
+              // are ordinary atoms in the reading without the v flag, so only poison that reading.
+              // - `/[\q{\d}]/v` is an error while `/[\q{\d}]/` is `q { \d }` in webcompat
               let e = peek();
               ASSERT_skip(e);
               let cu = -1; // code unit of a `\uXXXX`, so that a `\uXXXX\uXXXX` pair still counts as one code point
-              if (e === $$X_78) skipHexDigitsForQString(2);
-              else if (e === $$C_63 && neof() && isAsciiLetter(peek())) skip();
+              let badEscape = false;
+              if (e === $$X_78) badEscape = skipHexDigitsForQString(2) < 0;
+              else if (e === $$0_30) badEscape = neof() && isAsciiNumber(peek()); // `0 [lookahead not DecimalDigit]`
+              else if (e === $$C_63) { if (neof() && isAsciiLetter(peek())) skip(); else badEscape = true; }
               else if (e === $$U_75) {
                 if (neof() && peeky($$CURLY_L_7B)) {
                   ASSERT_skip($$CURLY_L_7B);
-                  while (neof() && getHexValue(peek()) !== HEX_OOB) skip();
+                  let cp = -1;
+                  while (neof()) {
+                    let h = getHexValue(peek());
+                    if (h === HEX_OOB) break;
+                    skip();
+                    cp = (cp < 0 ? 0 : cp) * 16 + h;
+                    if (cp > 0x10FFFF) badEscape = true; // keep the value bounded while still consuming the digits
+                  }
+                  if (cp < 0) badEscape = true; // at least one hex digit is required
                   if (neof() && peeky($$CURLY_R_7D)) ASSERT_skip($$CURLY_R_7D);
+                  else badEscape = true;
                 } else {
                   cu = skipHexDigitsForQString(4);
+                  badEscape = cu < 0;
                 }
+              }
+              else badEscape = !isClassStringSingleCharEscape(e);
+              if (badEscape) {
+                regexBodyHasSyntaxInvalidWithVFlag = true;
+                lastPotentialRegexErrorForVFlag = 'Only `\\b`, a CharacterEscape, or an escaped ClassSetReservedPunctuator is a valid escape inside `\\q{...}` with the v flag';
               }
               // Approximate the non-v reading of the escaped char as a plain atom (no range participation)
               if (nonVInClass) { urangeOpen = false; nrangeOpen = false; urangeLeft = -1; nrangeLeft = -1; }
@@ -5305,6 +5325,27 @@ function Lexer(
       Head: ((result-0x10000) & 0b1111111111) + 0xDC00
      */
     return ((codepoint - 0x10000) >> 10) + 0xD800
+  }
+
+  function isClassStringSingleCharEscape(c) {
+    ASSERT(isClassStringSingleCharEscape.length === arguments.length, 'arg count');
+    // The single character escapes that `ClassSetCharacter` allows after a backslash inside a `\q{...}`.
+    // The ones that take trailing characters (`\0`, `\c`, `\x`, `\u`) are handled by the caller.
+    // https://tc39.es/ecma262/#prod-ClassSetCharacter
+    switch (c) {
+      // `\b`, and ControlEscape
+      case $$B_62: case $$F_66: case $$N_6E: case $$R_72: case $$T_74: case $$V_76:
+      // IdentityEscape with u-mode: SyntaxCharacter and `/`
+      case $$XOR_5E: case $$$_24: case $$BACKSLASH_5C: case $$DOT_2E: case $$STAR_2A: case $$PLUS_2B:
+      case $$QMARK_3F: case $$PAREN_L_28: case $$PAREN_R_29: case $$SQUARE_L_5B: case $$SQUARE_R_5D:
+      case $$CURLY_L_7B: case $$CURLY_R_7D: case $$OR_7C: case $$FWDSLASH_2F:
+      // ClassSetReservedPunctuator
+      case $$AND_26: case $$DASH_2D: case $$EXCL_21: case $$HASH_23: case $$PERCENT_25: case $$COMMA_2C:
+      case $$COLON_3A: case $$SEMI_3B: case $$LT_3C: case $$IS_3D: case $$GT_3E: case $$AT_40:
+      case $$TICK_60: case $$TILDE_7E:
+        return true;
+    }
+    return false;
   }
 
   function skipHexDigitsForQString(n) {
