@@ -1689,8 +1689,10 @@ function Lexer(
     let c = peek();
 
     if (isAsciiNumber(c)) {
-      skip();
-      if (neof()) skipDigits(); // Do not allow underscores here
+      // A digit run after the leading zero is a LegacyOctalIntegerLiteral, unless it contains an `8` or a `9`. Then
+      // it is a NonOctalDecimalIntegerLiteral instead, which _is_ a DecimalIntegerLiteral (annexB B.1.1), so it can
+      // take a fraction and an exponent. Both forms are a syntax error in strict mode.
+      let nonOctal = skipDigitsCheckNonOctal(); // Do not allow underscores here
 
       if ((lexerFlags & LF_STRICT_MODE) === LF_STRICT_MODE) {
         if (!lastReportableLexerError) lastReportableLexerError = '"Illegal" octal escape in strict mode';
@@ -1699,6 +1701,17 @@ function Lexer(
 
       if (neof()) {
         let e = peek();
+
+        if (nonOctal) {
+          // Parse it like any other decimal. Note that the dot is consumed here, unlike for a legacy octal below.
+          // - `019.5` is `19.5` and `078e2` is `7800`
+          // - `08.foo` is an error because `08.` is already the whole literal (`017.foo` is a member expression)
+          // - `08n` is not a bigint; the `n` is left for verifyCharAfterNumber to reject
+          if (e === $$DOT_2E) parseFromFractionDot();
+          else parseExponentMaybe(e);
+          return $NUMBER_OLD;
+        }
+
         if (e === $$E_UC_45 || e === $$E_65) {
           if (!lastReportableLexerError) lastReportableLexerError = 'An exponent is not allowed after a legacy octal number and an ident after number must be separated by some whitespace so this is an error';
           return $ERROR;
@@ -1856,15 +1869,18 @@ function Lexer(
 
     return c;
   }
-  function skipDigits() {
-    // Does not parse underscores (!). Used for legacy octal, for example.
+  function skipDigitsCheckNonOctal() {
+    // Does not parse underscores (!). Used for legacy octal, which can not have numeric separators.
+    // Returns whether any digit was an `8` or a `9`, which makes it a NonOctalDecimalIntegerLiteral instead.
+    let nonOctal = false;
     let c = peek();
     while (isAsciiNumber(c)) {
+      if (c === $$8_38 || c === $$9_39) nonOctal = true;
       ASSERT_skip(c);
-      if (eof()) return 0; // monomorphism but meh. caller should check EOF state before using return value
+      if (eof()) break;
       c = peek();
     }
-    return c;
+    return nonOctal;
   }
   function parseExponentMaybe(c) {
     // this part is a little tricky. if an `e` follows, an optional +- may follow but at least one digit must follow regardless
