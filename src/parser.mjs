@@ -5110,9 +5110,12 @@ function Parser(code, options = {}) {
       let hasStringLocal = parseExportObject(lexerFlags, tmpExportedNames, tmpExportedBindings);
 
       if (tok_getType() === $ID_from) {
-        // drop the tmp lists
+        // The local names of a re-export are bindings of the _other_ module, so they must not be verified as
+        // bindings of this one (`export {undeclared} from "x"` is fine). The exported names do count towards
+        // ExportedNames, which must not contain duplicates, so those still go into the real set.
+        // - `export {a as n} from "x"; export let n` exports `n` twice
+        tmpExportedNames.forEach(name => addNameToExports(exportedNames, $tp_export_start, $tp_export_stop, name));
         ASSERT_skipToStringOrDie($ID_from, lexerFlags);
-        // TODO: what happens to dupe exported bindings or exported names here?
 
         let $tp_from_line = tok_getLine();
         let $tp_from_column = tok_getColumn();
