@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_digit_backref.md
+- Path: tests/testcases/regexes/unescaped_bracket_in_class/plain_la_braces.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : unescaped bracket in class
 >
-> ::> region digit backref
+> ::> plain la braces
 >
-> digit backreference in the region
+> the same with a bounded quantifier is a QuantifiableAssertion under annexB
 
 ## PASS ANNEXB
 
 ## Input
 
 `````js
-x=/(x)[[a]\1]/g;
+x = /[[](?=){2}/
 `````
 
 ## Output
@@ -32,10 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag
 
-start@1:0, error@1:2
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ x=/(x)[[a]\1]/g;
-   ║   ^^^^^^^^^^^^^------- error
+ 1 ║ x = /[[](?=){2}/
+   ║     ^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -66,7 +66,7 @@ ast: {
       loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
       expression: {
         type: 'AssignmentExpression',
-        loc:{start:{line:1,column:0},end:{line:1,column:15},source:''},
+        loc:{start:{line:1,column:0},end:{line:1,column:16},source:''},
         left: {
           type: 'Identifier',
           loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
@@ -75,10 +75,10 @@ ast: {
         operator: '=',
         right: {
           type: 'Literal',
-          loc:{start:{line:1,column:2},end:{line:1,column:15},source:''},
+          loc:{start:{line:1,column:4},end:{line:1,column:16},source:''},
           value: null,
-          regex: { pattern: '(x)[[a]\\1]', flags: 'g' },
-          raw: '/(x)[[a]\\1]/g'
+          regex: { pattern: '[[](?=){2}', flags: '' },
+          raw: '/[[](?=){2}/'
         }
       }
     }
@@ -86,7 +86,7 @@ ast: {
 }
 
 tokens (5x):
-       IDENT PUNC_EQ REGEXN PUNC_SEMI
+       IDENT PUNC_EQ REGEXN ASI
 `````
 
 ### Module goal with AnnexB
@@ -100,7 +100,7 @@ _Output same as sloppy mode with annexB._
 Printer output different from input [sloppy][annexb:yes]:
 
 ````js
-x = /(x)[[a]\1]/g;
+x = /[[](?=){2}/;
 ````
 
 Produces same AST

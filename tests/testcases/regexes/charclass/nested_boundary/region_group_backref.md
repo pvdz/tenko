@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: A character class is not allowed to have numeric back-reference
+    Regex: Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag
 
 start@1:0, error@1:2
 ╔══╦════════════════
  1 ║ x=/[[a](x)\1]/g;
-   ║   ^^^^^^^^^^^^------- error
+   ║   ^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

@@ -2828,6 +2828,7 @@ function Lexer(
   let regexBodyHasNegatedPropOfStrings = false; // \P{RGI_Emoji} etc is always an error (can't negate property of strings)
   let regexLastEscapeWasPropOfStrings = false; // the class escape just parsed was a \p{...} property of strings, which MayContainStrings
   let regexCurrentCharClassIsNegated = false; // set to true while parsing inside [^...], so \p{...} can detect it
+  let nonVInClass = true; // whether the reading *without* the v flag is still inside the char class (an unescaped `[` only opens a nested class with the v flag, so after the first unescaped `]` the rest is pattern body there)
   let regexBranchPath = [0]; // ES2025: disjunction branch index at each nesting level (for MightBothParticipate duplicate named group check)
   let declaredGroupNamesWithPath = new Map(); // ES2025: name -> array of { path, pointerStart, pointerEnd } (only when supportRegexDuplicateNamedCaptureGroups)
   function parseRegex(c) {
@@ -4159,22 +4160,25 @@ function Lexer(
     // reading while the v reading keeps us in the class through nested brackets, because an unescaped `/` outside
     // the non-v class must end the regex literal.
     // - `x=/[-[\]a]/g;` (the nested `[` keeps the v reading open past the `]` that closes the class without v)
-    let nonVInClass = true;
+    nonVInClass = true;
     // While consuming chars that are body content in the non-v reading, track what the body grammar allows next:
     // 2 = after an atom (a quantifier may follow), 1 = after a quantifier (only a lazy `?` may follow),
     // 0 = after an assertion/lazy marker (no quantifier may follow), 3/4 = inside a bounded quantifier `{...}`
-    // (3 = no digit seen yet, 4 = digit seen so `}` may close it).
+    // (3 = no digit seen yet, 4 = digit seen so `}` may close it), 9 = after a lookahead, which is a quantifiable
+    // atom only through the annexB `QuantifiableAssertion` (so quantifying it needs webcompat and rejects the u flag).
     // - `/[[a]+]/` `/[[a]+?]/` `/[[a]{2,3}]/` (valid body syntax) vs `/[[a]+*]/` `/[[a]?*]/` (nothing to repeat)
+    // - `/[[](?=)+/` is valid, `/[[](?=)+/u` is not, and `/[[](?<=)+/` is not either (lookbehind is state 0)
     let nonVRegionState = 2;
     // Parens in the ambiguous region open real groups in the non-v body reading; track balance so an unterminated
-    // group rejects (`/[[a](]/` is invalid in every reading). Note: these groups do not add to nCapturingParens,
-    // which can misvalidate backreferences that follow such rare regexes in pure (non-webcompat) mode.
+    // group rejects (`/[[a](]/` is invalid in every reading). They are real captures in that reading, so they are
+    // counted into nCapturingParens (assume capturing at the `(`, take it back once a non-capturing head shows up).
     let regionParenDepth = 0;
     // Region-local duplicate named-group detection (MightBothParticipate, ES2025 22.2.1.1). Named groups in the
     // ambiguous body tail are real captures; two with the same name in the same disjunction alternative are an
     // error. Track a branch path (branch index per group-nesting depth, bumped by `|`) and each declared name.
     // - `/[[a](?<n>y)(?<n>y)]/` invalid (same alternative) vs `/[[a](?<n>y)|(?<n>y)]/` valid (different alternatives)
     let regionBranch = [0];
+    let regionGroupKind = []; // per open `(` in the region: 0=ordinary, 1=lookahead, 2=lookbehind
     let regionGroupNames = new Map(); // name -> array of branch-path snapshots
     let regionCurName = '';
     // In the v reading a nested `[` starts a fresh class, so a dash or set operator right after it has no lhs
@@ -4489,7 +4493,12 @@ function Lexer(
           }
           else if (nonVRegionState === 7) {
             // First char after `(?<`: `=`/`!` start a lookbehind body; anything else starts a group name
-            if (c === $$IS_3D || c === $$EXCL_21) nonVRegionState = 0;
+            if (c === $$IS_3D || c === $$EXCL_21) {
+              // A lookbehind is not a `QuantifiableAssertion`, so it may never take a quantifier
+              if (regionGroupKind.length > 0) regionGroupKind[regionGroupKind.length - 1] = 2;
+              --nCapturingParens; // a lookbehind does not capture (a `(?<name>` head does, so only these two)
+              nonVRegionState = 0;
+            }
             else { nonVRegionState = 8; regionCurName = String.fromCharCode(c); }
           }
           else if (nonVRegionState === 8) {
@@ -4513,7 +4522,12 @@ function Lexer(
           }
           else if (nonVRegionState === 6) {
             // Right after `(?`: qualifier of a special group
-            if (c === $$COLON_3A || c === $$IS_3D || c === $$EXCL_21) nonVRegionState = 0;
+            if (c === $$COLON_3A || c === $$IS_3D || c === $$EXCL_21) {
+              // `(?=` and `(?!` are assertions; annexB `QuantifiableAssertion` lets them take a quantifier
+              if (c !== $$COLON_3A && regionGroupKind.length > 0) regionGroupKind[regionGroupKind.length - 1] = 1;
+              --nCapturingParens; // `(?:`, `(?=` and `(?!` do not capture
+              nonVRegionState = 0;
+            }
             else if (c === $$LT_3C) nonVRegionState = 7;
             else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; } // `(?x` is not a valid group head
           }
@@ -4532,7 +4546,19 @@ function Lexer(
               || esc === $$W_77 || esc === $$W_UC_57 || esc === $$B_62 || esc === $$B_UC_42
               || esc === $$F_66 || esc === $$N_6E || esc === $$R_72 || esc === $$T_74 || esc === $$V_76
               || esc === $$X_78 || esc === $$U_75 || esc === $$C_63;
-            if ((isLetter && !isStrictLetter) || (esc >= $$1_31 && esc <= $$9_39)) regexBodyNestedClassTailRbracket = true;
+            if (isLetter && !isStrictLetter) regexBodyNestedClassTailRbracket = true;
+            else if (esc >= $$1_31 && esc <= $$9_39) {
+              // A backreference in the body reading. Record the index and let the regular check adjudicate it once
+              // the group count is known; too large an index falls back to a legacy octal escape, which is annexB
+              // only. - `/[[](a)\1/u` is a backreference to the group, `/[[]\1/u` has no group to reference
+              let n = 0;
+              for (let k = 1; neofd(k + 1); ++k) {
+                const d = peekd(k);
+                if (d < $$0_30 || d > $$9_39) break;
+                n = (n * 10) + (d - $$0_30);
+              }
+              largestBackReference = Math.max(largestBackReference, n);
+            }
             else if (!isLetter && esc !== $$0_30) {
               // Escaped punctuation: valid strict body escape ([~U] IdentityEscape excludes only UnicodeIDContinue)
               // but with the u flag only SyntaxCharacters and `/` may be identity-escaped in the body (`/[[]\-/u`)
@@ -4547,10 +4573,19 @@ function Lexer(
           else if (c === $$PAREN_L_28) {
             regionParenDepth++;
             regionBranch.push(0); // enter a new group-nesting level for the branch path
+            regionGroupKind.push(0);
+            ++nCapturingParens; // assume capturing; a `(?:`/`(?=`/`(?!`/`(?<=`/`(?<!` head takes it back below
             nonVRegionState = 5; // group opened; quantifiers may not start a group body
           }
           else if (c === $$PAREN_R_29) {
-            if (regionParenDepth > 0) { regionParenDepth--; if (regionBranch.length > 1) regionBranch.pop(); nonVRegionState = 2; } // a group is a quantifiable atom
+            if (regionParenDepth > 0) {
+              regionParenDepth--;
+              if (regionBranch.length > 1) regionBranch.pop();
+              // An ordinary group is a quantifiable atom, a lookahead is one only under annexB (state 9), and a
+              // lookbehind is not one at all. - `/[[](?=)+/` is valid, `/[[](?=)+/u` and `/[[](?<=)+/` are not
+              const kind = regionGroupKind.pop();
+              nonVRegionState = kind === 2 ? 0 : kind === 1 ? 9 : 2;
+            }
             else {
               // This `)` does not match a group opened inside the region, so in the non-v body reading it closes a
               // group opened in the enclosing regex body (the class already closed at an earlier `]`). The class
@@ -4570,18 +4605,27 @@ function Lexer(
           }
           else if (c === $$CURLY_L_7B) {
             // - `x=/[[a]{2}]/g;` (bounded quantifier after the class atom is valid body syntax)
-            if (nonVRegionState === 2) nonVRegionState = 3;
+            if (nonVRegionState === 2 || nonVRegionState === 9) {
+              if (nonVRegionState === 9) regexBodyNestedClassTailRbracket = true; // quantified lookahead: annexB only
+              nonVRegionState = 3;
+            }
             else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; }
           }
           else if (c === $$STAR_2A || c === $$PLUS_2B) {
             // - `x=/[[a]+]/g;` (one quantifier after the class atom is valid body syntax)
             // - `x=/[[a]+*]/g;` (a second quantifier is invalid in the body, and `+*` is also invalid with the v flag)
-            if (nonVRegionState === 2) nonVRegionState = 1;
+            if (nonVRegionState === 2 || nonVRegionState === 9) {
+              if (nonVRegionState === 9) regexBodyNestedClassTailRbracket = true; // quantified lookahead: annexB only
+              nonVRegionState = 1;
+            }
             else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; }
           }
           else if (c === $$QMARK_3F) {
             // `?` is a quantifier after an atom, or the lazy marker right after another quantifier (`+?`, `{2}?`)
-            if (nonVRegionState === 2) nonVRegionState = 1;
+            if (nonVRegionState === 2 || nonVRegionState === 9) {
+              if (nonVRegionState === 9) regexBodyNestedClassTailRbracket = true; // quantified lookahead: annexB only
+              nonVRegionState = 1;
+            }
             else if (nonVRegionState === 1) nonVRegionState = 0;
             else { regexBodyUsedVOnlySyntax = true; nonVRegionState = 0; }
           }
@@ -4965,7 +5009,13 @@ function Lexer(
           // [x]: `/[\B-A]/`
           // [w]: `/[\B-Z]/`
 
-          if (webCompat === WEB_COMPAT_ON) {
+          if (!nonVInClass) {
+            // The class already closed at an earlier `]` in the readings without the v flag, so this `\B` is an
+            // ordinary body assertion there; only the v reading still has it inside a class.
+            // - `/[[]\B/u` is fine, `/[[]\B/v` is not
+            regexBodyHasSyntaxInvalidWithVFlag = true;
+            if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = 'Char class can not contain `\\B`';
+          } else if (webCompat === WEB_COMPAT_ON) {
             flagState = updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, 'Char class can not contain `\\B`');
           } else {
             flagState = regexSyntaxError('Char class can not contain `\\B`');
@@ -5779,6 +5829,13 @@ function Lexer(
         let reason = 'A character class is not allowed to have numeric back-reference';
 
         // Without web compat this is a back reference which is illegal in character classes
+        if (!nonVInClass) {
+          // As with `\B` above: in the readings without the v flag the class already closed, so this is an
+          // ordinary body backreference there. - `/[[](a)\1/u` is fine, `/[[](a)\1/v` is not
+          regexBodyHasSyntaxInvalidWithVFlag = true;
+          if (!lastPotentialRegexErrorForVFlag) lastPotentialRegexErrorForVFlag = reason;
+          return REGEX_CHARCLASS_CLASS_ESCAPE;
+        }
         if (webCompat === WEB_COMPAT_ON) {
           updateRegexUflagIsIllegal(REGEX_ALWAYS_GOOD, reason);
           if (supportRegexVFlag) {
