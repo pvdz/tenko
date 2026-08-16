@@ -12098,7 +12098,11 @@ function Parser(code, options = {}) {
             // pick up the flags from assignable and put them in destructible
             // - `= await bar`
             // - `= yield`
-            destructible |= parseExpression(lexerFlags, 'right'); // save the piggies!
+            // Only the piggies: the Initializer of an AssignmentElement is any AssignmentExpression, so whether it
+            // could itself be destructured says nothing about this element. A call tail rides CANT_DESTRUCT in the
+            // assignable, which would otherwise poison the whole pattern.
+            // - `[(8)[b] = c()] = d` destructures fine even though `c()` can not
+            destructible |= getPiggies(parseExpression(lexerFlags, 'right')); // save the piggies!
             AST_close($tp_elementStart_start, $tp_elementStart_line, $tp_elementStart_column, 'AssignmentExpression');
           } else {
             // - `[2=x]`
