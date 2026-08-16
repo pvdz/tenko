@@ -14019,55 +14019,46 @@ function Parser(code, options = {}) {
     let $tp_get_type = $UNTYPED;
     let $tp_set_type = $UNTYPED;
 
+    // A newline before the next token can end a field declaration through ASI. `get` and `set` are the exception:
+    // they still introduce an accessor across a newline, unless what follows can not be an accessor key (a `*`).
+    // `async` is not an exception, even though it is a modifier too: `AsyncMethod :: async [no LineTerminator here]
+    // ClassElementName ...` is a restricted production, so a newline rules that reading out and only the field
+    // remains. (In an object literal there is no field production, so there the same input is an error.)
+    // - `class A { async \n m(){} }` is the field `async` plus the method `m(){}`
+    // - `class A { get \n x(){} }` is a getter, but `class A { get \n *x(){} }` is the field `get` plus a method
+    if (tok_getNlwas() === true && (tok_getType() === $PUNC_STAR || ($tp_ident_type !== $ID_get && $tp_ident_type !== $ID_set))) {
+      let isPrivate = $tp_ident_type === $ID_PRIVATE_IDENT;
+      if (!(isPrivate ? allowPrivateClassFields : allowPublicClassFields)) {
+        return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
+      }
+      checkClassFieldNameErrors(isPrivate, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
+      if (isPrivate) declarePrivateName($tp_ident_canon, PRIVATE_KIND_OTHER, isStatic, $tp_ident_start, $tp_ident_stop);
+      let keyNode = isPrivate
+        ? AST_getPrivateIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon)
+        : AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
+      AST_open(astProp, {
+        type: 'PropertyDefinition',
+        loc: undefined,
+        key: keyNode,
+        value: null,
+        computed: false,
+        static: isStatic,
+      });
+      AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
+      return CANT_DESTRUCT;
+    }
+
     switch ($tp_ident_type) {
       case $ID_get:
         // The next token may now only be the key
         // - `class x {get key(){}}`
         //                 ^
-        // ASI: if there was a newline and the next token is `*`, treat `get` as a field name
-        // - `class x {get \n *a(){}}` => field `get` + generator method `*a(){}`
-        if (tok_getNlwas() === true && tok_getType() === $PUNC_STAR) {
-          if (!allowPublicClassFields) {
-            return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
-          }
-          checkClassFieldNameErrors(false, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
-          let keyNode = AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
-          AST_open(astProp, {
-            type: 'PropertyDefinition',
-            loc: undefined,
-            key: keyNode,
-            value: null,
-            computed: false,
-            static: isStatic,
-          });
-          AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
-          return CANT_DESTRUCT;
-        }
         $tp_get_type = $ID_get;
         break;
       case $ID_set:
         // The next token may now only be the key
         // - `class x {set key(v){}}`
         //                 ^
-        // ASI: if there was a newline and the next token is `*`, treat `set` as a field name
-        // - `class x {set \n *a(x){}}` => field `set` + generator method `*a(x){}`
-        if (tok_getNlwas() === true && tok_getType() === $PUNC_STAR) {
-          if (!allowPublicClassFields) {
-            return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
-          }
-          checkClassFieldNameErrors(false, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
-          let keyNode = AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
-          AST_open(astProp, {
-            type: 'PropertyDefinition',
-            loc: undefined,
-            key: keyNode,
-            value: null,
-            computed: false,
-            static: isStatic,
-          });
-          AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
-          return CANT_DESTRUCT;
-        }
         $tp_set_type = $ID_set;
         break;
       case $ID_async:
@@ -14078,14 +14069,6 @@ function Parser(code, options = {}) {
 
         if (!allowAsyncFunctions) {
           return THROW_RANGE('Async methods are not supported in the currently targeted language version', $tp_methodStart_start, tok_getStop());
-        }
-
-        if (tok_getNlwas() === true) {
-          // - `class x {async \n key(){}}`
-          //              ^
-          // Always an error due to async being a restricted production
-          // Note that `{async(){}}` is legal so we must check the current token
-          return THROW_RANGE('Async methods are a restricted production and cannot have a newline following it', $tp_methodStart_line, tok_getStart());
         }
 
         $tp_async_type = $ID_async;
@@ -14105,29 +14088,7 @@ function Parser(code, options = {}) {
         }
         break;
       default:
-        // Not a modifier (get/set/async). If newline before next token, treat as field with ASI.
-        // - `class C { fieldName \n nextElement }`
-        if (tok_getNlwas() === true) {
-          let isPrivate = $tp_ident_type === $ID_PRIVATE_IDENT;
-          if (!(isPrivate ? allowPrivateClassFields : allowPublicClassFields)) {
-            return THROW_RANGE('Class field declarations without initializer are not supported in the currently targeted language version', $tp_ident_start, tok_getStop());
-          }
-          checkClassFieldNameErrors(isPrivate, isStatic, $tp_ident_canon, $tp_ident_start, $tp_ident_stop);
-          if (isPrivate) declarePrivateName($tp_ident_canon, PRIVATE_KIND_OTHER, isStatic, $tp_ident_start, $tp_ident_stop);
-          let keyNode = isPrivate
-            ? AST_getPrivateIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon)
-            : AST_getIdentNode($tp_ident_start, $tp_ident_stop, $tp_ident_line, $tp_ident_column, $tp_ident_canon);
-          AST_open(astProp, {
-            type: 'PropertyDefinition',
-            loc: undefined,
-            key: keyNode,
-            value: null,
-            computed: false,
-            static: isStatic,
-          });
-          AST_close($tp_methodStart_start, $tp_methodStart_line, $tp_methodStart_column, 'PropertyDefinition');
-          return CANT_DESTRUCT;
-        }
+        // Not a modifier (get/set/async); the field-with-ASI case was handled before the switch.
         return THROW_RANGE('Either the current modifier is unknown or the input that followed was unexpected', tok_getStart(), tok_getStop());
     }
 

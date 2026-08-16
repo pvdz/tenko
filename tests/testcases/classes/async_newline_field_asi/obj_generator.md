@@ -1,16 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_async.md
+- Path: tests/testcases/classes/async_newline_field_asi/obj_generator.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : async newline field asi
 >
-> ::> newline-regex after async
+> ::> obj generator
+>
+> the same for a generator method
+
+## FAIL
 
 ## Input
 
 `````js
-class x { async 
- /foo/ }
+({async
+*m(){}})
 `````
 
 ## Output
@@ -27,13 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Async methods are a restricted production and cannot have a newline following it
 
 start@1:0, error@1:2
 ╔══╦════════════════
- 1 ║ class x { async
-   ║   ^^^^^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
+ 1 ║ ({async
+   ║   ^^^^^^------- error
+ 2 ║ *m(){}})
 ╚══╩════════════════
 
 `````

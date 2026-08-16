@@ -1,16 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_async.md
+- Path: tests/testcases/classes/async_newline_field_asi/bad_set_nl.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : async newline field asi
 >
-> ::> newline-regex after async
+> ::> bad set nl
+>
+> a newline after `set` still gives a setter, which needs exactly one parameter
+
+## FAIL
 
 ## Input
 
 `````js
-class x { async 
- /foo/ }
+class A { set
+m(){} }
 `````
 
 ## Output
@@ -27,13 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Setters must have exactly one parameter
 
-start@1:0, error@1:2
+start@1:0, error@2:2
 ╔══╦════════════════
- 1 ║ class x { async
-   ║   ^^^^^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
+ 1 ║ class A { set
+ 2 ║ m(){} }
+   ║   ^------- error
 ╚══╩════════════════
 
 `````

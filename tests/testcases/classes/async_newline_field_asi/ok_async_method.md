@@ -1,18 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/async_keyword/class_method/async_object_method_with_newline_after_async.md
+- Path: tests/testcases/classes/async_newline_field_asi/ok_async_method.md
 
-> :: async keyword : class method
+> :: classes : async newline field asi
 >
-> ::> async object method with newline after async
+> ::> ok async method
 >
-> restricted production
+> an async method needs no newline
+
+## PASS
 
 ## Input
 
 `````js
-class x {async 
- foo() {}}
+class A { async m(){} }
 `````
 
 ## Output
@@ -30,54 +31,42 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:2,column:10},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
   body: [
     {
       type: 'ClassDeclaration',
-      loc:{start:{line:1,column:0},end:{line:2,column:10},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:23},source:''},
       id: {
         type: 'Identifier',
         loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-        name: 'x'
+        name: 'A'
       },
       superClass: null,
       body: {
         type: 'ClassBody',
-        loc:{start:{line:1,column:8},end:{line:2,column:10},source:''},
+        loc:{start:{line:1,column:8},end:{line:1,column:23},source:''},
         body: [
           {
-            type: 'PropertyDefinition',
-            loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
-            key: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
-              name: 'async'
-            },
-            value: null,
-            computed: false,
-            static: false
-          },
-          {
             type: 'MethodDefinition',
-            loc:{start:{line:2,column:1},end:{line:2,column:9},source:''},
+            loc:{start:{line:1,column:10},end:{line:1,column:21},source:''},
             key: {
               type: 'Identifier',
-              loc:{start:{line:2,column:1},end:{line:2,column:4},source:''},
-              name: 'foo'
+              loc:{start:{line:1,column:16},end:{line:1,column:17},source:''},
+              name: 'm'
             },
             static: false,
             computed: false,
             kind: 'method',
             value: {
               type: 'FunctionExpression',
-              loc:{start:{line:2,column:1},end:{line:2,column:9},source:''},
+              loc:{start:{line:1,column:10},end:{line:1,column:21},source:''},
               generator: false,
-              async: false,
+              async: true,
               id: null,
               params: [],
               body: {
                 type: 'BlockStatement',
-                loc:{start:{line:2,column:7},end:{line:2,column:9},source:''},
+                loc:{start:{line:1,column:19},end:{line:1,column:21},source:''},
                 body: []
               }
             }
@@ -123,10 +112,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x{
-async;
-foo(){};
-}
+class A{async m(){};}
 ````
 
 Produces same AST

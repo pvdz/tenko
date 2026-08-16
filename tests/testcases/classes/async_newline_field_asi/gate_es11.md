@@ -1,16 +1,22 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_async.md
+- Path: tests/testcases/classes/async_newline_field_asi/gate_es11.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : async newline field asi
 >
-> ::> newline-regex after async
+> ::> gate es11
+>
+> the same at es11
+
+## FAIL
 
 ## Input
 
+- `es = 11`
+
 `````js
-class x { async 
- /foo/ }
+class A { async
+m(){} }
 `````
 
 ## Output
@@ -27,14 +33,14 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Class field declarations without initializer are not supported in the currently targeted language version
 
-start@1:0, error@1:2
-╔══╦════════════════
- 1 ║ class x { async
-   ║   ^^^^^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
-╚══╩════════════════
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ class A { async
+   ║           ^^^^^^^------- error
+ 2 ║ m(){} }
+╚══╩═════════════════
 
 `````
 

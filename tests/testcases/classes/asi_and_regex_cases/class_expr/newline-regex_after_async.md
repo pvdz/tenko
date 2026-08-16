@@ -27,12 +27,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Async methods are a restricted production and cannot have a newline following it
+  Unexpected token, wanted to parse a start of a property in an class literal/pattern
 
-start@1:0, error@1:1
+start@1:0, error@1:2
 ╔══╦════════════════
  1 ║ let c = class x { async
-   ║  ^^^^^^^^^^^^^^^^^^^^^^^^^------- error
+   ║   ^^^^^^^^^^^^^^^^^^^^^^^^^------- error
  2 ║  /foo/ }
 ╚══╩════════════════
 

@@ -1,16 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/asi_and_regex_cases/class_decl/newline-regex_after_async.md
+- Path: tests/testcases/classes/async_newline_field_asi/bad_dup_private.md
 
-> :: classes : asi and regex cases : class decl
+> :: classes : async newline field asi
 >
-> ::> newline-regex after async
+> ::> bad dup private
+>
+> a duplicate private name is still an error
+
+## FAIL
 
 ## Input
 
 `````js
-class x { async 
- /foo/ }
+class A { #m; async
+#m(){} }
 `````
 
 ## Output
@@ -27,13 +31,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Unexpected token, wanted to parse a start of a property in an class literal/pattern
+  Duplicate private name `#m`
 
-start@1:0, error@1:2
+start@1:0, error@2:0
 ╔══╦════════════════
- 1 ║ class x { async
-   ║   ^^^^^^^^^^^^^^^^^------- error
- 2 ║  /foo/ }
+ 1 ║ class A { #m; async
+ 2 ║ #m(){} }
+   ║ ^^------- error
 ╚══╩════════════════
 
 `````

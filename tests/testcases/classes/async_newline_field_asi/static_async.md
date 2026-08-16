@@ -1,18 +1,20 @@
 # Tenko parser test case
 
-- Path: tests/testcases/async_keyword/class_method/async_object_method_with_newline_after_async.md
+- Path: tests/testcases/classes/async_newline_field_asi/static_async.md
 
-> :: async keyword : class method
+> :: classes : async newline field asi
 >
-> ::> async object method with newline after async
+> ::> static async
 >
-> restricted production
+> the same for a static `async` field
+
+## PASS
 
 ## Input
 
 `````js
-class x {async 
- foo() {}}
+class A { static async
+foo(){} }
 `````
 
 ## Output
@@ -30,39 +32,39 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:2,column:10},source:''},
+  loc:{start:{line:1,column:0},end:{line:2,column:9},source:''},
   body: [
     {
       type: 'ClassDeclaration',
-      loc:{start:{line:1,column:0},end:{line:2,column:10},source:''},
+      loc:{start:{line:1,column:0},end:{line:2,column:9},source:''},
       id: {
         type: 'Identifier',
         loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
-        name: 'x'
+        name: 'A'
       },
       superClass: null,
       body: {
         type: 'ClassBody',
-        loc:{start:{line:1,column:8},end:{line:2,column:10},source:''},
+        loc:{start:{line:1,column:8},end:{line:2,column:9},source:''},
         body: [
           {
             type: 'PropertyDefinition',
-            loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
+            loc:{start:{line:1,column:10},end:{line:1,column:22},source:''},
             key: {
               type: 'Identifier',
-              loc:{start:{line:1,column:9},end:{line:1,column:14},source:''},
+              loc:{start:{line:1,column:17},end:{line:1,column:22},source:''},
               name: 'async'
             },
             value: null,
             computed: false,
-            static: false
+            static: true
           },
           {
             type: 'MethodDefinition',
-            loc:{start:{line:2,column:1},end:{line:2,column:9},source:''},
+            loc:{start:{line:2,column:0},end:{line:2,column:7},source:''},
             key: {
               type: 'Identifier',
-              loc:{start:{line:2,column:1},end:{line:2,column:4},source:''},
+              loc:{start:{line:2,column:0},end:{line:2,column:3},source:''},
               name: 'foo'
             },
             static: false,
@@ -70,14 +72,14 @@ ast: {
             kind: 'method',
             value: {
               type: 'FunctionExpression',
-              loc:{start:{line:2,column:1},end:{line:2,column:9},source:''},
+              loc:{start:{line:2,column:0},end:{line:2,column:7},source:''},
               generator: false,
               async: false,
               id: null,
               params: [],
               body: {
                 type: 'BlockStatement',
-                loc:{start:{line:2,column:7},end:{line:2,column:9},source:''},
+                loc:{start:{line:2,column:5},end:{line:2,column:7},source:''},
                 body: []
               }
             }
@@ -88,10 +90,10 @@ ast: {
   ]
 }
 
-tokens (11x):
-       ID_class IDENT PUNC_CURLY_OPEN ID_async IDENT PUNC_PAREN_OPEN
-       PUNC_PAREN_CLOSE PUNC_CURLY_OPEN PUNC_CURLY_CLOSE
-       PUNC_CURLY_CLOSE
+tokens (12x):
+       ID_class IDENT PUNC_CURLY_OPEN ID_static ID_async IDENT
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_CURLY_OPEN
+       PUNC_CURLY_CLOSE PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -123,8 +125,8 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class x{
-async;
+class A{
+static async;
 foo(){};
 }
 ````
