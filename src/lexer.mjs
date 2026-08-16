@@ -2909,7 +2909,7 @@ function Lexer(
 
     if (regexBodyOpCharsInvalidWithU && ustatusFlags === REGEX_GOOD_WITH_U_FLAG) {
       // - `/[a--b]/u` (with the u flag the chars consumed as v operators read as the out-of-order range a-to-dash)
-      regexSyntaxError('With the u flag the characters of a `--` / `&&` / `\\q{...}` construct are plain class atoms, and that reading of this class is invalid (for example an out-of-order range or a class escape range)');
+      regexSyntaxError('With the u flag this character class is invalid (an out-of-order range, a class escape range, or an identity escape that is not a SyntaxCharacter or `/`)');
       return $ERROR;
     }
 
@@ -5331,6 +5331,18 @@ function Lexer(
     return ((codepoint - 0x10000) >> 10) + 0xD800
   }
 
+  function isClassSetReservedPunctuator(c) {
+    ASSERT(isClassSetReservedPunctuator.length === arguments.length, 'arg count');
+    // https://tc39.es/ecma262/#prod-ClassSetReservedPunctuator
+    // Note: `-` is part of this production too but never reaches the callers (it is handled as a range dash first).
+    switch (c) {
+      case $$AND_26: case $$EXCL_21: case $$HASH_23: case $$PERCENT_25: case $$COMMA_2C: case $$COLON_3A:
+      case $$SEMI_3B: case $$LT_3C: case $$IS_3D: case $$GT_3E: case $$AT_40: case $$TICK_60: case $$TILDE_7E:
+        return true;
+    }
+    return false;
+  }
+
   function isClassStringSingleCharEscape(c) {
     ASSERT(isClassStringSingleCharEscape.length === arguments.length, 'arg count');
     // The single character escapes that `ClassSetCharacter` allows after a backslash inside a `\q{...}`.
@@ -5343,13 +5355,10 @@ function Lexer(
       case $$XOR_5E: case $$$_24: case $$BACKSLASH_5C: case $$DOT_2E: case $$STAR_2A: case $$PLUS_2B:
       case $$QMARK_3F: case $$PAREN_L_28: case $$PAREN_R_29: case $$SQUARE_L_5B: case $$SQUARE_R_5D:
       case $$CURLY_L_7B: case $$CURLY_R_7D: case $$OR_7C: case $$FWDSLASH_2F:
-      // ClassSetReservedPunctuator
-      case $$AND_26: case $$DASH_2D: case $$EXCL_21: case $$HASH_23: case $$PERCENT_25: case $$COMMA_2C:
-      case $$COLON_3A: case $$SEMI_3B: case $$LT_3C: case $$IS_3D: case $$GT_3E: case $$AT_40:
-      case $$TICK_60: case $$TILDE_7E:
         return true;
     }
-    return false;
+    // and `\` ClassSetReservedPunctuator (the `-` of which _can_ reach this one, unlike in a char class)
+    return c === $$DASH_2D || isClassSetReservedPunctuator(c);
   }
 
   function skipHexDigitsForQString(n) {
@@ -5388,7 +5397,15 @@ function Lexer(
         // Defer error until flags are parsed (no peeking): propagate REGEX_CHARCLASS_BAD_WITH_V_FLAG.
         // With u-flag only / and syntax chars may be identity-escaped; so every other char (e.g. \j, \') is invalid with u too.
         ASSERT_skip(c);
-        if (supportRegexVFlag && c === $$AND_26) return c;
+        // `ClassSetCharacter :: \ ClassSetReservedPunctuator` makes these valid with the v flag, and they are not
+        // UnicodeIDContinue so `IdentityEscape[~U]` makes them valid without flags too. But with the u flag only a
+        // SyntaxCharacter or `/` may be identity-escaped, so the u reading is invalid (the v flag is exempt).
+        // (`\-` never reaches this branch; it is also valid with u through `ClassEscape[+U] :: -`.)
+        // - `/[\!]/v` and `/[\!]/` are fine, `/[\!]/u` is not
+        if (supportRegexVFlag && isClassSetReservedPunctuator(c)) {
+          regexBodyOpCharsInvalidWithU = true;
+          return c;
+        }
 
         ASSERT(![$$BACKSLASH_5C, $$K_6B, $$C_63, $$XOR_5E, $$$_24, $$DOT_2E, $$STAR_2A, $$PLUS_2B, $$QMARK_3F, $$PAREN_L_28, $$PAREN_R_29, $$SQUARE_L_5B, $$SQUARE_R_5D, $$CURLY_L_7B, $$CURLY_R_7D, $$OR_7C].includes(c), 'all these u-flag chars should be checked above');
         if (webCompat === WEB_COMPAT_ON) {

@@ -1,19 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_nonsyntax_escape_u_fail.md
+- Path: tests/testcases/regexes/class_set_reserved_punctuator/gate_es14_amp_u.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : class set reserved punctuator
 >
-> ::> region nonsyntax escape u fail
+> ::> gate es14 amp u
 >
-> escaped non syntax punctuation in the region is invalid with u
+> the same for an escaped ampersand at es14
 
 ## FAIL
 
 ## Input
 
+- `es = 14`
+
 `````js
-x=/[[a]\-]/u;
+x = /[\&]/u
 `````
 
 ## Output
@@ -30,12 +32,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: With the u flag this character class is invalid (an out-of-order range, a class escape range, or an identity escape that is not a SyntaxCharacter or `/`)
+    Regex: Cannot escape `&` in a regex char class with the u-flag or v-flag
 
-start@1:0, error@1:2
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ x=/[[a]\-]/u;
-   ║   ^^^^^^^^^^------- error
+ 1 ║ x = /[\&]/u
+   ║     ^^^^^^^------- error
 ╚══╩════════════════
 
 `````

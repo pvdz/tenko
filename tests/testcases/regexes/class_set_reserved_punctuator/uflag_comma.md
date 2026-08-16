@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_nonsyntax_escape_u_fail.md
+- Path: tests/testcases/regexes/class_set_reserved_punctuator/uflag_comma.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : class set reserved punctuator
 >
-> ::> region nonsyntax escape u fail
+> ::> uflag comma
 >
-> escaped non syntax punctuation in the region is invalid with u
+> but with the u flag only a SyntaxCharacter or `/` may be identity-escaped
 
 ## FAIL
 
 ## Input
 
 `````js
-x=/[[a]\-]/u;
+x = /[\,]/u
 `````
 
 ## Output
@@ -32,10 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: With the u flag this character class is invalid (an out-of-order range, a class escape range, or an identity escape that is not a SyntaxCharacter or `/`)
 
-start@1:0, error@1:2
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ x=/[[a]\-]/u;
-   ║   ^^^^^^^^^^------- error
+ 1 ║ x = /[\,]/u
+   ║     ^^^^^^^------- error
 ╚══╩════════════════
 
 `````

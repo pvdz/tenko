@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_nonsyntax_escape_u_fail.md
+- Path: tests/testcases/regexes/class_set_reserved_punctuator/atom_v_amp.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : class set reserved punctuator
 >
-> ::> region nonsyntax escape u fail
+> ::> atom v amp
 >
-> escaped non syntax punctuation in the region is invalid with u
+> a reserved punctuator escape is a ClassSetCharacter, so it is not valid as an atom
 
 ## FAIL
 
 ## Input
 
 `````js
-x=/[[a]\-]/u;
+x = /\&/v
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: With the u flag this character class is invalid (an out-of-order range, a class escape range, or an identity escape that is not a SyntaxCharacter or `/`)
+    Regex: Atoms can only escape certain non-special chars without u-flag or v-flag
 
-start@1:0, error@1:2
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ x=/[[a]\-]/u;
-   ║   ^^^^^^^^^^------- error
+ 1 ║ x = /\&/v
+   ║     ^^^^^------- error
 ╚══╩════════════════
 
 `````

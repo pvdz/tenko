@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: With the u flag the characters of a `--` / `&&` / `\q{...}` construct are plain class atoms, and that reading of this class is invalid (for example an out-of-order range or a class escape range)
+    Regex: With the u flag this character class is invalid (an out-of-order range, a class escape range, or an identity escape that is not a SyntaxCharacter or `/`)
 
 start@1:0, error@1:2
 ╔══╦════════════════

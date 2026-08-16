@@ -1,19 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/charclass/nested_boundary/region_nonsyntax_escape_u_fail.md
+- Path: tests/testcases/regexes/class_set_reserved_punctuator/gate_es14_v.md
 
-> :: regexes : charclass : nested boundary
+> :: regexes : class set reserved punctuator
 >
-> ::> region nonsyntax escape u fail
+> ::> gate es14 v
 >
-> escaped non syntax punctuation in the region is invalid with u
+> the v flag does not exist at es14
 
 ## FAIL
 
 ## Input
 
+- `es = 14`
+
 `````js
-x=/[[a]\-]/u;
+x = /[\!]/v
 `````
 
 ## Output
@@ -30,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: With the u flag this character class is invalid (an out-of-order range, a class escape range, or an identity escape that is not a SyntaxCharacter or `/`)
+    The unicodeSets flag `v` is not supported in the currently targeted language version (ES2024+)
 
-start@1:0, error@1:2
-╔══╦════════════════
- 1 ║ x=/[[a]\-]/u;
-   ║   ^^^^^^^^^^------- error
-╚══╩════════════════
+start@1:0, error@1:10
+╔══╦═════════════════
+ 1 ║ x = /[\!]/v
+   ║           ^------- error
+╚══╩═════════════════
 
 `````
 
