@@ -1,25 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/field_init_await/bare_static.md
+- Path: tests/testcases/classes/field_init_await_nesting/mod_instance_call.md
 
-> :: classes : field init await
+> :: classes : field init await nesting
 >
-> ::> bare static
+> ::> mod instance call
 >
-> the same in a static field
->
-> UNADJUDICATED (BUGS.md #28): this records current behaviour, not a verified rule. The plain grammar says it is
-> valid -- `FieldDefinition : ClassElementName Initializer[+In, ~Yield, ~Await]opt` is the same production for
-> static and instance fields, and `IdentifierReference[~Await] : await` permits it -- and the instance-field twin
-> (`bare.md`) is accepted by every engine. But node/v8 rejects this static one, consistently with the static
-> initializer being `[+Await]`. If that turns out to be a real early error, this test flips to FAIL.
+> module code never allows `await` as an identifier
 
 ## PASS SLOPPY
 
 ## Input
 
 `````js
-class A { static x = await }
+class A { x = f(await) }
 `````
 
 ## Output
@@ -37,11 +31,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
   body: [
     {
       type: 'ClassDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:24},source:''},
       id: {
         type: 'Identifier',
         loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
@@ -50,23 +44,35 @@ ast: {
       superClass: null,
       body: {
         type: 'ClassBody',
-        loc:{start:{line:1,column:8},end:{line:1,column:28},source:''},
+        loc:{start:{line:1,column:8},end:{line:1,column:24},source:''},
         body: [
           {
             type: 'PropertyDefinition',
-            loc:{start:{line:1,column:10},end:{line:1,column:26},source:''},
+            loc:{start:{line:1,column:10},end:{line:1,column:22},source:''},
             key: {
               type: 'Identifier',
-              loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
+              loc:{start:{line:1,column:10},end:{line:1,column:11},source:''},
               name: 'x'
             },
             value: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:21},end:{line:1,column:26},source:''},
-              name: 'await'
+              type: 'CallExpression',
+              loc:{start:{line:1,column:14},end:{line:1,column:22},source:''},
+              optional: false,
+              callee: {
+                type: 'Identifier',
+                loc:{start:{line:1,column:14},end:{line:1,column:15},source:''},
+                name: 'f'
+              },
+              arguments: [
+                {
+                  type: 'Identifier',
+                  loc:{start:{line:1,column:16},end:{line:1,column:21},source:''},
+                  name: 'await'
+                }
+              ]
             },
             computed: false,
-            static: true
+            static: false
           }
         ]
       }
@@ -74,9 +80,9 @@ ast: {
   ]
 }
 
-tokens (9x):
-       ID_class IDENT PUNC_CURLY_OPEN ID_static IDENT PUNC_EQ ID_await
-       PUNC_CURLY_CLOSE
+tokens (11x):
+       ID_class IDENT PUNC_CURLY_OPEN IDENT PUNC_EQ IDENT
+       PUNC_PAREN_OPEN ID_await PUNC_PAREN_CLOSE PUNC_CURLY_CLOSE
 `````
 
 ### Strict mode
@@ -93,10 +99,10 @@ Parsed with the module goal.
 throws: Parser error!
   Cannot use `await` as var when goal=module but found `await` outside an async function
 
-start@1:0, error@1:27
+start@1:0, error@1:21
 ╔══╦═════════════════
- 1 ║ class A { static x = await }
-   ║                            ^------- error
+ 1 ║ class A { x = f(await) }
+   ║                      ^------- error
 ╚══╩═════════════════
 
 `````
@@ -118,7 +124,7 @@ _Output same as module mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class A{static x = await;}
+class A{x = f(await);}
 ````
 
 Produces same AST

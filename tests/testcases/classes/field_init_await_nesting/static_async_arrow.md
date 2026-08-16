@@ -1,25 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/classes/field_init_await/bare_static.md
+- Path: tests/testcases/classes/field_init_await_nesting/static_async_arrow.md
 
-> :: classes : field init await
+> :: classes : field init await nesting
 >
-> ::> bare static
+> ::> static async arrow
 >
-> the same in a static field
->
-> UNADJUDICATED (BUGS.md #28): this records current behaviour, not a verified rule. The plain grammar says it is
-> valid -- `FieldDefinition : ClassElementName Initializer[+In, ~Yield, ~Await]opt` is the same production for
-> static and instance fields, and `IdentifierReference[~Await] : await` permits it -- and the instance-field twin
-> (`bare.md`) is accepted by every engine. But node/v8 rejects this static one, consistently with the static
-> initializer being `[+Await]`. If that turns out to be a real early error, this test flips to FAIL.
+> an async function reintroduces AwaitExpression
 
-## PASS SLOPPY
+## PASS
 
 ## Input
 
 `````js
-class A { static x = await }
+class A { static x = async () => await 1 }
 `````
 
 ## Output
@@ -37,11 +31,11 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:42},source:''},
   body: [
     {
       type: 'ClassDeclaration',
-      loc:{start:{line:1,column:0},end:{line:1,column:28},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:42},source:''},
       id: {
         type: 'Identifier',
         loc:{start:{line:1,column:6},end:{line:1,column:7},source:''},
@@ -50,20 +44,34 @@ ast: {
       superClass: null,
       body: {
         type: 'ClassBody',
-        loc:{start:{line:1,column:8},end:{line:1,column:28},source:''},
+        loc:{start:{line:1,column:8},end:{line:1,column:42},source:''},
         body: [
           {
             type: 'PropertyDefinition',
-            loc:{start:{line:1,column:10},end:{line:1,column:26},source:''},
+            loc:{start:{line:1,column:10},end:{line:1,column:40},source:''},
             key: {
               type: 'Identifier',
               loc:{start:{line:1,column:17},end:{line:1,column:18},source:''},
               name: 'x'
             },
             value: {
-              type: 'Identifier',
-              loc:{start:{line:1,column:21},end:{line:1,column:26},source:''},
-              name: 'await'
+              type: 'ArrowFunctionExpression',
+              loc:{start:{line:1,column:21},end:{line:1,column:40},source:''},
+              params: [],
+              id: null,
+              generator: false,
+              async: true,
+              expression: true,
+              body: {
+                type: 'AwaitExpression',
+                loc:{start:{line:1,column:33},end:{line:1,column:40},source:''},
+                argument: {
+                  type: 'Literal',
+                  loc:{start:{line:1,column:39},end:{line:1,column:40},source:''},
+                  value: 1,
+                  raw: '1'
+                }
+              }
             },
             computed: false,
             static: true
@@ -74,8 +82,9 @@ ast: {
   ]
 }
 
-tokens (9x):
-       ID_class IDENT PUNC_CURLY_OPEN ID_static IDENT PUNC_EQ ID_await
+tokens (14x):
+       ID_class IDENT PUNC_CURLY_OPEN ID_static IDENT PUNC_EQ ID_async
+       PUNC_PAREN_OPEN PUNC_PAREN_CLOSE PUNC_EQ_GT ID_await NUMBER_DEC
        PUNC_CURLY_CLOSE
 `````
 
@@ -89,17 +98,7 @@ _Output same as sloppy mode._
 
 Parsed with the module goal.
 
-`````
-throws: Parser error!
-  Cannot use `await` as var when goal=module but found `await` outside an async function
-
-start@1:0, error@1:27
-╔══╦═════════════════
- 1 ║ class A { static x = await }
-   ║                            ^------- error
-╚══╩═════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Sloppy mode with AnnexB
 
@@ -111,14 +110,14 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as module mode._
+_Output same as sloppy mode._
 
 ## AST Printer
 
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-class A{static x = await;}
+class A{static x = async () => (await 1);}
 ````
 
 Produces same AST
