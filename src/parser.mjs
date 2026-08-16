@@ -10346,12 +10346,6 @@ function Parser(code, options = {}) {
     let $tp_op_start = tok_getStart();
     let $tp_op_stop = tok_getStop();
 
-    if (leftHandSideExpression === ONLY_LHSE) {
-      // [x]: `class x extends ++y {}`
-      //                       ^^
-      return THROW_RANGE('A `' + opName + '` update expression is not allowed here', $tp_op_start, $tp_op_stop);
-    }
-
     // if there is a newline between the previous value and UpdateExpression (++ or --) then it is not postfix
     // https://tc39.github.io/ecma262/#sec-rules-of-automatic-semicolon-insertion
     // https://tc39.github.io/ecma262/#prod-UpdateExpression
@@ -10374,6 +10368,14 @@ function Parser(code, options = {}) {
         return THROW_RANGE('The postfix `' + opName + '` is a restricted production so ASI must apply but that is not valid in this context', $tp_op_start, $tp_op_stop);
       }
       return assignable;
+    }
+
+    // The value can not take a postfix tail at all here (the caller wants a LeftHandSideExpression). Like the chain
+    // check below this must come _after_ the newline check, because ASI still applies: the `++` of `++a \n ++b` is
+    // not a postfix operator on `++a`, it starts a new statement.
+    // - `class x extends y++ {}` is an error, `++a \n ++b` is not
+    if (leftHandSideExpression === ONLY_LHSE) {
+      return THROW_RANGE('A `' + opName + '` update expression is not allowed here', $tp_op_start, $tp_op_stop);
     }
 
     // The AssignmentTargetType of an OptionalExpression is always invalid, even for a plain member tail like the `.c`
