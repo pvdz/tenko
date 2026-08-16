@@ -1,23 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/identity_escape_v_v_fail.md
+- Path: tests/testcases/regexes/control_escape_v_with_vflag/gate_noflag_es6.md
 
-> :: regexes : v flag
+> :: regexes : control escape v with vflag
 >
-> ::> identity escape v v fail
+> ::> gate noflag es6
 >
-> Despite the file name, this is not an identity escape at all: `\v` is a `ControlEscape` (`one of f n r t v`),
-> which `CharacterEscape` matches before it can ever reach `IdentityEscape`. The v-mode restriction on identity
-> escapes therefore does not apply to it, so this is valid.
+> and \v needs no flag at all at es6
 
 ## PASS
 
 ## Input
 
-- `es = 15`
+- `es = 6`
 
 `````js
-/\v/v
+x = /\v/
 `````
 
 ## Output
@@ -35,24 +33,34 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
       expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
-        value: null,
-        regex: { pattern: '\\v', flags: 'v' },
-        raw: '/\\v/v'
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:8},source:''},
+        left: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+          name: 'x'
+        },
+        operator: '=',
+        right: {
+          type: 'Literal',
+          loc:{start:{line:1,column:4},end:{line:1,column:8},source:''},
+          value: null,
+          regex: { pattern: '\\v', flags: '' },
+          raw: '/\\v/'
+        }
       }
     }
   ]
 }
 
-tokens (3x):
-       REGEXV ASI
+tokens (5x):
+       IDENT PUNC_EQ REGEXN ASI
 `````
 
 ### Strict mode
@@ -84,7 +92,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-/\v/v;
+x = /\v/;
 ````
 
 Produces same AST

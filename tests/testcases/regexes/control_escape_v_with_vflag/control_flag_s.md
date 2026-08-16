@@ -1,23 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/identity_escape_v_v_fail.md
+- Path: tests/testcases/regexes/control_escape_v_with_vflag/control_flag_s.md
 
-> :: regexes : v flag
+> :: regexes : control escape v with vflag
 >
-> ::> identity escape v v fail
+> ::> control flag s
 >
-> Despite the file name, this is not an identity escape at all: `\v` is a `ControlEscape` (`one of f n r t v`),
-> which `CharacterEscape` matches before it can ever reach `IdentityEscape`. The v-mode restriction on identity
-> escapes therefore does not apply to it, so this is valid.
+> a \v atom with `s` (control)
 
 ## PASS
 
 ## Input
 
-- `es = 15`
-
 `````js
-/\v/v
+x = /\v/s
 `````
 
 ## Output
@@ -35,24 +31,34 @@ Parsed with script goal and as if the code did not start with strict mode header
 `````
 ast: {
   type: 'Program',
-  loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+  loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
   body: [
     {
       type: 'ExpressionStatement',
-      loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
+      loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
       expression: {
-        type: 'Literal',
-        loc:{start:{line:1,column:0},end:{line:1,column:5},source:''},
-        value: null,
-        regex: { pattern: '\\v', flags: 'v' },
-        raw: '/\\v/v'
+        type: 'AssignmentExpression',
+        loc:{start:{line:1,column:0},end:{line:1,column:9},source:''},
+        left: {
+          type: 'Identifier',
+          loc:{start:{line:1,column:0},end:{line:1,column:1},source:''},
+          name: 'x'
+        },
+        operator: '=',
+        right: {
+          type: 'Literal',
+          loc:{start:{line:1,column:4},end:{line:1,column:9},source:''},
+          value: null,
+          regex: { pattern: '\\v', flags: 's' },
+          raw: '/\\v/s'
+        }
       }
     }
   ]
 }
 
-tokens (3x):
-       REGEXV ASI
+tokens (5x):
+       IDENT PUNC_EQ REGEXN ASI
 `````
 
 ### Strict mode
@@ -84,7 +90,7 @@ _Output same as sloppy mode._
 Printer output different from input [sloppy][annexb:no]:
 
 ````js
-/\v/v;
+x = /\v/s;
 ````
 
 Produces same AST

@@ -3853,11 +3853,9 @@ function Lexer(
         // forward slash (/)
         // syntax chars (^, $, \, ., *, +, ?, (, ), [, ], {, }, |)
         // and any ascii char that doesn't fit other cases
-        // With v flag, \v is invalid (identity escape of the flag character is not allowed).
-        if (c === $$V_76) {
-          regexBodyHasSyntaxInvalidWithVFlag = true;
-          lastPotentialRegexErrorForVFlag = 'Identity escape of `v` is not allowed with the v flag';
-        }
+        // Note: `\v` is a ControlEscape, not an IdentityEscape, so the v-mode identity escape restriction does not
+        // apply to it. Every char in this bucket is a SyntaxCharacter, `/`, a ControlEscape, or a class escape, so
+        // they are all valid with the u-flag and the v-flag alike.
         ASSERT_skip(c);
         return REGEX_ALWAYS_GOOD;
 
