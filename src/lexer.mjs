@@ -2588,7 +2588,9 @@ function Lexer(
   }
 
   function parseLt() {
-    if (parsingGoal === GOAL_SCRIPT && webCompat === WEB_COMPAT_ON && !eofd(3) && peek() === $$EXCL_21 && peekd(1) === $$DASH_2D && peekd(2) === $$DASH_2D) {
+    // peekd(2) reads pointer+2, so guard with neofd(3). The comment chars are optional (`SingleLineHTMLOpenComment ::
+    // <!-- SingleLineCommentChars_opt`) so a `<!--` that runs straight into EOF is still a complete comment.
+    if (parsingGoal === GOAL_SCRIPT && webCompat === WEB_COMPAT_ON && neofd(3) && peek() === $$EXCL_21 && peekd(1) === $$DASH_2D && peekd(2) === $$DASH_2D) {
       return parseCommentHtmlOpen();
     }
     return parseLtPunctuator(); // < << <= <<=
