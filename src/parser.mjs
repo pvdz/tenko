@@ -823,7 +823,11 @@ function Parser(code, options = {}) {
     // nested class sets the flag again for its own derived constructor, and `super.x` has its own flag, so both of
     // those keep working.
     // - `class A extends B { x = super() }` and `x = () => super()` are errors, `x = super.y` is not
-    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR | LF_SUPER_CALL) | LF_NO_ARGUMENTS | LF_CAN_NEW_DOT_TARGET;
+    // The Initializer is parsed with [~Await], so top-level await does not reach into it either. That is what
+    // dropping LF_NOT_IN_FUNC does: the initializer is a function boundary, just like a function body.
+    // - `class A { x = await 1 }` is an error in a module, while `class A { [await 1] = 1 }` is not (the computed
+    //   key is evaluated in class scope, which does keep top-level await)
+    let fieldFlags = sansFlag(lexerFlags, LF_IN_ASYNC | LF_IN_GENERATOR | LF_SUPER_CALL | LF_NOT_IN_FUNC) | LF_NO_ARGUMENTS | LF_CAN_NEW_DOT_TARGET;
     let $tp_value_start = tok_getStart();
     let $tp_value_line = tok_getLine();
     let $tp_value_column = tok_getColumn();
