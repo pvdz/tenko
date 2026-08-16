@@ -4728,10 +4728,29 @@ function Lexer(
             if (c === $$BACKSLASH_5C) {
               ASSERT_skip($$BACKSLASH_5C);
               if (eof()) return regexSyntaxError('Unexpected early EOF after backslash in \\q{...}');
-              ASSERT_skip(peek());
+              // Consume the whole escape, not just its first char: a CharacterEscape is one ClassSetCharacter no
+              // matter how many chars spell it, so the rest must not be counted as extra code points, and the `}`
+              // of a `\u{...}` must not be mistaken for the end of the `\q{...}`.
+              // - `/[^\q{A}]/v` and `/[^\q{\u{1F600}}]/v` are one code point, so they contain no strings
+              // (Which escapes are legal here at all is a separate concern, validated elsewhere.)
+              let e = peek();
+              ASSERT_skip(e);
+              let cu = -1; // code unit of a `\uXXXX`, so that a `\uXXXX\uXXXX` pair still counts as one code point
+              if (e === $$X_78) skipHexDigitsForQString(2);
+              else if (e === $$C_63 && neof() && isAsciiLetter(peek())) skip();
+              else if (e === $$U_75) {
+                if (neof() && peeky($$CURLY_L_7B)) {
+                  ASSERT_skip($$CURLY_L_7B);
+                  while (neof() && getHexValue(peek()) !== HEX_OOB) skip();
+                  if (neof() && peeky($$CURLY_R_7D)) ASSERT_skip($$CURLY_R_7D);
+                } else {
+                  cu = skipHexDigitsForQString(4);
+                }
+              }
               // Approximate the non-v reading of the escaped char as a plain atom (no range participation)
               if (nonVInClass) { urangeOpen = false; nrangeOpen = false; urangeLeft = -1; nrangeLeft = -1; }
-              qAltCodePoints++; qPrevHigh = false; // an escape is one code point (\uXXXX\uYYYY pairs are rare; approximate)
+              if (!(qPrevHigh && cu >= 0xDC00 && cu <= 0xDFFF)) qAltCodePoints++;
+              qPrevHigh = cu >= 0xD800 && cu <= 0xDBFF;
             } else if (c === $$OR_7C) {
               // Alternative separator: finalize the alternative just scanned
               if (qAltCodePoints !== 1) qMayStr = true;
@@ -5286,6 +5305,22 @@ function Lexer(
       Head: ((result-0x10000) & 0b1111111111) + 0xDC00
      */
     return ((codepoint - 0x10000) >> 10) + 0xD800
+  }
+
+  function skipHexDigitsForQString(n) {
+    ASSERT(skipHexDigitsForQString.length === arguments.length, 'arg count');
+    // Skips up to n hex digits of an escape inside a `\q{...}` and returns their value, or -1 when there were
+    // fewer than n (a malformed escape, which is rejected elsewhere; here we only need to consume its spelling).
+    let v = 0;
+    for (let i = 0; i < n; ++i) {
+      if (eof()) return -1;
+      let c = peek();
+      let h = getHexValue(c);
+      if (h === HEX_OOB) return -1;
+      ASSERT_skip(c);
+      v = (v << 4) | h;
+    }
+    return v;
   }
 
   function parseRegexCharClassEscape(c) {
