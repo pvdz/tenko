@@ -28,7 +28,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (`yield`) as a variable name because: Cannot use this reserved word as a variable name inside a generator
+  The `yield` keyword in arg default must be a var name but that is not allowed inside a generator
 
 start@1:0, error@1:16
 ╔══╦═════════════════
@@ -42,23 +42,13 @@ start@1:0, error@1:16
 
 Parsed with script goal but as if it was starting with `"use strict"` at the top.
 
-`````
-throws: Parser error!
-  Cannot use this name (`yield`) as a variable name because: Cannot use this reserved word as a variable name in strict mode
-
-start@1:0, error@1:16
-╔══╦═════════════════
- 1 ║ function * f(...yield) {}
-   ║                 ^^^^^------- error
-╚══╩═════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal
 
 Parsed with the module goal.
 
-_Output same as strict mode._
+_Output same as sloppy mode._
 
 ### Sloppy mode with AnnexB
 
@@ -70,4 +60,4 @@ _Output same as sloppy mode._
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as strict mode._
+_Output same as sloppy mode._

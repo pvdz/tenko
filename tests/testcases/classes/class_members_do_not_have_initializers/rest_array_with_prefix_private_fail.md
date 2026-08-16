@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Parser error!
-  Cannot use this name (`#x`) as a variable name because: Private identifiers are only valid in class bodies and in expressions (e.g. this.#x, #x in obj), not as bindings
+  Private identifier is only valid as the left-hand side of an `in` expression
 
 start@1:0, error@1:11
 ╔══╦═════════════════

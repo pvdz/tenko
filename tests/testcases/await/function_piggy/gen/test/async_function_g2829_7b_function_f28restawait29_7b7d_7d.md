@@ -102,13 +102,13 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
+  Cannot use `await` as var when goal=module but found `await` outside an async function
 
-start@1:0, error@2:16
+start@1:0, error@2:21
 ╔══╦═════════════════
  1 ║ async function g() {
  2 ║   function f(...await) {}
-   ║                 ^^^^^------- error
+   ║                      ^------- error
  3 ║ }
 ╚══╩═════════════════
 

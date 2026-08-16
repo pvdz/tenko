@@ -14788,9 +14788,10 @@ function Parser(code, options = {}) {
         let assignableOrErrorMsg = nonFatalBindingIdentCheck($tp_ident_type, $tp_ident_start, $tp_ident_stop, $tp_ident_canon, bindingType, lexerFlags);
         ASSERT(typeof assignableOrErrorMsg === 'string', 'func should always return string');
         if (assignableOrErrorMsg.length !== 0) {
-          if (bindingType !== BINDING_TYPE_NONE) {
-            return THROW_RANGE('Cannot use this name (`' + tok_sliceInput($tp_ident_start, $tp_ident_stop) + '`) as a variable name because: ' + assignableOrErrorMsg, $tp_ident_start, $tp_ident_stop);
-          }
+          // Can not throw here, not even for a binding type: the group may still turn out to be a plain expression,
+          // where the spread of a non-assignable value is fine. Only mark it, like the non-simple case below does;
+          // a context that really is a binding rejects it through the destructibility check instead.
+          // - `([...null])` is an array literal with a spread, only `([...null]) => x` is an error
           // - `[...await] = obj`
           // - `[...this];`
           destructible |= CANT_DESTRUCT;

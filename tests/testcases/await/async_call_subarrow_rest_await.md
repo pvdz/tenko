@@ -104,12 +104,12 @@ Parsed with the module goal.
 
 `````
 throws: Parser error!
-  Cannot use this name (`await`) as a variable name because: Await is illegal as var name with module goal
+  Expected to parse a value
 
-start@1:0, error@1:15
+start@1:0, error@1:20
 ╔══╦═════════════════
  1 ║ async (a = (...await) => {});
-   ║                ^^^^^------- error
+   ║                     ^------- error
 ╚══╩═════════════════
 
 `````
