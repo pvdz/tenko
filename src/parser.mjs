@@ -6418,6 +6418,13 @@ function Parser(code, options = {}) {
       // This can be fine if inside a regular `for-loop`. Only if we see `in` or `of` before the `;` are we in trouble.
       parseExpressionFromOp(lexerFlags| LF_IN_FOR_LHS, $tp_patternStart_start, $tp_patternStart_stop, $tp_patternStart_line, $tp_patternStart_column, assignable, astProp);
 
+      if (tok_getType() === $PUNC_COMMA) {
+        // The init of a `for(;;)` is an Expression, so a comma continues it as a sequence. (Keep LF_IN_FOR_LHS: the
+        // init is an `Expression[~In]`, so an unparenthesized `in` stays illegal for the rest of it too.)
+        // - `for ([] = x, y;;);` is a sequence, while `for ([] = x, y in z;;);` is still an error
+        _parseExpressions(lexerFlags | LF_IN_FOR_LHS, $tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, assignable, astProp);
+      }
+
       if (tok_getType() === $PUNC_SEMI) {
         // This is fiiiine
         // - `for ([] = x ;;);`
@@ -6469,7 +6476,9 @@ function Parser(code, options = {}) {
       // Don't care about assignable await/yield flags
       // [v]: `for ([], x;;);`
       //              ^
-      _parseExpressions(lexerFlags, $tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, NOT_ASSIGNABLE, astProp);
+      // Keep LF_IN_FOR_LHS: the init is an `Expression[~In]`, so an unparenthesized `in` stays illegal in the rest
+      // of the sequence too. - `for ([], y in z;;);` is an error, `for ([], (y in z);;);` is not
+      _parseExpressions(lexerFlags | LF_IN_FOR_LHS, $tp_patternStart_start, $tp_patternStart_line, $tp_patternStart_column, NOT_ASSIGNABLE, astProp);
     }
 
     if (tok_getType() === $PUNC_SEMI) {
