@@ -1655,7 +1655,7 @@ function Lexer(
       // I think some heuristics could make this check easier to grok?
       // c !== $$SPACE_20 && c!== $$SEMI_3B &&
       (
-        isIdentStart(c, 0) !== INVALID_IDENT_CHAR || // IdentifierStart, `3in`, `5instanceof` `0x33in`
+        isIdentStart(c, pointer) !== INVALID_IDENT_CHAR || // IdentifierStart, `3in`, `5instanceof` `0x33in`
         (c >= $$0_30 && c <= $$9_39)                        // DecimalDigit, not even sure about an example
       )
     ) {
