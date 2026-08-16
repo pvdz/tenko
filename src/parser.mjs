@@ -14334,7 +14334,10 @@ function Parser(code, options = {}) {
       return CANT_DESTRUCT;
     }
 
-    if (noModifiers && ($tp_postField_type === $PUNC_SEMI || $tp_postField_type === $PUNC_CURLY_CLOSE || tok_getNlwas() === true)) {
+    // A `(` continues the MethodDefinition (`ClassElementName ( UniqueFormalParameters ) ...` has no
+    // [no LineTerminator here]), so a newline before it is insignificant and ASI must not end a field there.
+    // The ident key path checks for `(` before this same decision. - `class C { [x] \n (){} }` is a method
+    if (noModifiers && ($tp_postField_type === $PUNC_SEMI || $tp_postField_type === $PUNC_CURLY_CLOSE || (tok_getNlwas() === true && $tp_postField_type !== $PUNC_PAREN_OPEN))) {
       // Class field decls without init are relatively special and were not allowed initially
       // - `class C { 'field' }`
       // - `class C { 'field' \n ... }`
@@ -14436,7 +14439,10 @@ function Parser(code, options = {}) {
       return assignable_forPiggies;
     }
 
-    if (noModifiers && ($tp_postField_type === $PUNC_SEMI || $tp_postField_type === $PUNC_CURLY_CLOSE || tok_getNlwas() === true)) {
+    // A `(` continues the MethodDefinition (`ClassElementName ( UniqueFormalParameters ) ...` has no
+    // [no LineTerminator here]), so a newline before it is insignificant and ASI must not end a field there.
+    // The ident key path checks for `(` before this same decision. - `class C { [x] \n (){} }` is a method
+    if (noModifiers && ($tp_postField_type === $PUNC_SEMI || $tp_postField_type === $PUNC_CURLY_CLOSE || (tok_getNlwas() === true && $tp_postField_type !== $PUNC_PAREN_OPEN))) {
       // Computed field without initializer: [expr]; or [expr] <newline> or [expr]}
       // Class fields without init are somewhat special and were not initially allowed
       if (!allowPublicClassFields) {
