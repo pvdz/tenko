@@ -1,18 +1,21 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/v_flag/rgi_emoji_u_fail.md
+- Path: tests/testcases/regexes/props_of_strings_needs_flag/gate_es14_vflag.md
 
-> :: regexes : v flag
+> :: regexes : props of strings needs flag
 >
-> ::> rgi emoji u fail
+> ::> gate es14 vflag
+>
+> the v flag does not exist at es14
+
 ## FAIL
 
 ## Input
 
-- `es = 15`
+- `es = 14`
 
 `````js
-/\p{RGI_Emoji}/u
+x = /a\p{RGI_Emoji}/v
 `````
 
 ## Output
@@ -29,13 +32,13 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
+    The unicodeSets flag `v` is not supported in the currently targeted language version (ES2024+)
 
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /\p{RGI_Emoji}/u
-   ║ ^^^^^^^^^^^^^^^^------- error
-╚══╩════════════════
+start@1:0, error@1:20
+╔══╦═════════════════
+ 1 ║ x = /a\p{RGI_Emoji}/v
+   ║                     ^------- error
+╚══╩═════════════════
 
 `````
 
@@ -55,20 +58,10 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-`````
-throws: Lexer error!
-    Regex: Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
-
-start@1:0, error@1:0
-╔══╦════════════════
- 1 ║ /\p{RGI_Emoji}/u
-   ║ ^^^^^^^^^^^^^^^^------- error
-╚══╩════════════════
-
-`````
+_Output same as sloppy mode._
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode with annexB._
+_Output same as sloppy mode._

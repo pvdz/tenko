@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/property_escapes/props_of_strings/negated_rgi_emoji_v_flag.md
+- Path: tests/testcases/regexes/props_of_strings_needs_flag/uflag_rgi_emoji.md
 
-> :: regexes : property escapes : props of strings
+> :: regexes : props of strings needs flag
 >
-> ::> negated rgi emoji v flag
+> ::> uflag rgi emoji
 >
-> Negating a property of strings with \P is always an error
+> a property of strings is not valid with the u flag
 
 ## FAIL
 
 ## Input
 
 `````js
-/\P{RGI_Emoji}/v
+x = /a\p{RGI_Emoji}/u
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Negating a property of strings (`\P{...}`) is not allowed
+    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /a\p{RGI_Emoji}/u
+   ║     ^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -58,12 +58,12 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Negating a property of strings (`\P{...}`) is not allowed
+    Regex: Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /a\p{RGI_Emoji}/u
+   ║     ^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

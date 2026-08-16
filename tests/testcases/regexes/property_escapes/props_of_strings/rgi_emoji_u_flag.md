@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
+    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,10 +56,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: Properties of strings (e.g. `\p{Basic_Emoji}`) are only valid with the v flag, not the u flag
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /\p{RGI_Emoji}/u
+   ║ ^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

@@ -2810,7 +2810,8 @@ function Lexer(
   let regexBodyOpCharsInvalidSansUV = false; // the non-v non-u reading of chars consumed as v operators / \q strings is invalid (`/[a--b]/` is the out-of-order range a-to-dash without flags) — the v flag itself is exempt
   let regexBodyOpCharsInvalidWithU = false; // the u reading of chars consumed as v operators / \q strings is invalid (`/[a--b]/u`) — the v flag itself is exempt
   let regexBodyHasPropOfStrings = false; // \p{RGI_Emoji} etc are only valid with v flag; error after flags if u flag
-  let regexBodyHasNegatedPropOfStrings = false; // \P{RGI_Emoji} or [^\p{RGI_Emoji}] etc is always an error (can't negate property of strings)
+  let regexBodyHasNegatedPropOfStrings = false; // \P{RGI_Emoji} etc is always an error (can't negate property of strings)
+  let regexLastEscapeWasPropOfStrings = false; // the class escape just parsed was a \p{...} property of strings, which MayContainStrings
   let regexCurrentCharClassIsNegated = false; // set to true while parsing inside [^...], so \p{...} can detect it
   let regexBranchPath = [0]; // ES2025: disjunction branch index at each nesting level (for MightBothParticipate duplicate named group check)
   let declaredGroupNamesWithPath = new Map(); // ES2025: name -> array of { path, pointerStart, pointerEnd } (only when supportRegexDuplicateNamedCaptureGroups)
@@ -2831,6 +2832,7 @@ function Lexer(
     regexBodyOpCharsInvalidWithU = false;
     regexBodyHasPropOfStrings = false;
     regexBodyHasNegatedPropOfStrings = false;
+    regexLastEscapeWasPropOfStrings = false;
     regexBranchPath = [0];
     declaredGroupNamesWithPath = new Map();
 
@@ -4002,8 +4004,7 @@ function Lexer(
         // - `/\P{name}`
         // - `/\p{name=value}`
         // - `/\P{name=value}`
-        const FROM_ATOM = false;
-        return parseRegexPropertyEscape(c, FROM_ATOM);
+        return parseRegexPropertyEscape(c);
 
       case REGATOM_ESC_0:
         ASSERT_skip($$0_30);
@@ -4846,6 +4847,7 @@ function Lexer(
         // or U+2029 is illegal (checked above and in the escape parser). An escape that happens to _denote_ one is
         // spelled with ASCII characters and is an ordinary ClassAtom.
         // - `/[\u2028]/` is fine, `/[<LS>]/` is not
+        regexLastEscapeWasPropOfStrings = false;
         c = parseRegexCharClassEscape(c);
 
         // TODO: /[\u{01}-a]/ if there is a u-flag, this is ok. no u-flag, `}-a` should fail unless webcompat mode
@@ -5211,7 +5213,9 @@ function Lexer(
           } else if (!(isSurrogate && !wasEscape)) {
             // a literal surrogate tail merged into the head that was already counted; anything else is an operand
             vOperandEvent();
-            vOperandStr(false); // a single ClassSetCharacter or class escape never contributes strings
+            // A single ClassSetCharacter or class escape contributes no strings, except a property of strings.
+            vOperandStr(regexLastEscapeWasPropOfStrings);
+            regexLastEscapeWasPropOfStrings = false;
             // Only a single ClassSetCharacter can start a range; class escapes (\d etc, marked with the special
             // REGEX_CHARCLASS_* sentinel values) can not.
             vPrevOperandRangeable = c !== REGEX_CHARCLASS_CLASS_ESCAPE;
@@ -5674,8 +5678,7 @@ function Lexer(
         // With uflag, the \p is a unicode property escape and must look like \p{x} or \p{x=y} with x and y whitelisted
         // Without uflag, the \p it leads to IdentityEscape where it fails for any value that is in ID_CONTINUE, inc p
         // In webcompat mode, without uflag, it leads to SourceCharacterIdentityEscape and passes without "body"
-        const FROM_CHARCLASS = true;
-        let regexPropState = parseRegexPropertyEscape(c, FROM_CHARCLASS);
+        let regexPropState = parseRegexPropertyEscape(c);
 
         if (regexPropState === REGEX_ALWAYS_BAD) {
           ASSERT(lastPotentialRegexError, 'should be set');
@@ -5792,7 +5795,7 @@ function Lexer(
 
     ASSERT(false, 'unreachable');
   }
-  function parseRegexPropertyEscape(c, fromCharClass) {
+  function parseRegexPropertyEscape(c) {
     ASSERT(parseRegexPropertyEscape.length === arguments.length, 'arg count');
     ASSERT(c === $$P_70 || c === $$P_UC_50, 'this should be \\p or \\P', c);
     ASSERT(peek() === c, 'not yet consumed');
@@ -6006,10 +6009,17 @@ function Lexer(
     // \P{...} (negated) is always an error for properties of strings.
     // Defer the u/v check until flags are known.
     if (TABLE_PROPS_OF_STRINGS.includes(nc)) {
-      if (isNegated || (fromCharClass && regexCurrentCharClassIsNegated)) regexBodyHasNegatedPropOfStrings = true;
-      else regexBodyHasPropOfStrings = true;
+      if (isNegated) regexBodyHasNegatedPropOfStrings = true;
+      else {
+        regexBodyHasPropOfStrings = true;
+        // A property of strings MayContainStrings, so it may not appear in a negated class at _any_ depth. Report it
+        // to the char class parser, which tracks the negation of every nesting level (`/[[^\p{RGI_Emoji}]]/v`).
+        regexLastEscapeWasPropOfStrings = true;
+      }
       ASSERT_skip($$CURLY_R_7D);
-      return REGEX_ALWAYS_GOOD;
+      // Like any other `\p`, this is only legal with u-flag or v-flag, or as the annexB identity escape of `p`
+      if (webCompat === WEB_COMPAT_ON) return REGEX_ALWAYS_GOOD;
+      return updateRegexUflagIsMandatory(REGEX_ALWAYS_GOOD, 'The `\\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case');
     }
 
     // Validate value against non-binary unicode properties or general category values

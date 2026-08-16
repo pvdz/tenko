@@ -30,7 +30,7 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: Negating a property of strings (`\P{...}`) is not allowed
+    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; A negated character class `[^...]` may not contain strings (a \q{...} with an empty or multi-code-point alternative, or an intersection/subtraction that yields strings) with the v flag
 
 start@1:0, error@1:0
 ╔══╦════════════════
@@ -56,10 +56,20 @@ _Output same as sloppy mode._
 
 Parsed with script goal with AnnexB rules enabled and as if the code did not start with strict mode header.
 
-_Output same as sloppy mode._
+`````
+throws: Lexer error!
+    Regex: A negated character class `[^...]` may not contain strings (a \q{...} with an empty or multi-code-point alternative, or an intersection/subtraction that yields strings) with the v flag
+
+start@1:0, error@1:0
+╔══╦════════════════
+ 1 ║ /[^\p{RGI_Emoji}]/v
+   ║ ^^^^^^^^^^^^^^^^^^^------- error
+╚══╩════════════════
+
+`````
 
 ### Module goal with AnnexB
 
 Parsed with the module goal with AnnexB rules enabled.
 
-_Output same as sloppy mode._
+_Output same as sloppy mode with annexB._

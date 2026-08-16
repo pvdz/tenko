@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/property_escapes/props_of_strings/negated_rgi_emoji_v_flag.md
+- Path: tests/testcases/regexes/nested_negated_class_strings/uflag_nested.md
 
-> :: regexes : property escapes : props of strings
+> :: regexes : nested negated class strings
 >
-> ::> negated rgi emoji v flag
+> ::> uflag nested
 >
-> Negating a property of strings with \P is always an error
+> properties of strings are invalid with the u flag
 
 ## FAIL
 
 ## Input
 
 `````js
-/\P{RGI_Emoji}/v
+x = /[[^\p{RGI_Emoji}]]/u
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Negating a property of strings (`\P{...}`) is not allowed
+    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /[[^\p{RGI_Emoji}]]/u
+   ║     ^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -58,12 +58,12 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Negating a property of strings (`\P{...}`) is not allowed
+    Regex: Without the v flag this class contains syntax that is only valid as annex B regex body content (a bare `]`, `\q`, or escapes/braces after the point where the class closes without v), which requires webcompat and is invalid with the u flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /[[^\p{RGI_Emoji}]]/u
+   ║     ^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

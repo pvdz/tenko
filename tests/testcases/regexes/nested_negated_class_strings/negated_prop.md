@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/property_escapes/props_of_strings/negated_rgi_emoji_v_flag.md
+- Path: tests/testcases/regexes/nested_negated_class_strings/negated_prop.md
 
-> :: regexes : property escapes : props of strings
+> :: regexes : nested negated class strings
 >
-> ::> negated rgi emoji v flag
+> ::> negated prop
 >
-> Negating a property of strings with \P is always an error
+> a property of strings can not be negated with \P
 
 ## FAIL
 
 ## Input
 
 `````js
-/\P{RGI_Emoji}/v
+x = /\P{RGI_Emoji}/v
 `````
 
 ## Output
@@ -32,10 +32,10 @@ Parsed with script goal and as if the code did not start with strict mode header
 throws: Lexer error!
     Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Negating a property of strings (`\P{...}`) is not allowed
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /\P{RGI_Emoji}/v
+   ║     ^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -60,10 +60,10 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 throws: Lexer error!
     Regex: Negating a property of strings (`\P{...}`) is not allowed
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /\P{RGI_Emoji}/v
+   ║     ^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````

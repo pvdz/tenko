@@ -1,19 +1,19 @@
 # Tenko parser test case
 
-- Path: tests/testcases/regexes/property_escapes/props_of_strings/negated_rgi_emoji_v_flag.md
+- Path: tests/testcases/regexes/nested_negated_class_strings/nested_rgi_emoji_modifier_sequence.md
 
-> :: regexes : property escapes : props of strings
+> :: regexes : nested negated class strings
 >
-> ::> negated rgi emoji v flag
+> ::> nested rgi emoji modifier sequence
 >
-> Negating a property of strings with \P is always an error
+> a nested negated class may not contain the `RGI_Emoji_Modifier_Sequence` property of strings
 
 ## FAIL
 
 ## Input
 
 `````js
-/\P{RGI_Emoji}/v
+x = /[[^\p{RGI_Emoji_Modifier_Sequence}]]/v
 `````
 
 ## Output
@@ -30,12 +30,12 @@ Parsed with script goal and as if the code did not start with strict mode header
 
 `````
 throws: Lexer error!
-    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; Negating a property of strings (`\P{...}`) is not allowed
+    Regex: The `\p` property escape is only legal with a u-flag or v-flag, or as a webcompat edge case; A negated character class `[^...]` may not contain strings (a \q{...} with an empty or multi-code-point alternative, or an intersection/subtraction that yields strings) with the v flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /[[^\p{RGI_Emoji_Modifier_Sequence}]]/v
+   ║     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
@@ -58,12 +58,12 @@ Parsed with script goal with AnnexB rules enabled and as if the code did not sta
 
 `````
 throws: Lexer error!
-    Regex: Negating a property of strings (`\P{...}`) is not allowed
+    Regex: A negated character class `[^...]` may not contain strings (a \q{...} with an empty or multi-code-point alternative, or an intersection/subtraction that yields strings) with the v flag
 
-start@1:0, error@1:0
+start@1:0, error@1:4
 ╔══╦════════════════
- 1 ║ /\P{RGI_Emoji}/v
-   ║ ^^^^^^^^^^^^^^^^------- error
+ 1 ║ x = /[[^\p{RGI_Emoji_Modifier_Sequence}]]/v
+   ║     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^------- error
 ╚══╩════════════════
 
 `````
